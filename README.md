@@ -63,7 +63,13 @@ Install this plugin, then use the bundled skills to scaffold new projects (via B
 /monorepo-setup
 ```
 
-The skill walks you through choosing your stack, then runs `create-better-t-stack` non-interactively to scaffold a full monorepo.
+The skill walks you through choosing your stack, then runs `create-better-t-stack` non-interactively into the current directory. Expected flow:
+
+1. Create a new git repo
+2. Install this plugin
+3. Run `/monorepo-setup` — scaffolds in-place using `--directory-conflict merge --no-git`
+
+> Scaffolding in-place overwrites README.md and .gitignore with Better-T-Stack's versions. This is expected for a fresh repo.
 
 ### 2. Initialize spec-driven development
 

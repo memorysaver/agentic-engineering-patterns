@@ -17,7 +17,7 @@ Before scaffolding, discuss the project with the user to determine the right con
 
 | Topic | Options | Default |
 |-------|---------|---------|
-| **Project name** | Any valid directory name | (user must provide) |
+| **Scaffold location** | `.` (current directory) or `<project-name>` (new subdirectory) | `.` (in-place) |
 | **Frontend** | tanstack, react, next, nuxt, svelte, solid, astro, none | `tanstack` |
 | **Backend** | hono, express, fastify, elysia, convex, self, none | `hono` |
 | **Database** | sqlite, postgres, mysql, mongodb, none | `sqlite` |
@@ -30,6 +30,14 @@ Before scaffolding, discuss the project with the user to determine the right con
 | **DB setup** | turso, d1, neon, supabase, planetscale, mongodb-atlas, docker, none | (depends on database) |
 | **Examples** | none, todo, ai | `none` |
 | **Deploy** | cloudflare, none | `none` |
+
+### Default: in-place scaffold
+
+The expected workflow is: **create a git repo → install this plugin → scaffold in-place**. So `.` (current directory) is the default.
+
+> **Note:** In-place scaffold uses `--directory-conflict merge`, which **overwrites** `README.md`, `.gitignore`, and `package.json` with Better-T-Stack's versions. This is expected — the user's repo should be empty/fresh when scaffolding.
+
+Only suggest a new subdirectory (`<project-name>`) if the user explicitly asks or if the current directory already has a `package.json` (indicating an existing project).
 
 ### Gathering style
 
@@ -67,7 +75,27 @@ If `bun` is missing, it must be installed before proceeding — the scaffold dep
 
 Build the `create-better-t-stack` command from gathered requirements and run it non-interactively.
 
-### Command template
+### Default command (in-place)
+
+```bash
+bun create better-t-stack@latest . --yes --directory-conflict merge --no-git \
+  --frontend <frontend> \
+  --backend <backend> \
+  --database <database> \
+  --orm <orm> \
+  --auth <auth> \
+  --api <api> \
+  --runtime <runtime> \
+  --package-manager <pm> \
+  --addons <addon1,addon2,...>
+```
+
+Key flags:
+- `.` — scaffold into current directory
+- `--directory-conflict merge` — merge into existing directory
+- `--no-git` — skip git init (repo already has .git)
+
+### Alternative: new subdirectory (only if user requests)
 
 ```bash
 bun create better-t-stack@latest <project-name> --yes \
@@ -91,7 +119,22 @@ bun create better-t-stack@latest <project-name> --yes \
 - Show the user the full command before running it
 - Wait for confirmation before executing
 
-### Example (default stack)
+### Example (default stack, in-place)
+
+```bash
+bun create better-t-stack@latest . --yes --directory-conflict merge --no-git \
+  --frontend tanstack \
+  --backend hono \
+  --database sqlite \
+  --orm drizzle \
+  --auth better-auth \
+  --api trpc \
+  --runtime bun \
+  --package-manager bun \
+  --addons turborepo,oxlint,skills
+```
+
+### Example (default stack, new subdirectory)
 
 ```bash
 bun create better-t-stack@latest my-app --yes \
@@ -111,6 +154,28 @@ bun create better-t-stack@latest my-app --yes \
 ## Phase 4: Post-Scaffold Verification
 
 After the scaffold completes:
+
+1. **Verify the structure exists:**
+   ```bash
+   ls apps/ packages/
+   ```
+
+2. **Install dependencies** (if not already done by scaffold):
+   ```bash
+   bun install
+   ```
+
+3. **Verify build works:**
+   ```bash
+   turbo build
+   ```
+
+4. **Commit the scaffold:**
+   ```bash
+   git add -A && git commit -m "feat: scaffold monorepo via Better-T-Stack"
+   ```
+
+### If scaffolded into a new subdirectory (alternative flow)
 
 1. **Navigate into the project:**
    ```bash
@@ -137,10 +202,11 @@ After the scaffold completes:
    git init && git add -A && git commit -m "Initial scaffold via Better-T-Stack"
    ```
 
-6. **Suggest next steps:**
-   - Run `/openspec-setup` to initialize spec-driven development
-   - Run `bun run dev` to start the dev server
-   - Check `bts.jsonc` for the project configuration record
+### Suggest next steps
+
+- Run `/openspec-setup` to initialize spec-driven development
+- Run `bun run dev` to start the dev server
+- Check `bts.jsonc` for the project configuration record
 
 ---
 
@@ -149,7 +215,7 @@ After the scaffold completes:
 The scaffold produces a Turborepo monorepo:
 
 ```
-<project-name>/
+<project>/
 ├── apps/
 │   ├── web/              # Frontend (TanStack/React/Next/etc.)
 │   └── server/           # Backend (Hono/Express/etc.)
@@ -170,6 +236,8 @@ The scaffold produces a Turborepo monorepo:
 ## Guardrails
 
 - **Never run scaffold without user confirmation** of the full command
-- **Never overwrite an existing project** — check if the directory exists first
 - **Always use `--yes`** to ensure non-interactive execution
 - **Show the generated command** to the user before running
+- **Warn about overwrites** — in-place scaffold (`--directory-conflict merge`) overwrites README.md, .gitignore, and package.json
+- **Use `--no-git` for in-place** — the repo already has .git initialized
+- **Check directory state first** — detect if empty repo vs existing project before recommending scaffold location
