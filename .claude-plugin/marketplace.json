@@ -1,0 +1,32 @@
+{
+  "name": "agentic-engineering-patterns",
+  "owner": {
+    "name": "memorysaver",
+    "email": "mho@looplia.run"
+  },
+  "metadata": {
+    "version": "0.1.0",
+    "description": "Skills for scaffolding and maintaining modern TypeScript monorepos with agentic development workflows."
+  },
+  "plugins": [
+    {
+      "name": "project-scaffold",
+      "description": "Skills for scaffolding new monorepo projects using Better-T-Stack and configuring Claude Code for agentic development.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/project-scaffold/monorepo-setup",
+        "./skills/project-scaffold/openspec-setup"
+      ]
+    },
+    {
+      "name": "development-workflow",
+      "description": "Full-lifecycle development workflow with two-session model, worktree isolation, OpenSpec integration, and progress tracking.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/development-workflow/agentic-development-workflow"
+      ]
+    }
+  ]
+}
