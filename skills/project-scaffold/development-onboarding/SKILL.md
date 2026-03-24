@@ -27,7 +27,7 @@ Add the marketplace and install both plugin groups:
 | Group | Skills | Purpose |
 |-------|--------|---------|
 | **project-scaffold** | monorepo-setup, openspec-setup, development-onboarding | Scaffold projects, configure spec-driven development, environment onboarding |
-| **development-workflow** | agentic-development-workflow | Full-lifecycle feature development with worktree isolation |
+| **development-workflow** | agentic-development-workflow, jj-essentials | Full-lifecycle feature development with jj workspaces and change-oriented VCS |
 
 > **Note:** This installs the agentic-engineering-patterns plugin itself. Recommended third-party plugins (superpowers, agent-browser, etc.) are configured at the project level in Phase 4 via `.claude/settings.json`.
 
@@ -38,7 +38,7 @@ Add the marketplace and install both plugin groups:
 Run this check:
 
 ```bash
-for cmd in bun git gh claude openspec tmux cmux; do
+for cmd in jj bun git gh claude openspec tmux cmux; do
   printf "%-15s" "$cmd:"
   which $cmd >/dev/null 2>&1 && echo "OK ($(which $cmd))" || echo "MISSING"
 done
@@ -48,8 +48,9 @@ Install any missing tools:
 
 | Tool | Purpose | Install |
 |------|---------|---------|
+| `jj` | Change-oriented local VCS | `brew install jj` or `cargo install jj-cli` |
 | `bun` | Package manager & runtime | `curl -fsSL https://bun.sh/install \| bash` |
-| `git` | Version control + worktrees | `xcode-select --install` (macOS) |
+| `git` | Remote collaboration + GitHub | `xcode-select --install` (macOS) |
 | `claude` | Claude Code CLI | `npm install -g @anthropic-ai/claude-code` |
 | `gh` | GitHub CLI for PRs | `brew install gh` |
 | `openspec` | Spec-driven development | `bun add -g openspec` |
@@ -57,6 +58,30 @@ Install any missing tools:
 | `cmux` | Claude Code tab multiplexer | `bun add -g cmux` |
 
 All tools must show OK before proceeding.
+
+---
+
+## Phase 2.5 — Initialize jj (Colocated Mode)
+
+If the project has a `.git/` directory but no `.jj/`, initialize jj in colocated mode:
+
+```bash
+# Check if jj is already initialized
+[ -d .jj ] && echo "jj already initialized" || jj git init --colocate
+```
+
+This creates a colocated jj+git repo:
+- **jj** manages local changes, history, workspaces
+- **git** handles remote push/fetch, GitHub PRs, CI/CD
+- Both `.jj/` and `.git/` coexist in the same repo
+
+Add `.jj/` to `.gitignore` if not already present:
+
+```bash
+grep -q '\.jj' .gitignore 2>/dev/null || echo '\n# jj local state\n.jj/' >> .gitignore
+```
+
+> **Rule:** After initialization, use `jj` commands for all local work. Use `jj git` subcommands for remote operations. Never use raw `git commit` or `git add` in a colocated repo.
 
 ---
 
@@ -145,7 +170,7 @@ Run a final comprehensive check:
 
 ```bash
 echo "=== Core Tools ==="
-for cmd in bun git gh claude openspec tmux cmux; do
+for cmd in jj bun git gh claude openspec tmux cmux; do
   printf "%-15s" "$cmd:"
   which $cmd >/dev/null 2>&1 && echo "OK" || echo "MISSING"
 done
@@ -155,6 +180,9 @@ for cmd in agent-browser portless; do
   printf "%-15s" "$cmd:"
   which $cmd >/dev/null 2>&1 && echo "OK" || echo "MISSING (optional)"
 done
+echo ""
+echo "=== jj Colocated ==="
+[ -d .jj ] && echo "jj initialized: OK" || echo "jj not initialized — run: jj git init --colocate"
 ```
 
 If all core tools show OK, the environment is ready.

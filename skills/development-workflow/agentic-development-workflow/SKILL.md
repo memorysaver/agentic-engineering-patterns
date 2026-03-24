@@ -1,6 +1,6 @@
 ---
 name: agentic-development-workflow
-description: Full-lifecycle feature development workflow with progress tracking. Use when starting a new feature, implementing a change end-to-end, or when the user says "start development", "new feature", "develop", or wants to follow the full scaffold → explore → propose → apply → test → archive → PR pipeline. Orchestrates Better-T-Stack scaffold, OpenSpec skills, agent-browser testing, worktree isolation, and checkpoint tracking.
+description: Full-lifecycle feature development workflow with progress tracking. Use when starting a new feature, implementing a change end-to-end, or when the user says "start development", "new feature", "develop", or wants to follow the full scaffold → explore → propose → apply → test → archive → PR pipeline. Orchestrates Better-T-Stack scaffold, OpenSpec skills, agent-browser testing, jj workspace isolation, and checkpoint tracking.
 ---
 
 # Agentic Development Workflow
@@ -10,14 +10,14 @@ A structured, end-to-end workflow for feature development — from project scaff
 This workflow uses a **two-session model**:
 
 - **Main session** (interactive) — scaffold, design phases with the user on `main`
-- **Worktree session** (autonomous) — implementation phases in an isolated worktree
+- **Workspace session** (autonomous) — implementation phases in an isolated jj workspace
 
 Split into five parts:
 
 - **Part A — Scaffold** (optional): Create a new project if none exists
 - **Part B — Design:** Explore, propose, review (on `main`, interactive with user)
-- **Part C — Launch Worktree:** Spawn autonomous Claude Code session in worktree
-- **Part D — Implementation:** Apply, test, PR (in worktree, autonomous)
+- **Part C — Launch Workspace:** Spawn autonomous Claude Code session in jj workspace
+- **Part D — Implementation:** Apply via jj change stack, test, PR (in workspace, autonomous)
 - **Part E — Post-Merge:** Archive + cleanup (on `main` after PR merges)
 
 ---
@@ -29,7 +29,7 @@ If the user asks to learn the workflow:
 1. **Read `README.md`** from this skill's directory to load the visual diagrams
 2. **Print the Five-Part Workflow** diagram — show it to the user as-is
 3. **Walk through each part** briefly, explaining what happens and why
-4. **Print the Two-Session Model** diagram — explain how main and worktree sessions work
+4. **Print the Two-Session Model** diagram — explain how main and workspace sessions work
 5. **Show where they are now** — check if a progress file exists in `.dev-workflow/` and highlight the current phase, or indicate they haven't started yet
 6. **Ask** if they want to start a feature or dive deeper into any specific phase
 
@@ -44,7 +44,7 @@ Before starting the workflow, verify these dependencies are available.
 Run this check:
 
 ```bash
-for cmd in git bun tmux cmux claude openspec gh; do
+for cmd in jj git bun tmux cmux claude openspec gh; do
   printf "%-15s" "$cmd:"
   which $cmd >/dev/null 2>&1 && echo "OK ($(which $cmd))" || echo "MISSING"
 done
@@ -57,9 +57,10 @@ done
 
 | Tool | Used in | Required? |
 |------|---------|-----------|
-| `git` | Worktree creation, commits, push | Required |
+| `jj` | Workspace creation, change management, publish | Required |
+| `git` | Remote collaboration (via `jj git` subcommands) | Required |
 | `bun` | Install deps, run dev server | Required |
-| `tmux` | Part C: launch worktree session | Required for Part C |
+| `tmux` | Part C: launch workspace session | Required for Part C |
 | `cmux` | Part C: create tab, send keys | Required for Part C |
 | `claude` | Part C: spawned agent session | Required for Part C |
 | `openspec` | Part B: explore/propose, Part D: apply | Required |
@@ -158,42 +159,39 @@ If adjustments are needed, update the OpenSpec change files directly.
 After Phase 3, commit all artifacts to `main`:
 
 ```bash
-git add docs/ openspec/changes/<change-name>/
-git commit -m "feat: add <change-name> architecture doc and OpenSpec change"
+jj describe -m "feat: add <change-name> architecture doc and OpenSpec change"
+jj new
+jj git push --change @-
 ```
 
-This ensures the worktree will have all artifacts when it's created from `main`.
+This ensures the workspace will have all artifacts when it's created from `main`.
 
 ---
 
-## Part C — Launch Worktree (on main, automated)
+## Part C — Launch Workspace (on main, automated)
 
-> Run this from the **main workspace** (on `main` branch) to spawn a new autonomous implementation session.
+> Run this from the **main workspace** (on `main`) to spawn a new autonomous implementation session.
 
 ### Guardrail: verify main is clean
 
 ```bash
-git status --short
+jj st
 ```
 
-**If any files are staged or modified — ABORT.** Commit or stash first.
+**If any files are modified — ABORT.** Describe and create a new change first (`jj describe -m "..." && jj new`).
 
 ### Launch commands
 
 ```bash
-# 1. Create the worktree
-git worktree add .claude/worktrees/<name> \
-  -b worktree-<name> origin/main
+# 1. Create the jj workspace
+jj workspace add .claude/workspaces/<name>
 
-# 2. Fast-forward to include latest main commits
-cd .claude/worktrees/<name> && git merge main --ff-only && cd -
-
-# 3. Start Claude Code in a tmux session
+# 2. Start Claude Code in a tmux session
 tmux new-session -d -s <name> \
-  -c .claude/worktrees/<name> \
+  -c .claude/workspaces/<name> \
   "claude --dangerously-skip-permissions --rc"
 
-# 4. Create a cmux tab and attach
+# 3. Create a cmux tab and attach
 SURFACE_REF=$(cmux new-surface --type terminal | grep -o 'surface:[0-9]*')
 cmux send --surface "$SURFACE_REF" "tmux attach -t <name>\n"
 cmux rename-tab --surface "$SURFACE_REF" "<name>"
@@ -214,22 +212,24 @@ cmux send --surface "$SURFACE_REF" "/agentic-development-workflow execute implem
 
 The main workspace stays on `main` and can:
 
-- Launch multiple worktree sessions (one tab per feature)
+- Launch multiple workspace sessions (one tab per feature)
 - See all sessions as named cmux tabs
 - Switch between sessions by clicking tabs
 - Handle Part E (archive + cleanup) after each PR merges
 
+Each workspace shares the underlying jj store — no extra disk space, no branch naming conflicts between agents.
+
 ---
 
-## Part D — Implementation (in worktree, autonomous)
+## Part D — Implementation (in workspace, autonomous)
 
-> Run these phases inside a git worktree on a feature branch. The spawned agent follows these steps autonomously after reading the worktree-onboarding reference.
+> Run these phases inside a jj workspace. The spawned agent follows these steps autonomously after reading the worktree-onboarding reference.
 
 ---
 
 ### Phase 0: Initialize Tracking
 
-Before any work begins, set up the tracking infrastructure and environment.
+Before any work begins, set up the tracking infrastructure, environment, and jj change stack.
 
 1. **Read the worktree-onboarding guide** at `skills/development-workflow/agentic-development-workflow/references/worktree-onboarding.md`.
 
@@ -244,30 +244,50 @@ Before any work begins, set up the tracking infrastructure and environment.
 
 4. **Add `.dev-workflow/` to `.gitignore`** if not already present:
    ```bash
-   grep -q '.dev-workflow' .gitignore || echo '\n# Development workflow tracking (per-worktree)\n.dev-workflow/' >> .gitignore
+   grep -q '.dev-workflow' .gitignore || echo '\n# Development workflow tracking (per-workspace)\n.dev-workflow/' >> .gitignore
    ```
 
 5. **Create the progress file** from the template:
    ```bash
    cp skills/development-workflow/agentic-development-workflow/references/progress-template.md \
-      .dev-workflow/progress-$(git branch --show-current | tr '/' '-').md
+      .dev-workflow/progress-$(jj log --no-graph -r @ -T 'change_id.short(8)').md
    ```
-   Fill in feature name, branch name, date, and OpenSpec change name.
+   Fill in feature name, change ID, date, and OpenSpec change name.
    **Mark Phase 1-3 as pre-completed** (they were done on main).
 
-6. **Install dependencies:**
+6. **Materialize the OpenSpec tasks as a jj change stack:**
+
+   Read `tasks.md` and create one change per task (skeleton-first pattern):
+
+   ```bash
+   jj new main
+   jj describe -m "<task-1-description>"
+   jj new
+   jj describe -m "<task-2-description>"
+   jj new
+   jj describe -m "<task-3-description>"
+   # ... one change per OpenSpec task
+   ```
+
+   This creates pre-described empty changes. The agent will `jj edit` each one during Phase 4.
+
+   Record the change IDs in the progress file for reference:
+   ```bash
+   jj log --no-graph -T 'change_id.short(8) ++ " " ++ description.first_line() ++ "\n"'
+   ```
+
+7. **Install dependencies:**
    ```bash
    bun install
    ```
 
-7. **Start the dev server:**
+8. **Start the dev server:**
    ```bash
    bun run dev
    ```
 
-8. **Set up port configuration** (if using portless):
+9. **Set up port configuration** (if using portless):
    ```bash
-   # Scan for available ports and write config
    mkdir -p .dev-workflow
    echo "WEB_PORT=3000\nSERVER_PORT=3001\nBASE_URL=http://localhost:3000\nSERVER_URL=http://localhost:3001" > .dev-workflow/ports.env
    ```
@@ -278,13 +298,26 @@ Update the Phase 0 checkbox in the progress file when done.
 
 ### Phase 4: OpenSpec Apply
 
-Invoke the apply skill to implement the tasks from the proposal:
+Implement each task by editing its corresponding jj change:
+
+```bash
+# For each task in the change stack:
+jj edit <change-id>       # Jump to the task's change
+# ... implement the task ...
+jj diff                   # Verify the change matches the task
+# ... run targeted tests for this change ...
+# Move to next task
+```
+
+Invoke the apply skill for guidance on implementing each task:
 
 ```
 /opsx:apply
 ```
 
-Work through each task in the proposal. Update the progress file checkbox for each completed task, and mark the Phase 4 checkbox when all tasks are done.
+The agent works **one change at a time**. Auto-rebase keeps dependent changes consistent — when you edit an earlier change, all later changes automatically update.
+
+Update the progress file checkbox for each completed task, and mark the Phase 4 checkbox when all tasks are done.
 
 ---
 
@@ -295,8 +328,8 @@ After implementation, verify the code before moving to testing.
 #### Completeness check
 
 1. Re-read the proposal (including any Phase 3 adjustments)
-2. Walk through each task and verify it was fully implemented
-3. If any task is incomplete, loop back to Phase 4
+2. Walk through each change in the stack, reviewing with `jj diff -r <change>` against its task description
+3. If any task is incomplete, `jj edit <change>` and loop back to Phase 4
 
 #### Code quality review
 
@@ -366,23 +399,44 @@ Update the Phase 8 checkbox in the progress file when complete.
 
 ---
 
-### Phase 9: Git Commit & Push
+### Phase 9: Cleanup & Publish
 
 > **Note:** Do NOT run `/opsx:archive` here. Archive runs on `main` after merge (Phase 13).
 
-1. **Verify you're on a feature branch** (not `main`/`master`).
-2. **Stage code changes** — be selective, avoid secrets or temp files. Do not stage `openspec/specs/` files:
-   ```bash
-   git add <relevant-files>
-   ```
-3. **Commit:**
-   ```bash
-   git commit -m "feat: <description of the change>"
-   ```
-4. **Push:**
-   ```bash
-   git push -u origin <branch-name>
-   ```
+#### 1. Clean up the change stack
+
+Review the change stack and clean up if needed:
+
+```bash
+jj log   # Review the full stack
+```
+
+- **Split** any change that mixed multiple concerns:
+  ```bash
+  jj edit <change>
+  jj split
+  ```
+
+- **Squash** any fix that belongs in an earlier change:
+  ```bash
+  jj squash
+  ```
+
+#### 2. Rebase onto latest main
+
+```bash
+jj git fetch
+jj rebase -d main@origin
+```
+
+#### 3. Create bookmark and push
+
+```bash
+jj bookmark create feat-<name> -r @-
+jj git push --bookmark feat-<name>
+```
+
+The bookmark maps to a Git branch on the remote. `gh pr create` will use it.
 
 Update the Phase 9 checkbox in the progress file when complete.
 
@@ -418,9 +472,18 @@ Monitor for CI and review feedback.
 1. Triage all comments
 2. Create fix plan at `.dev-workflow/pr-fix-plan-<round>.md`
 3. Reply to skipped/discussed comments
-4. Implement fixes, re-run tests
-5. Commit and push
-6. Repeat until CI green and reviews resolved
+4. **Edit the correct change** — identify which change owns each fix:
+   ```bash
+   jj edit <change-that-needs-fixing>
+   # ... make the fix ...
+   jj squash   # if fix is in a new change, fold into the right parent
+   ```
+5. Re-run tests
+6. Re-push:
+   ```bash
+   jj git push --bookmark feat-<name>
+   ```
+7. Repeat until CI green and reviews resolved
 
 Update the Phase 11 checkbox per fix round.
 
@@ -428,7 +491,7 @@ Update the Phase 11 checkbox per fix round.
 
 ### Phase 12: Pre-merge Checks & Merge
 
-1. Branch up-to-date with target: `git fetch && git diff HEAD..origin/main --stat`
+1. Up-to-date with main: `jj git fetch && jj rebase -d main@origin`
 2. CI checks green
 3. No unresolved review comments
 4. E2E tests passed (if applicable)
@@ -447,20 +510,20 @@ Update the Phase 12 checkboxes.
 
 ## Part E — Post-Merge on Main (Phase 13)
 
-> Run on `main` after the PR merges. Do not run from the feature branch worktree.
+> Run on `main` after the PR merges. Do not run from the workspace.
 
 ---
 
 ### Phase 13: Archive & Cleanup on Main
 
-1. **Switch to main and pull:**
+1. **Fetch merged state:**
    ```bash
-   git checkout main && git pull
+   jj git fetch
    ```
 
-2. **Stop the dev server** (from the worktree, if still running):
+2. **Stop the dev server** (from the workspace, if still running):
    ```bash
-   source <worktree-path>/.dev-workflow/ports.env 2>/dev/null
+   source .claude/workspaces/<name>/.dev-workflow/ports.env 2>/dev/null
    lsof -ti :$SERVER_PORT | xargs kill 2>/dev/null
    lsof -ti :$WEB_PORT | xargs kill 2>/dev/null
    ```
@@ -470,26 +533,16 @@ Update the Phase 12 checkboxes.
    /opsx:archive <change-name>
    ```
 
-4. **Commit the archive:**
+4. **Commit and push the archive:**
    ```bash
-   git add openspec/
-   git commit -m "chore: archive <change-name>"
-   git push
+   jj describe -m "chore: archive <change-name>"
+   jj new
+   jj git push --change @-
    ```
 
-5. **Remove the worktree:**
+5. **Remove the workspace:**
    ```bash
-   git worktree remove <worktree-path>
-   ```
-
-6. **Delete the merged branch:**
-   ```bash
-   git branch -d <branch-name>
-   ```
-
-7. **Prune stale worktree references:**
-   ```bash
-   git worktree prune
+   jj workspace forget <name>
    ```
 
 Update the Phase 13 checkboxes — workflow complete!
@@ -498,10 +551,12 @@ Update the Phase 13 checkboxes — workflow complete!
 
 ## Guardrails
 
-- **Never skip the tracking initialization** (Phase 0). Every workflow needs a progress file.
-- **Part C main-clean check is mandatory** — abort if `main` has staged or modified files.
-- **Never run `/opsx:archive` on the feature branch** — it writes to `openspec/specs/` and causes conflicts when parallel worktrees are active. Archive always runs on `main` in Phase 13.
+- **Never skip the tracking initialization** (Phase 0). Every workflow needs a progress file and jj change stack.
+- **Part C main-clean check is mandatory** — abort if `main` has uncommitted changes (`jj st`).
+- **Never run `/opsx:archive` from a workspace** — it writes to `openspec/specs/` and causes conflicts when parallel workspaces are active. Archive always runs on `main` in Phase 13.
 - **Always confirm with the user** before creating PRs, merging, or pushing to shared branches.
-- **The `.dev-workflow/` folder is ephemeral** — gitignored, local to each worktree.
+- **The `.dev-workflow/` folder is ephemeral** — gitignored, local to each workspace.
 - **Resume support**: If returning to an in-progress workflow, read the progress file.
 - **Phase skipping**: Users may ask to skip phases. Update progress file accordingly.
+- **Always use `jj` for local changes** — never use raw `git commit` or `git add` in a colocated repo. Use `jj git` subcommands for remote operations.
+- **Bookmarks are publish-time only** — create them in Phase 9 when ready to push, not during implementation.

@@ -26,6 +26,7 @@
       "source": "./",
       "strict": false,
       "skills": [
+        "./skills/development-workflow/jj-essentials",
         "./skills/development-workflow/agentic-development-workflow"
       ]
     }

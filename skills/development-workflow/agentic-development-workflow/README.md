@@ -31,11 +31,11 @@ See [SKILL.md](SKILL.md) for the full step-by-step process.
        │
        ▼
 ┌──────────────────────────────────────────────┐
-│    Part C — Launch Worktree (on main)        │
+│    Part C — Launch Workspace (on main)       │
 │                                              │
-│  Verify main is clean                        │
+│  Verify main is clean (jj st)                │
 │      ▼                                       │
-│  git worktree add + tmux + cmux tab          │
+│  jj workspace add + tmux + cmux tab          │
 │      ▼                                       │
 │  Send initial prompt to spawned agent        │
 │  (references worktree-onboarding.md)         │
@@ -43,11 +43,11 @@ See [SKILL.md](SKILL.md) for the full step-by-step process.
        │  cmux send key
        ▼
 ┌──────────────────────────────────────────────┐
-│    Part D — Implementation (in worktree)     │
+│    Part D — Implementation (in workspace)    │
 │                                              │
-│  Phase 0: Init tracking + dev environment    │
+│  Phase 0: Init tracking + jj change stack    │
 │      ▼                                       │
-│  Phase 4: /opsx:apply                        │
+│  Phase 4: jj edit each change + /opsx:apply  │
 │      ▼                                       │
 │  Phase 5: Code review & verification         │
 │      ▼                                       │
@@ -57,17 +57,17 @@ See [SKILL.md](SKILL.md) for the full step-by-step process.
 │      ▼                                       │
 │  Phase 8: Review results                     │
 │      ▼                                       │
-│  Phase 9–12: Commit ► PR ► Review ► Merge    │
+│  Phase 9–12: Publish ► PR ► Review ► Merge   │
 └──────┬───────────────────────────────────────┘
        │  PR merged
        ▼
 ┌──────────────────────────────────────────────┐
 │    Part E — Post-Merge (on main)             │
 │                                              │
-│  Phase 13: git checkout main && git pull     │
+│  Phase 13: jj git fetch                      │
 │      ├► /opsx:archive (spec sync)            │
-│      ├► git commit + push archive            │
-│      └► Remove worktree · delete branch      │
+│      ├► jj describe + push archive           │
+│      └► jj workspace forget                  │
 └──────────────────────────────────────────────┘
 ```
 
@@ -77,26 +77,27 @@ See [SKILL.md](SKILL.md) for the full step-by-step process.
 Main session (interactive with user):
   Part A: scaffold new project (optional)
   Part B: design phases — explore, propose, review
-  Part C: launch worktree, send bootstrap prompt
+  Part C: launch workspace, send bootstrap prompt
   Part E: archive after merge
 
-Worktree session (autonomous):
-  Part D: implement, test, PR — no user interaction needed
+Workspace session (autonomous):
+  Part D: implement via jj change stack, test, PR
   Reads worktree-onboarding.md to catch up with full context
 ```
 
-## Parallel Worktree Sessions via cmux
+## Parallel Workspace Sessions via cmux
 
 ```
 main workspace (cmux)
   │
-  ├► launch worktree ─► tab: feat-auth
+  ├► jj workspace add ─► tab: feat-auth
   │    autonomous Claude Code session
   │
-  ├► launch worktree ─► tab: feat-notif
+  ├► jj workspace add ─► tab: feat-notif
   │    autonomous Claude Code session
   │
   │  (each tab runs Part D independently)
+  │  (workspaces share the jj store — no extra disk)
   │
   ├► feat-auth merged ─► archive on main
   ├► feat-notif merged ─► archive on main

@@ -1,6 +1,6 @@
 # Agentic Engineering Patterns
 
-A Claude Code plugin for structured, spec-driven TypeScript development. Design interactively on main, implement autonomously in isolated worktrees, and merge with confidence. Every feature follows the same lifecycle — from spec to PR — with progress tracking and parallel worktree sessions.
+A Claude Code plugin for structured, spec-driven TypeScript development. Design interactively on main, implement autonomously in isolated jj workspaces, and merge with confidence. Every feature follows the same lifecycle — from spec to PR — with progress tracking and parallel workspace sessions.
 
 ## What You Get
 
@@ -10,7 +10,9 @@ A Claude Code plugin for structured, spec-driven TypeScript development. Design 
 
 **openspec-setup** — Initializes spec-driven development with OpenSpec. Creates explore, propose, apply, and archive commands so every feature starts with a spec, not code.
 
-**agentic-development-workflow** — Orchestrates the full development lifecycle across five parts: scaffold, design, launch worktree, implement, and post-merge cleanup. Handles 13 phases with checkpoints and resume support.
+**jj-essentials** — Reference guide for jj (Jujutsu), the change-oriented VCS used for local development. Maps jj concepts to git equivalents and explains the skeleton-first pattern for agent workflows.
+
+**agentic-development-workflow** — Orchestrates the full development lifecycle across five parts: scaffold, design, launch workspace, implement via jj change stacks, and post-merge cleanup. Handles 13 phases with checkpoints and resume support.
 
 ## The Workflow
 
@@ -42,11 +44,11 @@ Five parts, from scaffold through post-merge cleanup:
        │
        ▼
 ┌──────────────────────────────────────────────┐
-│    Part C — Launch Worktree (on main)        │
+│    Part C — Launch Workspace (on main)        │
 │                                              │
 │  Verify main is clean                        │
 │      ▼                                       │
-│  git worktree add + tmux + cmux tab          │
+│  jj workspace add + tmux + cmux tab          │
 │      ▼                                       │
 │  Send initial prompt to spawned agent        │
 │  (references worktree-onboarding.md)         │
@@ -54,11 +56,11 @@ Five parts, from scaffold through post-merge cleanup:
        │  cmux send key
        ▼
 ┌──────────────────────────────────────────────┐
-│    Part D — Implementation (in worktree)     │
+│    Part D — Implementation (in workspace)     │
 │                                              │
-│  Phase 0: Init tracking + dev environment    │
+│  Phase 0: Init tracking + jj change stack    │
 │      ▼                                       │
-│  Phase 4: /opsx:apply                        │
+│  Phase 4: jj edit each change + /opsx:apply  │
 │      ▼                                       │
 │  Phase 5: Code review & verification         │
 │      ▼                                       │
@@ -68,32 +70,32 @@ Five parts, from scaffold through post-merge cleanup:
 │      ▼                                       │
 │  Phase 8: Review results                     │
 │      ▼                                       │
-│  Phase 9–12: Commit ► PR ► Review ► Merge    │
+│  Phase 9–12: Publish ► PR ► Review ► Merge   │
 └──────┬───────────────────────────────────────┘
        │  PR merged
        ▼
 ┌──────────────────────────────────────────────┐
 │    Part E — Post-Merge (on main)             │
 │                                              │
-│  Phase 13: git checkout main && git pull     │
+│  Phase 13: jj git fetch                      │
 │      ├► /opsx:archive (spec sync)            │
-│      ├► git commit + push archive            │
-│      └► Remove worktree · delete branch      │
+│      ├► jj describe + push archive           │
+│      └► jj workspace forget                  │
 └──────────────────────────────────────────────┘
 ```
 
 ## Two-Session Model
 
-Design happens interactively with you. Implementation runs autonomously in an isolated worktree — a separate Claude Code session that reads the spec and works through it without interruption.
+Design happens interactively with you. Implementation runs autonomously in an isolated jj workspace — a separate Claude Code session that reads the spec and works through its change stack without interruption.
 
 ```
 ┌─────────────────────────────┐     ┌─────────────────────────────┐
-│   Main Session              │     │   Worktree Session          │
+│   Main Session              │     │   Workspace Session         │
 │   (interactive)             │     │   (autonomous)              │
 │                             │     │                             │
-│  Part A: scaffold           │     │  Phase 0: init tracking     │
-│  Part B: design             │────►│  Phase 4: apply             │
-│  Part C: launch worktree    │     │  Phase 5: code review       │
+│  Part A: scaffold           │     │  Phase 0: init + jj stack   │
+│  Part B: design             │────►│  Phase 4: jj edit + apply   │
+│  Part C: launch workspace   │     │  Phase 5: code review       │
 │                             │     │  Phase 6: dogfood test      │
 │                             │     │  Phase 7: E2E tests         │
 │                             │◄────│  Phase 8-12: PR + merge     │
@@ -101,18 +103,19 @@ Design happens interactively with you. Implementation runs autonomously in an is
 └─────────────────────────────┘     └─────────────────────────────┘
 ```
 
-Multiple features develop in parallel — each gets its own worktree and cmux tab:
+Multiple features develop in parallel — each gets its own jj workspace and cmux tab:
 
 ```
 main workspace (cmux)
   │
-  ├► launch worktree ─► tab: feat-auth
+  ├► jj workspace add ─► tab: feat-auth
   │    autonomous Claude Code session
   │
-  ├► launch worktree ─► tab: feat-notif
+  ├► jj workspace add ─► tab: feat-notif
   │    autonomous Claude Code session
   │
   │  (each tab runs Part D independently)
+  │  (workspaces share the jj store — no extra disk)
   │
   ├► feat-auth merged ─► archive on main
   ├► feat-notif merged ─► archive on main
