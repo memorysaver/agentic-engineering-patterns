@@ -29,6 +29,8 @@ Add the marketplace and install both plugin groups:
 | **project-scaffold** | monorepo-setup, openspec-setup, development-onboarding | Scaffold projects, configure spec-driven development, environment onboarding |
 | **development-workflow** | agentic-development-workflow | Full-lifecycle feature development with worktree isolation |
 
+> **Note:** This installs the agentic-engineering-patterns plugin itself. Recommended third-party plugins (superpowers, agent-browser, etc.) are configured at the project level in Phase 4 via `.claude/settings.json`.
+
 ---
 
 ## Phase 2 — Verify Required Tools
@@ -76,20 +78,64 @@ These are optional — the workflow works without them but is enhanced by them. 
 
 ---
 
-## Phase 4 — Install Recommended Claude Code Plugins
+## Phase 4 — Configure Project Plugins
 
-These plugins complement the agentic engineering workflow:
+Configure recommended plugins at the project level so anyone who clones this repo gets prompted to install them automatically.
 
-| Plugin | Purpose | Install |
-|--------|---------|---------|
-| `superpowers@superpowers-marketplace` | Planning, debugging, TDD, code review workflows | `/plugin install superpowers@superpowers-marketplace` |
-| `agent-browser@agent-browser` | Browser automation for testing | `/plugin install agent-browser@agent-browser` |
-| `frontend-design@claude-plugins-official` | High-quality UI generation | `/plugin install frontend-design@claude-plugins-official` |
-| `code-review@claude-plugins-official` | PR code review | `/plugin install code-review@claude-plugins-official` |
-| `mgrep@Mixedbread-Grep` | Semantic search (local + web) | `/plugin install mgrep@Mixedbread-Grep` |
-| `skill-creator@claude-plugins-official` | Create and test new skills | `/plugin install skill-creator@claude-plugins-official` |
+### What to write
 
-Install all recommended plugins, or pick the ones relevant to your workflow.
+Read `.claude/settings.json` if it exists. Merge the following keys into it (or create the file if missing):
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "claude-plugins-official": {
+      "source": { "source": "github", "repo": "anthropics/claude-plugins-official" }
+    },
+    "superpowers-marketplace": {
+      "source": { "source": "github", "repo": "obra/superpowers-marketplace" }
+    },
+    "agent-browser": {
+      "source": { "source": "github", "repo": "vercel-labs/agent-browser" }
+    },
+    "Mixedbread-Grep": {
+      "source": { "source": "github", "repo": "mixedbread-ai/mgrep" }
+    }
+  },
+  "enabledPlugins": {
+    "superpowers@superpowers-marketplace": true,
+    "agent-browser@agent-browser": true,
+    "frontend-design@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "mgrep@Mixedbread-Grep": true,
+    "skill-creator@claude-plugins-official": true
+  }
+}
+```
+
+### Plugin reference
+
+| Plugin | Marketplace | Purpose |
+|--------|------------|---------|
+| `superpowers` | `superpowers-marketplace` | Planning, debugging, TDD, code review workflows |
+| `agent-browser` | `agent-browser` | Browser automation for testing |
+| `frontend-design` | `claude-plugins-official` | High-quality UI generation |
+| `code-review` | `claude-plugins-official` | PR code review |
+| `mgrep` | `Mixedbread-Grep` | Semantic search (local + web) |
+| `skill-creator` | `claude-plugins-official` | Create and test new skills |
+
+### How it works
+
+- **`extraKnownMarketplaces`** declares where to find each plugin marketplace (GitHub repos)
+- **`enabledPlugins`** declares which plugins should be active for this project
+- When committed to git, team members are prompted to install these marketplaces and plugins on first use
+- Users can decline specific plugins — their choice is stored in their user settings
+
+### Merging rules
+
+- If `.claude/settings.json` already has `extraKnownMarketplaces` or `enabledPlugins`, merge new entries into the existing objects — do not overwrite other keys
+- Preserve any existing settings (permissions, hooks, env, etc.)
+- If the file doesn't exist, create it with just these two keys
 
 ---
 

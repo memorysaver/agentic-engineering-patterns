@@ -4,11 +4,11 @@ A Claude Code plugin for structured, spec-driven TypeScript development. Design 
 
 ## What You Get
 
+**development-onboarding** — Takes you from zero to ready. Installs the plugin, verifies required tools, and configures recommended Claude Code plugins. Run once on first setup.
+
 **monorepo-setup** — Scaffolds a modern full-stack TypeScript monorepo via Better-T-Stack. Walks you through stack selection (frontend, backend, database, auth, API layer, addons), then runs the CLI non-interactively.
 
 **openspec-setup** — Initializes spec-driven development with OpenSpec. Creates explore, propose, apply, and archive commands so every feature starts with a spec, not code.
-
-**development-onboarding** — Takes you from zero to ready. Installs the plugin, verifies required tools, and configures recommended Claude Code plugins. Run once on first setup.
 
 **agentic-development-workflow** — Orchestrates the full development lifecycle across five parts: scaffold, design, launch worktree, implement, and post-merge cleanup. Handles 13 phases with checkpoints and resume support.
 

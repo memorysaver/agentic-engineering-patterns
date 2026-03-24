@@ -15,6 +15,7 @@
       "source": "./",
       "strict": false,
       "skills": [
+        "./skills/project-scaffold/development-onboarding",
         "./skills/project-scaffold/monorepo-setup",
         "./skills/project-scaffold/openspec-setup"
       ]
