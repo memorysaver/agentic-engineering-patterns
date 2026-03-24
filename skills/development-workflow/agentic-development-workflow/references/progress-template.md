@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Feature** | <!-- feature name --> |
-| **Branch** | <!-- branch name --> |
+| **Change ID** | <!-- jj change ID --> |
 | **Started** | <!-- YYYY-MM-DD --> |
 | **OpenSpec Change** | <!-- change name --> |
 
@@ -22,25 +22,26 @@
 - [ ] Phase 3: Design Review
 - [ ] Artifacts committed to main
 
-## Part C — Launch Worktree
+## Part C — Launch Workspace
 
-- [ ] Worktree created
+- [ ] Workspace created (`jj workspace add`)
 - [ ] tmux/cmux session started
 - [ ] Bootstrap prompt sent
 
-## Part D — Implementation (in worktree)
+## Part D — Implementation (in workspace)
 
 - [ ] Phase 0: Tracking initialized
   - [ ] Progress file created
+  - [ ] jj change stack created (skeleton-first)
   - [ ] Dependencies installed
   - [ ] Dev server running
   - [ ] Port config written
-- [ ] Phase 4: OpenSpec Apply
+- [ ] Phase 4: OpenSpec Apply (jj edit each change)
   - [ ] Task 1: <!-- task description -->
   - [ ] Task 2: <!-- task description -->
   - [ ] Task 3: <!-- task description -->
 - [ ] Phase 5: Code Review & Verification
-  - [ ] Completeness check
+  - [ ] Completeness check (per-change review)
   - [ ] Quality review
   - [ ] Issues fixed
 - [ ] Phase 6: Browser Testing (Dogfood)
@@ -52,15 +53,23 @@
 - [ ] Phase 8: Review Results
   - [ ] All results reviewed
   - [ ] No blocking issues
-- [ ] Phase 9: Git Commit & Push
-  - [ ] Changes staged (selective)
-  - [ ] Committed
-  - [ ] Pushed
+- [ ] Phase 9: Cleanup & Publish
+  - [ ] Changes split/squashed as needed
+  - [ ] Rebased onto latest main
+  - [ ] Bookmark created and pushed
 - [ ] Phase 10: Create PR
   - [ ] PR created
   - [ ] PR URL: <!-- url -->
 - [ ] Phase 11: PR Review Loop
   - [ ] Round 1: <!-- status -->
+- [ ] Phase 11.5: Human Evaluation & Iteration
+  - [ ] Iteration round 1: _[findings summary]_
+    - [ ] Findings documented
+    - [ ] Code fixed (jj edit + squash)
+    - [ ] OpenSpec change aligned
+    - [ ] Re-tested
+    - [ ] Pushed
+  - [ ] Iteration round 2: _[findings summary]_
 - [ ] Phase 12: Merge
   - [ ] CI green
   - [ ] Reviews resolved
@@ -70,10 +79,8 @@
 ## Part E — Post-Merge (on main)
 
 - [ ] Phase 13: Archive & Cleanup
-  - [ ] Pulled latest main
+  - [ ] Fetched merged state (`jj git fetch`)
   - [ ] Dev server stopped
   - [ ] `/opsx:archive` run
   - [ ] Archive committed + pushed
-  - [ ] Worktree removed
-  - [ ] Branch deleted
-  - [ ] Worktree references pruned
+  - [ ] Workspace forgotten (`jj workspace forget`)

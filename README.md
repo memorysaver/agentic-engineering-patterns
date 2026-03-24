@@ -70,7 +70,11 @@ Five parts, from scaffold through post-merge cleanup:
 │      ▼                                       │
 │  Phase 8: Review results                     │
 │      ▼                                       │
-│  Phase 9–12: Publish ► PR ► Review ► Merge   │
+│  Phase 9–12: Publish ► PR ► Review            │
+│      ▼                                       │
+│  Phase 11.5: Human eval & iteration loop     │
+│      ▼                                       │
+│  Phase 12: Merge                             │
 └──────┬───────────────────────────────────────┘
        │  PR merged
        ▼

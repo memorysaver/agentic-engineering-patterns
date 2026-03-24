@@ -489,6 +489,45 @@ Update the Phase 11 checkbox per fix round.
 
 ---
 
+### Phase 11.5: Human Evaluation & Iteration
+
+After PR review fixes are resolved, the human tester evaluates the feature — typically by running the app from the workspace. If they find minor issues (UX tweaks, missing edge cases, behavior that doesn't match intent), this phase handles the iteration loop. The design direction stays the same; these are refinements, not redesigns.
+
+> **If no issues found:** Skip this phase and proceed to Phase 12.
+
+#### Iteration round
+
+1. **Document findings** — Write to `.dev-workflow/human-eval-round-<N>.md`:
+   - What was found (description, steps to reproduce)
+   - Severity (minor / moderate)
+   - Category (UX, logic, edge case, visual)
+
+2. **Fix in the correct change** — Identify which jj change owns each fix:
+   ```bash
+   jj edit <change-that-needs-fixing>
+   # ... make the fix ...
+   jj squash   # if fix is in a new change, fold into the right parent
+   ```
+
+3. **Align OpenSpec change** — Update `openspec/changes/<name>/` artifacts:
+   - Add completed tasks to `tasks.md` for the work just done
+   - Update `specs/` if behavior changed
+   - Update `design.md` only if approach details shifted
+   - Keep `proposal.md` scope as-is (direction unchanged)
+
+4. **Re-test** — Re-run Phase 5 (code review) and Phase 6 (dogfood) on the changed areas. Update E2E scripts (Phase 7) if coverage gaps were found.
+
+5. **Push** — Update the PR:
+   ```bash
+   jj git push --bookmark feat-<name>
+   ```
+
+6. **Repeat** — If the human tester finds more issues, start a new round (increment N).
+
+Update the Phase 11.5 checkbox per iteration round.
+
+---
+
 ### Phase 12: Pre-merge Checks & Merge
 
 1. Up-to-date with main: `jj git fetch && jj rebase -d main@origin`
@@ -516,10 +555,12 @@ Update the Phase 12 checkboxes.
 
 ### Phase 13: Archive & Cleanup on Main
 
-1. **Fetch merged state:**
+1. **Fetch merged state and verify clean workspace:**
    ```bash
    jj git fetch
+   jj st
    ```
+   > **Verify the workspace is clean** before archiving. If `jj st` shows unexpected modified files (code in `apps/`, `packages/`, etc.), investigate before proceeding. Only `openspec/` files should change during the archive step.
 
 2. **Stop the dev server** (from the workspace, if still running):
    ```bash
@@ -560,3 +601,4 @@ Update the Phase 13 checkboxes — workflow complete!
 - **Phase skipping**: Users may ask to skip phases. Update progress file accordingly.
 - **Always use `jj` for local changes** — never use raw `git commit` or `git add` in a colocated repo. Use `jj git` subcommands for remote operations.
 - **Bookmarks are publish-time only** — create them in Phase 9 when ready to push, not during implementation.
+- **Phase 13 clean-workspace check** — after `jj git fetch`, run `jj st` to verify no unexpected files are modified. Only `openspec/` should change during archive. A dirty workspace can cause unintended changes to be included in the archive commit.
