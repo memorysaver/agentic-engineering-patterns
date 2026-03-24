@@ -1,154 +1,129 @@
 # Agentic Engineering Patterns
 
-A Claude Code plugin that packages skills for scaffolding and maintaining modern TypeScript monorepos with agentic development workflows.
+A Claude Code plugin for structured, spec-driven TypeScript development. Design interactively on main, implement autonomously in isolated worktrees, and merge with confidence. Every feature follows the same lifecycle — from spec to PR — with progress tracking and parallel worktree sessions.
 
-Install this plugin, then use the bundled skills to scaffold new projects (via Better-T-Stack), initialize spec-driven development (via OpenSpec), and follow a structured development lifecycle with worktree isolation and progress tracking.
+## What You Get
 
-## Installation
+**monorepo-setup** — Scaffolds a modern full-stack TypeScript monorepo via Better-T-Stack. Walks you through stack selection (frontend, backend, database, auth, API layer, addons), then runs the CLI non-interactively.
 
-```bash
-# Add the marketplace
-/plugin marketplace add memorysaver/agentic-engineering-patterns
+**openspec-setup** — Initializes spec-driven development with OpenSpec. Creates explore, propose, apply, and archive commands so every feature starts with a spec, not code.
 
-# Install plugin groups
-/plugin install project-scaffold@agentic-engineering-patterns
-/plugin install development-workflow@agentic-engineering-patterns
-```
+**development-onboarding** — Takes you from zero to ready. Installs the plugin, verifies required tools, and configures recommended Claude Code plugins. Run once on first setup.
 
-## Plugin Groups
+**agentic-development-workflow** — Orchestrates the full development lifecycle across five parts: scaffold, design, launch worktree, implement, and post-merge cleanup. Handles 13 phases with checkpoints and resume support.
 
-| Group | Skills | Purpose |
-|-------|--------|---------|
-| **project-scaffold** | monorepo-setup, openspec-setup | Scaffold new monorepo projects and configure spec-driven development |
-| **development-workflow** | agentic-development-workflow | Full-lifecycle feature development with worktree isolation |
+## The Workflow
 
-## Prerequisites
-
-### Required Tools
-
-| Tool | Purpose | Install |
-|------|---------|---------|
-| `bun` | Package manager & runtime | `curl -fsSL https://bun.sh/install \| bash` |
-| `git` | Version control + worktrees | `xcode-select --install` (macOS) |
-| `claude` | Claude Code CLI | `npm install -g @anthropic-ai/claude-code` |
-| `gh` | GitHub CLI for PRs | `brew install gh` |
-| `openspec` | Spec-driven development | `bun add -g openspec` |
-| `tmux` | Terminal multiplexer | `brew install tmux` |
-| `cmux` | Claude Code tab multiplexer | `bun add -g cmux` |
-
-### Optional Tools
-
-| Tool | Purpose | Install |
-|------|---------|---------|
-| `agent-browser` | Browser automation testing | Claude Code plugin: `agent-browser@agent-browser` |
-| `portless` | Port management (.localhost) | `bun add -g portless` |
-| `oxlint` | Fast linter | Included via Better-T-Stack `--addons oxlint` |
-
-### Recommended Claude Code Plugins
-
-| Plugin | Purpose |
-|--------|---------|
-| `superpowers@superpowers-marketplace` | Planning, debugging, TDD, code review workflows |
-| `agent-browser@agent-browser` | Browser automation for testing |
-| `frontend-design@claude-plugins-official` | High-quality UI generation |
-| `code-review@claude-plugins-official` | PR code review |
-| `mgrep@Mixedbread-Grep` | Semantic search (local + web) |
-| `skill-creator@claude-plugins-official` | Create and test new skills |
-
-## Quick Start
-
-### 1. Scaffold a new project
+Five parts, from scaffold through post-merge cleanup:
 
 ```
-/monorepo-setup
+┌──────────────────────────────────────────────┐
+│    Part A — Scaffold (optional)              │
+│                                              │
+│  /monorepo-setup (Better-T-Stack)            │
+│      ▼                                       │
+│  /openspec-setup (spec-driven dev)           │
+│      ▼                                       │
+│  Verify build + OpenSpec ready               │
+└──────┬───────────────────────────────────────┘
+       │
+       ▼
+┌──────────────────────────────────────────────┐
+│    Part B — Design (on main, interactive)    │
+│                                              │
+│  Phase 1: /opsx:explore                      │
+│      ▼                                       │
+│  Phase 2: /opsx:propose                      │
+│      ▼                                       │
+│  Phase 3: Design review                      │
+│      ▼                                       │
+│  Commit artifacts to main                    │
+└──────┬───────────────────────────────────────┘
+       │
+       ▼
+┌──────────────────────────────────────────────┐
+│    Part C — Launch Worktree (on main)        │
+│                                              │
+│  Verify main is clean                        │
+│      ▼                                       │
+│  git worktree add + tmux + cmux tab          │
+│      ▼                                       │
+│  Send initial prompt to spawned agent        │
+│  (references worktree-onboarding.md)         │
+└──────┬───────────────────────────────────────┘
+       │  cmux send key
+       ▼
+┌──────────────────────────────────────────────┐
+│    Part D — Implementation (in worktree)     │
+│                                              │
+│  Phase 0: Init tracking + dev environment    │
+│      ▼                                       │
+│  Phase 4: /opsx:apply                        │
+│      ▼                                       │
+│  Phase 5: Code review & verification         │
+│      ▼                                       │
+│  Phase 6: Dogfood testing (agent-browser)    │
+│      ▼                                       │
+│  Phase 7: E2E test scripts                   │
+│      ▼                                       │
+│  Phase 8: Review results                     │
+│      ▼                                       │
+│  Phase 9–12: Commit ► PR ► Review ► Merge    │
+└──────┬───────────────────────────────────────┘
+       │  PR merged
+       ▼
+┌──────────────────────────────────────────────┐
+│    Part E — Post-Merge (on main)             │
+│                                              │
+│  Phase 13: git checkout main && git pull     │
+│      ├► /opsx:archive (spec sync)            │
+│      ├► git commit + push archive            │
+│      └► Remove worktree · delete branch      │
+└──────────────────────────────────────────────┘
 ```
 
-The skill walks you through choosing your stack, then runs `create-better-t-stack` non-interactively into the current directory. Expected flow:
+## Two-Session Model
 
-1. Create a new git repo
-2. Install this plugin
-3. Run `/monorepo-setup` — scaffolds in-place using `--directory-conflict merge --no-git`
-
-> Scaffolding in-place overwrites README.md and .gitignore with Better-T-Stack's versions. This is expected for a fresh repo.
-
-### 2. Initialize spec-driven development
+Design happens interactively with you. Implementation runs autonomously in an isolated worktree — a separate Claude Code session that reads the spec and works through it without interruption.
 
 ```
-/openspec-setup
+┌─────────────────────────────┐     ┌─────────────────────────────┐
+│   Main Session              │     │   Worktree Session          │
+│   (interactive)             │     │   (autonomous)              │
+│                             │     │                             │
+│  Part A: scaffold           │     │  Phase 0: init tracking     │
+│  Part B: design             │────►│  Phase 4: apply             │
+│  Part C: launch worktree    │     │  Phase 5: code review       │
+│                             │     │  Phase 6: dogfood test      │
+│                             │     │  Phase 7: E2E tests         │
+│                             │◄────│  Phase 8-12: PR + merge     │
+│  Part E: archive            │     │                             │
+└─────────────────────────────┘     └─────────────────────────────┘
 ```
 
-Runs `openspec init --tools claude,opencode,pi,codex` to set up OpenSpec with multi-tool skills and command aliases.
-
-### 3. Start feature development
+Multiple features develop in parallel — each gets its own worktree and cmux tab:
 
 ```
-/agentic-development-workflow
+main workspace (cmux)
+  │
+  ├► launch worktree ─► tab: feat-auth
+  │    autonomous Claude Code session
+  │
+  ├► launch worktree ─► tab: feat-notif
+  │    autonomous Claude Code session
+  │
+  │  (each tab runs Part D independently)
+  │
+  ├► feat-auth merged ─► archive on main
+  ├► feat-notif merged ─► archive on main
+  │
+  openspec/specs/ updated only on main
+  ── no conflicts
 ```
 
-Follow the structured workflow: design on main, implement in an isolated worktree, test, PR, merge, archive.
+## Project Structure
 
-## Skills Reference
-
-### monorepo-setup
-
-Interactive scaffold skill that:
-1. Gathers your requirements (frontend, backend, database, auth, API, etc.)
-2. Verifies required CLI tools are installed
-3. Builds and runs `create-better-t-stack` with all flags non-interactively
-4. Verifies the scaffold completed successfully
-
-**Default stack:** Hono + TanStack Router + Drizzle + SQLite + Better Auth + tRPC + Turborepo + Bun
-
-### openspec-setup
-
-Post-scaffold initialization that:
-1. Runs `openspec init --tools claude,opencode,pi,codex`
-2. Configures project context in `openspec/config.yaml`
-3. Creates `/opsx:explore`, `/opsx:propose`, `/opsx:apply`, `/opsx:archive` command aliases
-
-### agentic-development-workflow
-
-Full-lifecycle development workflow with five parts:
-
-```
-Part A — Scaffold (optional)
-  └► /monorepo-setup + /openspec-setup
-
-Part B — Design (on main, interactive)
-  └► /opsx:explore → /opsx:propose → design review
-
-Part C — Launch Worktree
-  └► git worktree + tmux + cmux → autonomous agent
-
-Part D — Implementation (in worktree, autonomous)
-  └► init → apply → code review → test → PR → merge
-
-Part E — Post-Merge (on main)
-  └► /opsx:archive → cleanup worktree
-```
-
-Features:
-- **Two-session model** — main (interactive) + worktree (autonomous)
-- **Parallel worktrees** — multiple features developed simultaneously via cmux tabs
-- **Progress tracking** — checkpoint files in `.dev-workflow/` for resume support
-- **13 phases** with guardrails and skip support
-
-## Better-T-Stack Reference
-
-[Better-T-Stack](https://www.better-t-stack.dev/docs) scaffolds modular TypeScript monorepos. Key options:
-
-| Category | Options | Default |
-|----------|---------|---------|
-| Frontend | tanstack, react, next, nuxt, svelte, solid, astro | tanstack |
-| Backend | hono, express, fastify, elysia, convex | hono |
-| Database | sqlite, postgres, mysql, mongodb | sqlite |
-| ORM | drizzle, prisma, mongoose | drizzle |
-| Auth | better-auth, clerk | better-auth |
-| API | trpc, orpc | trpc |
-| Runtime | bun, node, workers | bun |
-| Addons | turborepo, nx, biome, oxlint, skills, pwa, tauri | turborepo,oxlint,skills |
-
-### Resulting structure
+After scaffolding with `/monorepo-setup`, you get:
 
 ```
 <project>/
@@ -168,22 +143,11 @@ Features:
 └── package.json       # Root workspace
 ```
 
-## Development Workflow Diagram
+## Getting Started
 
-```
-┌─────────────────────────┐     ┌─────────────────────────┐
-│   Main Session          │     │   Worktree Session      │
-│   (interactive)         │     │   (autonomous)          │
-│                         │     │                         │
-│  Part A: scaffold       │     │  Phase 0: init tracking │
-│  Part B: design         │────►│  Phase 4: apply         │
-│  Part C: launch worktree│     │  Phase 5: code review   │
-│                         │     │  Phase 6: dogfood test  │
-│                         │     │  Phase 7: E2E tests     │
-│                         │◄────│  Phase 8-12: PR + merge │
-│  Part E: archive        │     │                         │
-└─────────────────────────┘     └─────────────────────────┘
-```
+New to this plugin? Run `/development-onboarding` to install prerequisites, verify your environment, and configure recommended plugins.
+
+Already set up? Run `/monorepo-setup` to scaffold a project, then `/agentic-development-workflow` to start building.
 
 ## Related Projects
 
