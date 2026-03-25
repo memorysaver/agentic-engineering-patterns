@@ -85,6 +85,25 @@ If OpenSpec skills are missing, run `/openspec-setup` first.
 
 ---
 
+## Workflow Modes
+
+### Full mode (default)
+
+All 13 phases + separate evaluator agent. Use for complex features, UI work, anything at the edge of model capability.
+
+### Light mode
+
+Skip Phases 3, 6, 7, 8. No separate evaluator. Use for simple CRUD, config changes, small bug fixes.
+
+### Tuning principle
+
+> "Every component in a harness encodes an assumption about what the model can't do on its own. Those assumptions deserve stress-testing."
+> — Anthropic, ["Harness Design for Long-Running Application Development"](https://www.anthropic.com/engineering/harness-design-long-running-apps)
+
+With each model upgrade, re-evaluate which phases provide value. Remove scaffolding that no longer serves a purpose; add complexity only where the model falls short.
+
+---
+
 ## Part A — Scaffold (optional, on main)
 
 > Skip this part if the project already exists.
@@ -208,6 +227,36 @@ cmux send --surface "$SURFACE_REF" "/agentic-development-workflow execute implem
 "
 ```
 
+### Optional: Launch evaluator agent
+
+For complex features (full mode), set up a separate evaluator agent:
+
+```
+/evaluator-setup
+```
+
+This spawns a second Claude Code session in the same workspace that independently reviews the generator's work. See the `evaluator-setup` skill for details.
+
+### Monitoring workspace progress
+
+The main session can check workspace progress without interrupting the agent:
+
+```bash
+# Check current phase and progress
+cat .claude/workspaces/<name>/.dev-workflow/signals/status.json
+
+# Check if ready for human review
+ls .claude/workspaces/<name>/.dev-workflow/signals/ready-for-review.flag 2>/dev/null
+
+# Send mid-flight feedback
+cat >> .claude/workspaces/<name>/.dev-workflow/signals/feedback.md << 'EOF'
+
+## <date> <time>
+Priority: high
+<feedback here>
+EOF
+```
+
 ### Managing parallel sessions
 
 The main workspace stays on `main` and can:
@@ -292,7 +341,119 @@ Before any work begins, set up the tracking infrastructure, environment, and jj 
    echo "WEB_PORT=3000\nSERVER_PORT=3001\nBASE_URL=http://localhost:3000\nSERVER_URL=http://localhost:3001" > .dev-workflow/ports.env
    ```
 
+10. **Generate sprint contracts:**
+
+    Read `specs/*.md`, `design.md`, and `tasks.md`. For each task in the change stack, generate a contract entry in `.dev-workflow/contracts.md` using the template at `references/contract-template.md`:
+
+    ```markdown
+    ## Task: <task-description>
+    **Change ID:** <id>
+    **Source spec:** <matching spec file>
+
+    ### What will be built
+    - [specific files/components]
+
+    ### Success criteria
+    - [extracted from matching spec]
+
+    ### Verification steps
+    1. [concrete, executable step]
+    2. [what to check]
+    ```
+
+    This bridges OpenSpec's spec detail into actionable per-task verification — the "sprint contract" pattern from Anthropic's harness design research.
+
+11. **Generate feature verification list:**
+
+    Extract the verification steps from contracts into `.dev-workflow/feature-verification.json`:
+
+    ```json
+    [
+      {
+        "task": "<task description>",
+        "change_id": "<jj change short ID>",
+        "verification_steps": ["step 1", "step 2", "step 3"],
+        "passes": false,
+        "evaluated_by": null,
+        "round": null
+      }
+    ]
+    ```
+
+    **Rules:**
+    - JSON format is intentional — models tamper with JSON less than Markdown
+    - The generator agent **MUST NOT** modify `verification_steps` or `passes` — only the evaluator (or human) does
+    - The evaluator updates `passes`, `evaluated_by`, and `round` fields
+
+12. **Generate session recovery script:**
+
+    Create `.dev-workflow/init.sh` for resuming after context resets:
+
+    ```bash
+    #!/bin/bash
+    # Session recovery script — run this to resume after context reset
+    set -e
+    cd "$(dirname "$0")/.."
+
+    # Environment
+    source .dev-workflow/ports.env 2>/dev/null
+
+    # Dependencies
+    bun install --silent
+
+    # Dev server (if not running)
+    if ! lsof -ti :${SERVER_PORT:-3001} >/dev/null 2>&1; then
+      bun run dev &
+      echo "Dev server starting on ${BASE_URL:-http://localhost:3000}"
+    else
+      echo "Dev server already running on port ${SERVER_PORT:-3001}"
+    fi
+
+    # Current state
+    echo "=== Change Stack ==="
+    jj log --no-graph -T 'change_id.short(8) ++ " " ++ description.first_line() ++ "\n"'
+
+    echo "=== Progress ==="
+    grep '\[x\]' .dev-workflow/progress-*.md 2>/dev/null | tail -10
+
+    echo "=== Next Phase ==="
+    grep '\[ \]' .dev-workflow/progress-*.md 2>/dev/null | head -3
+    ```
+
+    Make executable: `chmod +x .dev-workflow/init.sh`
+
+13. **Initialize inter-agent signals:**
+
+    ```bash
+    mkdir -p .dev-workflow/signals
+    ```
+
+    Create `.dev-workflow/signals/status.json`:
+
+    ```json
+    {
+      "phase": 0,
+      "phase_name": "initializing",
+      "task_current": null,
+      "task_index": 0,
+      "task_total": 0,
+      "started_at": "<ISO 8601 timestamp>",
+      "blockers": [],
+      "completion_pct": 0,
+      "last_updated": "<ISO 8601 timestamp>"
+    }
+    ```
+
+    Check for feedback from main session:
+    ```bash
+    cat .dev-workflow/signals/feedback.md 2>/dev/null
+    ```
+
+    See `references/signals-spec.md` for the full signal file specification.
+
 Update the Phase 0 checkbox in the progress file when done.
+
+> **Signal update:** Update `.dev-workflow/signals/status.json` with `"phase": 0, "phase_name": "initialized", "completion_pct": 10`.
 
 ---
 
@@ -319,28 +480,52 @@ The agent works **one change at a time**. Auto-rebase keeps dependent changes co
 
 Update the progress file checkbox for each completed task, and mark the Phase 4 checkbox when all tasks are done.
 
+> **Signal update:** Update `.dev-workflow/signals/status.json` with `"phase": 4` at start, update `task_current`, `task_index`, `task_total` as tasks progress, and `completion_pct` proportionally.
+
 ---
 
 ### Phase 5: Code Review & Verification
 
 After implementation, verify the code before moving to testing.
 
-#### Completeness check
+#### Completeness check (always done by generator)
 
 1. Re-read the proposal (including any Phase 3 adjustments)
 2. Walk through each change in the stack, reviewing with `jj diff -r <change>` against its task description
-3. If any task is incomplete, `jj edit <change>` and loop back to Phase 4
+3. Check `.dev-workflow/contracts.md` — verify each task's success criteria are met
+4. If any task is incomplete, `jj edit <change>` and loop back to Phase 4
 
-#### Code quality review
+#### Quality review
+
+**With separate evaluator (full mode):**
+
+If an evaluator agent was set up via `/evaluator-setup`, delegate quality review to it:
+
+1. Write `.dev-workflow/signals/eval-request.md` describing what to evaluate
+2. Wait for `.dev-workflow/signals/eval-response-1.md`
+3. Read the response — fix any FAIL items
+4. Write a new eval-request for the next round
+5. Repeat until all dimensions pass (see `references/evaluator-criteria.md` for thresholds)
+6. Max 5 rounds — escalate to human if not converging
+
+The evaluator also updates `.dev-workflow/feature-verification.json` with pass/fail results.
+
+**Without evaluator (light mode):**
+
+Self-review with awareness of its limitations:
 
 1. **Correctness** — Logic errors, off-by-one bugs, missing edge cases?
 2. **Security** — Input validation, auth checks, SQL parameterization?
 3. **Performance** — N+1 queries, missing indexes, unbounded loops?
 4. **Conventions** — Naming, file structure, error handling, imports?
 
+> **Note:** Self-review tends to be lenient. If using light mode, be extra critical and walk through `feature-verification.json` steps manually.
+
 Document findings in `.dev-workflow/code-review-<feature>.md`. Fix any issues found.
 
 Update the Phase 5 checkbox in the progress file when complete.
+
+> **Signal update:** Update `.dev-workflow/signals/status.json` with `"phase": 5, "phase_name": "code-review"`.
 
 ---
 
@@ -369,6 +554,8 @@ Document results in `.dev-workflow/dogfood-<feature>.md`.
 
 Update the Phase 6 checkbox in the progress file when complete.
 
+> **Signal update:** Update `.dev-workflow/signals/status.json` with `"phase": 6, "phase_name": "dogfood-testing"`.
+
 ---
 
 ### Phase 7: E2E Test Script Generation
@@ -396,6 +583,8 @@ Update the Phase 7 checkbox in the progress file when complete.
 4. If tests fail, loop back to the appropriate phase
 
 Update the Phase 8 checkbox in the progress file when complete.
+
+> **Signal update:** Update `.dev-workflow/signals/status.json` with `"phase": 8, "phase_name": "review-results"`.
 
 ---
 
@@ -526,6 +715,8 @@ After PR review fixes are resolved, the human tester evaluates the feature — t
 
 Update the Phase 11.5 checkbox per iteration round.
 
+> **Signal update:** Create `.dev-workflow/signals/ready-for-review.flag` when ready for human evaluation. Update `status.json` with `"phase": 11.5, "phase_name": "human-evaluation"`.
+
 ---
 
 ### Phase 12: Pre-merge Checks & Merge
@@ -597,8 +788,11 @@ Update the Phase 13 checkboxes — workflow complete!
 - **Never run `/opsx:archive` from a workspace** — it writes to `openspec/specs/` and causes conflicts when parallel workspaces are active. Archive always runs on `main` in Phase 13.
 - **Always confirm with the user** before creating PRs, merging, or pushing to shared branches.
 - **The `.dev-workflow/` folder is ephemeral** — gitignored, local to each workspace.
-- **Resume support**: If returning to an in-progress workflow, read the progress file.
+- **Resume support**: If returning to an in-progress workflow, run `.dev-workflow/init.sh` if it exists, then read the progress file.
 - **Phase skipping**: Users may ask to skip phases. Update progress file accordingly.
 - **Always use `jj` for local changes** — never use raw `git commit` or `git add` in a colocated repo. Use `jj git` subcommands for remote operations.
 - **Bookmarks are publish-time only** — create them in Phase 9 when ready to push, not during implementation.
 - **Phase 13 clean-workspace check** — after `jj git fetch`, run `jj st` to verify no unexpected files are modified. Only `openspec/` should change during archive. A dirty workspace can cause unintended changes to be included in the archive commit.
+- **Signal updates are required** — update `.dev-workflow/signals/status.json` at the start and end of every phase. Check `.dev-workflow/signals/feedback.md` for main session feedback at phase boundaries.
+- **Generator must not modify verification data** — never modify `verification_steps` or `passes` in `feature-verification.json`. Only the evaluator or human updates these fields.
+- **Evaluator loop max 5 rounds** — if the generator-evaluator loop hasn't converged after 5 rounds, escalate to human rather than continuing.

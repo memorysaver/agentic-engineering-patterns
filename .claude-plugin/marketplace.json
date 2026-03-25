@@ -27,7 +27,8 @@
       "strict": false,
       "skills": [
         "./skills/development-workflow/jj-essentials",
-        "./skills/development-workflow/agentic-development-workflow"
+        "./skills/development-workflow/agentic-development-workflow",
+        "./skills/development-workflow/evaluator-setup"
       ]
     }
   ]

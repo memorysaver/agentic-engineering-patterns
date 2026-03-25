@@ -6,6 +6,8 @@
 | **Change ID** | <!-- jj change ID --> |
 | **Started** | <!-- YYYY-MM-DD --> |
 | **OpenSpec Change** | <!-- change name --> |
+| **Mode** | <!-- full / light --> |
+| **Evaluator** | <!-- yes / no --> |
 
 ---
 
@@ -27,6 +29,7 @@
 - [ ] Workspace created (`jj workspace add`)
 - [ ] tmux/cmux session started
 - [ ] Bootstrap prompt sent
+- [ ] Evaluator agent launched (full mode only)
 
 ## Part D — Implementation (in workspace)
 
@@ -36,13 +39,21 @@
   - [ ] Dependencies installed
   - [ ] Dev server running
   - [ ] Port config written
+  - [ ] Sprint contracts generated (`.dev-workflow/contracts.md`)
+  - [ ] Feature verification list generated (`.dev-workflow/feature-verification.json`)
+  - [ ] Session recovery script generated (`.dev-workflow/init.sh`)
+  - [ ] Inter-agent signals initialized (`.dev-workflow/signals/`)
 - [ ] Phase 4: OpenSpec Apply (jj edit each change)
   - [ ] Task 1: <!-- task description -->
   - [ ] Task 2: <!-- task description -->
   - [ ] Task 3: <!-- task description -->
 - [ ] Phase 5: Code Review & Verification
   - [ ] Completeness check (per-change review)
-  - [ ] Quality review
+  - [ ] Contracts verified (`.dev-workflow/contracts.md`)
+  - [ ] Quality review (evaluator or self-review)
+  - [ ] Evaluator round 1: <!-- PASS/FAIL + summary -->
+  - [ ] Evaluator round 2: <!-- if needed -->
+  - [ ] `feature-verification.json` updated
   - [ ] Issues fixed
 - [ ] Phase 6: Browser Testing (Dogfood)
   - [ ] Dogfood report created
