@@ -55,7 +55,9 @@ jj new
 jj git push --change @-
 ```
 
-### 5. Sync story status from workspace signals
+### 5. Sync story status from workspace signals (Product-Cycle Mode Only)
+
+> **Standalone mode:** If `product-context.yaml` doesn't exist, skip this step and proceed to step 6.
 
 If `product-context.yaml` exists and this feature was a dispatched story, read the workspace signals and update the YAML:
 
@@ -107,7 +109,9 @@ jj workspace forget <name>
 
 ---
 
-## Reflect and Advance
+## Reflect and Advance (Product-Cycle Mode)
+
+> **Standalone mode:** If `product-context.yaml` doesn't exist, skip the layer gate check. You can still run `/reflect` if you want to classify observations.
 
 After archiving, check the product context:
 

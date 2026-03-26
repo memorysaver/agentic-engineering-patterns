@@ -69,22 +69,36 @@ Before any work begins, set up the tracking infrastructure, environment, and jj 
    jj log --no-graph -T 'change_id.short(8) ++ " " ++ description.first_line() ++ "\n"'
    ```
 
-7. **Install dependencies:**
+7. **Run project setup** (if a setup hook exists):
    ```bash
-   bun install
+   SETUP_HOOK=.claude/hooks/workspace-setup.sh
+   if [ -f "$SETUP_HOOK" ]; then
+     bash "$SETUP_HOOK"
+   else
+     echo "No workspace setup hook found at $SETUP_HOOK"
+     echo "Read the project README or ask the user for setup instructions."
+   fi
    ```
 
-8. **Start the dev server:**
-   ```bash
-   bun run dev
+   The project's setup hook handles all project-specific concerns:
+   - Package installation (bun/npm/pnpm/cargo/poetry/etc.)
+   - Dev server startup
+   - Port assignment → writes `.dev-workflow/ports.env`
+   - Database migrations, seeding
+   - Docker/container management
+   - `.env` file validation
+
+   **Contract:** The hook MUST write `.dev-workflow/ports.env` with at minimum:
+   ```
+   WEB_PORT=<port>
+   SERVER_PORT=<port>
+   BASE_URL=http://localhost:<web-port>
+   SERVER_URL=http://localhost:<server-port>
    ```
 
-9. **Set up port configuration** (if using portless):
-   ```bash
-   echo "WEB_PORT=3000\nSERVER_PORT=3001\nBASE_URL=http://localhost:3000\nSERVER_URL=http://localhost:3001" > .dev-workflow/ports.env
-   ```
+   If no hook exists and no README provides instructions, ask the user how to set up the project.
 
-10. **Generate sprint contracts:**
+8. **Generate sprint contracts:**
 
     Read `specs/*.md`, `design.md`, and `tasks.md`. For each task in the change stack, generate a contract entry in `.dev-workflow/contracts.md` using the template at `references/contract-template.md`:
 
@@ -104,7 +118,7 @@ Before any work begins, set up the tracking infrastructure, environment, and jj 
     2. [what to check]
     ```
 
-11. **Generate feature verification list:**
+9. **Generate feature verification list:**
 
     Extract the verification steps from contracts into `.dev-workflow/feature-verification.json`:
 
@@ -125,7 +139,7 @@ Before any work begins, set up the tracking infrastructure, environment, and jj 
     - JSON format is intentional — models tamper with JSON less than Markdown
     - The generator agent **MUST NOT** modify `verification_steps` or `passes` — only the evaluator (or human) does
 
-12. **Generate session recovery script:**
+10. **Generate session recovery script:**
 
     Create `.dev-workflow/init.sh` for resuming after context resets:
 
@@ -135,19 +149,16 @@ Before any work begins, set up the tracking infrastructure, environment, and jj 
     set -e
     cd "$(dirname "$0")/.."
 
-    # Environment
-    source .dev-workflow/ports.env 2>/dev/null
-
-    # Dependencies
-    bun install --silent
-
-    # Dev server (if not running)
-    if ! lsof -ti :${SERVER_PORT:-3001} >/dev/null 2>&1; then
-      bun run dev &
-      echo "Dev server starting on ${BASE_URL:-http://localhost:3000}"
+    # Project setup (deps, dev server, ports)
+    SETUP_HOOK=.claude/hooks/workspace-setup.sh
+    if [ -f "$SETUP_HOOK" ]; then
+      bash "$SETUP_HOOK"
     else
-      echo "Dev server already running on port ${SERVER_PORT:-3001}"
+      echo "No workspace setup hook found. Check project README for setup instructions."
     fi
+
+    # Source ports (written by setup hook)
+    source .dev-workflow/ports.env 2>/dev/null
 
     # Current state
     echo "=== Change Stack ==="
@@ -162,7 +173,7 @@ Before any work begins, set up the tracking infrastructure, environment, and jj 
 
     Make executable: `chmod +x .dev-workflow/init.sh`
 
-13. **Initialize inter-agent signals:**
+11. **Initialize inter-agent signals:**
 
     ```bash
     mkdir -p .dev-workflow/signals
@@ -202,7 +213,9 @@ Update the Phase 0 checkbox in the progress file when done.
 
 ---
 
-## Story Status Tracking
+## Story Status Tracking (Product-Cycle Mode Only)
+
+> **Standalone mode:** If `product-context.yaml` doesn't exist, skip this entire section. Signal updates (status.json) still work — just omit `story_status` fields.
 
 If this feature corresponds to a story in `product-context.yaml` (check if the OpenSpec change name matches a story's `openspec_change` field):
 
@@ -402,13 +415,18 @@ jj git push --bookmark feat-<name>
 
 ---
 
-## Phase 10: Create PR
+## Phase 10: Create PR / MR
+
+**Auto-detect the platform:**
 
 ```bash
-gh pr create --title "<title>" --body "<body>"
+REMOTE_URL=$(jj git remote list | head -1 | awk '{print $2}')
 ```
 
-Include in the PR body:
+- `github.com` → `gh pr create --title "<title>" --body "<body>"`
+- `gitlab` → `glab mr create --title "<title>" --description "<body>"`
+
+Include in the PR/MR body:
 - Summary of changes (from proposal)
 - Test coverage notes
 - Link to manual test plan (if created)
@@ -496,8 +514,11 @@ After PR review fixes are resolved, the human tester evaluates the feature — t
 Merge:
 
 ```bash
-gh pr merge <number> --squash --delete-branch
+REMOTE_URL=$(jj git remote list | head -1 | awk '{print $2}')
 ```
+
+- GitHub: `gh pr merge <number> --squash --delete-branch`
+- GitLab: `glab mr merge <number> --squash --remove-source-branch`
 
 ---
 

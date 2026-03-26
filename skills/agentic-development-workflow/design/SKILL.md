@@ -20,20 +20,20 @@ Interactive feature design on the `main` branch. Explore the problem, propose a 
 
 ---
 
-## Product Context Integration
+## Operating Mode
 
-Before starting, check if product context artifacts exist:
+This skill works in two modes, auto-detected at startup:
 
 ```bash
 ls product-context.yaml 2>/dev/null
 ```
 
-**If product context exists:**
+**Standalone mode** *(no `product-context.yaml`)* — Feature lifecycle runs independently. Proceed directly to prerequisites and design phases.
+
+**Product-cycle mode** *(has `product-context.yaml`)* — Feature is part of a larger product lifecycle (`/envision` → `/map` → `/dispatch` → `/design`):
 - Read from `product-context.yaml` for project-wide context
 - If a story was dispatched (has `openspec_change` set in the YAML), load that story's acceptance criteria, interface obligations, and relevant architecture module
 - When dispatched from `/dispatch`, the OpenSpec change already exists — `/opsx:propose` refines it rather than starting from scratch
-
-**If no product context exists:** Proceed normally — the feature workflow works independently.
 
 ---
 
@@ -46,10 +46,13 @@ Before starting, verify dependencies are available.
 Run this check:
 
 ```bash
-for cmd in jj git bun openspec gh; do
+for cmd in jj git openspec; do
   printf "%-15s" "$cmd:"
   which $cmd >/dev/null 2>&1 && echo "OK ($(which $cmd))" || echo "MISSING"
 done
+# PR/MR tool (need at least one):
+printf "%-15s" "gh or glab:"
+(which gh >/dev/null 2>&1 || which glab >/dev/null 2>&1) && echo "OK" || echo "MISSING"
 ```
 
 If any required tool is missing, run `/onboard` first.

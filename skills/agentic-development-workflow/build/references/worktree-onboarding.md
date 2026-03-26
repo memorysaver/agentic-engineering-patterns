@@ -48,15 +48,24 @@ Edit the progress file:
 
 ### 4. Set up environment
 
+Run the project's setup hook if it exists:
+
 ```bash
-# Install dependencies
-bun install
+SETUP_HOOK=.claude/hooks/workspace-setup.sh
+if [ -f "$SETUP_HOOK" ]; then
+  bash "$SETUP_HOOK"
+else
+  echo "No workspace setup hook found at $SETUP_HOOK"
+  echo "Read the project README or ask the user for setup instructions."
+fi
+```
 
-# Start dev server
-bun run dev &
+The setup hook handles project-specific concerns: package installation, dev server, port assignment, DB seeding, etc. It must write `.dev-workflow/ports.env` with `WEB_PORT`, `SERVER_PORT`, `BASE_URL`, `SERVER_URL`.
 
-# Write port config
-echo "WEB_PORT=3000\nSERVER_PORT=3001\nBASE_URL=http://localhost:3000\nSERVER_URL=http://localhost:3001" > .dev-workflow/ports.env
+Verify setup produced ports.env:
+
+```bash
+[ -f .dev-workflow/ports.env ] && source .dev-workflow/ports.env
 ```
 
 ### 5. Generate harness artifacts
