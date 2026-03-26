@@ -1,15 +1,46 @@
 ---
 name: scaffold
-description: Scaffold a full-stack TypeScript monorepo and initialize spec-driven development. Use when creating a new project, starting fresh, or when the user says "new project", "scaffold", "create app", "setup project". Guides stack selection via Better-T-Stack, then initializes OpenSpec for explore/propose/apply/archive workflow.
+description: Scaffold a new project or onboard an existing one with agentic development infrastructure. Use when creating a new project ("new project", "scaffold", "create app") OR setting up an existing project ("onboard project", "set up existing project", "initialize infrastructure", "add workflow to project"). For new projects, creates a full-stack monorepo via Better-T-Stack. For existing projects, audits and fills infrastructure gaps. Both modes set up OpenSpec, workspace hook, and e2e-test skill.
 ---
 
 # Scaffold
 
-Scaffold a modern full-stack TypeScript monorepo using [Better-T-Stack](https://www.better-t-stack.dev/docs), then initialize [OpenSpec](https://openspec.dev) for spec-driven development. One command gets you from empty repo to ready-to-develop project.
-
-For detailed decision guidance on stack options, read `references/stack-guide.md`.
+Set up a project for agentic development — either by scaffolding a new monorepo or by onboarding an existing project. Both paths produce a project with OpenSpec, a workspace setup hook, and an e2e-test skill skeleton.
 
 ---
+
+## Mode Selection
+
+Detect whether this is a new or existing project:
+
+```bash
+# Check for existing project markers
+ls package.json pyproject.toml Cargo.toml go.mod 2>/dev/null
+```
+
+- **New project** — empty or near-empty directory, no project config files
+  → [New Project Flow](#new-project-flow) (Phase 1-8)
+- **Existing project** — has source code and config files
+  → [Existing Project Flow](#existing-project-flow) (Phase 1E-6E)
+
+---
+
+## Default Tooling
+
+When generating workspace hooks and e2e-test skills, use these defaults unless the project already uses something different:
+
+| Language | Package Manager | Test Runner | Dev Server |
+|----------|----------------|-------------|------------|
+| TypeScript / JavaScript | bun | vitest (via Turborepo) | `bun run dev` |
+| Python | uv | pytest | `uv run dev` |
+| Rust | cargo | cargo test | `cargo run` |
+| Go | go | go test | `go run .` |
+
+---
+
+# New Project Flow
+
+For detailed decision guidance on stack options, read `references/stack-guide.md`.
 
 ## Phase 1: Gather Requirements
 
@@ -313,10 +344,127 @@ done
 
 ---
 
-## Phase 6: Final Commit
+## Phase 6: Commit OpenSpec
 
 ```bash
 git add -A && git commit -m "feat: initialize OpenSpec for spec-driven development"
+```
+
+---
+
+## Phase 7: Generate Workspace Setup Hook
+
+Create the hook that `/build` Phase 0 calls for project-specific setup:
+
+```bash
+mkdir -p .claude/hooks
+```
+
+Generate `.claude/hooks/workspace-setup.sh` tailored to the stack from Phase 1. The hook must:
+
+1. **Install dependencies** — use the package manager from Phase 1 (default: `bun install`)
+2. **Scan for available ports** — start from 3000, increment by 10 to avoid parallel workspace collisions
+3. **Write `.dev-workflow/ports.env`** — the contract with `/build`:
+   ```
+   WEB_PORT=<port>
+   SERVER_PORT=<port>
+   BASE_URL=http://localhost:<web-port>
+   SERVER_URL=http://localhost:<server-port>
+   ```
+4. **Update `.env` files** with assigned ports (detect `.env.example` locations from scaffolded structure)
+5. **Start the dev server** if not already running
+6. **Call seed script** if `.claude/skills/e2e-test/scripts/seed.sh` exists
+
+Use the template from `/testing-guide` Part 1, filling in project-specific values from the stack chosen in Phase 1.
+
+```bash
+chmod +x .claude/hooks/workspace-setup.sh
+```
+
+---
+
+## Phase 8: Generate E2E Test Skill Skeleton
+
+Create the project-level testing infrastructure that `/build` Phases 5-8 use:
+
+```bash
+mkdir -p .claude/skills/e2e-test/scripts
+```
+
+### Generate `.claude/skills/e2e-test/SKILL.md`
+
+```markdown
+---
+name: e2e-test
+description: E2E testing infrastructure for this project. Use when running tests,
+  adding test coverage, or understanding what tests exist.
+---
+
+# E2E Test Infrastructure
+
+## Prerequisites
+
+- Dev server running (started by `.claude/hooks/workspace-setup.sh`)
+- `.dev-workflow/ports.env` exists
+
+## Setup
+
+Source ports before running any test:
+
+\`\`\`bash
+source .dev-workflow/ports.env
+\`\`\`
+
+## Test Scripts
+
+| Script | What it tests | Tools |
+|--------|--------------|-------|
+| seed.sh | DB setup + test account | curl |
+
+## Adding a New Test
+
+1. Create `.claude/skills/e2e-test/scripts/<feature>-e2e.sh`
+2. Follow the E2E script pattern (see `/testing-guide` Part 2)
+3. Add the script to the table above
+4. Run it: `bash .claude/skills/e2e-test/scripts/<feature>-e2e.sh`
+```
+
+### Generate `.claude/skills/e2e-test/scripts/seed.sh`
+
+```bash
+#!/usr/bin/env bash
+# Seed script — DB migrations + test account creation
+# Called by workspace-setup.sh after dev server starts
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+if [ -f "$REPO_ROOT/.dev-workflow/ports.env" ]; then
+  source "$REPO_ROOT/.dev-workflow/ports.env"
+fi
+SERVER_URL="${SERVER_URL:-http://localhost:3000}"
+
+# Wait for server
+echo "Waiting for server at $SERVER_URL..."
+for i in $(seq 1 30); do
+  curl -s "$SERVER_URL" >/dev/null 2>&1 && break
+  sleep 1
+done
+
+# TODO: Add project-specific DB migrations here
+# TODO: Add test account seeding here
+
+echo "Seed complete."
+```
+
+```bash
+chmod +x .claude/skills/e2e-test/scripts/seed.sh
+```
+
+### Commit
+
+```bash
+git add .claude/hooks/ .claude/skills/e2e-test/
+git commit -m "feat: add workspace hook and e2e-test skill skeleton"
 ```
 
 ---
@@ -325,20 +473,30 @@ git add -A && git commit -m "feat: initialize OpenSpec for spec-driven developme
 
 ```
 <project>/
+├── .claude/
+│   ├── hooks/
+│   │   └── workspace-setup.sh    # Project-specific workspace init
+│   ├── skills/
+│   │   ├── e2e-test/             # Testing infrastructure
+│   │   │   ├── SKILL.md
+│   │   │   └── scripts/
+│   │   │       └── seed.sh
+│   │   └── openspec-*/           # OpenSpec skills
+│   └── commands/opsx/            # OpenSpec command aliases
 ├── apps/
-│   ├── web/              # Frontend (TanStack/React/Next/etc.)
-│   └── server/           # Backend (Hono/Express/etc.)
+│   ├── web/                      # Frontend (TanStack/React/Next/etc.)
+│   └── server/                   # Backend (Hono/Express/etc.)
 ├── packages/
-│   ├── config/           # Shared TypeScript/lint config
-│   ├── ui/               # Shared UI components (shadcn/ui)
-│   ├── db/               # Database schema + migrations
-│   ├── auth/             # Auth configuration
-│   ├── api/              # API layer (tRPC/oRPC router)
-│   └── env/              # Shared environment variables
-├── openspec/             # Spec-driven development
-├── bts.jsonc             # Better-T-Stack project config
-├── turbo.json            # Turborepo pipeline config
-└── package.json          # Root workspace config
+│   ├── config/                   # Shared TypeScript/lint config
+│   ├── ui/                       # Shared UI components (shadcn/ui)
+│   ├── db/                       # Database schema + migrations
+│   ├── auth/                     # Auth configuration
+│   ├── api/                      # API layer (tRPC/oRPC router)
+│   └── env/                      # Shared environment variables
+├── openspec/                     # Spec-driven development
+├── bts.jsonc                     # Better-T-Stack project config
+├── turbo.json                    # Turborepo pipeline config
+└── package.json                  # Root workspace config
 ```
 
 ---
@@ -363,3 +521,139 @@ git add -A && git commit -m "feat: initialize OpenSpec for spec-driven developme
 - **Use `--no-git` for in-place** — the repo already has .git initialized
 - **Never overwrite existing OpenSpec config** — check if `openspec/config.yaml` exists first
 - **Commit OpenSpec artifacts to git** — they are part of the project record
+- **Existing project mode never overwrites** — only creates missing files, never replaces existing ones
+
+---
+
+# Existing Project Flow
+
+For projects that already have source code and want to add agentic development infrastructure.
+
+---
+
+## Phase 1E: Detect Stack
+
+Scan the project to understand its technology stack:
+
+```bash
+echo "=== Detecting stack ==="
+
+# Language
+[ -f "package.json" ] && echo "Language: TypeScript/JavaScript"
+[ -f "pyproject.toml" ] && echo "Language: Python"
+[ -f "Cargo.toml" ] && echo "Language: Rust"
+[ -f "go.mod" ] && echo "Language: Go"
+
+# Package manager
+[ -f "bun.lockb" ] && echo "Package manager: bun"
+[ -f "pnpm-lock.yaml" ] && echo "Package manager: pnpm"
+[ -f "package-lock.json" ] && echo "Package manager: npm"
+[ -f "yarn.lock" ] && echo "Package manager: yarn"
+[ -f "uv.lock" ] && echo "Package manager: uv"
+
+# Monorepo
+[ -f "turbo.json" ] && echo "Monorepo: Turborepo"
+[ -f "nx.json" ] && echo "Monorepo: Nx"
+[ -f "pnpm-workspace.yaml" ] && echo "Monorepo: pnpm workspaces"
+
+# Framework (from package.json or pyproject.toml)
+[ -f "package.json" ] && {
+  grep -q '"hono"' package.json 2>/dev/null && echo "Backend: Hono"
+  grep -q '"express"' package.json 2>/dev/null && echo "Backend: Express"
+  grep -q '"fastify"' package.json 2>/dev/null && echo "Backend: Fastify"
+  grep -q '"next"' package.json 2>/dev/null && echo "Frontend: Next.js"
+  grep -q '"@tanstack/react-router"' package.json 2>/dev/null && echo "Frontend: TanStack Router"
+  grep -q '"nuxt"' package.json 2>/dev/null && echo "Frontend: Nuxt"
+  grep -q '"svelte"' package.json 2>/dev/null && echo "Frontend: Svelte"
+}
+```
+
+Present findings to the user and confirm. If package manager is not detected, recommend:
+- TypeScript/JavaScript → **bun**
+- Python → **uv**
+
+---
+
+## Phase 2E: Audit Checklist
+
+Run through the infrastructure checklist and report what exists vs what's missing:
+
+```bash
+echo "=== Infrastructure Audit ==="
+
+# VCS
+printf "  %-45s" "jj colocated mode (.jj/ exists):"
+[ -d ".jj" ] && echo "[x]" || echo "[ ] MISSING"
+
+# OpenSpec
+printf "  %-45s" "openspec/ initialized:"
+[ -d "openspec" ] && echo "[x]" || echo "[ ] MISSING"
+
+printf "  %-45s" ".claude/commands/opsx/ aliases:"
+[ -d ".claude/commands/opsx" ] && echo "[x]" || echo "[ ] MISSING"
+
+# Workspace hook
+printf "  %-45s" ".claude/hooks/workspace-setup.sh:"
+[ -f ".claude/hooks/workspace-setup.sh" ] && echo "[x]" || echo "[ ] MISSING"
+
+# E2E test skill
+printf "  %-45s" ".claude/skills/e2e-test/SKILL.md:"
+[ -f ".claude/skills/e2e-test/SKILL.md" ] && echo "[x]" || echo "[ ] MISSING"
+
+printf "  %-45s" ".claude/skills/e2e-test/scripts/seed.sh:"
+[ -f ".claude/skills/e2e-test/scripts/seed.sh" ] && echo "[x]" || echo "[ ] MISSING"
+```
+
+Show the user the results. Only proceed to fill gaps for items marked `[ ] MISSING`.
+
+---
+
+## Phase 3E: Fill Gaps
+
+For each missing item, generate it. **Never overwrite existing files.**
+
+### jj colocated mode (if missing)
+
+```bash
+jj git init --colocate
+echo '.jj/' >> .gitignore
+```
+
+### OpenSpec (if missing)
+
+Follow the same steps as [Phase 5: Initialize OpenSpec](#phase-5-initialize-openspec) from the new project flow — `openspec init`, config, command aliases.
+
+### Workspace setup hook (if missing)
+
+Follow the same steps as [Phase 7: Generate Workspace Setup Hook](#phase-7-generate-workspace-setup-hook), using the detected stack from Phase 1E instead of the chosen stack.
+
+### E2E test skill (if missing)
+
+Follow the same steps as [Phase 8: Generate E2E Test Skill Skeleton](#phase-8-generate-e2e-test-skill-skeleton).
+
+---
+
+## Phase 4E: Verify
+
+Re-run the audit checklist from Phase 2E. Everything should now be `[x]`.
+
+---
+
+## Phase 5E: Commit
+
+```bash
+git add .claude/ openspec/
+grep -q '.jj/' .gitignore && git add .gitignore
+git commit -m "feat: initialize agentic development infrastructure"
+```
+
+---
+
+## Phase 6E: Next Steps
+
+| Command | What it does |
+|---------|-------------|
+| `/design` | Start designing a feature (standalone mode) |
+| `/dispatch` | Pick the next story (if product context exists) |
+| `/testing-guide` | Detailed guide for testing strategy and adding test scripts |
+| `/jj-ref` | jj command reference and concept mapping |
