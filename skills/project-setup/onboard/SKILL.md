@@ -18,6 +18,7 @@ Add the marketplace and install both plugin groups:
 /plugin marketplace add memorysaver/agentic-engineering-patterns
 
 # Install plugin groups
+/plugin install product-context@agentic-engineering-patterns
 /plugin install project-setup@agentic-engineering-patterns
 /plugin install agentic-development-workflow@agentic-engineering-patterns
 ```
@@ -26,6 +27,7 @@ Add the marketplace and install both plugin groups:
 
 | Group | Skills | Purpose |
 |-------|--------|---------|
+| **product-context** | envision, map, reflect | Product-level planning and iteration |
 | **project-setup** | onboard, scaffold | Scaffold projects, configure spec-driven development, environment onboarding |
 | **agentic-development-workflow** | design, launch, build, wrap, jj-ref | Full-lifecycle feature development with jj workspaces |
 
@@ -184,10 +186,11 @@ If all core tools show OK, the environment is ready.
 
 | Command | What it does |
 |---------|-------------|
+| `/envision` | Validate a product idea and create the context document |
 | `/scaffold` | Scaffold a full-stack TypeScript monorepo + initialize OpenSpec |
 | `/design` | Start designing a feature (explore + propose + review) |
 
-Typical flow: `/scaffold` → `/design` → `/launch` → `/build` → `/wrap`
+Typical flow: `/envision` → `/map` → `/scaffold` → `/design` → `/launch` → `/build` → `/wrap` → `/reflect`
 
 ---
 

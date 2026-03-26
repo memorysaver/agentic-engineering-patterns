@@ -15,8 +15,26 @@ Interactive feature design on the `main` branch. Explore the problem, propose a 
 ```
 
 **Session:** Main session, interactive with user
-**Input:** Feature idea or user request
+**Input:** Feature idea or user request (optionally informed by product context)
 **Output:** OpenSpec change committed to main (proposal, design, specs, tasks)
+
+---
+
+## Product Context Integration
+
+Before starting, check if product context artifacts exist:
+
+```bash
+ls product-context/context-document.md product-context/system-map.md product-context/story-graph.md 2>/dev/null
+```
+
+**If product context exists:**
+- Read the Context Document for project-wide requirements and constraints
+- Read the System Map for the relevant module's interface contracts
+- Check if this feature corresponds to a story in the story graph — if so, load the Story Spec as input context for `/opsx:propose` (it already has acceptance criteria, interface obligations, dependencies)
+- When the Story Spec is well-specified, `/opsx:propose` can work directly from it without a full explore conversation
+
+**If no product context exists:** Proceed normally — the feature workflow works independently.
 
 ---
 

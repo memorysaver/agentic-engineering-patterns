@@ -5,10 +5,21 @@
     "email": "mho@looplia.run"
   },
   "metadata": {
-    "version": "0.2.0",
-    "description": "Skills for scaffolding and maintaining modern TypeScript monorepos with agentic development workflows."
+    "version": "0.3.0",
+    "description": "Skills for product planning, project scaffolding, and agentic development workflows."
   },
   "plugins": [
+    {
+      "name": "product-context",
+      "description": "Product-level planning and iteration: envision, map, reflect.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/product-context/envision",
+        "./skills/product-context/map",
+        "./skills/product-context/reflect"
+      ]
+    },
     {
       "name": "project-setup",
       "description": "One-time project scaffolding and environment setup.",

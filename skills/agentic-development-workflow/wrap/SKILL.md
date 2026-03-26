@@ -71,9 +71,23 @@ jj workspace forget <name>
 
 ---
 
-## Workflow Complete
+## Reflect on What Was Learned
 
-The feature is merged, archived, and cleaned up. Start the next feature with:
+After archiving, consider running `/reflect` to classify observations from this feature and update the product context:
+
+```
+/reflect
+```
+
+This closes the feedback loop — bugs, refinements, and discoveries get routed back to the right phase of the product context layer.
+
+**Layer gate check:** If this was the last story in a layer (check `product-context/story-graph.md`), run the layer gate integration test before starting the next layer.
+
+---
+
+## Next Step
+
+Start the next feature with:
 
 ```
 /design
