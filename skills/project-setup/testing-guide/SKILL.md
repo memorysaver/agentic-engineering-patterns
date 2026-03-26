@@ -274,34 +274,34 @@ exit 0
 
 ---
 
-## Part 3: Testing Pyramid
+## Part 3: Testing Layers
 
-Three layers of tests, each mapped to a `/build` phase. Add them incrementally as features are built.
+Two categories of tests, owned by different parts of the system:
 
-### Layer 1: Unit Tests (Phase 4 — implementation)
-
-| Aspect | Detail |
-|--------|--------|
-| **What** | Individual functions, modules, utilities |
-| **Runner** | Project's test framework (vitest, jest, pytest, cargo test, go test) |
-| **Scope** | Pure logic, data transforms, validators, helpers |
-| **Convention** | Co-located with source (`*.test.ts`, `*_test.go`, `test_*.py`) |
-| **When** | As you implement each task in the jj change stack |
-| **Who runs** | Build agent, per-change (`jj edit <change>` → implement → run tests) |
-| **Catches** | Logic errors, off-by-one bugs, edge cases, data transform errors |
-
-**How to add:**
-```bash
-# After implementing a function, add a test next to it:
-# src/utils/validate.ts → src/utils/validate.test.ts
-
-# Run with the project's test runner:
-# bun test src/utils/validate.test.ts
-# vitest run src/utils/validate.test.ts
-# pytest tests/test_validate.py
+```
+┌─────────────────────────────────┐  ┌──────────────────────────────────┐
+│ Project test framework          │  │ e2e-test skill                   │
+│ (vitest, jest, pytest, etc.)    │  │ (.claude/skills/e2e-test/)       │
+│                                 │  │                                  │
+│ Unit tests                      │  │ API integration tests (curl)     │
+│  - co-located with source       │  │ E2E browser tests (agent-browser)│
+│  - run during Phase 4           │  │                                  │
+│  - use project's test command   │  │  - live in scripts/              │
+│                                 │  │  - run during Phase 5-8          │
+│ Plugin doesn't manage this.     │  │  Plugin orchestrates this.       │
+│ See your framework's docs.      │  │  This guide covers this.         │
+└─────────────────────────────────┘  └──────────────────────────────────┘
 ```
 
-### Layer 2: API Integration Tests (Phase 5 — code review)
+### Unit Tests (Phase 4 — project framework)
+
+Unit tests are owned by the project's test framework — vitest, jest, pytest, cargo test, go test. The monorepo setup from `/scaffold` (or the project's own config) already configures the test runner.
+
+During `/build` Phase 4, the build agent runs the project's test command after implementing each task. No special setup from the e2e-test skill is needed.
+
+> The plugin doesn't teach unit testing. Your framework's docs do that.
+
+### API Integration Tests (Phase 5 — e2e-test skill)
 
 | Aspect | Detail |
 |--------|--------|
@@ -335,7 +335,7 @@ fi
 
 API tests can live inside E2E scripts (the curl-based sections) or as standalone scripts. For projects with many API endpoints, consider a dedicated `scripts/api/` directory.
 
-### Layer 3: E2E Browser Tests (Phases 6-7 — testing)
+### E2E Browser Tests (Phases 6-7 — e2e-test skill)
 
 | Aspect | Detail |
 |--------|--------|
@@ -354,32 +354,30 @@ API tests can live inside E2E scripts (the curl-based sections) or as standalone
 Features start with zero tests and build up through `/build` phases:
 
 ```
-Phase 4 (implement)  → unit tests alongside code
-                        └─ test the function you just wrote
-Phase 5 (review)     → API tests to verify contracts
-                        └─ curl the endpoint you just created
-Phase 6 (dogfood)    → manual exploration finds what needs coverage
-                        └─ agent-browser explores, reports gaps
-Phase 7 (e2e)        → browser test scripts for CI/CD
-                        └─ codify the dogfood findings into scripts
-Phase 8 (review)     → all layers run, gaps identified
-                        └─ fix gaps, re-run, move to PR
+Phase 4 (implement)  → run project's unit tests (framework-level)
+Phase 5 (review)     → API contract tests via e2e-test scripts
+Phase 6 (dogfood)    → agent-browser exploration, find gaps
+Phase 7 (e2e)        → codify findings into e2e-test scripts
+Phase 8 (review)     → run all e2e-test scripts + unit tests
 ```
 
-Each layer catches different failure modes. Together they form a safety net that grows with every feature.
+Each layer catches different failure modes:
+- **Unit tests** (framework) — logic errors, edge cases, data transforms
+- **API tests** (e2e-test skill) — contract breaks, auth gaps, wrong status codes
+- **E2E browser** (e2e-test skill) — integration failures, UI regressions, flow breaks
 
 ### When to Skip Layers
 
-Not every project needs all three layers. Use this guide:
+Not every project needs both e2e-test layers. Unit tests are always the project framework's responsibility — this table covers what the e2e-test skill should include:
 
-| Project type | Unit | API | E2E Browser |
-|---|---|---|---|
-| Full-stack web app | Yes | Yes | Yes |
-| API-only service | Yes | Yes | Skip |
-| CLI tool | Yes | Skip | Skip |
-| Static site / landing page | Skip | Skip | E2E only |
-| Library / package | Yes | Skip | Skip |
-| Mobile app (API backend) | Yes | Yes | Skip (use native testing) |
+| Project type | API tests (curl) | E2E browser (agent-browser) |
+|---|---|---|
+| Full-stack web app | Yes | Yes |
+| API-only service | Yes | Skip |
+| CLI tool | Skip | Skip |
+| Static site / landing page | Skip | E2E only |
+| Library / package | Skip | Skip |
+| Mobile app (API backend) | Yes | Skip (use native testing) |
 
 ---
 
@@ -398,13 +396,14 @@ Don't worry about coverage. The goal is **one green test end-to-end**.
 
 ### Layer 1+ — Feature Development
 
-Each subsequent feature adds tests at the appropriate layers:
+Each subsequent feature adds tests via the e2e-test skill:
 
-- New utility function → unit test
-- New API endpoint → curl-based contract test
-- New user flow → E2E browser test script
+- New API endpoint → API contract test (curl in e2e-test script)
+- New user flow → E2E browser test script (agent-browser)
 
-The build agent does this automatically during `/build` Phases 4-7. The e2e-test SKILL.md tells it where to put scripts and what patterns to follow.
+Unit tests are added alongside code during Phase 4 using the project's test framework — the e2e-test skill doesn't manage these.
+
+The build agent follows the e2e-test SKILL.md to know where to put scripts and what patterns to use.
 
 ### Evaluator Integration
 
@@ -448,12 +447,12 @@ Add them to your CI pipeline:
 
 ## Quick Reference
 
-| What | Where | When |
-|------|-------|------|
-| Workspace setup hook | `.claude/hooks/workspace-setup.sh` | Before `/build` (created during project setup) |
-| E2E test skill | `.claude/skills/e2e-test/SKILL.md` | Before `/build` (created during project setup) |
-| Seed script | `.claude/skills/e2e-test/scripts/seed.sh` | Phase 0 (called by setup hook) |
-| Unit tests | Co-located with source | Phase 4 (per-change) |
-| API tests | In E2E scripts or `scripts/api/` | Phase 5 (code review) |
-| E2E browser tests | `.claude/skills/e2e-test/scripts/<feature>-e2e.sh` | Phase 7 (after dogfood) |
-| Feature verification | `.dev-workflow/feature-verification.json` | Phase 5 (evaluator) |
+| What | Where | Managed by |
+|------|-------|------------|
+| Workspace setup hook | `.claude/hooks/workspace-setup.sh` | Project (you create this) |
+| E2E test skill | `.claude/skills/e2e-test/SKILL.md` | Project (you create this) |
+| Seed script | `.claude/skills/e2e-test/scripts/seed.sh` | e2e-test skill |
+| API contract tests | `.claude/skills/e2e-test/scripts/<feature>-e2e.sh` | e2e-test skill (Phase 5) |
+| E2E browser tests | `.claude/skills/e2e-test/scripts/<feature>-e2e.sh` | e2e-test skill (Phase 6-7) |
+| Unit tests | Co-located with source | Project test framework (Phase 4) |
+| Feature verification | `.dev-workflow/feature-verification.json` | `/build` plugin (Phase 5) |
