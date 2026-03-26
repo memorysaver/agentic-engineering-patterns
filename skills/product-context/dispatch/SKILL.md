@@ -1,11 +1,11 @@
 ---
 name: dispatch
-description: Pick the next story to work on and bridge it into the feature lifecycle. Use when ready to start building, or when the user says "what's next", "dispatch", "pick a story", "start next feature", "what should I work on". Reads product-context.yaml, presents the dispatch queue, creates an OpenSpec change, and hands off to /design or /launch.
+description: Pick the next story to work on and bridge it into the feature lifecycle. Use when ready to start building, or when the user says "what's next", "dispatch", "pick a story", "start next feature", "what should I work on". Reads product-context.yaml, syncs workspace signals, scores stories by critical path + business value + unblock potential, assembles context, and hands off to /design or /launch. Supports parallel batch dispatch with WIP limits.
 ---
 
 # Dispatch
 
-Bridge between the product context (control plane) and the feature lifecycle (execution plane). Reads the story graph from `product-context.yaml`, determines what's ready to build, and routes the selected story into `/design` or `/launch`.
+Bridge between the product context (control plane) and the feature lifecycle (execution plane). Syncs workspace state, scores stories, picks what to build next, assembles context, and routes into `/design` or `/launch`.
 
 **Where this fits:**
 
@@ -18,301 +18,375 @@ Bridge between the product context (control plane) and the feature lifecycle (ex
 
 **Session:** Main, interactive with user
 **Input:** `product-context.yaml` with stories
-**Output:** OpenSpec change created, story status updated, handoff to `/design` or `/launch`
+**Output:** OpenSpec change with pre-assembled context, story status updated, handoff to `/design` or `/launch`
 
 ---
 
 ## Before Starting
-
-Read the product context:
 
 ```bash
 cat product-context.yaml
 ```
 
 If `product-context.yaml` doesn't exist, run `/envision` then `/map` first.
-
-If the `stories` section is empty, run `/map` to decompose the product into stories.
+If the `stories` section is empty, run `/map` to decompose the product.
 
 ---
 
-## Step 1: Determine Active Layer
+## The Dispatch Protocol
 
-Find the current active layer — the lowest layer number with incomplete stories:
-
-```
-For each layer (0, 1, 2, ...):
-  If any story in this layer has status != completed and status != deferred:
-    This is the active layer. Stop.
-```
-
-### Layer Gate Check
-
-If the active layer is > 0, verify the previous layer's gate has passed:
+Every dispatch run follows the same 7-step protocol. Each step is idempotent — running `/dispatch` twice with no state changes produces the same result.
 
 ```
-If layer_gates[active_layer - 1].status != passed:
-  BLOCK — cannot start Layer N until Layer N-1 gate passes.
-  Suggest: run the layer gate integration test first.
-```
-
-Present the current state to the user:
-
-```
-Layer 0: 5/8 completed, 2 in_progress, 1 ready
-Layer 1: 0/6 completed (blocked — waiting for Layer 0 gate)
+① SYNC signals    → bring YAML up to date with workspace reality
+② CASCADE states  → compute all pending→ready, pending→blocked transitions
+③ SCORE stories   → rank the ready queue by dispatch_score
+④ PRESENT queue   → show user the scored dispatch queue
+⑤ DISPATCH        → lock stories (status→in_progress), create OpenSpec changes
+⑥ MONITOR         → agents work, main session watches signals
+⑦ COMPLETE        → /wrap updates YAML, atomic cascade, re-invoke dispatch
 ```
 
 ---
 
-## Step 2: Compute Ready Stories
+## Step 1: Signal Sync
 
-Transition stories based on dependency status:
+Before calculating anything, sync workspace signals into the YAML to reflect reality:
+
+```
+For each story with status: in_progress or in_review:
+  workspace = story.assigned_to
+  signal_path = .claude/workspaces/<workspace>/.dev-workflow/signals/status.json
+
+  Read signal file (if exists):
+    If signal.phase >= 12 (merged):
+      Update YAML: story.status → completed
+      Update: story.completed_at, story.pr_url, story.cost_usd
+    If signal shows failure/escalation:
+      Update YAML: story.status → failed
+      Append to story.failure_logs
+```
+
+**Why:** Without signal sync, the YAML shows `in_progress` for stories already done. Downstream stories stay `pending` even though they're actually ready.
+
+---
+
+## Step 2: Cascade State Transitions
+
+After syncing all signals, compute all state transitions in one pass:
 
 ```
 For each story with status: pending:
   If any story in dependencies[] has status: failed:
     Transition → blocked
   Elif any story in dependencies[] has status: deferred:
-    Transition → blocked (dependency deferred — will unblock if un-deferred)
+    Transition → blocked (dependency deferred)
   Elif all stories in dependencies[] have status: completed:
     Transition → ready
 
 For each story with status: blocked:
   If the blocking dependency is now completed:
-    Transition → pending (will be re-evaluated next cycle)
+    Transition → pending (will be re-evaluated in this same pass)
 ```
 
-Also handle recovery transitions (user-initiated):
+**Recovery transitions** (user-initiated, handle if requested):
 - `failed → pending` — user resets after fixing the spec
 - `deferred → pending` — user un-defers a story
 
-Update the YAML with all new statuses.
+**Commit** the synced + cascaded state to YAML before computing scores. Increment `dispatch_epoch`.
 
 ---
 
-## Step 3: Filter and Sort
+## Step 3: Score Stories
 
-From the `ready` stories in the active layer:
+### Determine Active Layer
 
-### Conflict Detection
+```
+For each layer (0, 1, 2, ...):
+  If any story in this layer has status not in [completed, deferred]:
+    This is the active layer. Stop.
+```
 
-Remove stories whose `files_affected` overlap with any `in_progress` story. These would cause merge conflicts if built in parallel.
+**Layer gate check:** If active layer > 0, verify `layer_gates[active_layer - 1].status == passed`. If not, block and suggest running the layer gate test.
+
+### Filter Ready Queue
+
+From `ready` stories in the active layer, remove stories with file-level conflicts:
 
 ```
 For each ready story:
   For each in_progress story:
     If files_affected intersection is non-empty:
-      Mark as conflicted — cannot dispatch until the in_progress story completes.
+      Mark as conflicted — cannot dispatch until the in_progress story completes
 ```
 
-### Priority Sort
+### Compute Dispatch Score
 
-Sort remaining stories by:
-1. **Priority:** critical > high > medium > low
-2. **Slice:** lower slice number first (earlier in layer execution order)
-3. **Complexity:** S > M > L (simpler stories first — faster feedback)
+Each remaining ready story gets a score:
+
+```
+dispatch_score = (critical_path_urgency + business_value + unblock_potential) / complexity_cost
+```
+
+#### Critical Path Urgency (0-10)
+
+Compute the critical path through the dependency DAG (longest chain from any root to any leaf within the active layer). Stories on the critical path get maximum urgency:
+
+```
+If story is on critical path:
+  critical_path_urgency = 10
+Else:
+  slack = latest_possible_start - earliest_possible_start
+  critical_path_urgency = max(0, 10 - slack)
+```
+
+A critical-path story delayed by 1 hour delays the entire layer by 1 hour.
+
+#### Business Value (1-10)
+
+```
+critical = 10
+high     = 7
+medium   = 4
+low      = 1
+```
+
+#### Unblock Potential (0-10)
+
+```
+unblock_potential = min(10, count of stories that directly depend on this one * 2)
+```
+
+A story that unblocks 5 others scores 10. A leaf story scores 0.
+
+#### Complexity Cost (divisor)
+
+```
+S = 1    (fast feedback)
+M = 2
+L = 4    (slow, expensive)
+```
+
+#### Example Scores
+
+| Story | CP | Value | Unblock | Complexity | Score |
+|-------|-----|-------|---------|------------|-------|
+| Auth middleware (critical path, high priority, unblocks 3) | 10 | 7 | 6 | S=1 | **23.0** |
+| User model (not critical, medium priority, unblocks 2) | 4 | 4 | 4 | S=1 | **12.0** |
+| Dashboard layout (not critical, low priority, leaf) | 2 | 1 | 0 | L=4 | **0.75** |
 
 ---
 
 ## Step 4: Present Dispatch Queue
 
-Show the sorted queue to the user with context for each story:
+Show the sorted queue with context:
 
 ```
-Dispatch Queue (Layer 0, 3 ready):
+Dispatch Queue (Layer 0 — 4 ready, 2 in_progress, WIP 3/5)
 
-  1. [critical] PROJ-003 "Setup auth middleware" (S)
-     Module: auth | Slice: 1 | Dependencies: none
-     → Ready to build
+  1. ★ PROJ-003 "Setup auth middleware"           score: 23.0
+     [critical] S | Module: auth | Slice 1 | Critical path
+     Unblocks: PROJ-005, PROJ-007, PROJ-008
+     → Well-specified (3 acceptance criteria, contracts defined)
+     → Recommend: skip to /launch
 
-  2. [high] PROJ-005 "Create user registration endpoint" (M)
-     Module: api | Slice: 1 | Dependencies: none
-     → Ready to build
+  2.   PROJ-004 "Create user model"                score: 12.0
+     [medium] S | Module: db | Slice 1 | 4h slack
+     Unblocks: PROJ-006, PROJ-009
+     → Well-specified
+     → Recommend: skip to /launch
 
-  3. [medium] PROJ-007 "Add session persistence" (S)
-     Module: auth | Slice: 2 | Dependencies: PROJ-003
-     → Ready (PROJ-003 completed)
+  3.   PROJ-010 "Add settings page"                score: 0.75
+     [low] L | Module: web | Slice 3 | Leaf
+     → Ambiguous (1 vague criterion, no interface contracts)
+     → Recommend: go through /design
 
   Conflicted (waiting):
-  - PROJ-004 "Add login form" — files overlap with in_progress PROJ-002
+  • PROJ-006 — files overlap with in_progress PROJ-002
 
   Blocked (dependencies not met):
-  - PROJ-008 "Dashboard layout" — waiting on PROJ-005, PROJ-006
+  • PROJ-008 — waiting on PROJ-003 (auth middleware)
+
+  In progress:
+  • PROJ-001 (tab: feat-api-scaffold) — Phase 4, 60% complete
+  • PROJ-002 (tab: feat-db-schema) — Phase 5, code review
 ```
 
-**Recommendation:** Highlight the top story and explain why it's recommended (highest priority, no conflicts, unblocks the most downstream work).
+**Recommendation:** Always highlight the top story and explain why (highest score = critical path + high value + unblocks the most).
 
 ---
 
-## Step 5: User Picks a Story
+## Step 5: Dispatch
 
-The user selects a story from the queue (or accepts the recommendation).
+### Dispatch Modes
 
-For **batch dispatch** (multiple parallel workspaces), the user can pick multiple non-conflicting stories from the same slice.
+#### Interactive (default)
+User picks stories one at a time. Best for early layers or learning the system.
+
+#### Slice Batch (`--batch slice`)
+Dispatch all ready stories in the current execution slice at once:
+```
+Dispatches all ready stories in Slice N (up to WIP limit)
+Creates N workspaces via /launch
+```
+
+#### Wave (`--batch wave`)
+Dispatch the highest-scored ready stories regardless of slice:
+```
+N = min(ready_count, wip_limit - in_progress_count)
+Dispatches top N stories by dispatch_score
+```
+
+### WIP Limits
+
+```
+max_wip = topology.routing.concurrency_limit  (default: 5)
+current_wip = count of stories with status: in_progress
+available_slots = max_wip - current_wip
+
+Never dispatch more than available_slots stories.
+```
+
+**Why (Little's Law):** `Lead Time = WIP / Throughput`. If you merge 3 stories/day, WIP 3 = 1 day lead time. WIP 15 = 5 days. The bottleneck is usually human PR review, not agent speed.
+
+### The Dispatch Lock
+
+For each selected story, dispatch atomically:
+
+```
+1. Re-read story.status from YAML (not from cache)
+2. If status != ready → SKIP (already dispatched by another run)
+3. Write to YAML:
+     status: in_progress
+     assigned_to: <workspace-name>
+     openspec_change: <story-id>
+     started_at: <ISO 8601 now>
+     dispatched_at_epoch: <current dispatch_epoch>
+4. Commit YAML immediately (this IS the lock)
+5. THEN create OpenSpec change and workspace
+```
+
+The commit happens BEFORE the workspace is created. Two consecutive `/dispatch` runs: Run 1 writes `in_progress` and commits. Run 2 reads `in_progress`, skips. No double dispatch.
 
 ---
 
-## Step 6: Create OpenSpec Change
+## Step 6: Create OpenSpec Change with Context Package
 
-Generate an OpenSpec change from the selected story spec:
+For each dispatched story, create the OpenSpec change with pre-assembled context:
 
-```bash
-# Create the OpenSpec change directory
-mkdir -p openspec/changes/<story-id>/specs
+```
+openspec/changes/<story-id>/
+├── proposal.md          ← story description + why + business value
+├── design.md            ← module definition + interface contracts + dependency APIs
+├── specs/<module>.md    ← acceptance criteria + interface obligations + verification
+├── tasks.md             ← story decomposed into implementation tasks
+└── .context/            ← pre-assembled context package
+    ├── stable-prefix.md ← shared product/architecture context (cacheable)
+    ├── dependencies.md  ← public APIs from completed dependency stories
+    └── retrieval.md     ← what to explore at runtime
 ```
 
-Map story fields to OpenSpec artifacts:
+### Context Assembly
 
-| Story field | OpenSpec artifact |
-|---|---|
-| `description.what_changes` + `description.why` | `proposal.md` |
-| Architecture module + interface contracts | `design.md` |
-| `acceptance_criteria` + `interface_obligations` | `specs/<module>.md` |
-| Story as implementation task | `tasks.md` |
+#### Part 1: Stable Prefix (~10K tokens, shared across agents in same layer)
 
-### proposal.md
+Extracted from `product-context.yaml`:
+- `product.problem` — what we're solving
+- `product.constraints` — tech stack, infrastructure
+- `product.layers[active_layer]` — what the user can do at this layer
+- `architecture.overview` — high-level structure
+- Coding conventions (conventional commits, jj for local, trunk-based)
+
+#### Part 2: Story-Specific Payload (~20K tokens, unique per agent)
+
+- **Full story spec** from the `stories` section
+- **Module definition** from `architecture.modules` matching `story.module`
+- **Adjacent interfaces** from `architecture.interfaces` where `from` or `to` = story module
+- **Dependency outputs** — for each completed dependency: public API surface (types, exports, endpoints). NOT internal implementation.
+
+#### Part 3: Retrieval Instructions (~500 tokens)
 
 ```markdown
-# <story title>
+## Files to read first
+- <files_affected from story spec>
 
-## What
-<description.what_changes>
+## Patterns to explore
+- Check existing patterns in <module> directory
+- Read interface contract tests for consumed interfaces
 
-## Why
-<description.why>
-
-## Story Reference
-- ID: <story id>
-- Layer: <layer>
-- Module: <module>
-- Priority: <priority>
-- Complexity: <complexity>
+## Do not read
+- Other module internals — use dependency_outputs above
 ```
 
-### design.md
+### Assembly Rules
 
-Extract from `product-context.yaml`:
-- The story's module definition (from `architecture.modules`)
-- Adjacent interface contracts (from `architecture.interfaces` where `from` or `to` matches the module)
-- Relevant data flow (from `architecture.data_flows`)
-
-### specs/<module>.md
-
-```markdown
-# Acceptance Criteria
-
-<acceptance_criteria as numbered list>
-
-# Interface Obligations
-
-Implements: <interface_obligations.implements>
-Consumes: <interface_obligations.consumes>
-Contract tests required: <yes/no>
-
-# Verification Strategy
-
-Unit: <verification.unit>
-Integration: <verification.integration>
-Contract: <verification.contract>
-```
-
-### tasks.md
-
-```markdown
-# Tasks
-
-- [ ] <story title>
-  - Acceptance: <criteria summary>
-  - Files: <files_affected>
-```
-
-For complex stories (L), decompose into sub-tasks based on acceptance criteria.
+1. **Prune aggressively** — irrelevant context degrades agent performance
+2. **Dependency outputs = public API only** — types, exports, endpoint signatures, never internals
+3. **Measure the package** — if it exceeds the role's token budget from topology, prune harder or split the story
+4. **Stable prefix is cacheable** — when dispatching multiple stories in the same layer, write it once
 
 ---
 
-## Step 7: Update YAML
-
-Update the story in `product-context.yaml`:
-
-```yaml
-status: in_progress
-assigned_to: <workspace-name or "main">
-openspec_change: <story-id>
-started_at: <ISO 8601 now>
-```
-
-Append to changelog:
-
-```yaml
-- date: <today>
-  type: dispatch
-  author: human
-  summary: "Dispatched <story-id>: <story-title>"
-  sections_changed: [stories]
-```
-
-Commit:
-
-```bash
-git add product-context.yaml openspec/changes/<story-id>/
-git commit -m "feat: dispatch <story-id> — <story-title>"
-```
-
----
-
-## Step 8: Hand Off
+## Step 7: Hand Off
 
 Determine the handoff based on story completeness:
 
-### Well-specified story (skip to /launch)
-
-The story has:
-- Detailed acceptance criteria (3+ specific, testable items)
+### Well-specified → skip to /launch
+- 3+ specific, testable acceptance criteria
 - Interface obligations defined
 - Verification strategy complete
 - Files affected identified
+- Complexity S or M
 
-→ Suggest: **skip `/design` and go straight to `/launch`**. The OpenSpec change already has everything the agent needs.
-
-### Ambiguous or complex story (go to /design)
-
-The story has:
-- Vague acceptance criteria
+### Ambiguous → go through /design
+- Vague or fewer than 3 acceptance criteria
 - Missing interface details
-- Complexity: L
+- Complexity L
 - Open questions relevant to this story
 
-→ Suggest: **run `/design` first** to refine the spec through explore/propose conversation.
-
 ```
-Story PROJ-003 dispatched.
+Story PROJ-003 dispatched (score: 23.0, critical path).
 
-OpenSpec change created at openspec/changes/PROJ-003/
+OpenSpec change: openspec/changes/PROJ-003/
+Context package: openspec/changes/PROJ-003/.context/
 
-Recommendation: This story is well-specified (3 acceptance criteria,
-interface contracts defined, files identified). Skip to /launch.
+Recommendation: Well-specified (3 criteria, contracts defined, S complexity)
+  → Skip to /launch
 
   /launch    ← start building immediately
   /design    ← refine the spec first
 ```
 
----
+### Batch Handoff
 
-## Batch Dispatch
-
-For parallel execution (multiple workspace sessions), dispatch multiple stories at once:
-
-1. Select non-conflicting stories from the same slice
-2. Create OpenSpec changes for each
-3. Update all statuses in YAML
-4. Launch each in its own workspace via `/launch`
+For batch dispatch, create all workspaces via `/launch`:
 
 ```
-Batch dispatch: PROJ-003, PROJ-005 (Slice 1, no file conflicts)
+Batch dispatched: PROJ-003 (score 23.0), PROJ-004 (score 12.0)
 
   /launch PROJ-003  → tab: auth-middleware
-  /launch PROJ-005  → tab: user-registration
+  /launch PROJ-004  → tab: user-model
+```
+
+---
+
+## Append Changelog
+
+After dispatching, append to the `changelog` section:
+
+```yaml
+- date: <today>
+  type: dispatch
+  author: human
+  summary: "Dispatched PROJ-003 (auth middleware), PROJ-004 (user model) — Layer 0, Slice 1"
+  sections_changed: [stories]
+```
+
+Commit all changes:
+
+```bash
+git add product-context.yaml openspec/changes/*/
+git commit -m "feat: dispatch PROJ-003, PROJ-004 — Layer 0 Slice 1"
 ```
 
 ---
@@ -321,14 +395,17 @@ Batch dispatch: PROJ-003, PROJ-005 (Slice 1, no file conflicts)
 
 - **No stories ready:** All pending stories have unmet dependencies. Check if any `in_progress` stories are stuck (high attempt_count, old started_at). Suggest checking workspace progress or running `/reflect`.
 - **All stories completed in active layer:** Trigger layer gate test. If passed, advance to next layer and re-run dispatch.
-- **All stories completed in all layers:** Product is done. Suggest `/reflect` for final review and celebration.
+- **All stories completed in all layers:** Product is done. Suggest `/reflect` for final review.
 - **Layer gate failed:** Do not advance. Create fix stories based on gate failure, add to current layer, re-dispatch.
+- **WIP limit reached:** No available slots. Show what's in progress and suggest waiting or reviewing PRs to unblock slots.
 
 ---
 
 ## Guardrails
 
-- **Never dispatch a story with unmet dependencies** — even if the user insists. Dependencies exist because module boundaries require ordered integration.
-- **Never dispatch conflicting stories in parallel** — file-level conflicts cause merge chaos across workspace sessions.
-- **Always update the YAML before handing off** — the YAML is the source of truth. If it says `pending` but the agent is building, the system is inconsistent.
-- **Always create the OpenSpec change** — even for well-specified stories. The change directory is what `/build` reads.
+- **Never dispatch a story with unmet dependencies** — even if the user insists.
+- **Never dispatch conflicting stories in parallel** — file-level conflicts cause merge chaos.
+- **Always sync signals before computing** — stale YAML produces wrong dispatch decisions.
+- **Always commit YAML before creating workspaces** — the commit IS the dispatch lock.
+- **Always create the OpenSpec change** — even for well-specified stories. The `.context/` directory is what the agent reads.
+- **Respect WIP limits** — dispatching beyond integration capacity creates traffic jams, not speed.

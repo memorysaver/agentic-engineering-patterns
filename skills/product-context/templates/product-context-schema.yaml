@@ -16,6 +16,7 @@ schema: v1
 project: <project-name>
 version: "0.1.0"  # semantic: major (opportunity shift), minor (architecture/map change), patch (dispatch/build/wrap)
 updated_at: <ISO 8601>
+dispatch_epoch: 0  # incremented on every /dispatch run — consistency marker for agents
 
 # ─── CONCURRENCY PROTOCOL ────────────────────────────────────
 # Only the MAIN SESSION writes to this file. Workspace agents
@@ -190,9 +191,13 @@ stories:
       unit: ["What to unit test"]
       integration: ["Cross-module tests"]
       contract: ["Interface compliance tests"]
+    # ── Dispatch scoring (computed by /dispatch, not manually set) ──
+    dispatch_score: null   # (critical_path_urgency + business_value + unblock_potential) / complexity_cost
+    on_critical_path: false
     # ── Execution tracking (updated by /dispatch, /build, /wrap) ──
     assigned_to: null      # workspace session name
     openspec_change: null  # OpenSpec change name
+    dispatched_at_epoch: null  # which dispatch_epoch assigned this story
     attempt_count: 0
     max_retries: 4         # override per story (default from topology.routing.retry)
     cost_usd: null

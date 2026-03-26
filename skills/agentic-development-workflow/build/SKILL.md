@@ -199,6 +199,28 @@ Update the Phase 0 checkbox in the progress file when done.
 
 If this feature corresponds to a story in `product-context.yaml` (check if the OpenSpec change name matches a story's `openspec_change` field):
 
+### Build-Time Dependency Re-Verification (Phase 0)
+
+Before starting implementation, re-verify that all dependencies are still completed:
+
+```
+Read product-context.yaml
+Find this story by openspec_change match
+For each dependency in story.dependencies:
+  If dependency.status != completed:
+    ABORT build
+    Signal via .dev-workflow/signals/status.json:
+      { "phase": 0, "phase_name": "dependency_check_failed",
+        "blockers": ["<dep_id> is not completed"] }
+    Stop and wait for main session to investigate
+```
+
+Also check `dispatched_at_epoch` vs current `dispatch_epoch`. If the epoch advanced by 3+ since dispatch, re-read the YAML to check for architecture amendments.
+
+**Why:** A dependency could be rolled back after dispatch (e.g., PR reverted). This defense-in-depth catches issues that dispatch-time checks missed.
+
+### Status Updates
+
 - **Phase 0 start:** Confirm story status is `in_progress` in the YAML
 - **Phase 12 merge:** Update story in YAML:
   - `status: completed`
@@ -207,8 +229,8 @@ If this feature corresponds to a story in `product-context.yaml` (check if the O
   - `cost_usd: <accumulated cost>`
 - **On failure (escalation):** Update story:
   - `status: failed`
-  - Append to `failure_logs`
-- **After status update:** Check if any `pending` stories should transition to `ready` (all dependencies now completed)
+  - Append to `failure_logs` with structured record (error_class, approach_summary, unexplored_alternatives)
+- **After status update:** Check if any `pending` stories should transition to `ready` (all dependencies now completed). Commit all transitions atomically.
 
 Update the YAML and commit:
 ```bash
