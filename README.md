@@ -43,18 +43,26 @@ The workflow separates **thinking** from **doing**:
 │   │ build    │    │ break it │    │ learned  │  │              │
 │   │          │    │ down     │    │          │  │              │
 │   └──────────┘    └──────────┘    └──────────┘  │              │
-│        ▲                               │         │              │
-│        └───────────────────────────────┘         │              │
-│                  feedback loop                   │              │
-│                                                  │              │
-└──────────────────────────────────────────────────┼──────────────┘
-                                                   │
-                        structured artifacts flow down
-                        (context doc, system map, story specs)
-                                                   │
+│        ▲                │              │         │              │
+│        └────────────────┼──────────────┘         │              │
+│                         │  feedback loop         │              │
+│                         ▼                        │              │
+│                  ┌────────────┐                   │              │
+│                  │ /dispatch  │  picks stories    │              │
+│                  │            │  from the map,    │              │
+│                  │ what to    │  creates OpenSpec │              │
+│                  │ work on    │  changes          │              │
+│                  │ next       │                   │              │
+│                  └─────┬──────┘                   │              │
+│                        │                         │              │
+└────────────────────────┼─────────────────────────┼──────────────┘
+                         │                         │
+          story specs    │    status + cost flow up │
+          flow down      │                         │
+                         ▼                         │
 ┌──────────────────────────────────────────────────┼──────────────┐
 │                                                  │              │
-│   EXECUTION PLANE  (agents build it)             ▼              │
+│   EXECUTION PLANE  (agents build it)             │              │
 │                                                                 │
 │   Agents receive precise specs, work in isolation,              │
 │   produce PRs. They don't decide what to build.                 │
@@ -62,12 +70,12 @@ The workflow separates **thinking** from **doing**:
 │   ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌─────────┐  │
 │   │ /design  │───►│ /launch  │───►│  /build  │───►│  /wrap  │  │
 │   │          │    │          │    │          │    │         │  │
-│   │ spec the │    │ spawn    │    │ implement│    │ archive │  │
-│   │ feature  │    │ agent    │    │ + test   │    │ + clean │  │
-│   │          │    │          │    │ + PR     │    │         │  │
+│   │ refine   │    │ spawn    │    │ implement│    │ archive │  │
+│   │ the spec │    │ agent    │    │ + test   │    │ + update│  │
+│   │          │    │          │    │ + PR     │    │ status  │  │
 │   └──────────┘    └──────────┘    └──────────┘    └─────────┘  │
 │                                                                 │
-│   (repeat per feature — multiple features run in parallel)      │
+│   (repeat per story — multiple stories run in parallel)         │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -80,57 +88,65 @@ Each plugin implements one layer of the mental model.
 
 ### 1. Product Context — the persistent map
 
-Captures the "what and why" of the entire product. Lives in `product-context/` at the project root, committed to git, and evolves over time.
+Captures the "what and why" of the entire product in a single `product-context.yaml` — committed to git, versioned, and machine-parseable.
 
 ```
 /envision                        /map                            /reflect
     │                               │                               │
     ▼                               ▼                               ▼
-Opportunity Brief               System Map                      Feedback Log
-"should we build this?"         "what are the modules?"         "what did we learn?"
+Opportunity Brief               System Map                      Classify feedback:
+"should we build this?"         "modules + interfaces"          bug → fix story
+    │                               │                           refinement → next layer
+    ▼                               ▼                           discovery → update map
+Context Document                Story Graph                     shift → re-envision
+"what exactly to build,         "layered work items,                │
+ for whom, within               execution slices"                   │
+ what constraints"                  │                               │
+    │                               ▼                               │
+    │                           Agent Topology                      │
+    │                           "roles + contracts"                 │
     │                               │                               │
-    ▼                               ▼                               │
-Context Document                Story Graph                     Update context docs,
-"what exactly to build,         "layered work items,            story graph, or
- for whom, within               execution slices,               architecture based
- what constraints"              dependencies"                   on what category
-    │                               │                           of feedback
-    │                               ▼
-    │                           Agent Topology
-    │                           "who does what,
-    │                            handoff contracts,
-    │                            routing rules"
-    │                               │
-    └───────────────┬───────────────┘
+    └───────────────┬───────────────┘                               │
+                    │                                               │
+                    ▼                                               │
+               /dispatch                                            │
+               "pick next story,          ◄─────────────────────────┘
+                create OpenSpec change,     (new stories feed back
+                route to /design"            into the dispatch queue)
                     │
                     ▼
-            feeds into /design
-            (each story becomes a feature)
+              /design → /launch → /build → /wrap
 ```
 
-**Why this exists:** Without a product-level map, each feature is designed in isolation. Agents build incompatible pieces. Module boundaries are implicit. The product context makes the whole system visible before any code is written.
+All sections live in one `product-context.yaml` file — opportunity, product, architecture, stories (with state machine), topology, layer gates, cost tracking, and a semantic changelog.
+
+**Why this exists:** Without a product-level map, each feature is designed in isolation. Agents build incompatible pieces. Module boundaries are implicit. The YAML makes the whole system visible, machine-readable, and git-versioned before any code is written.
 
 ### 2. Feature Lifecycle — the execution cycle
 
-Takes one story from the map and turns it into a merged PR. Runs in a two-session model:
+Takes one story from the map and turns it into a merged PR. `/dispatch` picks the story; the two-session model executes it:
 
 ```
 MAIN SESSION (you + AI)                WORKSPACE SESSION (agent alone)
 ━━━━━━━━━━━━━━━━━━━━━━                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+/dispatch
+  pick story from YAML
+  create OpenSpec change
+         │
 /design
-  explore the problem
-  propose a solution          ────►   /build
-  review the design                     init tracking + jj change stack
-         │                              implement each task
-/launch                                 code review (+ evaluator loop)
-  create jj workspace                   browser testing
+  refine the spec
+  (or skip if well-specified) ────►   /build
+         │                              init tracking + jj change stack
+/launch                                 implement each task
+  create jj workspace                   code review (+ evaluator loop)
   bootstrap agent             ◄────     create PR, handle review
   optional: spawn evaluator             merge
          │                                     │
 /wrap    ◄─────────────────────────────────────┘
   archive OpenSpec change
-  clean up workspace
+  update story status in YAML
+  check layer gate
   suggest /reflect
 ```
 
