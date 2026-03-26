@@ -15,7 +15,7 @@ Spawn an autonomous workspace session to implement a feature. Creates a jj works
 ```
 
 **Session:** Main session, automated
-**Input:** OpenSpec change name (from `/design`)
+**Input:** OpenSpec change name (from `/design` or `/dispatch` for well-specified stories)
 **Output:** Running workspace session with bootstrapped agent + optional evaluator
 
 ---

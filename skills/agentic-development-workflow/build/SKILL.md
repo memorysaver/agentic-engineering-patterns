@@ -7,6 +7,8 @@ description: Autonomous feature implementation in a workspace session. Use when 
 
 Autonomous feature implementation inside an isolated jj workspace. Initialize the harness, implement each task via jj change stack, review, test, create a PR, handle feedback, and merge — all without user interaction.
 
+> **Phase numbering note:** Phases 1-3 (explore, propose, review) were completed on main via `/design`. This skill begins at Phase 0 (workspace init) and continues from Phase 4 (implementation).
+
 **Where this fits:**
 
 ```
@@ -178,7 +180,12 @@ Before any work begins, set up the tracking infrastructure, environment, and jj 
       "started_at": "<ISO 8601 timestamp>",
       "blockers": [],
       "completion_pct": 0,
-      "last_updated": "<ISO 8601 timestamp>"
+      "last_updated": "<ISO 8601 timestamp>",
+      "story_status": "in_progress",
+      "pr_url": null,
+      "cost_usd": null,
+      "completed_at": null,
+      "failure_log": null
     }
     ```
 
@@ -204,7 +211,7 @@ If this feature corresponds to a story in `product-context.yaml` (check if the O
 Before starting implementation, re-verify that all dependencies are still completed:
 
 ```
-Read product-context.yaml
+Read product-context.yaml (READ-ONLY — workspace agents never write to this file)
 Find this story by openspec_change match
 For each dependency in story.dependencies:
   If dependency.status != completed:
@@ -215,29 +222,22 @@ For each dependency in story.dependencies:
     Stop and wait for main session to investigate
 ```
 
-Also check `dispatched_at_epoch` vs current `dispatch_epoch`. If the epoch advanced by 3+ since dispatch, re-read the YAML to check for architecture amendments.
+Also check `dispatched_at_epoch` vs current `dispatch_epoch`. If the epoch advanced since dispatch, re-read the YAML to check for architecture amendments.
 
 **Why:** A dependency could be rolled back after dispatch (e.g., PR reverted). This defense-in-depth catches issues that dispatch-time checks missed.
 
-### Status Updates
+### Status Updates via Signals
 
-- **Phase 0 start:** Confirm story status is `in_progress` in the YAML
-- **Phase 12 merge:** Update story in YAML:
-  - `status: completed`
-  - `completed_at: <ISO 8601 now>`
-  - `pr_url: <PR URL>`
-  - `cost_usd: <accumulated cost>`
-- **On failure (escalation):** Update story:
-  - `status: failed`
-  - Append to `failure_logs` with structured record (error_class, approach_summary, unexplored_alternatives)
-- **After status update:** Check if any `pending` stories should transition to `ready` (all dependencies now completed). Commit all transitions atomically.
+> **CONCURRENCY PROTOCOL:** Only the main session writes to `product-context.yaml`. Workspace agents report status through `.dev-workflow/signals/status.json`. The main session (via `/wrap`, `/dispatch`) reads signals and updates the YAML.
 
-Update the YAML and commit:
-```bash
-# Update product-context.yaml with new story status
-git add product-context.yaml
-git commit -m "chore: update story <id> status to completed"
-```
+All story status updates flow through the signal file, NOT direct YAML writes:
+
+- **Phase 0 start:** Confirm story status is `in_progress` in the YAML (read-only check)
+- **Phase 10 (PR created):** Update `status.json` with `story_status: "in_review"` and `pr_url`
+- **Phase 12 merge:** Update `status.json` with `story_status: "completed"`, `completed_at`, `pr_url`, `cost_usd`
+- **On failure (escalation):** Update `status.json` with `story_status: "failed"` and `failure_log` (structured record: error_class, approach_summary, unexplored_alternatives)
+
+`/wrap` (running on main) reads these signal fields and writes the final status to `product-context.yaml`.
 
 If `product-context.yaml` doesn't exist, skip this tracking (standalone feature mode).
 
@@ -505,6 +505,7 @@ gh pr merge <number> --squash --delete-branch
 
 - **Never skip the tracking initialization** (Phase 0). Every workflow needs a progress file and jj change stack.
 - **Never run `/opsx:archive` from a workspace** — it writes to `openspec/specs/` and causes conflicts. Archive always runs on `main` via `/wrap`.
+- **Never write to `product-context.yaml` from a workspace** — only the main session writes to the YAML. Report all status through `.dev-workflow/signals/status.json`. This is the concurrency protocol.
 - **Always confirm with the user** before creating PRs, merging, or pushing to shared branches.
 - **The `.dev-workflow/` folder is ephemeral** — gitignored, local to each workspace.
 - **Resume support**: If returning to an in-progress workflow, run `.dev-workflow/init.sh` if it exists, then read the progress file.

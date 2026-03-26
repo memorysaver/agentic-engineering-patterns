@@ -56,6 +56,13 @@ Anthropic's harness design research uses file-based communication between agents
 | `blockers` | string[] | List of blockers preventing progress |
 | `completion_pct` | number | Estimated completion percentage (0–100) |
 | `last_updated` | string | ISO 8601 timestamp of last update |
+| `story_status` | string | Story state for `/dispatch` sync: `"in_progress"`, `"in_review"`, `"completed"`, `"failed"` |
+| `pr_url` | string | PR URL once created (Phase 10+) |
+| `cost_usd` | number | Accumulated cost estimate for this story |
+| `completed_at` | string | ISO 8601 timestamp when story completed (Phase 12) |
+| `failure_log` | object | Structured failure record (Phase 12 failure only) — `error_class`, `approach_summary`, `failure_point`, `root_cause`, `unexplored_alternatives` |
+
+> **Concurrency protocol:** These story-tracking fields replace direct writes to `product-context.yaml`. The main session (via `/wrap` and `/dispatch` signal sync) reads these fields and updates the YAML. Workspace agents must never write to `product-context.yaml`.
 
 **Update points:**
 - Phase 0: After initialization completes
@@ -187,6 +194,11 @@ If a signal file doesn't exist yet, skip it and continue — it will be checked 
 3. **Phase 4:** Update `task_current`, `task_index` as tasks progress
 4. **Phase 5:** Generator creates `eval-request.md` if evaluator is running
 5. **Phase 5:** Evaluator writes `eval-response-<N>.md`
-6. **Phase 11.5:** Create `ready-for-review.flag`
-7. **On blockers:** Update `status.json` blockers immediately
-8. **On feedback:** Check `feedback.md` at start of each phase
+6. **Phase 10:** Set `story_status: "in_review"` and `pr_url` in `status.json`
+7. **Phase 11.5:** Create `ready-for-review.flag`
+8. **Phase 12:** Set `story_status: "completed"`, `completed_at`, `cost_usd` in `status.json`
+9. **On failure:** Set `story_status: "failed"` and populate `failure_log` in `status.json`
+10. **On blockers:** Update `status.json` blockers immediately
+11. **On feedback:** Check `feedback.md` at start of each phase
+
+> **Main session reads these signals** via `/dispatch` (signal sync step) and `/wrap` (post-merge step) to update `product-context.yaml`. Workspace agents never write to the YAML directly.

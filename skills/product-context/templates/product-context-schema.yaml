@@ -8,8 +8,8 @@
 #   /envision → opportunity, product
 #   /map      → architecture, stories, topology, layer_gates, cost
 #   /dispatch → stories[].status, stories[].openspec_change (per story)
-#   /build    → stories[].status, stories[].cost_usd, stories[].pr_url
-#   /wrap     → stories[].completed_at
+#   /build    → .dev-workflow/signals/status.json (story_status, pr_url, cost_usd)
+#   /wrap     → stories[].status, stories[].completed_at, stories[].pr_url, stories[].cost_usd (read from signals)
 #   /reflect  → changelog, stories (new), architecture (amendments)
 
 schema: v1
@@ -267,12 +267,12 @@ topology:
   handoffs:
     - from: implementer
       to: evaluator
-      trigger: pr_submitted
-      payload: "output_contract from implementer role"  # schema-defined, not free text
+      trigger: implementation_complete  # Phase 4 done, Phase 5 starts — evaluator runs BEFORE PR creation
+      payload: "eval-request.md + code diff + contracts.md + feature-verification.json"
       validation:
-        - "PR exists and is not draft"
-        - "All acceptance criteria have corresponding tests"
-        - "Status report produced"
+        - "All tasks in jj change stack are implemented"
+        - "Dev server running and accessible"
+        - "eval-request.md created with round number and change summary"
       on_validation_failure: "reject handoff, notify source agent"
 
 # ─── LAYER GATES ─────────────────────────────────────────────

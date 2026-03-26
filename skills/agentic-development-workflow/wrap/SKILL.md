@@ -55,7 +55,43 @@ jj new
 jj git push --change @-
 ```
 
-### 5. Remove the workspace
+### 5. Sync story status from workspace signals
+
+If `product-context.yaml` exists and this feature was a dispatched story, read the workspace signals and update the YAML:
+
+```bash
+# Read completion data from workspace signals
+cat .claude/workspaces/<name>/.dev-workflow/signals/status.json
+```
+
+From the signal file, extract `story_status`, `pr_url`, `cost_usd`, `completed_at`, and `failure_log` (if present). Update the story in `product-context.yaml`:
+
+```yaml
+# Update the matching story:
+status: completed          # from signal story_status
+completed_at: <timestamp>  # from signal completed_at
+pr_url: <url>              # from signal pr_url
+cost_usd: <cost>           # from signal cost_usd
+```
+
+If `story_status` is `failed`, update with failure data instead:
+```yaml
+status: failed
+failure_logs:
+  - <structured failure_log from signal>
+```
+
+After updating the story, check if any `pending` stories should transition to `ready` (all dependencies now completed). Commit all transitions atomically:
+
+```bash
+jj describe -m "chore: update story <id> status to completed"
+jj new
+jj git push --change @-
+```
+
+> **Concurrency protocol:** This is the only place where story completion status enters `product-context.yaml`. Workspace agents write to signals; `/wrap` (running on main) reads signals and writes to YAML.
+
+### 6. Remove the workspace
 
 ```bash
 jj workspace forget <name>
@@ -103,8 +139,14 @@ This closes the feedback loop — bugs, refinements, and discoveries get routed 
 
 ## Next Step
 
-Start the next feature with:
+Pick the next story from the dispatch queue:
 
 ```
-/design
+/dispatch
+```
+
+Or classify feedback from the feature you just shipped:
+
+```
+/reflect
 ```

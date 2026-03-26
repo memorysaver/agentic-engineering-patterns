@@ -59,12 +59,17 @@ For each story with status: in_progress or in_review:
   signal_path = .claude/workspaces/<workspace>/.dev-workflow/signals/status.json
 
   Read signal file (if exists):
-    If signal.phase >= 12 (merged):
+    If signal.story_status == "completed":
       Update YAML: story.status → completed
-      Update: story.completed_at, story.pr_url, story.cost_usd
-    If signal shows failure/escalation:
+      Update: story.completed_at = signal.completed_at
+      Update: story.pr_url = signal.pr_url
+      Update: story.cost_usd = signal.cost_usd
+    If signal.story_status == "in_review":
+      Update YAML: story.status → in_review
+      Update: story.pr_url = signal.pr_url
+    If signal.story_status == "failed":
       Update YAML: story.status → failed
-      Append to story.failure_logs
+      Append signal.failure_log to story.failure_logs
 ```
 
 **Why:** Without signal sync, the YAML shows `in_progress` for stories already done. Downstream stories stay `pending` even though they're actually ready.

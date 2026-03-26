@@ -136,9 +136,35 @@ Read `.claude/settings.json` if it exists. Merge the following keys into it (or 
     "code-review@claude-plugins-official": true,
     "mgrep@Mixedbread-Grep": true,
     "skill-creator@claude-plugins-official": true
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // \"\"' | { read -r f; case \"$f\" in *product-context.yaml) if [[ \"$PWD\" == */.claude/workspaces/* ]]; then echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"CONCURRENCY PROTOCOL: Workspace sessions must not write to product-context.yaml. Write to .dev-workflow/signals/status.json instead. Only the main session (via /wrap, /dispatch, /reflect) updates the YAML.\"}}'; fi ;; esac; }",
+            "statusMessage": "Checking concurrency protocol..."
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command // \"\"' | { read -r cmd; if [[ \"$PWD\" == */.claude/workspaces/* ]] && echo \"$cmd\" | grep -qE '(git\\s+(add|commit)|jj\\s+(describe|new|commit)).*product-context\\.yaml'; then echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"CONCURRENCY PROTOCOL: Workspace sessions must not commit product-context.yaml. Write to .dev-workflow/signals/status.json instead.\"}}'; fi; }",
+            "statusMessage": "Checking concurrency protocol..."
+          }
+        ]
+      }
+    ]
   }
 }
 ```
+
+> **Concurrency protocol hooks:** The `hooks` section enforces the rule that only the main session writes to `product-context.yaml`. When a workspace agent attempts to edit, write, or commit `product-context.yaml`, the hook blocks the action and explains how to use signals instead. This is defense-in-depth — the skill instructions also direct agents to use signals, but the hook catches any model drift.
 
 ### Plugin reference
 
@@ -154,8 +180,9 @@ Read `.claude/settings.json` if it exists. Merge the following keys into it (or 
 ### Merging rules
 
 - If `.claude/settings.json` already has these keys, merge new entries — do not overwrite other keys
-- Preserve any existing settings (permissions, hooks, env, etc.)
-- If the file doesn't exist, create it with just these two keys
+- Preserve any existing settings (permissions, env, etc.)
+- If `.claude/settings.json` already has a `hooks.PreToolUse` array, append these hook entries — do not replace existing hooks
+- If the file doesn't exist, create it with all three keys (`extraKnownMarketplaces`, `enabledPlugins`, `hooks`)
 
 ---
 

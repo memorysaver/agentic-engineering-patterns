@@ -51,7 +51,7 @@ Every piece of feedback becomes one of:
 
 ### Bug
 Specified behavior that does not work.
-- **Action:** Create a new story in `product-context.yaml` with `priority: high` and `status: pending` in the current layer, route to `/design`
+- **Action:** Create a new story in `product-context.yaml` with `priority: high` and `status: pending` in the current layer, route to `/dispatch`
 - **Update:** Add the story directly to the `stories` section of the YAML
 
 ### Refinement
@@ -120,8 +120,9 @@ Based on the classified feedback, update `product-context.yaml` directly:
 
 5. **Commit updates:**
    ```bash
-   git add product-context.yaml
-   git commit -m "chore: reflect — classify feedback and update product context"
+   jj describe -m "chore: reflect — classify feedback and update product context"
+   jj new
+   jj git push --change @-
    ```
 
 ---
@@ -132,8 +133,8 @@ Based on the reflection, recommend the next step:
 
 | Feedback type | Next action |
 |---|---|
-| Only bugs | Fix stories → `/design` → `/build` |
-| Refinements | Next layer → `/design` → `/build` |
+| Only bugs | Fix stories added to YAML → `/dispatch` → `/design` → `/build` |
+| Refinements | Next layer stories added to YAML → `/dispatch` → `/design` → `/build` |
 | Discovery (product) | `/envision` to update assumptions |
 | Discovery (architecture) | `/map` to update system map |
 | Opportunity shift | `/envision` Phase 0 (re-validate) |
@@ -154,7 +155,7 @@ Based on the reflection, recommend the next step:
 
 Based on the reflection outcome, proceed to one of:
 
-- `/design` — execute new stories (bugs or refinements)
+- `/dispatch` — pick and execute new stories (bugs or refinements enter the dispatch queue)
 - `/envision` — update product assumptions
 - `/map` — update system architecture
 - Next layer execution cycle

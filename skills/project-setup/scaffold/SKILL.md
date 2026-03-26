@@ -347,7 +347,8 @@ git add -A && git commit -m "feat: initialize OpenSpec for spec-driven developme
 
 | Command | What it does |
 |---------|-------------|
-| `/design` | Start designing a feature (explore + propose + review) |
+| `/dispatch` | Pick the next story and start building (if product context exists) |
+| `/design` | Start designing a feature directly (standalone, no product context) |
 | `bun run dev` | Start the dev server |
 | `openspec list` | List active changes |
 
