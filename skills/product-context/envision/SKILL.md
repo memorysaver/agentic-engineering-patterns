@@ -115,8 +115,9 @@ Commit the artifact:
 
 ```bash
 # Write product-context.yaml (opportunity + product sections)
-git add product-context.yaml
-git commit -m "feat: add product context (opportunity brief + context document)"
+jj describe -m "feat: add product context (opportunity brief + context document)"
+jj new
+jj git push --change @-
 ```
 
 ---

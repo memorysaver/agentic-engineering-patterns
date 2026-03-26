@@ -390,8 +390,9 @@ After dispatching, append to the `changelog` section:
 Commit all changes:
 
 ```bash
-git add product-context.yaml openspec/changes/*/
-git commit -m "feat: dispatch PROJ-003, PROJ-004 — Layer 0 Slice 1"
+jj describe -m "feat: dispatch PROJ-003, PROJ-004 — Layer 0 Slice 1"
+jj new
+jj git push --change @-
 ```
 
 ---

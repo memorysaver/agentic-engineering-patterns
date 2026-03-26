@@ -139,8 +139,9 @@ Write the topology to the `topology` section of `product-context.yaml`. Also ini
 Commit the updated YAML:
 
 ```bash
-git add product-context.yaml
-git commit -m "feat: add system map, story graph, and agent topology"
+jj describe -m "feat: add system map, story graph, and agent topology"
+jj new
+jj git push --change @-
 ```
 
 **Sections written:**
