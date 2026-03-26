@@ -1,119 +1,249 @@
 # Agentic Engineering Patterns
 
-A Claude Code plugin for structured, spec-driven TypeScript development. Plan products with a persistent context layer, design features interactively on main, implement autonomously in isolated jj workspaces, and iterate with structured feedback loops.
+A Claude Code plugin for building software products with AI agents — from raw idea to shipped MVP.
 
-## The Workflow
+## Why This Exists
 
-Three layers, one mental model:
+Traditional software development bottlenecks on human coding time. Process design optimizes "how to make people write code faster."
 
-```
-Product context:   /envision → /map → ─────────────────────────── → /reflect → loop
-                                      ↓                         ↑
-Project setup:     /onboard → /scaffold                         │
-                                      ↓                         │
-Feature lifecycle: [ /design → /launch → /build → /wrap ] ──────┘
-                     (repeat per feature/story)
-```
+When agents can execute dozens of tasks in parallel, that bottleneck vanishes. A new one takes its place:
 
-### Product Context (persistent, evolves)
+> **Agent execution capacity is near-infinite. Specification quality is not.**
 
-| Command | What it does | When to use |
-|---------|-------------|-------------|
-| `/envision` | Opportunity brief + context document | Starting a product, revisiting direction |
-| `/map` | System map + story graph + agent topology | Decomposing a product into executable work |
-| `/reflect` | Classify feedback + update context | After shipping, after user testing |
+Vague specs don't slow down a human — they ask a colleague and adjust. Vague specs paralyze agents — they guess, diverge, and produce incompatible code across parallel sessions. The cost of ambiguity scales with parallelism.
 
-### Project Setup (one-time)
-
-| Command | What it does |
-|---------|-------------|
-| `/onboard` | Verify tools, install plugin, configure environment |
-| `/scaffold` | Scaffold monorepo (Better-T-Stack) + initialize OpenSpec |
-
-### Feature Lifecycle (per-feature)
-
-| Command | What it does | Session |
-|---------|-------------|---------|
-| `/design` | Explore + propose + review (reads product context) | Main, interactive |
-| `/launch` | Spawn workspace + optional evaluator agent | Main, automated |
-| `/build` | Init → implement → test → PR → merge | Workspace, autonomous |
-| `/wrap` | Archive + suggest `/reflect` | Main, post-merge |
-| `/jj-ref` | jj command reference (on-demand) | Any |
-
-## Two-Session Model
-
-Design happens interactively with you. Implementation runs autonomously in an isolated jj workspace — a separate Claude Code session that reads the spec and works through its change stack without interruption.
+This inverts the entire design logic:
 
 ```
-┌─────────────────────────────┐     ┌─────────────────────────────┐
-│   Main Session              │     │   Workspace Session         │
-│   (interactive)             │     │   (autonomous)              │
-│                             │     │                             │
-│  /envision (product vision) │     │  /build                     │
-│  /map (decomposition)       │     │    Phase 0: init + jj stack │
-│  /design (feature spec)     │────►│    Phase 4: implement       │
-│  /launch (spawn workspace)  │     │    Phase 5: code review     │
-│                             │◄────│    Phase 6-12: test + merge │
-│  /wrap (archive)            │     │                             │
-│  /reflect (feedback loop)   │     │                             │
-└─────────────────────────────┘     └─────────────────────────────┘
+Traditional:    plan roughly → adjust as you go → ship
+                (optimizes for human coding speed)
+
+Agentic:        invest heavily in spec precision → parallel execution → ship
+                (optimizes for agent execution quality)
 ```
 
-Multiple features develop in parallel — each gets its own jj workspace and cmux tab:
+Every skill in this plugin serves that logic. The time you spend in `/envision` and `/map` pays back exponentially when agents build in parallel without asking questions.
+
+## The Mental Model
+
+The workflow separates **thinking** from **doing**:
 
 ```
-main workspace (cmux)
-  │
-  ├► jj workspace add ─► tab: feat-auth
-  │    autonomous Claude Code session
-  │
-  ├► jj workspace add ─► tab: feat-notif
-  │    autonomous Claude Code session
-  │
-  │  (each tab runs /build independently)
-  │  (workspaces share the jj store — no extra disk)
-  │
-  ├► feat-auth merged ─► /wrap → /reflect
-  ├► feat-notif merged ─► /wrap → /reflect
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│   CONTROL PLANE  (human decides what to build)                  │
+│                                                                 │
+│   You + AI collaborate on high-leverage decisions:              │
+│   goals, decomposition, architecture, priorities, feedback      │
+│                                                                 │
+│   ┌──────────┐    ┌──────────┐    ┌──────────┐                 │
+│   │ /envision │───►│  /map    │───►│ /reflect │──┐              │
+│   │          │    │          │    │          │  │              │
+│   │ what to  │    │ how to   │    │ what we  │  │              │
+│   │ build    │    │ break it │    │ learned  │  │              │
+│   │          │    │ down     │    │          │  │              │
+│   └──────────┘    └──────────┘    └──────────┘  │              │
+│        ▲                               │         │              │
+│        └───────────────────────────────┘         │              │
+│                  feedback loop                   │              │
+│                                                  │              │
+└──────────────────────────────────────────────────┼──────────────┘
+                                                   │
+                        structured artifacts flow down
+                        (context doc, system map, story specs)
+                                                   │
+┌──────────────────────────────────────────────────┼──────────────┐
+│                                                  │              │
+│   EXECUTION PLANE  (agents build it)             ▼              │
+│                                                                 │
+│   Agents receive precise specs, work in isolation,              │
+│   produce PRs. They don't decide what to build.                 │
+│                                                                 │
+│   ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌─────────┐  │
+│   │ /design  │───►│ /launch  │───►│  /build  │───►│  /wrap  │  │
+│   │          │    │          │    │          │    │         │  │
+│   │ spec the │    │ spawn    │    │ implement│    │ archive │  │
+│   │ feature  │    │ agent    │    │ + test   │    │ + clean │  │
+│   │          │    │          │    │ + PR     │    │         │  │
+│   └──────────┘    └──────────┘    └──────────┘    └─────────┘  │
+│                                                                 │
+│   (repeat per feature — multiple features run in parallel)      │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-## Project Structure
+**Agents don't talk to each other.** They communicate through structured artifacts — context documents, story specs, interface contracts, signal files. The harness coordinates everything. This is a production system design, not a chatroom-style agent swarm.
 
-After scaffolding with `/scaffold`, you get:
+## The Three Plugins
+
+Each plugin implements one layer of the mental model.
+
+### 1. Product Context — the persistent map
+
+Captures the "what and why" of the entire product. Lives in `product-context/` at the project root, committed to git, and evolves over time.
 
 ```
-<project>/
-├── product-context/     # Product planning artifacts (after /envision + /map)
-├── openspec/            # Per-feature change artifacts (after /design)
-├── apps/
-│   ├── web/             # Frontend (TanStack/React/Next/etc.)
-│   └── server/          # Backend (Hono/Express/etc.)
-├── packages/
-│   ├── config/          # Shared TypeScript/lint config
-│   ├── ui/              # Shared UI components (shadcn/ui)
-│   ├── db/              # Database schema + migrations
-│   ├── auth/            # Auth configuration
-│   ├── api/             # API layer (tRPC/oRPC router)
-│   └── env/             # Shared environment variables
-├── bts.jsonc            # Better-T-Stack project config
-├── turbo.json           # Turborepo pipeline
-└── package.json         # Root workspace
+/envision                        /map                            /reflect
+    │                               │                               │
+    ▼                               ▼                               ▼
+Opportunity Brief               System Map                      Feedback Log
+"should we build this?"         "what are the modules?"         "what did we learn?"
+    │                               │                               │
+    ▼                               ▼                               │
+Context Document                Story Graph                     Update context docs,
+"what exactly to build,         "layered work items,            story graph, or
+ for whom, within               execution slices,               architecture based
+ what constraints"              dependencies"                   on what category
+    │                               │                           of feedback
+    │                               ▼
+    │                           Agent Topology
+    │                           "who does what,
+    │                            handoff contracts,
+    │                            routing rules"
+    │                               │
+    └───────────────┬───────────────┘
+                    │
+                    ▼
+            feeds into /design
+            (each story becomes a feature)
 ```
+
+**Why this exists:** Without a product-level map, each feature is designed in isolation. Agents build incompatible pieces. Module boundaries are implicit. The product context makes the whole system visible before any code is written.
+
+### 2. Feature Lifecycle — the execution cycle
+
+Takes one story from the map and turns it into a merged PR. Runs in a two-session model:
+
+```
+MAIN SESSION (you + AI)                WORKSPACE SESSION (agent alone)
+━━━━━━━━━━━━━━━━━━━━━━                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+/design
+  explore the problem
+  propose a solution          ────►   /build
+  review the design                     init tracking + jj change stack
+         │                              implement each task
+/launch                                 code review (+ evaluator loop)
+  create jj workspace                   browser testing
+  bootstrap agent             ◄────     create PR, handle review
+  optional: spawn evaluator             merge
+         │                                     │
+/wrap    ◄─────────────────────────────────────┘
+  archive OpenSpec change
+  clean up workspace
+  suggest /reflect
+```
+
+**Why two sessions:** Design needs human judgment — you decide direction, scope, tradeoffs. Implementation is mechanical — the agent follows the spec, implements, tests, publishes. Separating them lets the agent work autonomously for hours while you do other things.
+
+**Why jj (not git):** Changes are mutable until published. No staging area. Auto-rebase when editing earlier changes. `jj workspace add` gives each agent an isolated working copy with no extra disk space. The agent generates rough code, then cleans up with `split`/`squash` — a natural post-generation step.
+
+### 3. Project Setup — the one-time foundation
+
+Gets your machine and project ready. Run once.
+
+```
+/onboard                             /scaffold
+    │                                    │
+    ▼                                    ▼
+Verify tools                         Scaffold monorepo
+(jj, bun, git, gh,                   (Better-T-Stack: frontend,
+ claude, openspec,                    backend, database, auth,
+ tmux, cmux)                         API layer, addons)
+    │                                    │
+    ▼                                    ▼
+Install plugins                      Initialize OpenSpec
+(superpowers, agent-browser,         (explore/propose/apply/archive
+ frontend-design, mgrep)             commands for spec-driven dev)
+```
+
+## The Feedback Loop
+
+The workflow is a loop, not a line. After shipping features, `/reflect` classifies what you learned:
+
+```
+                    ┌──────────────────────────────────┐
+                    │                                  │
+     ┌──────────── │ ◄── opportunity shift             │
+     │              │      (back to /envision)          │
+     │              │                                  │
+     │  ┌───────── │ ◄── discovery                     │
+     │  │           │      (update /envision or /map)   │
+     │  │           │                                  │
+     │  │  ┌────── │ ◄── refinement                    │
+     │  │  │        │      (new story in next layer)    │
+     │  │  │        │                                  │
+     │  │  │  ┌─── │ ◄── bug                           │
+     │  │  │  │     │      (fix story, back to /design) │
+     │  │  │  │     │                                  │
+     │  │  │  │     └──────────────────────────────────┘
+     │  │  │  │              /reflect
+     ▼  ▼  ▼  ▼
+  Each feedback type routes to the right phase.
+  The product context evolves. The cycle continues.
+```
+
+## Design Principles
+
+These aren't rules we invented — they're patterns extracted from Anthropic's engineering research on long-running agent harnesses:
+
+**Spec precision over implementation speed.** Time invested in unambiguous specs pays back exponentially across parallel agents. A 10-minute conversation in `/envision` saves hours of agent confusion.
+
+**Walking skeleton first.** Build the thinnest end-to-end path (Layer 0) before going deep into any module. Validate the architecture at minimum cost. Going deep before proving the skeleton works is the most expensive mistake.
+
+**Every harness component earns its place.** Sprint contracts, verification JSON, signal files, evaluator agents — each exists because of a specific failure mode observed in practice. As models improve, stress-test each component and remove what's no longer needed.
+
+**Generator-evaluator separation.** Agents praise their own work even when it's mediocre. A separate evaluator agent, calibrated toward skepticism, catches problems the builder missed. This is the single most durable pattern from Anthropic's research.
 
 ## Getting Started
 
-New to this plugin? Run `/onboard` to install prerequisites, verify your environment, and configure recommended plugins.
+**New to this plugin?**
+```
+/onboard
+```
+Installs prerequisites, verifies tools, configures recommended plugins.
 
-Have a product idea? Run `/envision` to validate the opportunity and frame the product, then `/map` to decompose it into executable work.
+**Have a product idea?**
+```
+/envision  →  /map  →  /scaffold
+```
+Validate the opportunity, decompose into stories, scaffold the project.
 
-Already set up? Run `/scaffold` to create a project, then `/design` to start building.
+**Ready to build a feature?**
+```
+/design  →  /launch  →  /build  →  /wrap
+```
+Spec it, spawn the agent, let it build, archive when merged.
 
-## Related Projects
+**Shipped something? Close the loop:**
+```
+/reflect
+```
+Classify feedback, update the product context, plan the next iteration.
 
-- [looplia-skills](https://github.com/memorysaver/looplia-skills) — Search and context management skills
+## All Skills
+
+| Skill | Plugin | Purpose |
+|-------|--------|---------|
+| `/envision` | product-context | Opportunity brief + context document |
+| `/map` | product-context | System map + story graph + agent topology |
+| `/reflect` | product-context | Classify feedback + update context |
+| `/onboard` | project-setup | Verify tools + install plugins |
+| `/scaffold` | project-setup | Scaffold monorepo + initialize OpenSpec |
+| `/design` | agentic-development-workflow | Explore + propose + review a feature |
+| `/launch` | agentic-development-workflow | Spawn workspace + optional evaluator |
+| `/build` | agentic-development-workflow | Implement → test → PR → merge |
+| `/wrap` | agentic-development-workflow | Archive + cleanup + suggest reflect |
+| `/jj-ref` | agentic-development-workflow | jj command reference (on-demand) |
+
+## Inspired By
+
+- [Harness Design for Long-Running Application Development](https://www.anthropic.com/engineering/harness-design-long-running-apps) — Anthropic Engineering
+- [Effective Harnesses for Long-Running Agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) — Anthropic Engineering
+- [Effective Context Engineering for AI Agents](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) — Anthropic Engineering
 - [Better-T-Stack](https://www.better-t-stack.dev) — Full-stack TypeScript scaffold engine
 - [OpenSpec](https://openspec.dev) — Spec-driven development CLI
-- [Agent Skills Spec](https://agentskills.io/home) — Open standard for AI agent skills
+- User Story Mapping — Jeff Patton (walking skeleton, layered delivery)
 
 ## License
 
