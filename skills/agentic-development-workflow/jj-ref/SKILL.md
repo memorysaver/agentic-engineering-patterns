@@ -1,13 +1,13 @@
 ---
-name: jj-essentials
+name: jj-ref
 description: Reference guide for jj (Jujutsu), the change-oriented VCS used for local development alongside Git. Use when the user asks about jj, jujutsu, "change vs commit", "how does jj work", or needs help with jj commands. Maps jj concepts to Git equivalents and explains the skeleton-first pattern for agent workflows.
 ---
 
-# jj Essentials
+# jj Reference
 
 jj (Jujutsu) handles local change management. Git handles remote collaboration. Together they give you the best of both: mutable, change-oriented local work with Git-compatible publishing to GitHub.
 
-This skill is a reference — read it to understand concepts and commands. The agentic-development-workflow skill uses jj throughout its phases.
+This skill is a reference — read it to understand concepts and commands. The `/design`, `/launch`, `/build`, and `/wrap` skills use jj throughout.
 
 ---
 
@@ -68,7 +68,7 @@ Agents naturally produce mixed diffs. With git, you need perfect commits or pain
 
 ### 3. Auto-rebase = edit any change in the stack
 
-`jj edit <change>` lets you modify any historical change. All dependent changes automatically rebase. No manual rebase conflicts for the common case. Git can't do this without interactive rebase.
+`jj edit <change>` lets you modify any historical change. All dependent changes automatically rebase. No manual rebase conflicts for the common case.
 
 ### 4. split/squash = first-class post-hoc cleanup
 
@@ -77,19 +77,17 @@ jj split    # One change has mixed concerns → split into multiple
 jj squash   # A fix belongs in the parent change → fold it in
 ```
 
-These are everyday operations, not emergency tools.
-
 ### 5. undo/op log = safe recovery
 
-Agents make mistakes. `jj undo` reverses the last operation — any operation. `jj op log` shows the full history. `jj op restore <id>` goes back to any point. No git reflog archaeology.
+`jj undo` reverses the last operation — any operation. `jj op log` shows the full history. `jj op restore <id>` goes back to any point.
 
 ### 6. Workspaces = parallel agents with shared store
 
-`jj workspace add` creates a new working copy that shares the underlying store. No extra disk space. No branch naming conflicts. Multiple agents work in parallel, each in their own workspace.
+`jj workspace add` creates a new working copy that shares the underlying store. No extra disk space. No branch naming conflicts.
 
 ### 7. Immutable protection = can't edit published changes
 
-`jj edit` on a change that's already been pushed to a remote will warn and prevent accidental modification. Safety built into the model.
+`jj edit` on a change that's already been pushed to a remote will warn and prevent accidental modification.
 
 ---
 
@@ -119,7 +117,6 @@ jj describe -m "docs(auth): update API examples"
 jj edit <change-id-for-task-1>
 # ... implement task 1 ...
 jj diff                          # verify the change
-# ... run targeted tests ...
 
 jj edit <change-id-for-task-2>
 # ... implement task 2 ...
@@ -178,27 +175,21 @@ jj bookmark create feat-<name> -r @-
 jj git push --bookmark feat-<name>
 ```
 
-After pushing, use `gh pr create` as normal — jj's bookmark becomes a Git branch.
-
 ### Updating after push
 
 ```bash
-# After making fixes, re-push (bookmark auto-tracks)
 jj git push --bookmark feat-<name>
 ```
 
 ### Quick publish (without named bookmark)
 
 ```bash
-# Push the current change's parent — jj auto-creates a bookmark
 jj git push --change @-
 ```
 
 ---
 
 ## Recovery
-
-Recovery is a first-class operation, not an emergency procedure.
 
 ```bash
 # Undo the last operation (any operation)
@@ -211,12 +202,6 @@ jj op log
 jj op restore <operation-id>
 ```
 
-Use when:
-- A rebase went wrong
-- The wrong change was edited
-- A split/squash damaged the stack
-- The agent over-applied a refactor
-
 ---
 
 ## Colocated Mode
@@ -226,6 +211,5 @@ jj runs alongside git in **colocated mode** (`jj git init --colocate`). Both `.j
 - **jj** manages local changes, history, workspaces
 - **git** handles remote push/fetch, GitHub PRs, CI/CD
 - All git tooling (GitHub Actions, `gh` CLI, IDE git panels) sees normal git state
-- `jj git fetch` and `jj git push` bridge the two
 
 Rule: **use `jj` commands for all local work. Use `jj git` subcommands for remote operations. Never use raw `git commit` or `git add` in a colocated repo.**

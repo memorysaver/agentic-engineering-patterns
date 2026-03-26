@@ -1,7 +1,20 @@
 # Agentic Development Workflow
 
 A structured harness for autonomous feature development — from spec to merge.
-See [SKILL.md](SKILL.md) for the full step-by-step process.
+
+Four skills, one lifecycle:
+
+```
+/design → /launch → /build → /wrap
+```
+
+| Skill | What it does | Session |
+|-------|-------------|---------|
+| [/design](design/SKILL.md) | Explore + propose + review | Main, interactive |
+| [/launch](launch/SKILL.md) | Spawn workspace + evaluator | Main, automated |
+| [/build](build/SKILL.md) | Init → implement → test → PR → merge | Workspace, autonomous |
+| [/wrap](wrap/SKILL.md) | Archive + cleanup | Main, post-merge |
+| [/jj-ref](jj-ref/SKILL.md) | jj command reference | On-demand |
 
 ## Inspired By
 
@@ -85,80 +98,8 @@ Sonnet 4.5 era:          Opus 4.6 era:           Future:
 └──────────────┘         └──────────────┘        └──────────────┘
 
 This workflow supports:
-  Full mode ── All 13 phases + evaluator   (complex features)
-  Light mode ── Skip 3,6,7,8, no evaluator (simple changes)
-```
-
----
-
-## Five-Part Workflow
-
-```
-┌──────────────────────────────────────────────────┐
-│    Part A — Scaffold (optional)                  │
-│                                                  │
-│    /monorepo-setup ► /openspec-setup ► verify    │
-└──────┬───────────────────────────────────────────┘
-       │
-       ▼
-┌──────────────────────────────────────────────────┐
-│    Part B — Design (on main, interactive)        │
-│                                                  │
-│    Phase 1: /opsx:explore (clarify + research)   │
-│        ▼                                         │
-│    Phase 2: /opsx:propose (generate artifacts)   │
-│        ▼                                         │
-│    Phase 3: Design review (security, perf, edge) │
-│        ▼                                         │
-│    Commit artifacts to main                      │
-└──────┬───────────────────────────────────────────┘
-       │
-       ▼
-┌──────────────────────────────────────────────────┐
-│    Part C — Launch Workspace (on main)           │
-│                                                  │
-│    jj st (verify clean)                          │
-│        ▼                                         │
-│    jj workspace add ► tmux ► cmux tab            │
-│        ▼                                         │
-│    Send bootstrap prompt to spawned agent        │
-│        ▼                                         │
-│    Optional: /evaluator-setup (full mode)        │
-│        ▼                                         │
-│    Monitor via signals/status.json               │
-└──────┬───────────────────────────────────────────┘
-       │
-       ▼
-┌──────────────────────────────────────────────────┐
-│    Part D — Implementation (in workspace)        │
-│                                                  │
-│    Phase 0: Init harness ─────────────────────┐  │
-│      contracts + verify.json + init.sh        │  │
-│      + signals + jj change stack              │  │
-│        ▼                                      │  │
-│    Phase 4: jj edit each change + /opsx:apply │  │
-│        ▼                                      │  │
-│    Phase 5: Review ◄──► Evaluator loop        │  │
-│        ▼               (if full mode)         │  │
-│    Phase 6-8: Dogfood + E2E + Results         │  │
-│        ▼                                      │  │
-│    Phase 9: Cleanup + push                    │  │
-│        ▼                                      │  │
-│    Phase 10: Create PR                        │  │
-│        ▼                                      │  │
-│    Phase 11: PR review loop                   │  │
-│        ▼                                      │  │
-│    Phase 11.5: Human eval + iteration         │  │
-│        ▼                                      │  │
-│    Phase 12: Merge                            │  │
-└──────┬───────────────────────────────────────────┘
-       │  PR merged
-       ▼
-┌──────────────────────────────────────────────────┐
-│    Part E — Post-Merge (on main)                 │
-│                                                  │
-│    Phase 13: fetch ► archive ► cleanup           │
-└──────────────────────────────────────────────────┘
+  Full mode ── All phases + evaluator    (complex features)
+  Light mode ── Skip review phases, no evaluator (simple changes)
 ```
 
 ---
@@ -169,19 +110,18 @@ This workflow supports:
 MAIN SESSION (interactive)              WORKSPACE SESSION (autonomous)
 ━━━━━━━━━━━━━━━━━━━━━━━━━              ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Part A: scaffold ──────────┐
-Part B: design ────────────┤
-                           │
-Part C: launch ────────────┼──cmux──►   Phase 0: init harness
-         │                 │                 ▼
-         │  poll status.json◄────────   Phase 4: implement
-         │  send feedback.md────────►        ▼
-         │                 │            Phase 5: evaluator loop
-         │  ready-review ◄──────────   Phase 11.5: human eval
-         │                 │                 ▼
-         │                 │            Phase 12: merge
-         │                 │
-Part E: archive ◄──────────┘
+/design ──────────────────┐
+                          │
+/launch ──────────────────┼──cmux──►   /build
+         │                │              Phase 0: init harness
+         │  poll status.json◄────────        ▼
+         │  send feedback.md────────►   Phase 4: implement
+         │                │                  ▼
+         │  ready-review ◄──────────   Phase 5-8: review + test
+         │                │                  ▼
+         │                │            Phase 9-12: PR + merge
+         │                │
+/wrap ◄───────────────────┘
 ```
 
 ---
@@ -211,9 +151,6 @@ GENERATOR                                           EVALUATOR
        │
        ▼
   Write eval-request.md (round 2) ───────────────►
-                                                    │
-                                                    ├─ re-evaluate changes
-                                                    │
                               ◄──────────────────── Write eval-response-2.md
        │
        ▼
@@ -222,30 +159,13 @@ GENERATOR                                           EVALUATOR
   Max 5 rounds, then escalate to human
 ```
 
-### Evaluator Scoring Dimensions
-
-```
-  Completeness ████████░░  4/5  ── All tasks implemented?
-  Correctness  ██████████  5/5  ── Works as specified?
-  UX Quality   ██████░░░░  3/5  ── Intuitive + accessible?
-  Security     ████████░░  4/5  ── Validated + auth'd?
-  Code Quality ████████░░  4/5  ── Clean + conventional?
-
-  Hard fail: any < 3, completeness < 4
-
-  Customize dimensions per project type:
-    UI-heavy  → weight UX, add Originality
-    API-only  → drop UX, add API Design
-    Security  → weight Security, add Threat Model
-```
-
 ---
 
 ## .dev-workflow/ Artifact Layout
 
 ```
 .dev-workflow/                          ← gitignored, per-workspace
-├── progress-<change-id>.md             ← checkbox tracking (all 13 phases)
+├── progress-<change-id>.md             ← checkbox tracking
 ├── contracts.md                        ← per-task success criteria + verification steps
 ├── feature-verification.json           ← JSON verification list (evaluator updates)
 ├── init.sh                             ← session recovery script (chmod +x)
@@ -260,29 +180,4 @@ GENERATOR                                           EVALUATOR
     ├── ready-for-review.flag           ← generator creates when ready for human eval
     ├── eval-request.md                 ← generator writes, evaluator reads
     └── eval-response-<N>.md            ← evaluator writes, generator reads
-```
-
----
-
-## Parallel Workspace Sessions
-
-```
-main workspace (cmux)
-  │
-  ├──► jj workspace add ──► tab: feat-auth ──► tab: evaluator-auth
-  │     generator agent          evaluator agent (full mode)
-  │     status.json ──────────────────► main can poll
-  │
-  ├──► jj workspace add ──► tab: feat-notif
-  │     generator agent (light mode, no evaluator)
-  │     status.json ──────────────────► main can poll
-  │
-  │   (each workspace runs Part D independently)
-  │   (all share the jj store — no extra disk)
-  │   (monitor all via signals/status.json per workspace)
-  │
-  ├──► feat-auth merged ──► archive on main
-  ├──► feat-notif merged ──► archive on main
-  │
-  openspec/specs/ updated only on main — no conflicts
 ```

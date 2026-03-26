@@ -218,7 +218,7 @@ These are common evaluator failure modes — watch for them:
 
 ## Dimension Presets
 
-Use these as starting points when brainstorming project-specific criteria (Step 0 of `/evaluator-setup`). Select the preset that matches the feature type, then adjust with the user.
+Use these as starting points when brainstorming project-specific criteria (evaluator setup section of `/launch`). Select the preset that matches the feature type, then adjust with the user.
 
 ### UI-heavy (forms, dashboards, layouts)
 
@@ -275,7 +275,7 @@ Hard fail:   Default thresholds (any < 3, Completeness < 4)
 
 ### How to use presets
 
-1. During `/evaluator-setup` Step 0, identify the feature type
+1. During `/launch` evaluator setup (Step 0), identify the feature type
 2. Select the matching preset
 3. Present to the user for customization
 4. Write the final criteria to `.dev-workflow/evaluator-criteria.md`

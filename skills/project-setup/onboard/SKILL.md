@@ -1,11 +1,11 @@
 ---
-name: development-onboarding
+name: onboard
 description: Full environment onboarding for agentic engineering. Use when setting up a new machine, joining the project, or when the user says "get started", "onboard", "setup environment", "install prerequisites", or wants to prepare their dev environment for this plugin.
 ---
 
-# Development Onboarding
+# Onboard
 
-Set up your environment for agentic TypeScript development. This skill takes you from a bare machine to fully configured — install the plugin, verify tools, and configure recommended plugins. Run it once on first setup, or re-run anytime to verify your environment.
+Set up your environment for agentic TypeScript development. Install the plugin, verify tools, and configure recommended plugins. Run once on first setup, or re-run anytime to verify your environment.
 
 ---
 
@@ -18,16 +18,16 @@ Add the marketplace and install both plugin groups:
 /plugin marketplace add memorysaver/agentic-engineering-patterns
 
 # Install plugin groups
-/plugin install project-scaffold@agentic-engineering-patterns
-/plugin install development-workflow@agentic-engineering-patterns
+/plugin install project-setup@agentic-engineering-patterns
+/plugin install agentic-development-workflow@agentic-engineering-patterns
 ```
 
 ### Plugin Groups
 
 | Group | Skills | Purpose |
 |-------|--------|---------|
-| **project-scaffold** | monorepo-setup, openspec-setup, development-onboarding | Scaffold projects, configure spec-driven development, environment onboarding |
-| **development-workflow** | agentic-development-workflow, jj-essentials | Full-lifecycle feature development with jj workspaces and change-oriented VCS |
+| **project-setup** | onboard, scaffold | Scaffold projects, configure spec-driven development, environment onboarding |
+| **agentic-development-workflow** | design, launch, build, wrap, jj-ref | Full-lifecycle feature development with jj workspaces |
 
 > **Note:** This installs the agentic-engineering-patterns plugin itself. Recommended third-party plugins (superpowers, agent-browser, etc.) are configured at the project level in Phase 4 via `.claude/settings.json`.
 
@@ -99,13 +99,13 @@ done
 | `agent-browser` | Browser automation testing | Claude Code plugin: `agent-browser@agent-browser` |
 | `portless` | Port management (.localhost) | `bun add -g portless` |
 
-These are optional — the workflow works without them but is enhanced by them. `agent-browser` enables dogfood testing (Phase 6 of the development workflow). `portless` provides clean `.localhost` URLs for dev servers.
+These are optional — the workflow works without them but is enhanced by them.
 
 ---
 
 ## Phase 4 — Configure Project Plugins
 
-Configure recommended plugins at the project level so anyone who clones this repo gets prompted to install them automatically.
+Configure recommended plugins at the project level.
 
 ### What to write
 
@@ -149,24 +149,15 @@ Read `.claude/settings.json` if it exists. Merge the following keys into it (or 
 | `mgrep` | `Mixedbread-Grep` | Semantic search (local + web) |
 | `skill-creator` | `claude-plugins-official` | Create and test new skills |
 
-### How it works
-
-- **`extraKnownMarketplaces`** declares where to find each plugin marketplace (GitHub repos)
-- **`enabledPlugins`** declares which plugins should be active for this project
-- When committed to git, team members are prompted to install these marketplaces and plugins on first use
-- Users can decline specific plugins — their choice is stored in their user settings
-
 ### Merging rules
 
-- If `.claude/settings.json` already has `extraKnownMarketplaces` or `enabledPlugins`, merge new entries into the existing objects — do not overwrite other keys
+- If `.claude/settings.json` already has these keys, merge new entries — do not overwrite other keys
 - Preserve any existing settings (permissions, hooks, env, etc.)
 - If the file doesn't exist, create it with just these two keys
 
 ---
 
 ## Phase 5 — Verify Environment
-
-Run a final comprehensive check:
 
 ```bash
 echo "=== Core Tools ==="
@@ -193,11 +184,10 @@ If all core tools show OK, the environment is ready.
 
 | Command | What it does |
 |---------|-------------|
-| `/monorepo-setup` | Scaffold a full-stack TypeScript monorepo via Better-T-Stack |
-| `/openspec-setup` | Initialize spec-driven development with explore/propose/apply/archive commands |
-| `/agentic-development-workflow` | Start the full development lifecycle — design, implement, test, PR |
+| `/scaffold` | Scaffold a full-stack TypeScript monorepo + initialize OpenSpec |
+| `/design` | Start designing a feature (explore + propose + review) |
 
-Typical flow: `/monorepo-setup` → `/openspec-setup` → `/agentic-development-workflow`
+Typical flow: `/scaffold` → `/design` → `/launch` → `/build` → `/wrap`
 
 ---
 
@@ -206,4 +196,3 @@ Typical flow: `/monorepo-setup` → `/openspec-setup` → `/agentic-development-
 - **Run from the project root** — tools and plugins are verified relative to the current environment
 - **Re-run anytime** — safe to re-run to verify environment is still complete
 - **Checks only** — this skill verifies and installs tools, it does not scaffold projects or modify code
-- **Complements runtime checks** — the `agentic-development-workflow` skill re-verifies tools at workflow start; this skill ensures the baseline is in place upfront

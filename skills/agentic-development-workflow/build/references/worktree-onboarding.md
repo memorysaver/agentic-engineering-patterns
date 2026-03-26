@@ -35,7 +35,7 @@ ls openspec/changes/<change-name>/specs/ 2>/dev/null
 mkdir -p .dev-workflow .dev-workflow/signals
 
 # Copy progress template
-cp skills/development-workflow/agentic-development-workflow/references/progress-template.md \
+cp skills/agentic-development-workflow/build/references/progress-template.md \
    .dev-workflow/progress-$(jj log --no-graph -r @ -T 'change_id.short(8)').md
 
 # Ensure .dev-workflow is gitignored
@@ -72,7 +72,7 @@ After creating the jj change stack (see SKILL.md Phase 0 step 6), generate these
 
 Now follow the workflow starting from **Phase 4: OpenSpec Apply**.
 
-Read the full workflow at the agentic-development-workflow SKILL.md for phase details.
+Read the full workflow at the `/build` skill (skills/agentic-development-workflow/build/SKILL.md) for phase details.
 
 ---
 

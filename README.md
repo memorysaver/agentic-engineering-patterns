@@ -2,91 +2,24 @@
 
 A Claude Code plugin for structured, spec-driven TypeScript development. Design interactively on main, implement autonomously in isolated jj workspaces, and merge with confidence. Every feature follows the same lifecycle — from spec to PR — with progress tracking and parallel workspace sessions.
 
-## What You Get
-
-**development-onboarding** — Takes you from zero to ready. Installs the plugin, verifies required tools, and configures recommended Claude Code plugins. Run once on first setup.
-
-**monorepo-setup** — Scaffolds a modern full-stack TypeScript monorepo via Better-T-Stack. Walks you through stack selection (frontend, backend, database, auth, API layer, addons), then runs the CLI non-interactively.
-
-**openspec-setup** — Initializes spec-driven development with OpenSpec. Creates explore, propose, apply, and archive commands so every feature starts with a spec, not code.
-
-**jj-essentials** — Reference guide for jj (Jujutsu), the change-oriented VCS used for local development. Maps jj concepts to git equivalents and explains the skeleton-first pattern for agent workflows.
-
-**agentic-development-workflow** — Orchestrates the full development lifecycle across five parts: scaffold, design, launch workspace, implement via jj change stacks, and post-merge cleanup. Handles 13 phases with checkpoints and resume support.
-
 ## The Workflow
 
-Five parts, from scaffold through post-merge cleanup:
+Four verbs, one mental model:
 
 ```
-┌──────────────────────────────────────────────┐
-│    Part A — Scaffold (optional)              │
-│                                              │
-│  /monorepo-setup (Better-T-Stack)            │
-│      ▼                                       │
-│  /openspec-setup (spec-driven dev)           │
-│      ▼                                       │
-│  Verify build + OpenSpec ready               │
-└──────┬───────────────────────────────────────┘
-       │
-       ▼
-┌──────────────────────────────────────────────┐
-│    Part B — Design (on main, interactive)    │
-│                                              │
-│  Phase 1: /opsx:explore                      │
-│      ▼                                       │
-│  Phase 2: /opsx:propose                      │
-│      ▼                                       │
-│  Phase 3: Design review                      │
-│      ▼                                       │
-│  Commit artifacts to main                    │
-└──────┬───────────────────────────────────────┘
-       │
-       ▼
-┌──────────────────────────────────────────────┐
-│    Part C — Launch Workspace (on main)        │
-│                                              │
-│  Verify main is clean                        │
-│      ▼                                       │
-│  jj workspace add + tmux + cmux tab          │
-│      ▼                                       │
-│  Send initial prompt to spawned agent        │
-│  (references worktree-onboarding.md)         │
-└──────┬───────────────────────────────────────┘
-       │  cmux send key
-       ▼
-┌──────────────────────────────────────────────┐
-│    Part D — Implementation (in workspace)     │
-│                                              │
-│  Phase 0: Init tracking + jj change stack    │
-│      ▼                                       │
-│  Phase 4: jj edit each change + /opsx:apply  │
-│      ▼                                       │
-│  Phase 5: Code review & verification         │
-│      ▼                                       │
-│  Phase 6: Dogfood testing (agent-browser)    │
-│      ▼                                       │
-│  Phase 7: E2E test scripts                   │
-│      ▼                                       │
-│  Phase 8: Review results                     │
-│      ▼                                       │
-│  Phase 9–12: Publish ► PR ► Review            │
-│      ▼                                       │
-│  Phase 11.5: Human eval & iteration loop     │
-│      ▼                                       │
-│  Phase 12: Merge                             │
-└──────┬───────────────────────────────────────┘
-       │  PR merged
-       ▼
-┌──────────────────────────────────────────────┐
-│    Part E — Post-Merge (on main)             │
-│                                              │
-│  Phase 13: jj git fetch                      │
-│      ├► /opsx:archive (spec sync)            │
-│      ├► jj describe + push archive           │
-│      └► jj workspace forget                  │
-└──────────────────────────────────────────────┘
+/onboard → /scaffold → [ /design → /launch → /build → /wrap ]
+   once       once           (repeat per feature)
 ```
+
+| Command | What it does | Session |
+|---------|-------------|---------|
+| `/onboard` | Verify tools, install plugin, configure environment | Main, once |
+| `/scaffold` | Scaffold monorepo (Better-T-Stack) + initialize OpenSpec | Main, once per project |
+| `/design` | Explore + propose + review a feature with user | Main, interactive |
+| `/launch` | Spawn workspace + optional evaluator agent | Main, automated |
+| `/build` | Init → implement → test → PR → merge | Workspace, autonomous |
+| `/wrap` | Archive OpenSpec change + cleanup workspace | Main, post-merge |
+| `/jj-ref` | jj command reference (on-demand) | Any |
 
 ## Two-Session Model
 
@@ -97,13 +30,13 @@ Design happens interactively with you. Implementation runs autonomously in an is
 │   Main Session              │     │   Workspace Session         │
 │   (interactive)             │     │   (autonomous)              │
 │                             │     │                             │
-│  Part A: scaffold           │     │  Phase 0: init + jj stack   │
-│  Part B: design             │────►│  Phase 4: jj edit + apply   │
-│  Part C: launch workspace   │     │  Phase 5: code review       │
-│                             │     │  Phase 6: dogfood test      │
-│                             │     │  Phase 7: E2E tests         │
-│                             │◄────│  Phase 8-12: PR + merge     │
-│  Part E: archive            │     │                             │
+│  /design (explore, propose, │     │  /build                     │
+│   review, commit to main)   │────►│    Phase 0: init + jj stack │
+│                             │     │    Phase 4: implement       │
+│  /launch (spawn workspace,  │     │    Phase 5: code review     │
+│   optional evaluator)       │     │    Phase 6-8: test          │
+│                             │◄────│    Phase 9-12: PR + merge   │
+│  /wrap (archive + cleanup)  │     │                             │
 └─────────────────────────────┘     └─────────────────────────────┘
 ```
 
@@ -118,11 +51,11 @@ main workspace (cmux)
   ├► jj workspace add ─► tab: feat-notif
   │    autonomous Claude Code session
   │
-  │  (each tab runs Part D independently)
+  │  (each tab runs /build independently)
   │  (workspaces share the jj store — no extra disk)
   │
-  ├► feat-auth merged ─► archive on main
-  ├► feat-notif merged ─► archive on main
+  ├► feat-auth merged ─► /wrap on main
+  ├► feat-notif merged ─► /wrap on main
   │
   openspec/specs/ updated only on main
   ── no conflicts
@@ -130,7 +63,7 @@ main workspace (cmux)
 
 ## Project Structure
 
-After scaffolding with `/monorepo-setup`, you get:
+After scaffolding with `/scaffold`, you get:
 
 ```
 <project>/
@@ -144,7 +77,7 @@ After scaffolding with `/monorepo-setup`, you get:
 │   ├── auth/          # Auth configuration
 │   ├── api/           # API layer (tRPC/oRPC router)
 │   └── env/           # Shared environment variables
-├── openspec/          # Spec-driven development (after /openspec-setup)
+├── openspec/          # Spec-driven development (after /scaffold)
 ├── bts.jsonc          # Better-T-Stack project config
 ├── turbo.json         # Turborepo pipeline
 └── package.json       # Root workspace
@@ -152,9 +85,9 @@ After scaffolding with `/monorepo-setup`, you get:
 
 ## Getting Started
 
-New to this plugin? Run `/development-onboarding` to install prerequisites, verify your environment, and configure recommended plugins.
+New to this plugin? Run `/onboard` to install prerequisites, verify your environment, and configure recommended plugins.
 
-Already set up? Run `/monorepo-setup` to scaffold a project, then `/agentic-development-workflow` to start building.
+Already set up? Run `/scaffold` to create a project, then `/design` to start building.
 
 ## Related Projects
 
