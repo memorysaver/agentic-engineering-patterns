@@ -47,6 +47,67 @@ When asked to evaluate their own work, agents consistently rate it positively �
 
 ## Setup Steps
 
+### 0. Brainstorm Evaluation Criteria
+
+Before spawning the evaluator, brainstorm **project-specific** scoring criteria with the user. Generic criteria miss what matters; task-specific criteria catch the right problems.
+
+#### a. Read the OpenSpec change
+
+```bash
+cat openspec/changes/<change-name>/proposal.md
+cat openspec/changes/<change-name>/design.md
+ls openspec/changes/<change-name>/specs/
+cat openspec/changes/<change-name>/tasks.md
+```
+
+#### b. Identify the feature type
+
+Based on the change artifacts, classify the feature:
+
+| Feature type | Signals |
+|-------------|---------|
+| **UI-heavy** | Forms, dashboards, layouts, user-facing pages |
+| **API-only** | Endpoints, services, integrations, no frontend |
+| **Security-sensitive** | Auth, payments, data handling, permissions |
+| **Data pipeline** | ETL, migrations, batch processing, data transforms |
+| **Mixed** | Full-stack features spanning multiple categories |
+
+#### c. Propose dimensions
+
+Read the dimension presets in `references/evaluator-criteria.md` (bottom section). Based on the feature type, propose:
+
+- Which default dimensions to **keep** (Completeness, Correctness, UX, Security, Code Quality)
+- Which to **drop** or de-weight
+- Which to **add** (Originality, Accessibility, API Design, Performance, Data Integrity, etc.)
+- Which to **weight heavily** — these are where the model tends to fall short
+
+#### d. Ask the user
+
+Present the proposed dimensions and ask:
+
+1. **Which dimensions matter most** for this specific feature?
+2. **What does "good" look like** — any concrete quality bars? (e.g., "must pass WCAG AA", "P95 latency < 200ms", "no N+1 queries")
+3. **Where have you seen mediocre output** from the model before on similar work?
+4. **Any hard failure conditions** beyond the defaults? (e.g., "Security below 4 is unacceptable for this auth feature")
+
+#### e. Generate project-specific criteria
+
+Write `.dev-workflow/evaluator-criteria.md` (per-workspace, not the default reference) with:
+
+- The agreed-upon dimensions with weights
+- Scale definitions tailored to this feature (what 1/3/5 look like for *this* project)
+- Hard failure thresholds reflecting what the user cares about
+- Few-shot examples adapted from the defaults in `references/evaluator-criteria.md`
+
+```
+.dev-workflow/evaluator-criteria.md   ← brainstormed, per-workspace
+references/evaluator-criteria.md       ← defaults + presets (read-only reference)
+```
+
+> **Skip brainstorming?** If the user wants to move fast, fall back to the default criteria at `references/evaluator-criteria.md`. But note that Anthropic's research found task-specific calibration significantly improves evaluator judgment.
+
+---
+
 ### 1. Identify the workspace session
 
 ```bash
@@ -81,14 +142,15 @@ Wait for Claude Code to be ready, then send the bootstrap prompt. Keep it concis
 cmux send --surface "$EVAL_SURFACE" "You are an EVALUATOR agent. Your job is to critically evaluate the generator's work, not to write code.
 
 Start by reading these files:
-1. skills/development-workflow/agentic-development-workflow/references/evaluator-criteria.md (your scoring calibration)
+1. .dev-workflow/evaluator-criteria.md (your scoring calibration — brainstormed for this feature)
+   If this file does not exist, fall back to: skills/development-workflow/agentic-development-workflow/references/evaluator-criteria.md
 2. All files in openspec/changes/<change-name>/ (proposal, design, specs, tasks)
 3. .dev-workflow/contracts.md (success criteria per task)
 4. .dev-workflow/feature-verification.json (verification checklist)
 
 After reading, check .dev-workflow/signals/eval-request.md — if it exists, begin your evaluation. If it does not exist yet, the generator is still implementing. Check again at phase boundaries or when prompted.
 
-Follow the evaluation protocol in evaluator-criteria.md. Write your response to .dev-workflow/signals/eval-response-1.md.
+Follow the evaluation protocol in your criteria file. Write your response to .dev-workflow/signals/eval-response-1.md.
 
 CRITICAL: Score honestly. Do not rationalize problems away. Apply hard failure thresholds strictly. Never modify verification_steps in feature-verification.json.
 "

@@ -213,3 +213,70 @@ These are common evaluator failure modes — watch for them:
 | **Scope creep** | "It would be nice if..." | Only evaluate against the spec, not wishlist items |
 | **Premature approval** | Passing after finding only minor issues | Minor issues compound — evaluate the whole surface first |
 | **Self-persuasion** | Identifying a problem then arguing it away | The problem exists. Score accordingly. |
+
+---
+
+## Dimension Presets
+
+Use these as starting points when brainstorming project-specific criteria (Step 0 of `/evaluator-setup`). Select the preset that matches the feature type, then adjust with the user.
+
+### UI-heavy (forms, dashboards, layouts)
+
+```
+Dimensions:  Completeness, Correctness, UX Quality, Originality, Accessibility
+Weight:      UX Quality (high), Originality (high)
+De-weight:   Code Quality (still check but don't hard-fail)
+Add:         Originality — penalize generic "AI slop" (purple gradients, card layouts)
+             Accessibility — WCAG AA compliance, keyboard navigation, screen readers
+Hard fail:   UX Quality < 3, Completeness < 4
+```
+
+### API-only (endpoints, services, integrations)
+
+```
+Dimensions:  Completeness, Correctness, API Design, Security, Performance
+Weight:      Correctness (high), Security (high)
+Drop:        UX Quality (no frontend)
+Add:         API Design — consistent naming, proper status codes, pagination, error format
+             Performance — response times, query efficiency, no N+1
+Hard fail:   Correctness < 3, Security < 3
+```
+
+### Security-sensitive (auth, payments, data handling)
+
+```
+Dimensions:  Completeness, Correctness, Security, Data Privacy, Code Quality
+Weight:      Security (high), Data Privacy (high)
+Drop:        UX Quality (unless auth UI is involved)
+Add:         Data Privacy — PII handling, encryption at rest, audit logging
+Hard fail:   Security < 4, Data Privacy < 4
+```
+
+### Data pipeline (ETL, migrations, batch processing)
+
+```
+Dimensions:  Completeness, Correctness, Performance, Data Integrity, Error Recovery
+Weight:      Data Integrity (high), Performance (high)
+Drop:        UX Quality, Security (unless processing sensitive data)
+Add:         Data Integrity — no data loss, idempotent operations, schema validation
+             Error Recovery — partial failure handling, retry logic, dead letter queues
+Hard fail:   Data Integrity < 4, Completeness < 4
+```
+
+### Mixed / Full-stack
+
+```
+Dimensions:  Completeness, Correctness, UX Quality, Security, Code Quality
+Weight:      All equal (default)
+Add:         None — use the 5 defaults
+Adjust:      Weight toward the area the user identifies as highest risk
+Hard fail:   Default thresholds (any < 3, Completeness < 4)
+```
+
+### How to use presets
+
+1. During `/evaluator-setup` Step 0, identify the feature type
+2. Select the matching preset
+3. Present to the user for customization
+4. Write the final criteria to `.dev-workflow/evaluator-criteria.md`
+5. The evaluator reads this per-workspace file instead of this default reference
