@@ -195,6 +195,32 @@ Update the Phase 0 checkbox in the progress file when done.
 
 ---
 
+## Story Status Tracking
+
+If this feature corresponds to a story in `product-context.yaml` (check if the OpenSpec change name matches a story's `openspec_change` field):
+
+- **Phase 0 start:** Confirm story status is `in_progress` in the YAML
+- **Phase 12 merge:** Update story in YAML:
+  - `status: completed`
+  - `completed_at: <ISO 8601 now>`
+  - `pr_url: <PR URL>`
+  - `cost_usd: <accumulated cost>`
+- **On failure (escalation):** Update story:
+  - `status: failed`
+  - Append to `failure_logs`
+- **After status update:** Check if any `pending` stories should transition to `ready` (all dependencies now completed)
+
+Update the YAML and commit:
+```bash
+# Update product-context.yaml with new story status
+git add product-context.yaml
+git commit -m "chore: update story <id> status to completed"
+```
+
+If `product-context.yaml` doesn't exist, skip this tracking (standalone feature mode).
+
+---
+
 ## Phase 4: OpenSpec Apply
 
 Implement each task by editing its corresponding jj change:

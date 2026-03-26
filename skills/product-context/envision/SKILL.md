@@ -16,20 +16,22 @@ Transform a fuzzy product idea into a precise, testable product definition. Firs
 
 **Session:** Main, interactive with user
 **Input:** Product idea (vague or refined)
-**Output:** Opportunity Brief + Context Document (committed to `product-context/`)
+**Output:** `product-context.yaml` with `opportunity` and `product` sections populated
+
+**YAML Schema:** See `templates/product-context-schema.yaml` for the full structure and field definitions.
 
 ---
 
 ## Before Starting
 
-Check if product context artifacts already exist:
+Check if product context already exists:
 
 ```bash
-ls product-context/opportunity-brief.md product-context/context-document.md 2>/dev/null
+ls product-context.yaml 2>/dev/null
 ```
 
-- **No artifacts exist:** Start from Phase 0.
-- **Artifacts exist:** The user is likely iterating. Ask whether they want to revise the existing Context Document (update mode) or start fresh. In update mode, read the existing artifacts first, then focus on what's changed.
+- **No `product-context.yaml` exists:** Start from Phase 0. You will create the file at the end.
+- **`product-context.yaml` exists:** The user is likely iterating. Read the existing file and ask whether they want to revise the existing product context (update mode) or start fresh. In update mode, read the existing YAML first, then focus on what's changed — preserve all sections you are not updating.
 
 ---
 
@@ -63,7 +65,7 @@ If the opportunity does not survive an honest five-minute challenge, it should n
 
 ### Phase 0 Output
 
-Write the finalized Opportunity Brief to `product-context/opportunity-brief.md`.
+Write the finalized Opportunity Brief to the `opportunity` section of `product-context.yaml`.
 
 ---
 
@@ -99,16 +101,21 @@ Hand the Context Document to agents that did not participate in the conversation
 
 Each reviewer produces a challenge list. The user resolves each item — either by refining the document or marking it as an explicit `open_question` with a default assumption and a revisit trigger.
 
+Record the stress test results in `product.stress_test` within the YAML.
+
 ### Phase 1 Output
 
-Write the finalized Context Document to `product-context/context-document.md`.
+Write the finalized Context Document to the `product` section of `product-context.yaml`. Always append an entry to the `changelog` section recording what was created or updated.
 
-Commit both artifacts:
+On first run — create `product-context.yaml` with `opportunity` + `product` sections, using `templates/product-context-schema.yaml` as the structural reference.
+
+On subsequent runs — read the existing YAML, update the `opportunity` and/or `product` sections, and preserve all other sections (e.g., `architecture`, `stories`, `topology`).
+
+Commit the artifact:
 
 ```bash
-mkdir -p product-context
-# Write opportunity-brief.md and context-document.md
-git add product-context/
+# Write product-context.yaml (opportunity + product sections)
+git add product-context.yaml
 git commit -m "feat: add product context (opportunity brief + context document)"
 ```
 
@@ -118,11 +125,12 @@ git commit -m "feat: add product context (opportunity brief + context document)"
 
 When revisiting an existing product (triggered by `/reflect` or the user's own initiative):
 
-1. Read the existing Context Document
+1. Read the existing `product-context.yaml`
 2. Identify what's changed — new learnings, invalidated assumptions, scope shifts
-3. Update the relevant sections
+3. Update the relevant sections (`opportunity` and/or `product`)
 4. Re-run the stress test on changed sections only
-5. Commit the updated version (version history is itself valuable)
+5. Append to the `changelog` section
+6. Commit the updated version (version history is itself valuable)
 
 ---
 

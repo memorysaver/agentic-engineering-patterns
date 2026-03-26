@@ -211,9 +211,9 @@ Validate the opportunity, decompose into stories, scaffold the project.
 
 **Ready to build a feature?**
 ```
-/design  →  /launch  →  /build  →  /wrap
+/dispatch  →  /design  →  /launch  →  /build  →  /wrap
 ```
-Spec it, spawn the agent, let it build, archive when merged.
+Pick a story from the map, spec it, spawn the agent, let it build, archive when merged.
 
 **Shipped something? Close the loop:**
 ```
@@ -227,6 +227,7 @@ Classify feedback, update the product context, plan the next iteration.
 |-------|--------|---------|
 | `/envision` | product-context | Opportunity brief + context document |
 | `/map` | product-context | System map + story graph + agent topology |
+| `/dispatch` | product-context | Pick next story + create OpenSpec change |
 | `/reflect` | product-context | Classify feedback + update context |
 | `/onboard` | project-setup | Verify tools + install plugins |
 | `/scaffold` | project-setup | Scaffold monorepo + initialize OpenSpec |

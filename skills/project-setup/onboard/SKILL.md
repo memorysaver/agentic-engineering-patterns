@@ -190,7 +190,7 @@ If all core tools show OK, the environment is ready.
 | `/scaffold` | Scaffold a full-stack TypeScript monorepo + initialize OpenSpec |
 | `/design` | Start designing a feature (explore + propose + review) |
 
-Typical flow: `/envision` → `/map` → `/scaffold` → `/design` → `/launch` → `/build` → `/wrap` → `/reflect`
+Typical flow: `/envision` → `/map` → `/scaffold` → `/dispatch` → `/design` → `/launch` → `/build` → `/wrap` → `/reflect`
 
 ---
 

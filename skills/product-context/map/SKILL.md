@@ -15,8 +15,10 @@ Decompose the Context Document into a system map (modules + interfaces), a layer
 ```
 
 **Session:** Main, interactive with user (System Map requires human review)
-**Input:** Context Document from `/envision`
-**Output:** System Map + Story Graph + Agent Topology (committed to `product-context/`)
+**Input:** `product-context.yaml` (specifically the `opportunity` and `product` sections from `/envision`)
+**Output:** `product-context.yaml` updated with `architecture`, `stories`, `topology`, `layer_gates`, and `cost` sections
+
+**YAML Schema:** See `templates/product-context-schema.yaml` for the full structure and field definitions.
 
 ---
 
@@ -25,11 +27,10 @@ Decompose the Context Document into a system map (modules + interfaces), a layer
 Read the product context:
 
 ```bash
-cat product-context/context-document.md
-cat product-context/opportunity-brief.md
+cat product-context.yaml
 ```
 
-If these don't exist, run `/envision` first.
+If `product-context.yaml` does not exist or is missing the `product` section, run `/envision` first.
 
 ---
 
@@ -41,6 +42,8 @@ Produce a **System Map** (see `templates/system-map.md`) from the Context Docume
 - **Interface contracts:** For every module-to-module connection, define the exact API surface — endpoints, data shapes, error contracts. These are not documentation; they are executable specifications enforced by contract tests.
 - **Data flow:** How information moves through the system for each user journey in the MVP contract.
 - **Third-party boundaries:** External service integration points with failure modes.
+
+Write the system map to the `architecture` section of `product-context.yaml`.
 
 ### Human Review Gate
 
@@ -66,6 +69,8 @@ Each story follows the **Story Spec** format (see `templates/story-spec.md`) and
 - Interface obligations (if touching module boundaries)
 - Files likely affected (for conflict detection)
 
+**All stories start with `status: pending`.** Stories follow a state machine: `pending → ready → in_progress → review → done` (or `blocked` / `failed` as error states). The `/dispatch` skill manages state transitions during execution.
+
 ### Walking Skeleton (Layer 0)
 
 **Layer 0 is the most important layer.** Each module contributes one minimal story, strung together so a user can complete the crudest possible end-to-end journey from the Context Document's Layer 0 MVP Contract.
@@ -84,6 +89,8 @@ A dedicated agent receives all stories and produces:
 - **Execution Slices:** Within each layer, group stories into slices that can be dispatched as a batch. A slice is a set of stories with no mutual dependencies that can run fully in parallel.
 - **Critical path per layer:** The longest dependency chain, determining minimum time to complete that layer.
 - **Layer gates:** The integration test definition that must pass before advancing to the next layer.
+
+Write all stories to the `stories` section of `product-context.yaml`.
 
 ### Feedback Loop
 
@@ -123,22 +130,28 @@ For every agent-to-agent transition:
 - **Conflict detection:** Stories modifying the same files must not run in parallel
 - **Retry routing:** Same agent retry (2x) → fresh agent with failure log (1x) → human escalation
 
+Write the topology to the `topology` section of `product-context.yaml`. Also initialize the `layer_gates` and `cost` sections.
+
 ---
 
 ## Output
 
-Write all artifacts to `product-context/`:
+Commit the updated YAML:
 
 ```bash
-# Write system-map.md, story-graph.md, agent-topology.md
-git add product-context/
+git add product-context.yaml
 git commit -m "feat: add system map, story graph, and agent topology"
 ```
 
-**Artifacts produced:**
-- `product-context/system-map.md`
-- `product-context/story-graph.md` (layered story graph with execution slices)
-- `product-context/agent-topology.md`
+**Sections written:**
+- `architecture` — system map (modules, interfaces, data flow)
+- `stories` — layered story graph with execution slices (all stories start `status: pending`)
+- `topology` — agent roles, handoff contracts, routing rules
+- `layer_gates` — integration test definitions per layer
+- `cost` — initial cost budgets and tracking structure
+- `changelog` — append an entry recording what was added
+
+Always append to the `changelog` section.
 
 ---
 
@@ -146,11 +159,12 @@ git commit -m "feat: add system map, story graph, and agent topology"
 
 When updating the map (triggered by `/reflect` or new requirements):
 
-1. Read the existing System Map and Story Graph
+1. Read the existing `product-context.yaml`
 2. Identify what's changed — new modules, revised interfaces, new stories
-3. Update affected sections
+3. Update affected sections (`architecture`, `stories`, `topology`)
 4. If interface contracts changed → re-verify dependent stories
-5. Commit updated versions
+5. Append to the `changelog` section
+6. Commit updated version
 
 ---
 
@@ -173,7 +187,7 @@ Decomposition is complete. If no project exists yet:
 If the project already exists, start executing stories:
 
 ```
-/design
+/dispatch
 ```
 
-Each story (or execution slice) from the story graph becomes an OpenSpec change that flows through `/design → /launch → /build → /wrap`.
+`/dispatch` reads the story graph from `product-context.yaml` and begins moving stories through the state machine (`pending → ready → in_progress → ...`), routing each through `/design → /launch → /build → /wrap`.

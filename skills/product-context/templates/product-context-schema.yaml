@@ -1,0 +1,319 @@
+# Product Context Schema v1
+#
+# Single source of truth for the entire product.
+# Created by /envision and /map, updated by /dispatch, /build, /wrap, /reflect.
+# Committed to git — version history tracks how the product evolves.
+#
+# Sections are populated incrementally:
+#   /envision → opportunity, product
+#   /map      → architecture, stories, topology, layer_gates, cost
+#   /dispatch → stories[].status, stories[].openspec_change (per story)
+#   /build    → stories[].status, stories[].cost_usd, stories[].pr_url
+#   /wrap     → stories[].completed_at
+#   /reflect  → changelog, stories (new), architecture (amendments)
+
+schema: v1
+project: <project-name>
+version: "0.1.0"  # semantic: major (opportunity shift), minor (architecture/map change), patch (dispatch/build/wrap)
+updated_at: <ISO 8601>
+
+# ─── CONCURRENCY PROTOCOL ────────────────────────────────────
+# Only the MAIN SESSION writes to this file. Workspace agents
+# report status through .dev-workflow/signals/. The main session
+# (via /wrap, /dispatch, /reflect) reads signals and updates the
+# YAML. This prevents git merge conflicts from concurrent writers.
+
+# ─── OPPORTUNITY (/envision Phase 0) ─────────────────────────
+# Validates whether the idea is worth building at all.
+# Kill early if the opportunity doesn't survive a 5-minute challenge.
+opportunity:
+  bet: "I believe [target user] has [problem], and I can build [solution] because [advantage]"
+  why_now: "What changed that makes this viable now?"
+  counter_arguments:
+    - "Strongest reason this might fail"
+  scale_of_impact: "What magnitude of change if this works?"
+  kill_criteria:
+    - "Condition that would invalidate the opportunity"
+  decision: proceed  # proceed | kill | defer
+  decided_at: <ISO date>
+
+# ─── PRODUCT (/envision Phase 1) ─────────────────────────────
+# Precise product definition. Every statement must be convertible
+# into a verification condition. Vague statements are useless to agents.
+product:
+  problem: "Sharp problem statement — who, what, why inadequate"
+  persona:
+    description: "Concrete user description with context, skill level, tools, constraints"
+    jtbd: "When [situation], I want to [motivation], so I can [outcome]"
+  mvp_boundary:
+    in_scope:
+      - "Specific capability (testable)"
+    out_of_scope:
+      - "What this does NOT do, even if users might expect it"
+    deferred:
+      - "Might add later, but agents should not build toward this"
+  constraints:
+    required_stack:
+      frontend: <framework>
+      backend: <framework>
+      database: <engine>
+      orm: <orm>
+    preferred_stack: {}  # overridable with good reason
+    infrastructure: "Where this runs, deployment targets"
+    external_deps:
+      - name: <service>
+        provides: "What it does for us"
+        failure_mode: "Graceful degradation or hard fail?"
+  layers:
+    - layer: 0
+      name: "Walking Skeleton"
+      user_can: "End-to-end journey in concrete steps"
+      verification: "Test scenario that proves Layer 0 works"
+    - layer: 1
+      name: <layer-name>
+      user_can: "Everything from Layer 0, plus..."
+      verification: "Test scenario for new capabilities"
+  success_criteria:
+    functional:
+      - "Specific, testable condition"
+    non_functional:
+      - "Measurable threshold (e.g., API p95 < 200ms)"
+  open_questions:
+    - question: "Decision explicitly deferred"
+      default_assumption: "What agents should assume for now"
+      revisit_trigger: "When to revisit this"
+  decisions:
+    - decision: "What was decided"
+      reasoning: "Why"
+      alternatives:
+        - "What else was considered"
+  stress_test:
+    - challenge: "What was challenged"
+      angle: product_viability  # product_viability | technical_feasibility | scope_control
+      resolution: "How it was resolved"
+
+# ─── ARCHITECTURE (/map Step 1) ──────────────────────────────
+# Module boundaries and interface contracts. A wrong boundary costs
+# more than any implementation bug. Human review required.
+architecture:
+  style: "e.g., modular monolith, microservices"
+  overview: "2-3 sentences on structure and why"
+  modules:
+    - name: <module-name>
+      responsibility: "What this module does"
+      does_not: "What this module does NOT do (defines the boundary)"
+      owns:
+        - "Data/state/resources this module is authority on"
+      depends_on:
+        - <other-module>
+      technology: null  # null = default stack
+      key_concepts:    # domain objects, patterns, abstractions implementers need
+        - "e.g., tokens, sessions, RBAC roles"
+  interfaces:
+    - from: <module>
+      to: <module>
+      protocol: "HTTP REST | gRPC | function call | message queue"
+      endpoint: "Specific API path or function signature"
+      request: {}   # exact data structure
+      response: {}  # exact data structure
+      errors:
+        - code: <number>
+          meaning: "What this error means"
+      sla: null  # expected latency, throughput
+  data_flows:
+    - journey: "User journey name"
+      path: "User → [Module] → action → [Module] → response"
+  third_party:
+    - name: <service>
+      provides: "Specific capability"
+      integration_point: "Which module, how"
+      failure_mode: "Behavior when down"
+  deployment:
+    environments: ["local", "staging", "production"]
+    module_runtime: {}  # { "auth": "bun", "worker": "cloudflare-workers" }
+    persistence: {}     # { "users": "postgres", "cache": "redis" }
+  amendment_log:  # boundary/contract issues found during story decomposition
+    - proposed_by: <agent-or-module>
+      module_affected: <module>
+      proposed_change: "What should change"
+      reasoning: "Why"
+      status: pending  # pending | accepted | rejected
+  adrs:
+    - id: ADR-001
+      title: "Architecture decision title"
+      context: "What prompted this"
+      decision: "What was decided"
+      reasoning: "Why"
+      consequences: "What this enables and constrains"
+
+# ─── STORIES (/map Steps 2-3) ────────────────────────────────
+# The atomic units of work. Each story is a self-contained spec
+# that an agent can implement without asking questions.
+#
+# State machine:
+#   pending → ready       (all dependencies completed)
+#   pending → blocked     (a dependency failed)
+#   ready → in_progress   (/dispatch assigns)
+#   in_progress → in_review  (PR submitted)
+#   in_review → completed    (verification passes)
+#   in_review → in_progress  (verification fails, retry)
+#   in_progress → failed     (retry limit exceeded)
+#   any → deferred           (user postpones)
+#
+# Recovery transitions (user-initiated):
+#   failed → pending     (user resets after spec fix)
+#   blocked → pending    (blocking dependency resolved)
+#   deferred → pending   (user un-defers)
+stories:
+  - id: <PROJECT>-001
+    title: "Short, descriptive"
+    layer: 0
+    module: <module-name>
+    slice: 1  # execution slice within layer (parallel batch)
+    status: pending
+    priority: critical  # critical | high | medium | low
+    complexity: S  # S | M | L
+    dependencies: []  # story IDs that must complete first
+    description:
+      what_changes: "Observable difference when complete"
+      why: "Connection to Context Document / layer"
+    acceptance_criteria:
+      - "Specific, automatable test criterion"
+    interface_obligations:
+      implements: []  # interface contracts this story creates/modifies
+      consumes: []    # interface contracts this story calls
+      contract_tests_required: false
+    files_affected:
+      - "path/to/likely/file.ts"  # for conflict detection
+    technical_notes: null  # optional — known pitfalls, guidance to prevent mistakes
+    verification:
+      unit: ["What to unit test"]
+      integration: ["Cross-module tests"]
+      contract: ["Interface compliance tests"]
+    # ── Execution tracking (updated by /dispatch, /build, /wrap) ──
+    assigned_to: null      # workspace session name
+    openspec_change: null  # OpenSpec change name
+    attempt_count: 0
+    max_retries: 4         # override per story (default from topology.routing.retry)
+    cost_usd: null
+    started_at: null       # ISO 8601
+    completed_at: null     # ISO 8601
+    pr_url: null
+    failure_logs:          # structured — not free text
+      - attempt: 1
+        error_class: test_failure  # test_failure | timeout | context_overflow | merge_conflict
+        approach_summary: "What the agent tried"
+        failure_point: "Which step failed"
+        root_cause: "Best guess at why"
+        unexplored_alternatives: []  # critical for fresh-agent retries
+        timestamp: <ISO 8601>
+
+# ─── TOPOLOGY (/map Step 4) ──────────────────────────────────
+# Agent roles, contracts, and routing. Defined at planning time
+# because agents need clear boundaries before execution starts.
+topology:
+  roles:
+    - name: implementer
+      purpose: "Takes story spec, produces code + tests + PR"
+      does:
+        - "implement"
+        - "unit test"
+        - "contract test"
+        - "submit PR"
+      does_not:
+        - "decide scope"
+        - "modify architecture"
+        - "skip tests"
+      input_contract:    # schema-defined — agents communicate through structured artifacts
+        story_spec: "Full story from stories section"
+        context_slice:
+          context_document: "Pruned to: problem, constraints, relevant layer"
+          system_map_module: "This story's module definition"
+          adjacent_interfaces: "Interface contracts where from/to matches module"
+          dependency_artifacts: "Public API surface from completed dependencies"
+      output_contract:
+        implementation:
+          branch_name: "string"
+          files_changed: "FileDiff[]"
+          pr_url: "string"
+        verification:
+          unit_tests: "TestResult[]"
+          contract_tests: "TestResult[]"
+          all_passing: "boolean"
+        status_report:
+          story_id: "string"
+          outcome: "success | failure"
+          error_summary: "string (if failure)"
+          what_was_not_tried: "string[] (critical for fresh-agent retries)"
+      context_composition:
+        - "Story spec (full)"
+        - "Context Document (pruned: problem, constraints, relevant layer)"
+        - "System Map (story's module + adjacent interfaces only)"
+        - "Dependency artifacts (public API surface only)"
+      cost_budget:
+        input_tokens_max: 50000
+        output_tokens_max: 20000
+        alert_threshold_total: 100000
+  routing:
+    dispatch: fifo_within_slice  # dispatch policy
+    concurrency_limit: 5         # max parallel agents
+    conflict_detection: files_affected_overlap
+    retry: "2x same agent → failure analyst → fresh agent → human escalation"
+  handoffs:
+    - from: implementer
+      to: evaluator
+      trigger: pr_submitted
+      payload: "output_contract from implementer role"  # schema-defined, not free text
+      validation:
+        - "PR exists and is not draft"
+        - "All acceptance criteria have corresponding tests"
+        - "Status report produced"
+      on_validation_failure: "reject handoff, notify source agent"
+
+# ─── LAYER GATES ─────────────────────────────────────────────
+# Integration tests that verify a completed layer works as a whole.
+# Must pass before advancing to the next layer.
+layer_gates:
+  - layer: 0
+    status: not_started  # not_started | running | passed | failed
+    test_definition: "End-to-end user journey from Layer 0 MVP contract"
+    results:             # structured test results
+      tests_run: 0
+      tests_passed: 0
+      tests_failed: 0
+      failures: []       # [{ test: "...", error: "...", boundary: "module_a → module_b" }]
+    completed_at: null
+
+# ─── COST TRACKING ───────────────────────────────────────────
+# Accumulated cost data. Updated by /build after each story.
+# Reviewed by /reflect for optimization opportunities.
+cost:
+  total_usd: 0
+  by_layer: {}   # { "0": 12.50, "1": 8.30 }
+  by_module: {}  # { "auth": 5.20, "api": 7.30 }
+  by_story: {}   # { "PROJ-001": 3.10 }
+  alerts:        # structured anomaly records
+    - story_id: null
+      type: cost_exceeded  # cost_exceeded | retry_concentration | timeout_pattern
+      detail: "Description of the anomaly"
+      threshold: null
+      actual: null
+      timestamp: null
+
+# ─── CHANGELOG ───────────────────────────────────────────────
+# Semantic history of how the product context evolved.
+# git log shows file diffs; changelog shows why things changed.
+# Appended by every skill that modifies this file.
+changelog:
+  - date: <ISO date>
+    type: initial  # initial | envision_update | map_update | dispatch | reflect | build | wrap | layer_gate_pass | layer_gate_fail | architecture_review
+    author: human  # human | agent
+    summary: "What changed and why"
+    sections_changed:
+      - <section-name>
+    # Only for type: reflect
+    feedback:
+      bugs: []
+      refinements: []
+      discoveries: []
+      opportunity_shifts: []

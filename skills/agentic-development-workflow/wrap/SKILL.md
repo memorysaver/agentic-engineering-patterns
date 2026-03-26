@@ -71,17 +71,33 @@ jj workspace forget <name>
 
 ---
 
-## Reflect on What Was Learned
+## Reflect and Advance
 
-After archiving, consider running `/reflect` to classify observations from this feature and update the product context:
+After archiving, check the product context:
+
+### Layer Gate Check
+
+If `product-context.yaml` exists and this feature was a dispatched story:
+
+```bash
+# Check: was this the last story in the current layer?
+# Read product-context.yaml and check if all stories in the active layer are completed
+```
+
+If all stories in the current layer are completed:
+- Suggest running the **layer gate integration test** (defined in `layer_gates` section of the YAML)
+- If the gate passes, update `layer_gates[layer].status: passed` and `completed_at`
+- The next `/dispatch` will advance to the next layer
+
+### Feedback Loop
+
+Consider running `/reflect` to classify observations from this feature and update the product context:
 
 ```
 /reflect
 ```
 
-This closes the feedback loop — bugs, refinements, and discoveries get routed back to the right phase of the product context layer.
-
-**Layer gate check:** If this was the last story in a layer (check `product-context/story-graph.md`), run the layer gate integration test before starting the next layer.
+This closes the feedback loop — bugs, refinements, and discoveries get routed back to the right phase.
 
 ---
 
