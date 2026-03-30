@@ -73,21 +73,23 @@ cmux send --surface "$GEN_SURFACE" "/build execute implementation for openspec c
 
 ---
 
-## Optional: Set Up Evaluator Agent (Full Mode)
+## Optional: Evaluator Mode (Full Mode)
 
-For complex features, set up a separate evaluator agent that independently reviews the generator's work. This is the single most impactful improvement for agent output quality.
+For complex features, a separate evaluator agent independently reviews the generator's work. This is the single most impactful improvement for agent output quality.
+
+> **Key design decision:** The evaluator is **not spawned at launch time**. It is spawned by the
+> generator at Phase 5, after implementation is complete. Anthropic's research shows evaluation
+> should be sequential — build first, then evaluate — not concurrent.
+>
+> **Source:** [Harness Design for Long-Running Application Development](https://www.anthropic.com/engineering/harness-design-long-running-apps) — Anthropic Engineering
 
 ### Why Separate Evaluation
 
-When asked to evaluate their own work, agents consistently rate it positively — even when quality is mediocre. Anthropic's research found that separating generation from evaluation (inspired by GANs) dramatically improves output quality:
+When asked to evaluate their own work, agents consistently rate it positively — even when quality is mediocre. Separating generation from evaluation (inspired by GANs) dramatically improves output quality:
 
 - The **generator** focuses on building features
 - The **evaluator** focuses on finding problems
 - Separation makes it easy to calibrate the evaluator toward **skepticism**
-
-> "When asked to evaluate work they've produced, agents tend to respond by confidently praising the work — even when, to a human observer, the quality is obviously mediocre."
->
-> **Source:** [Harness Design for Long-Running Application Development](https://www.anthropic.com/engineering/harness-design-long-running-apps) — Anthropic Engineering
 
 ### When to Use
 
@@ -101,9 +103,9 @@ When asked to evaluate their own work, agents consistently rate it positively �
 
 **Rule of thumb:** If the feature has 3+ tasks in `tasks.md` or touches UI, use an evaluator.
 
-### Step 0: Brainstorm Evaluation Criteria
+### Brainstorm Evaluation Criteria (at launch time)
 
-Before spawning the evaluator, brainstorm **project-specific** scoring criteria with the user. Generic criteria miss what matters; task-specific criteria catch the right problems.
+Before the generator starts, brainstorm **project-specific** scoring criteria with the user. The criteria are written to `.dev-workflow/evaluator-criteria.md` so they're ready when the generator reaches Phase 5.
 
 #### a. Read the OpenSpec change
 
@@ -153,69 +155,53 @@ Write `.dev-workflow/evaluator-criteria.md` (per-workspace, not the default refe
 
 > **Skip brainstorming?** If the user wants to move fast, fall back to the default criteria at `references/evaluator-criteria.md`. But note that task-specific calibration significantly improves evaluator judgment.
 
-### Step 1: Spawn the Evaluator
+### How the Evaluator Loop Works (Phase 5)
 
-> **Key insight:** Use `tmux new-window` to create the evaluator window directly with the command,
-> then attach a cmux surface to that specific window. Do NOT send shell commands via cmux to start
-> Claude Code — that routing is unreliable across tmux windows.
+The generator self-orchestrates the evaluation loop at Phase 5. **You do not need to spawn the evaluator manually.** The generator uses cmux to create a bottom split pane with a new evaluator Claude Code instance:
 
-```bash
-# 1. Create evaluator window directly via tmux (runs Claude Code immediately)
-tmux new-window -t <name> -n evaluator \
-  -c .feature-workspaces/<name> \
-  "claude --dangerously-skip-permissions --rc"
-
-# 2. Create a cmux tab that attaches to the evaluator window
-EVAL_SURFACE=$(cmux new-surface --type terminal | grep -o 'surface:[0-9]*')
-cmux send --surface "$EVAL_SURFACE" "tmux attach -t <name>:evaluator\n"
-cmux rename-tab --surface "$EVAL_SURFACE" "evaluator-<name>"
+```
+┌─────────────────────────────────────────────────────┐
+│                                                     │
+│   Generator (building/fixing)                       │
+│   Phase 0-4: full tab / Phase 5+: top half          │
+│                                                     │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│   Evaluator (spawned at Phase 5, bottom half)       │
+│                                                     │
+└─────────────────────────────────────────────────────┘
 ```
 
-### Step 2: Send Evaluator Bootstrap Prompt
+The full loop is documented in `/build` Phase 5. In summary:
 
-Wait for the evaluator's Claude Code to initialize, then send the bootstrap prompt via the cmux surface:
+1. Generator writes `eval-request.md` → spawns evaluator in bottom pane
+2. Evaluator evaluates → writes `eval-response-<N>.md`
+3. Generator reads response → fixes issues → closes evaluator pane
+4. Repeat until pass (max 5 rounds)
 
-```bash
-# Wait for Claude Code to be ready
-sleep 8
-tmux capture-pane -t <name>:evaluator -p -S -5 | grep -q '❯' && echo "evaluator ready"
+### Evaluator Bootstrap Prompt Template
 
-# Send bootstrap prompt
-cmux send --surface "$EVAL_SURFACE" "You are an EVALUATOR agent. Your job is to critically evaluate the generator's work, not to write code.
+The generator sends this when spawning the evaluator (for reference — the build skill handles this automatically):
 
-Start by reading these files:
-1. .dev-workflow/evaluator-criteria.md (your scoring calibration — brainstormed for this feature)
-   If this file does not exist, fall back to the evaluator-criteria.md reference in the launch skill's references/ directory.
-2. All files in openspec/changes/<change-name>/ (proposal, design, specs, tasks)
-3. .dev-workflow/contracts.md (success criteria per task)
-4. .dev-workflow/feature-verification.json (verification checklist)
-
-After reading, check .dev-workflow/signals/eval-request.md — if it exists, begin your evaluation. If it does not exist yet, the generator is still implementing. Check again at phase boundaries or when prompted.
-
-Follow the evaluation protocol in your criteria file. Write your response to .dev-workflow/signals/eval-response-1.md.
-
-CRITICAL: Score honestly. Do not rationalize problems away. Apply hard failure thresholds strictly. Never modify verification_steps in feature-verification.json.
-"
 ```
+You are an EVALUATOR agent. Begin evaluation immediately.
 
-### Step 3: Notify the Generator
+Read these files:
+1. .dev-workflow/evaluator-criteria.md (scoring calibration)
+2. .dev-workflow/signals/eval-request.md (what to evaluate)
+3. All files in openspec/changes/<change-name>/
+4. .dev-workflow/contracts.md (if exists)
+5. .dev-workflow/feature-verification.json (if exists)
 
-```bash
-cmux send --surface "$GEN_SURFACE" "An evaluator agent is now running in a separate tab. After you complete Phase 4 implementation:
-1. Write .dev-workflow/signals/eval-request.md describing what to evaluate
-2. Wait for .dev-workflow/signals/eval-response-1.md
-3. Read the eval response and fix any FAIL items
-4. Write a new eval-request for round 2
-5. Repeat until the evaluator passes all thresholds
-"
-```
+Then:
+1. Review code changes via jj diff
+2. Test the running application if possible
+3. Score each dimension per your criteria
+4. Write structured feedback to .dev-workflow/signals/eval-response-<N>.md
 
-### Evaluator Cleanup
-
-After the evaluation loop completes and all phases pass:
-
-```bash
-tmux kill-window -t <name>:evaluator
+CRITICAL: Score honestly. Do not rationalize problems away.
+Apply hard failure thresholds strictly.
+Never modify verification_steps in feature-verification.json.
 ```
 
 ---

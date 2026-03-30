@@ -298,14 +298,82 @@ After implementation, verify the code before moving to testing.
 
 **With separate evaluator (full mode):**
 
-If an evaluator agent was set up via `/launch`, delegate quality review to it:
+If `.dev-workflow/evaluator-criteria.md` exists (written during `/launch`), spawn an evaluator in a cmux bottom split pane. The generator orchestrates the entire evaluation loop — no manual intervention needed.
 
-1. Write `.dev-workflow/signals/eval-request.md` describing what to evaluate
-2. Wait for `.dev-workflow/signals/eval-response-1.md`
-3. Read the response — fix any FAIL items
-4. Write a new eval-request for the next round
-5. Repeat until all dimensions pass (see `skills/agentic-development-workflow/launch/references/evaluator-criteria.md` for thresholds)
-6. Max 5 rounds — escalate to human if not converging
+#### Evaluation round
+
+For each round N (starting at 1, max 5):
+
+1. **Write eval-request:**
+
+   Create `.dev-workflow/signals/eval-request.md`:
+   ```markdown
+   # Evaluation Request — Round <N>
+   ## What to evaluate
+   - [summary of implementation state]
+   ## Changes since last round
+   - [what was fixed, or "first evaluation"]
+   ## Known issues
+   - [anything the generator is aware of]
+   ## Files changed
+   [output of jj diff --stat]
+   ```
+
+2. **Spawn evaluator in bottom pane:**
+
+   ```bash
+   # Start evaluator in its own tmux session
+   tmux new-session -d -s eval-<feature-name> \
+     -c "$(pwd)" \
+     "claude --dangerously-skip-permissions --rc"
+
+   # Create bottom cmux pane and attach
+   EVAL_PANE=$(cmux new-pane --direction down | grep -o 'pane:[0-9]*')
+   EVAL_SURFACE=$(cmux list-pane-surfaces --pane "$EVAL_PANE" \
+     | grep -o 'surface:[0-9]*' | tail -1)
+   cmux send --surface "$EVAL_SURFACE" "tmux attach -t eval-<feature-name>\n"
+   ```
+
+3. **Wait for evaluator to initialize, then send prompt:**
+
+   ```bash
+   sleep 10
+   cmux send --surface "$EVAL_SURFACE" "You are an EVALUATOR agent. Begin evaluation immediately.
+
+   Read these files:
+   1. .dev-workflow/evaluator-criteria.md (scoring calibration)
+   2. .dev-workflow/signals/eval-request.md (what to evaluate)
+   3. All files in openspec/changes/<change-name>/
+   4. .dev-workflow/contracts.md (if exists)
+   5. .dev-workflow/feature-verification.json (if exists)
+
+   Then:
+   1. Review code changes via jj diff
+   2. Test the running application if possible
+   3. Score each dimension per your criteria
+   4. Write structured feedback to .dev-workflow/signals/eval-response-<N>.md
+
+   CRITICAL: Score honestly. Do not rationalize problems away.
+   Apply hard failure thresholds strictly.
+   Never modify verification_steps in feature-verification.json.
+   "
+   ```
+
+4. **Poll for response:**
+
+   ```bash
+   while [ ! -f .dev-workflow/signals/eval-response-<N>.md ]; do sleep 15; done
+   ```
+
+5. **Read response and close evaluator:**
+
+   ```bash
+   tmux kill-session -t eval-<feature-name>
+   ```
+
+6. **Fix FAIL items** — edit the appropriate jj changes and loop back to step 1 with round N+1.
+
+7. **Max 5 rounds** — if not converging, escalate to human.
 
 The evaluator also updates `.dev-workflow/feature-verification.json` with pass/fail results.
 
