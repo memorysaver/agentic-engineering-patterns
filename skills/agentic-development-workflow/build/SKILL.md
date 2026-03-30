@@ -285,7 +285,11 @@ Update the progress file checkbox for each completed task, and mark the Phase 4 
 
 ## Phase 5: Code Review & Verification
 
-After implementation, verify the code before moving to testing.
+After implementation, verify the code before moving to testing. This phase uses the **generator/evaluator pattern** — read the shared utility for full details:
+
+- **Scoring framework:** `.claude/skills/aep-gen-eval/references/scoring-framework.md` (dimensions, thresholds, presets)
+- **Agent contracts:** `.claude/skills/aep-gen-eval/references/agent-contracts.md` (role separation, prompt templates)
+- **Eval protocol:** `.claude/skills/aep-gen-eval/references/eval-protocol.md` (request/response format, verification JSON, convergence rules)
 
 ### Completeness check (always done by generator)
 
@@ -298,7 +302,7 @@ After implementation, verify the code before moving to testing.
 
 **With separate evaluator (full mode):**
 
-If `.dev-workflow/evaluator-criteria.md` exists (written during `/launch`), spawn an evaluator in a tmux bottom split pane. The generator orchestrates the entire evaluation loop — no manual intervention needed.
+If `.dev-workflow/evaluator-criteria.md` exists (written during `/launch`), spawn an evaluator in a tmux bottom split pane. The generator orchestrates the entire evaluation loop — no manual intervention needed. This uses **Context A: Tmux Split Panes** from the eval protocol.
 
 > **Why tmux splits, not cmux splits:** The generator runs inside tmux but was not spawned by cmux,
 > so it cannot use cmux socket commands. Use `tmux split-window` instead — the cmux surface attached
@@ -308,20 +312,7 @@ If `.dev-workflow/evaluator-criteria.md` exists (written during `/launch`), spaw
 
 For each round N (starting at 1, max 5):
 
-1. **Write eval-request:**
-
-   Create `.dev-workflow/signals/eval-request.md`:
-   ```markdown
-   # Evaluation Request — Round <N>
-   ## What to evaluate
-   - [summary of implementation state]
-   ## Changes since last round
-   - [what was fixed, or "first evaluation"]
-   ## Known issues
-   - [anything the generator is aware of]
-   ## Files changed
-   [output of jj diff --stat]
-   ```
+1. **Write eval-request** — create `.dev-workflow/signals/eval-request.md` per the format in `eval-protocol.md` (Signal Files section).
 
 2. **Spawn evaluator in bottom tmux pane:**
 
@@ -333,29 +324,18 @@ For each round N (starting at 1, max 5):
    tmux select-pane -t :.0
    ```
 
-3. **Wait for evaluator to initialize, then send prompt:**
+3. **Wait for evaluator to initialize, then send the bootstrap prompt** from `agent-contracts.md` (Evaluator Prompt — Code Quality template). Customize with the workspace paths:
 
    ```bash
    sleep 10
-   tmux send-keys -t :.1 "You are an EVALUATOR agent. Begin evaluation immediately.
-
-   Read these files:
-   1. .dev-workflow/evaluator-criteria.md (scoring calibration)
-   2. .dev-workflow/signals/eval-request.md (what to evaluate)
-   3. All files in openspec/changes/<change-name>/
-   4. .dev-workflow/contracts.md (if exists)
-   5. .dev-workflow/feature-verification.json (if exists)
-
-   Then:
-   1. Review code changes via jj diff
-   2. Test the running application if possible
-   3. Score each dimension per your criteria
-   4. Write structured feedback to .dev-workflow/signals/eval-response-<N>.md
-
-   CRITICAL: Score honestly. Do not rationalize problems away.
-   Apply hard failure thresholds strictly.
-   Never modify verification_steps in feature-verification.json.
-   " Enter
+   tmux send-keys -t :.1 "<evaluator prompt from agent-contracts.md, customized with:
+     criteria_file=.dev-workflow/evaluator-criteria.md
+     eval_request_file=.dev-workflow/signals/eval-request.md
+     spec_directory=openspec/changes/<change-name>/
+     contracts_file=.dev-workflow/contracts.md
+     verification_file=.dev-workflow/feature-verification.json
+     eval_response_file=.dev-workflow/signals/eval-response-<N>.md
+   >" Enter
    ```
 
 4. **Poll for response:**
@@ -373,9 +353,9 @@ For each round N (starting at 1, max 5):
 
 6. **Fix FAIL items** — edit the appropriate jj changes and loop back to step 1 with round N+1.
 
-7. **Max 5 rounds** — if not converging, escalate to human.
+7. **Max 5 rounds** — if not converging, escalate to human (see convergence rules in `eval-protocol.md`).
 
-The evaluator also updates `.dev-workflow/feature-verification.json` with pass/fail results.
+The evaluator also updates `.dev-workflow/feature-verification.json` with pass/fail results per the field ownership rules in `eval-protocol.md`.
 
 **Without evaluator (light mode):**
 

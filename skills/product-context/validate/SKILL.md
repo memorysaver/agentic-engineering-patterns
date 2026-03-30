@@ -11,7 +11,13 @@ Run a generator/evaluator pattern against any artifact produced by the AEP workf
 > "When asked to evaluate work they've produced, agents tend to respond by confidently praising the work — even when, to a human observer, the quality is obviously mediocre."
 > — Anthropic, "Harness Design for Long-Running Application Development"
 
-**Why separate agents:** The agent that produced an artifact cannot honestly evaluate it. The generator/evaluator separation is the single most impactful quality improvement in agentic workflows. This skill generalizes the pattern from `/build` Phase 5 to work on any artifact at any phase.
+**Why separate agents:** The agent that produced an artifact cannot honestly evaluate it. The generator/evaluator separation is the single most impactful quality improvement in agentic workflows. This skill applies the gen/eval pattern to product artifacts.
+
+**Uses the gen/eval utility pattern.** Read these reference files for the underlying framework:
+- **Scoring:** `.claude/skills/aep-gen-eval/references/scoring-framework.md`
+- **Agent contracts:** `.claude/skills/aep-gen-eval/references/agent-contracts.md`
+- **Eval protocol:** `.claude/skills/aep-gen-eval/references/eval-protocol.md`
+- **Findings format:** `.claude/skills/aep-gen-eval/references/findings-format.md`
 
 **Where this fits:**
 

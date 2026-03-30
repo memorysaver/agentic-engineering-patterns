@@ -128,7 +128,7 @@ cat openspec/changes/<change-name>/tasks.md
 
 #### c. Propose dimensions
 
-Read the dimension presets in `references/evaluator-criteria.md` (bottom section). Based on the feature type, propose:
+Read the dimension presets in the gen-eval utility skill at `.claude/skills/aep-gen-eval/references/scoring-framework.md` (Dimension Presets section). Based on the feature type, propose:
 
 - Which default dimensions to **keep** (Completeness, Correctness, UX, Security, Code Quality)
 - Which to **drop** or de-weight
@@ -151,9 +151,9 @@ Write `.dev-workflow/evaluator-criteria.md` (per-workspace, not the default refe
 - The agreed-upon dimensions with weights
 - Scale definitions tailored to this feature
 - Hard failure thresholds reflecting what the user cares about
-- Few-shot examples adapted from the defaults in `references/evaluator-criteria.md`
+- Few-shot examples adapted from the defaults in `.claude/skills/aep-gen-eval/references/scoring-framework.md`
 
-> **Skip brainstorming?** If the user wants to move fast, fall back to the default criteria at `references/evaluator-criteria.md`. But note that task-specific calibration significantly improves evaluator judgment.
+> **Skip brainstorming?** If the user wants to move fast, fall back to the default criteria at `.claude/skills/aep-gen-eval/references/scoring-framework.md`. But note that task-specific calibration significantly improves evaluator judgment.
 
 ### How the Evaluator Loop Works (Phase 5)
 
