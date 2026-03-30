@@ -214,6 +214,62 @@ When evaluating product context, architecture, or design artifacts (not code):
 | 4 | Fully compatible with minor cosmetic issues |
 | 5 | Perfect compatibility — downstream skills can consume without any transformation |
 
+### Walking Skeleton Validity (1–5)
+
+Does Layer 0 represent the thinnest possible end-to-end user journey?
+
+| Score | Definition |
+|-------|-----------|
+| 1 | Layer 0 has gold-plated features, infrastructure-only stories, or no clear user journey |
+| 2 | A user journey exists but includes unnecessary scope — some stories could move to Layer 1+ |
+| 3 | Mostly minimal but 1-2 stories feel over-scoped for a walking skeleton |
+| 4 | Genuinely thin path with one minor luxury that could be deferred |
+| 5 | The absolute minimum — a user can complete the crudest possible journey, nothing more |
+
+> "Build a skeleton that can walk before building a perfect leg." — Jeff Patton
+
+### Layer Ordering (1–5)
+
+Does each layer add meaningful new user capability in the right order?
+
+| Score | Definition |
+|-------|-----------|
+| 1 | Layers are arbitrary groupings with no clear progression of user value |
+| 2 | Some layers add user value, but ordering doesn't match priority |
+| 3 | Layers generally progress from core to enrichment, with 1-2 misplacements |
+| 4 | Clear value progression — each layer unlocks a meaningful new user capability |
+| 5 | Optimal ordering — users get the highest-value capabilities earliest, each layer builds naturally on the previous |
+
+### Vision Alignment (1–5)
+
+Do all stories trace back to the opportunity brief and product vision?
+
+| Score | Definition |
+|-------|-----------|
+| 1 | Multiple stories serve no user need — pure technical infrastructure or scope creep |
+| 2 | Most stories serve the vision but some are "nice to have" that crept in |
+| 3 | All stories connect to user needs but some are indirect |
+| 4 | Clear traceability from each story to the opportunity brief |
+| 5 | Every story directly serves a stated user need, with explicit mapping to JTBD |
+
+### INVEST Compliance (1–5)
+
+Do stories follow the INVEST criteria (Independent, Negotiable, Valuable, Estimable, Small, Testable)?
+
+| Score | Definition |
+|-------|-----------|
+| 1 | Stories are coupled, vague, and untestable — they are task lists, not stories |
+| 2 | Some stories meet INVEST but many are too large or have hidden dependencies |
+| 3 | Most stories are independent and testable but some are oversized or bundled |
+| 4 | Stories are well-formed with minor violations (e.g., one L story that should be split) |
+| 5 | Every story is independent, delivers observable value, has clear acceptance criteria, and is right-sized |
+
+### Story Mapping Hard Failure Thresholds
+
+- **Walking Skeleton Validity < 3** — Layer 0 is not minimal enough
+- **Vision Alignment < 3** — Stories have drifted from the product vision
+- **INVEST Compliance < 3** — Stories are not actionable by an autonomous agent
+
 ---
 
 ## Document Dimensions

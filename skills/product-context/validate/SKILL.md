@@ -64,6 +64,28 @@ The skill operates in one of four modes based on the artifact type. Each mode co
 ### Mode A: Product Context Validation
 
 **When:** After `/envision` or `/map` — validating `product-context.yaml`
+
+Mode A runs **two passes** — product design quality first, then technical correctness:
+
+#### Pass 1: Product Design Evaluation ("Are we building the right thing?")
+
+**Agents:** Product Design Evaluator + Vision Alignment Checker
+
+| Agent | Role | What it checks |
+|-------|------|---------------|
+| Product Design Evaluator | Review against user story mapping principles | Walking skeleton validity, layer ordering, INVEST compliance, dependency graph quality |
+| Vision Alignment Checker | Trace stories to opportunity brief | Every story maps to a stated user need, no scope creep, JTBD coverage |
+
+Read the Product Design Evaluator prompt from `.claude/skills/aep-gen-eval/references/agent-contracts.md`.
+Score using the story mapping dimensions from `.claude/skills/aep-gen-eval/references/scoring-framework.md` (Walking Skeleton Validity, Layer Ordering, Vision Alignment, INVEST Compliance).
+
+**Pass 1 hard failures:**
+- Walking Skeleton Validity < 3 — Layer 0 is not minimal enough
+- Vision Alignment < 3 — Stories have drifted from the product vision
+- INVEST Compliance < 3 — Stories are not actionable by an autonomous agent
+
+#### Pass 2: Technical Validation ("Can we build it correctly?")
+
 **Agents:** Generator + Evaluator + Protocol Checker
 
 | Agent | Role | What it checks |
@@ -71,6 +93,8 @@ The skill operates in one of four modes based on the artifact type. Each mode co
 | Generator | Dry-run each story/layer | Can each story be implemented? Missing details, ambiguous criteria, dependency gaps |
 | Evaluator | Compare design vs codebase | Package versions, import paths, existing patterns, file existence, API compatibility |
 | Protocol Checker | Verify downstream compatibility | Dispatch-required fields, DAG validity, scoring compatibility, file conflict detection |
+
+**Why two passes:** Pass 1 catches product design problems (wrong stories, bad layering, vision drift). Pass 2 catches technical problems (missing fields, broken references, codebase mismatches). Both are required before dispatching to autonomous agents — the agents will faithfully build whatever you give them, right or wrong.
 
 ### Mode B: Design Validation
 

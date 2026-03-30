@@ -16,9 +16,46 @@ Bridge between the product context (control plane) and the feature lifecycle (ex
   → /reflect → loop
 ```
 
-**Session:** Main, interactive with user
+**Session:** Main, interactive (default) or autonomous (`--auto`)
 **Input:** `product-context.yaml` with stories
 **Output:** OpenSpec change with pre-assembled context, story status updated, handoff to `/design` or `/launch`
+
+### Autonomous Mode (`--auto`)
+
+When invoked with `--auto`, dispatch runs the **full feature loop without human intervention**:
+
+```
+/dispatch --auto
+    ↓ sync signals, cascade states, score stories
+    ↓ auto-select top stories by dispatch_score (wave mode)
+    ↓ auto-route: well-specified → /launch, ambiguous → autonomous /design
+    ↓ /launch spawns workspace → /build runs autonomously
+    ↓ /build completes → /wrap archives and syncs YAML
+    ↓ /dispatch --auto re-invoked (loop continues)
+```
+
+**The autonomous contract:** Humans own the product design (`/envision`, `/map`, `/validate`, UI/UX). Agents own the implementation loop (`dispatch → design → launch → build → wrap`). The boundary is at `/validate` — once the product context passes validation, agents take over.
+
+**Autonomous mode changes these defaults:**
+- Step 4 (Present Queue): **Skipped** — no interactive display
+- Step 5 (Dispatch): Uses `--batch wave` — dispatches top N stories by score
+- Step 7 (Handoff): **Auto-routes** — well-specified stories skip to `/launch`, ambiguous stories run autonomous `/design` (Phase 2 only, skip interactive Phase 1 and 3)
+- `/build` Phase 11.5: **Skipped for non-UI stories** — automated dogfood testing via agent-browser replaces human evaluation for UI stories
+- `/build` Phase 12: **Auto-merge** when CI green + no blocking review comments
+- `/wrap`: **Auto-triggers next dispatch** — calls `/dispatch --auto` instead of suggesting it
+
+**Prerequisites for autonomous mode:**
+- `product-context.yaml` must have passed `/validate` (both product design and technical passes)
+- `topology.routing.autonomous: true` must be set in product-context.yaml
+- All stories in the active layer must have `business_value` and `complexity` fields
+- Evaluator criteria must be pre-configured (default from gen-eval scoring-framework, or project-specific)
+
+**When autonomous mode stops and escalates to human:**
+- Evaluator loop fails to converge after 5 rounds
+- Layer gate test fails
+- No stories are ready (all blocked or failed)
+- A story fails 3 times (max retries exceeded)
+- WIP limit reached and no stories are completing
 
 ---
 
@@ -399,11 +436,101 @@ jj git push --change @-
 
 ## Edge Cases
 
-- **No stories ready:** All pending stories have unmet dependencies. Check if any `in_progress` stories are stuck (high attempt_count, old started_at). Suggest checking workspace progress or running `/reflect`.
-- **All stories completed in active layer:** Trigger layer gate test. If passed, advance to next layer and re-run dispatch.
-- **All stories completed in all layers:** Product is done. Suggest `/reflect` for final review.
-- **Layer gate failed:** Do not advance. Create fix stories based on gate failure, add to current layer, re-dispatch.
-- **WIP limit reached:** No available slots. Show what's in progress and suggest waiting or reviewing PRs to unblock slots.
+- **No stories ready:** All pending stories have unmet dependencies. Check if any `in_progress` stories are stuck (high attempt_count, old started_at). Suggest checking workspace progress or running `/reflect`. In `--auto` mode: escalate to human.
+- **All stories completed in active layer:** Trigger layer gate test. If passed, advance to next layer and re-run dispatch. In `--auto` mode: auto-run layer gate test, advance if passed, escalate if failed.
+- **All stories completed in all layers:** Product is done. Suggest `/reflect` for final review. In `--auto` mode: stop loop, notify human.
+- **Layer gate failed:** Do not advance. Create fix stories based on gate failure, add to current layer, re-dispatch. In `--auto` mode: escalate to human (layer gate failures require judgment).
+- **WIP limit reached:** No available slots. Show what's in progress and suggest waiting or reviewing PRs to unblock slots. In `--auto` mode: wait and poll workspace signals every 60 seconds until a slot frees up.
+
+---
+
+## Autonomous Loop Protocol
+
+When running in `--auto` mode, the dispatch loop is a continuous cycle:
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                    HUMAN DOMAIN                                  │
+│                                                                  │
+│  /envision → /map → /validate (Pass 1: product design)          │
+│       │                  │                                       │
+│       │    product-context.yaml                                  │
+│       │    (validated, autonomous: true)                         │
+│       └──────────────────┘                                       │
+│                          │                                       │
+│                          ▼                                       │
+├──────────────────────────────────────────────────────────────────┤
+│                    AGENT DOMAIN                                  │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────┐        │
+│  │             /dispatch --auto                         │        │
+│  │                                                     │        │
+│  │  ① Sync signals from workspaces                     │        │
+│  │  ② Cascade state transitions                        │        │
+│  │  ③ Score ready stories                              │        │
+│  │  ④ Check: stories ready?                            │        │
+│  │     No  → escalate to human                         │        │
+│  │     Yes → continue                                  │        │
+│  │  ⑤ Check: layer complete?                           │        │
+│  │     Yes → run layer gate test                       │        │
+│  │           Pass → advance layer, continue            │        │
+│  │           Fail → escalate to human                  │        │
+│  │  ⑥ Select top N stories (wave mode, up to WIP)     │        │
+│  │  ⑦ For each story:                                  │        │
+│  │     Well-specified → /launch directly               │        │
+│  │     Ambiguous → autonomous /design (Phase 2 only)   │        │
+│  │                  then /launch                        │        │
+│  │  ⑧ Monitor workspaces (poll signals)                │        │
+│  │  ⑨ On completion → /wrap                            │        │
+│  │  ⑩ Loop → back to ①                                 │        │
+│  └─────────────────────────────────────────────────────┘        │
+│                                                                  │
+│  ESCALATION TRIGGERS (agent → human):                            │
+│  • Eval loop fails after 5 rounds                                │
+│  • Layer gate test fails                                         │
+│  • No stories ready (all blocked/failed)                         │
+│  • Story fails 3 times (max retries)                             │
+│  • All layers complete (product done)                            │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Autonomous Design (Ambiguous Stories)
+
+When a story is ambiguous (fewer than 3 acceptance criteria, missing interfaces, complexity L), autonomous mode runs `/design` Phase 2 only (auto-generate proposal, design, specs, tasks via `/opsx:propose`). Phase 1 (interactive explore) and Phase 3 (interactive review) are skipped — the product context from `/validate` provides sufficient context.
+
+The auto-generated design artifacts are committed and the story proceeds to `/launch` immediately.
+
+### Monitoring and Re-entry
+
+In autonomous mode, the main session monitors workspace signals:
+
+```bash
+# Poll all active workspaces
+for ws in .feature-workspaces/*/; do
+  status=$(cat "$ws/.dev-workflow/signals/status.json" 2>/dev/null)
+  # Check for completion, failure, or escalation
+done
+```
+
+When a workspace completes (signal shows `story_status: completed`):
+1. Run `/wrap` for that workspace
+2. `/wrap` updates product-context.yaml
+3. Re-invoke `/dispatch --auto` to cascade and dispatch next stories
+
+### Enabling Autonomous Mode
+
+Add to `product-context.yaml`:
+
+```yaml
+topology:
+  routing:
+    autonomous: true           # Enable --auto mode
+    concurrency_limit: 5       # Max parallel workspaces
+    auto_merge: true           # Skip Phase 12 confirmation
+    auto_design: true          # Auto-generate designs for ambiguous stories
+    skip_human_eval: backend   # Skip Phase 11.5 for backend-only stories
+                               # Options: all, backend, none (default: none)
+```
 
 ---
 
