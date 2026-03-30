@@ -298,7 +298,11 @@ After implementation, verify the code before moving to testing.
 
 **With separate evaluator (full mode):**
 
-If `.dev-workflow/evaluator-criteria.md` exists (written during `/launch`), spawn an evaluator in a cmux bottom split pane. The generator orchestrates the entire evaluation loop — no manual intervention needed.
+If `.dev-workflow/evaluator-criteria.md` exists (written during `/launch`), spawn an evaluator in a tmux bottom split pane. The generator orchestrates the entire evaluation loop — no manual intervention needed.
+
+> **Why tmux splits, not cmux splits:** The generator runs inside tmux but was not spawned by cmux,
+> so it cannot use cmux socket commands. Use `tmux split-window` instead — the cmux surface attached
+> to the tmux session will display both panes automatically.
 
 #### Evaluation round
 
@@ -319,26 +323,21 @@ For each round N (starting at 1, max 5):
    [output of jj diff --stat]
    ```
 
-2. **Spawn evaluator in bottom pane:**
+2. **Spawn evaluator in bottom tmux pane:**
 
    ```bash
-   # Start evaluator in its own tmux session
-   tmux new-session -d -s eval-<feature-name> \
-     -c "$(pwd)" \
-     "claude --dangerously-skip-permissions --rc"
+   # Split current tmux window vertically (top=generator, bottom=evaluator)
+   tmux split-window -v -c "$(pwd)" "claude --dangerously-skip-permissions --rc"
 
-   # Create bottom cmux pane and attach
-   EVAL_PANE=$(cmux new-pane --direction down | grep -o 'pane:[0-9]*')
-   EVAL_SURFACE=$(cmux list-pane-surfaces --pane "$EVAL_PANE" \
-     | grep -o 'surface:[0-9]*' | tail -1)
-   cmux send --surface "$EVAL_SURFACE" "tmux attach -t eval-<feature-name>\n"
+   # Return focus to the generator pane (top)
+   tmux select-pane -t :.0
    ```
 
 3. **Wait for evaluator to initialize, then send prompt:**
 
    ```bash
    sleep 10
-   cmux send --surface "$EVAL_SURFACE" "You are an EVALUATOR agent. Begin evaluation immediately.
+   tmux send-keys -t :.1 "You are an EVALUATOR agent. Begin evaluation immediately.
 
    Read these files:
    1. .dev-workflow/evaluator-criteria.md (scoring calibration)
@@ -356,7 +355,7 @@ For each round N (starting at 1, max 5):
    CRITICAL: Score honestly. Do not rationalize problems away.
    Apply hard failure thresholds strictly.
    Never modify verification_steps in feature-verification.json.
-   "
+   " Enter
    ```
 
 4. **Poll for response:**
@@ -365,10 +364,11 @@ For each round N (starting at 1, max 5):
    while [ ! -f .dev-workflow/signals/eval-response-<N>.md ]; do sleep 15; done
    ```
 
-5. **Read response and close evaluator:**
+5. **Read response and close evaluator pane:**
 
    ```bash
-   tmux kill-session -t eval-<feature-name>
+   # Kill the evaluator pane (bottom)
+   tmux kill-pane -t :.1
    ```
 
 6. **Fix FAIL items** — edit the appropriate jj changes and loop back to step 1 with round N+1.

@@ -157,7 +157,7 @@ Write `.dev-workflow/evaluator-criteria.md` (per-workspace, not the default refe
 
 ### How the Evaluator Loop Works (Phase 5)
 
-The generator self-orchestrates the evaluation loop at Phase 5. **You do not need to spawn the evaluator manually.** The generator uses cmux to create a bottom split pane with a new evaluator Claude Code instance:
+The generator self-orchestrates the evaluation loop at Phase 5. **You do not need to spawn the evaluator manually.** The generator uses `tmux split-window` to create a bottom pane with a new evaluator Claude Code instance (the cmux surface attached to the session displays both panes automatically):
 
 ```
 ┌─────────────────────────────────────────────────────┐
