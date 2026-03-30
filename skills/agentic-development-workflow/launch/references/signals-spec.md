@@ -111,7 +111,7 @@ echo "Feature ready for testing at http://localhost:3000" > .dev-workflow/signal
 The main session can watch for this file:
 ```bash
 # Main session polls (or uses filesystem watcher):
-cat .claude/workspaces/<name>/.dev-workflow/signals/ready-for-review.flag
+cat .feature-workspaces/<name>/.dev-workflow/signals/ready-for-review.flag
 ```
 
 ### `eval-request.md` — Evaluation Request
@@ -157,13 +157,13 @@ The main session can check workspace progress without interrupting the agent:
 
 ```bash
 # Check current phase and progress
-cat .claude/workspaces/<name>/.dev-workflow/signals/status.json | jq .
+cat .feature-workspaces/<name>/.dev-workflow/signals/status.json | jq .
 
 # Check if ready for review
-ls .claude/workspaces/<name>/.dev-workflow/signals/ready-for-review.flag 2>/dev/null
+ls .feature-workspaces/<name>/.dev-workflow/signals/ready-for-review.flag 2>/dev/null
 
 # Send feedback
-cat >> .claude/workspaces/<name>/.dev-workflow/signals/feedback.md << 'EOF'
+cat >> .feature-workspaces/<name>/.dev-workflow/signals/feedback.md << 'EOF'
 
 ## 2026-03-25 14:00
 Priority: high

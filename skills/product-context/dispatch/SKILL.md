@@ -56,7 +56,7 @@ Before calculating anything, sync workspace signals into the YAML to reflect rea
 ```
 For each story with status: in_progress or in_review:
   workspace = story.assigned_to
-  signal_path = .claude/workspaces/<workspace>/.dev-workflow/signals/status.json
+  signal_path = .feature-workspaces/<workspace>/.dev-workflow/signals/status.json
 
   Read signal file (if exists):
     If signal.story_status == "completed":

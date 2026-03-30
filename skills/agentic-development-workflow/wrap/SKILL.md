@@ -36,7 +36,7 @@ jj st
 ### 2. Stop the dev server (from the workspace, if still running)
 
 ```bash
-source .claude/workspaces/<name>/.dev-workflow/ports.env 2>/dev/null
+source .feature-workspaces/<name>/.dev-workflow/ports.env 2>/dev/null
 lsof -ti :$SERVER_PORT | xargs kill 2>/dev/null
 lsof -ti :$WEB_PORT | xargs kill 2>/dev/null
 ```
@@ -63,7 +63,7 @@ If `product-context.yaml` exists and this feature was a dispatched story, read t
 
 ```bash
 # Read completion data from workspace signals
-cat .claude/workspaces/<name>/.dev-workflow/signals/status.json
+cat .feature-workspaces/<name>/.dev-workflow/signals/status.json
 ```
 
 From the signal file, extract `story_status`, `pr_url`, `cost_usd`, `completed_at`, and `failure_log` (if present). Update the story in `product-context.yaml`:

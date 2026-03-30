@@ -32,31 +32,42 @@ jj st
 
 ## Launch Workspace
 
+> **Important:** Workspaces must live **outside** `.claude/` — Claude Code treats everything under
+> `.claude/` as sensitive and blocks file writes with permission prompts, even with `--dangerously-skip-permissions`.
+
 ```bash
-# 1. Create the jj workspace
-jj workspace add .claude/workspaces/<name>
+# 1. Create the jj workspace (outside .claude/ to avoid sensitive path protection)
+mkdir -p .feature-workspaces
+jj workspace add .feature-workspaces/<name>
 
 # 2. Start Claude Code in a tmux session
 tmux new-session -d -s <name> \
-  -c .claude/workspaces/<name> \
+  -c .feature-workspaces/<name> \
   "claude --dangerously-skip-permissions --rc"
 
-# 3. Create a cmux tab and attach
-SURFACE_REF=$(cmux new-surface --type terminal | grep -o 'surface:[0-9]*')
-cmux send --surface "$SURFACE_REF" "tmux attach -t <name>\n"
-cmux rename-tab --surface "$SURFACE_REF" "<name>"
+# 3. Create a cmux tab and attach to the generator window
+GEN_SURFACE=$(cmux new-surface --type terminal | grep -o 'surface:[0-9]*')
+cmux send --surface "$GEN_SURFACE" "tmux attach -t <name>\n"
+cmux rename-tab --surface "$GEN_SURFACE" "<name>"
 ```
 
 Replace `<name>` with a short feature name (e.g., `add-auth`).
+
+> **Note:** Add `.feature-workspaces/` to your project's `.gitignore` — workspace directories are ephemeral and should not be committed.
 
 ---
 
 ## Send Bootstrap Prompt
 
-After the cmux tab is attached and Claude Code is ready, send the bootstrap instruction:
+Wait for Claude Code to fully initialize (look for the `❯` prompt in the tmux pane), then send the bootstrap instruction:
 
 ```bash
-cmux send --surface "$SURFACE_REF" "/build execute implementation for openspec change <change-name>. Read the worktree-onboarding reference at skills/agentic-development-workflow/build/references/worktree-onboarding.md for full setup instructions. Design phases are pre-completed on main.
+# Verify Claude Code is ready before sending (look for the prompt indicator)
+sleep 5
+tmux capture-pane -t <name>:0 -p -S -5 | grep -q '❯' && echo "ready"
+
+# Send bootstrap prompt via cmux
+cmux send --surface "$GEN_SURFACE" "/build execute implementation for openspec change <change-name>. Read the worktree-onboarding reference in the build skill's references/worktree-onboarding.md for full setup instructions. Design phases are pre-completed on main.
 "
 ```
 
@@ -144,28 +155,37 @@ Write `.dev-workflow/evaluator-criteria.md` (per-workspace, not the default refe
 
 ### Step 1: Spawn the Evaluator
 
-Create a second cmux tab in the same tmux session:
+> **Key insight:** Use `tmux new-window` to create the evaluator window directly with the command,
+> then attach a cmux surface to that specific window. Do NOT send shell commands via cmux to start
+> Claude Code — that routing is unreliable across tmux windows.
 
 ```bash
-# Create a new cmux tab for the evaluator
+# 1. Create evaluator window directly via tmux (runs Claude Code immediately)
+tmux new-window -t <name> -n evaluator \
+  -c .feature-workspaces/<name> \
+  "claude --dangerously-skip-permissions --rc"
+
+# 2. Create a cmux tab that attaches to the evaluator window
 EVAL_SURFACE=$(cmux new-surface --type terminal | grep -o 'surface:[0-9]*')
-cmux send --surface "$EVAL_SURFACE" "tmux new-window -t <session-name> -n evaluator -c .claude/workspaces/<name>\n"
-
-# Start Claude Code in the evaluator tab
-cmux send --surface "$EVAL_SURFACE" "claude --dangerously-skip-permissions --rc\n"
-
-# Rename the tab
+cmux send --surface "$EVAL_SURFACE" "tmux attach -t <name>:evaluator\n"
 cmux rename-tab --surface "$EVAL_SURFACE" "evaluator-<name>"
 ```
 
 ### Step 2: Send Evaluator Bootstrap Prompt
 
+Wait for the evaluator's Claude Code to initialize, then send the bootstrap prompt via the cmux surface:
+
 ```bash
+# Wait for Claude Code to be ready
+sleep 8
+tmux capture-pane -t <name>:evaluator -p -S -5 | grep -q '❯' && echo "evaluator ready"
+
+# Send bootstrap prompt
 cmux send --surface "$EVAL_SURFACE" "You are an EVALUATOR agent. Your job is to critically evaluate the generator's work, not to write code.
 
 Start by reading these files:
 1. .dev-workflow/evaluator-criteria.md (your scoring calibration — brainstormed for this feature)
-   If this file does not exist, fall back to: skills/agentic-development-workflow/launch/references/evaluator-criteria.md
+   If this file does not exist, fall back to the evaluator-criteria.md reference in the launch skill's references/ directory.
 2. All files in openspec/changes/<change-name>/ (proposal, design, specs, tasks)
 3. .dev-workflow/contracts.md (success criteria per task)
 4. .dev-workflow/feature-verification.json (verification checklist)
@@ -195,7 +215,7 @@ cmux send --surface "$GEN_SURFACE" "An evaluator agent is now running in a separ
 After the evaluation loop completes and all phases pass:
 
 ```bash
-tmux kill-window -t <session-name>:evaluator
+tmux kill-window -t <name>:evaluator
 ```
 
 ---
@@ -206,13 +226,13 @@ The main session can check workspace progress without interrupting the agent:
 
 ```bash
 # Check current phase and progress
-cat .claude/workspaces/<name>/.dev-workflow/signals/status.json
+cat .feature-workspaces/<name>/.dev-workflow/signals/status.json
 
 # Check if ready for human review
-ls .claude/workspaces/<name>/.dev-workflow/signals/ready-for-review.flag 2>/dev/null
+ls .feature-workspaces/<name>/.dev-workflow/signals/ready-for-review.flag 2>/dev/null
 
 # Send mid-flight feedback
-cat >> .claude/workspaces/<name>/.dev-workflow/signals/feedback.md << 'EOF'
+cat >> .feature-workspaces/<name>/.dev-workflow/signals/feedback.md << 'EOF'
 
 ## <date> <time>
 Priority: high
