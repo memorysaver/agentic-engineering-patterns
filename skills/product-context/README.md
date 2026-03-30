@@ -2,16 +2,17 @@
 
 A persistent product-level planning layer that captures the "what and why" of the entire product in a single YAML file. Used for both initial product planning and ongoing iteration.
 
-Four skills, one feedback loop:
+Five skills, one feedback loop:
 
 ```
-/envision → /map → [ /dispatch → /design → /build → /wrap ] → /reflect → loop
+/envision → /map → /validate → [ /dispatch → /design → /build → /wrap ] → /reflect → loop
 ```
 
 | Skill | What it does | When to use |
 |-------|-------------|-------------|
 | [/envision](envision/SKILL.md) | Opportunity brief + context document | Starting a new product, revisiting direction |
 | [/map](map/SKILL.md) | System map + story graph + agent topology | Decomposing a product into executable work |
+| [/validate](validate/SKILL.md) | Generator/evaluator validation of any artifact | After any generation phase, before proceeding |
 | [/dispatch](dispatch/SKILL.md) | Pick next story, create OpenSpec change | Ready to start building a feature |
 | [/reflect](reflect/SKILL.md) | Classify feedback + update context | After shipping, after user testing |
 
