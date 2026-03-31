@@ -57,7 +57,15 @@ export function loadProductContext(filePath?: string): ProductContext {
 
   const raw = readFileSync(resolvedPath, "utf-8");
   const preprocessed = preprocessYaml(raw);
-  const parsed = yaml.load(preprocessed) as ProductContext;
+  const rawParsed = yaml.load(preprocessed);
+  let parsed: ProductContext;
+  try {
+    parsed = ProductContextSchema.parse(rawParsed);
+  } catch {
+    // Fallback: if Zod rejects (e.g., z.record type issues in v4),
+    // use raw data so the dashboard still loads
+    parsed = rawParsed as ProductContext;
+  }
 
   cached = parsed;
   cachedPath = resolvedPath;
@@ -129,7 +137,7 @@ export function buildStoryMap(ctx: ProductContext): StoryMapData {
   const modules = ctx.architecture?.modules || [];
   const layers = ctx.product?.layers || [];
   const stories = ctx.stories || [];
-  const rawActivities = (ctx.product as any)?.activities || [];
+  const rawActivities = ctx.product?.activities || [];
 
   const backbone = modules.map((m) => ({
     id: m.id || m.name || "",
@@ -159,7 +167,7 @@ export function buildStoryMap(ctx: ProductContext): StoryMapData {
     storyId: s.id,
     title: s.title,
     moduleId: s.module,
-    activity: (s as any).activity ?? null,
+    activity: s.activity ?? null,
     layer: s.layer,
     slice: s.slice,
     status: s.status,

@@ -9,7 +9,7 @@ import { FilterToolbar } from "@/components/story-map/filter-toolbar";
 import { SummaryStats } from "@/components/story-map/summary-stats";
 import { StoryDetailPanel } from "@/components/story-map/story-detail-panel";
 import { JourneyView } from "@/components/story-map/journey-view";
-import { useMemo, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useState, type ComponentType } from "react";
 import { Grid3x3, Layers, Columns3, ListCollapse, Route as RouteIcon } from "lucide-react";
 
 export const Route = createFileRoute("/story-map")({
@@ -41,7 +41,12 @@ function StoryMapPage() {
     () => (hasActivities ? [JOURNEY_TAB, ...BASE_TABS] : BASE_TABS),
     [hasActivities],
   );
-  const [activeTab, setActiveTab] = useState<ViewTab>(hasActivities ? "journey" : "grid");
+  const [activeTab, setActiveTab] = useState<ViewTab>("grid");
+
+  // Switch to journey tab when activities data loads
+  useEffect(() => {
+    if (hasActivities) setActiveTab("journey");
+  }, [hasActivities]);
 
   if (isLoading) {
     return (
