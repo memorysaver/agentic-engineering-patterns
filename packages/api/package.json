@@ -1,0 +1,31 @@
+{
+  "name": "@agentic-engineering-patterns/api",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@agentic-engineering-patterns/auth": "workspace:*",
+    "@agentic-engineering-patterns/db": "workspace:*",
+    "@agentic-engineering-patterns/env": "workspace:*",
+    "@orpc/client": "catalog:",
+    "@orpc/openapi": "catalog:",
+    "@orpc/server": "catalog:",
+    "@orpc/zod": "catalog:",
+    "dotenv": "catalog:",
+    "js-yaml": "^4.1.1",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@agentic-engineering-patterns/config": "workspace:*",
+    "@types/js-yaml": "^4.0.9",
+    "hono": "catalog:",
+    "typescript": "^5"
+  }
+}
