@@ -90,32 +90,29 @@ function StoryMapPage() {
       {/* Summary stats bar */}
       <SummaryStats cards={data.cards} dispatchEpoch={progressQuery.data?.dispatchEpoch} />
 
-      {/* Tab bar + filters */}
-      <div className="flex items-center border-b border-zinc-800/60 bg-zinc-950/60">
-        {/* Tabs */}
-        <div className="flex">
+      {/* Tab bar */}
+      <div className="flex items-center gap-3 border-b border-zinc-800/50 px-4 py-1.5">
+        <div className="flex rounded-lg bg-zinc-900/80 p-0.5">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`relative flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium transition-colors ${
-                activeTab === tab.id ? "text-zinc-100" : "text-zinc-500 hover:text-zinc-300"
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-medium transition-all ${
+                activeTab === tab.id
+                  ? "bg-zinc-800 text-zinc-100 shadow-sm shadow-black/20"
+                  : "text-zinc-500 hover:text-zinc-300"
               }`}
             >
-              <tab.icon className="h-3.5 w-3.5" />
+              <tab.icon className="h-3 w-3" />
               {tab.label}
-              {activeTab === tab.id && (
-                <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-emerald-400" />
-              )}
             </button>
           ))}
         </div>
 
-        {/* Divider */}
-        <div className="mx-2 h-4 w-px bg-zinc-800" />
+        <div className="h-4 w-px bg-zinc-800/60" />
 
-        {/* Filters */}
+        {/* Inline filters */}
         <FilterToolbar
           statuses={[...new Set(data.cards.map((c) => c.status))]}
           layers={data.lanes}

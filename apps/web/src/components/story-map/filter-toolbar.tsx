@@ -1,4 +1,5 @@
 import { getStatusColor, STATUS_ORDER } from "./status-colors";
+import { SlidersHorizontal, X } from "lucide-react";
 
 type FilterToolbarProps = {
   statuses: string[];
@@ -8,6 +9,8 @@ type FilterToolbarProps = {
   onStatusFilterChange: (statuses: string[]) => void;
   onLayerFilterChange: (layers: number[]) => void;
 };
+
+const VISIBLE_STATUSES = STATUS_ORDER.filter((s) => !["done", "review"].includes(s));
 
 export function FilterToolbar({
   statuses,
@@ -34,12 +37,15 @@ export function FilterToolbar({
   };
 
   const hasFilters = statusFilter.length > 0 || layerFilter.length > 0;
+  const filterCount = statusFilter.length + layerFilter.length;
 
   return (
-    <div className="flex flex-1 flex-wrap items-center gap-3 px-2 py-1">
-      <div className="flex items-center gap-1">
-        <span className="text-[10px] text-zinc-600 uppercase tracking-wider mr-1">Status</span>
-        {STATUS_ORDER.filter((s) => !["done", "review"].includes(s)).map((status) => {
+    <div className="flex flex-1 items-center gap-2">
+      <SlidersHorizontal className="h-3 w-3 text-zinc-600" />
+
+      {/* Status dots */}
+      <div className="flex items-center gap-0.5 rounded-md bg-zinc-900/60 px-1.5 py-1">
+        {VISIBLE_STATUSES.map((status) => {
           const colors = getStatusColor(status);
           const isActive = statusFilter.includes(status);
           const exists = statuses.includes(status);
@@ -48,25 +54,31 @@ export function FilterToolbar({
               key={status}
               type="button"
               onClick={() => toggleStatus(status)}
-              className={`flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] transition-all ${
-                isActive
-                  ? `${colors.border} ${colors.bg}`
-                  : !exists
-                    ? "border-transparent opacity-20"
-                    : hasFilters
-                      ? "border-transparent opacity-40 hover:opacity-70"
-                      : "border-transparent opacity-85 hover:opacity-100"
+              title={status.replace(/_/g, " ")}
+              className={`group relative flex h-5 w-5 items-center justify-center rounded transition-all ${
+                isActive ? "bg-zinc-700/80" : "hover:bg-zinc-800/60"
               }`}
             >
-              <span className={`h-1.5 w-1.5 rounded-full ${colors.dot}`} />
-              <span className="text-zinc-400">{status.replace(/_/g, " ")}</span>
+              <span
+                className={`rounded-full transition-all ${colors.dot} ${
+                  isActive
+                    ? "h-2.5 w-2.5"
+                    : exists
+                      ? "h-[6px] w-[6px] group-hover:h-2 group-hover:w-2"
+                      : "h-[4px] w-[4px] opacity-25"
+                }`}
+              />
+              {/* Tooltip */}
+              <span className="pointer-events-none absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-zinc-800 px-1.5 py-0.5 text-[9px] text-zinc-300 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                {status.replace(/_/g, " ")}
+              </span>
             </button>
           );
         })}
       </div>
-      <div className="h-3 w-px bg-zinc-800" />
-      <div className="flex items-center gap-1">
-        <span className="text-[10px] text-zinc-600 uppercase tracking-wider mr-1">Layer</span>
+
+      {/* Layer pills */}
+      <div className="flex items-center gap-0.5 rounded-md bg-zinc-900/60 px-1 py-0.5">
         {layers.map((lane) => {
           const layerNum = Number(lane.id.match(/\d+/)?.[0] ?? 0);
           const isActive = layerFilter.includes(layerNum);
@@ -75,19 +87,21 @@ export function FilterToolbar({
               key={lane.id}
               type="button"
               onClick={() => toggleLayer(layerNum)}
-              className={`rounded border px-1.5 py-0.5 text-[10px] transition-all ${
+              className={`rounded px-1.5 py-0.5 text-[10px] font-medium transition-all ${
                 isActive
-                  ? "border-zinc-600 bg-zinc-800 text-zinc-200"
+                  ? "bg-zinc-700/80 text-zinc-200"
                   : hasFilters
-                    ? "border-transparent text-zinc-500 opacity-30 hover:opacity-60"
-                    : "border-transparent text-zinc-500 opacity-70 hover:opacity-100"
+                    ? "text-zinc-600 hover:text-zinc-400"
+                    : "text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-300"
               }`}
             >
-              {lane.name}
+              L{layerNum}
             </button>
           );
         })}
       </div>
+
+      {/* Active filter count + clear */}
       {hasFilters && (
         <button
           type="button"
@@ -95,9 +109,10 @@ export function FilterToolbar({
             onStatusFilterChange([]);
             onLayerFilterChange([]);
           }}
-          className="text-[10px] text-zinc-500 underline decoration-zinc-700 hover:text-zinc-300"
+          className="flex items-center gap-1 rounded-md bg-zinc-800/80 px-1.5 py-0.5 text-[10px] text-zinc-400 transition-colors hover:bg-zinc-700/80 hover:text-zinc-200"
         >
-          Clear
+          <span>{filterCount}</span>
+          <X className="h-2.5 w-2.5" />
         </button>
       )}
     </div>
