@@ -471,8 +471,10 @@ jj git push --bookmark feat-<name>
 REMOTE_URL=$(jj git remote list | head -1 | awk '{print $2}')
 ```
 
-- `github.com` → `gh pr create --title "<title>" --body "<body>"`
-- `gitlab` → `glab mr create --title "<title>" --description "<body>"`
+- `github.com` → `gh pr create --title "<title>" --body "<body>" --base main`
+- `gitlab` → `glab mr create --title "<title>" --description "<body>" --target-branch main`
+
+> **CRITICAL — always specify `--base main` (GitHub) or `--target-branch main` (GitLab).** Workspace sessions run from a jj workspace whose local branch is the feature branch, not `main`. Without an explicit base, `gh pr create` may infer the wrong base from the local branch state — causing the PR to target a dispatch bookmark instead of `main`, so the code never lands on the main branch even after merge.
 
 Include in the PR/MR body:
 - Summary of changes (from proposal)
