@@ -232,7 +232,7 @@ export function StoryMapGrid({
                           title={card.title}
                           status={card.status}
                           complexity={card.complexity}
-                          priority={card.priority}
+                          slice={card.slice}
                           prUrl={card.prUrl}
                           isSelected={
                             card.storyId === selectedStoryId || highlightedStories.has(card.storyId)
