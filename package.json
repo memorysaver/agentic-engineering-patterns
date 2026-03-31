@@ -1,0 +1,67 @@
+{
+  "name": "agentic-engineering-patterns",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "packages/*"
+    ],
+    "catalog": {
+      "dotenv": "^17.2.2",
+      "zod": "^4.1.13",
+      "@types/node": "^22.13.14",
+      "@cloudflare/workers-types": "^4.20251213.0",
+      "hono": "^4.8.2",
+      "@orpc/server": "^1.12.2",
+      "@orpc/openapi": "^1.12.2",
+      "@orpc/zod": "^1.12.2",
+      "better-auth": "1.5.5",
+      "alchemy": "^0.90.0",
+      "wrangler": "^4.77.0",
+      "lucide-react": "^0.546.0",
+      "next-themes": "^0.4.6",
+      "react": "^19.2.3",
+      "react-dom": "^19.2.3",
+      "sonner": "^2.0.5",
+      "tailwindcss": "^4.1.18",
+      "@libsql/client": "0.15.15",
+      "libsql": "0.5.22",
+      "@orpc/client": "^1.12.2",
+      "@types/react": "^19.2.10",
+      "@types/react-dom": "^19.2.3"
+    }
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "check-types": "turbo check-types",
+    "dev:web": "turbo -F web dev",
+    "dev:desktop": "turbo -F desktop dev:hmr",
+    "build:desktop": "turbo -F desktop build:stable",
+    "build:desktop:canary": "turbo -F desktop build:canary",
+    "dev:server": "turbo -F server dev",
+    "dev:dashboard": "bun run --cwd apps/server --hot src/dev.ts & bun run --cwd apps/web dev:bare",
+    "db:push": "turbo -F @agentic-engineering-patterns/db db:push",
+    "db:generate": "turbo -F @agentic-engineering-patterns/db db:generate",
+    "deploy": "turbo -F @agentic-engineering-patterns/infra deploy",
+    "destroy": "turbo -F @agentic-engineering-patterns/infra destroy",
+    "check": "oxlint && oxfmt --write"
+  },
+  "dependencies": {
+    "@agentic-engineering-patterns/env": "workspace:*",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@agentic-engineering-patterns/config": "workspace:*",
+    "@cloudflare/workers-types": "catalog:",
+    "@types/node": "catalog:",
+    "lefthook": "^2.0.13",
+    "oxfmt": "^0.26.0",
+    "oxlint": "^1.41.0",
+    "turbo": "^2.8.12",
+    "typescript": "^5"
+  },
+  "packageManager": "bun@1.2.18"
+}

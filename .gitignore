@@ -1,8 +1,54 @@
+# Dependencies
 node_modules/
+
+# Build outputs
 dist/
-.dev-workflow/
-.claude/worktrees/
-*.log
-.DS_Store
+build
+*.tsbuildinfo
+
+# Environment variables
 .env
 .env.local
+.env*.local
+
+# IDEs and editors
+.idea
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
+
+# Turbo / Nx
+.turbo
+.nx
+.cache
+
+# Logs
+*.log
+lerna-debug.log*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+logs
+
+# Testing
+coverage
+.nyc_output
+
+# Misc
+.DS_Store
+*.swo
+*.swp
+*~
+*.tgz
+temp
+tmp
+.pnp
+.pnp.js
+
+# Project
+.alchemy
+.claude/worktrees/
+.dev-workflow/

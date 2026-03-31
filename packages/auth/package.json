@@ -1,0 +1,24 @@
+{
+  "name": "@agentic-engineering-patterns/auth",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@agentic-engineering-patterns/db": "workspace:*",
+    "@agentic-engineering-patterns/env": "workspace:*",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@agentic-engineering-patterns/config": "workspace:*",
+    "typescript": "^5"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "desktop",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "turbo -F web build && electrobun dev",
+    "dev": "electrobun dev --watch",
+    "dev:hmr": "concurrently \"bun run hmr\" \"bun run start\"",
+    "hmr": "turbo -F web dev",
+    "build": "turbo -F web build && electrobun build",
+    "build:stable": "turbo -F web build && electrobun build --env=stable",
+    "build:canary": "turbo -F web build && electrobun build --env=canary",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "electrobun": "^1.15.1"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.4",
+    "concurrently": "^9.1.0",
+    "typescript": "^5"
+  }
+}

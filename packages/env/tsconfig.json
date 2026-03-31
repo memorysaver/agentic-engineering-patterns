@@ -1,0 +1,3 @@
+{
+  "extends": "@agentic-engineering-patterns/config/tsconfig.base.json"
+}

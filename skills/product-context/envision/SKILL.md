@@ -82,8 +82,9 @@ Continue the conversation from Phase 0, now focused on product specifics. Lines 
 - **Problem statement:** Sharpen the problem. Not "developers need better tools" but "solo developers building SaaS on edge platforms lose 4+ hours per project setting up agent sandboxing because existing solutions assume AWS/GCP infrastructure."
 - **Persona / JTBD:** Who is the primary user, concretely? What job are they hiring this product to do? What does success look like from their perspective?
 - **MVP boundary:** What is the single most important end-to-end journey the user can complete? What is explicitly excluded, even if adjacent and tempting?
+- **User activities (story map backbone):** What does the user DO, step by step, in the core journey? Map the user's activities as a left-to-right narrative. Each activity is a verb phrase from the user's perspective: "Authenticate", "Create Profile", "Generate Content", "Track Progress", "Download Output". These form the backbone of the story map — the horizontal axis that layers cut across. The activities should read as a coherent sentence: "The user authenticates, then creates a profile, then generates content, then tracks progress, then downloads the output." This comes BEFORE layer definitions — build the backbone first, then draw release lines across it.
 - **Technical constraints:** Non-negotiable stack choices, infrastructure requirements, hard dependencies.
-- **Layered MVP contract:** Layer 0 is the walking skeleton — the thinnest possible end-to-end path. Each subsequent layer adds capabilities. Define what the user can accomplish at each layer.
+- **Layered MVP contract:** Layer 0 is the walking skeleton — a horizontal slice across the activity backbone, picking the thinnest story from each activity. Each subsequent layer adds capabilities. Later layers may introduce new activities that extend the backbone to the right. Define what the user can accomplish at each layer.
 
 ### Stage 2: Structure
 
