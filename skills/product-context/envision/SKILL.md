@@ -112,7 +112,17 @@ On first run — create `product-context.yaml` with `opportunity` + `product` se
 
 On subsequent runs — read the existing YAML, update the `opportunity` and/or `product` sections, and preserve all other sections (e.g., `architecture`, `stories`, `topology`).
 
-Commit the artifact:
+### Before Committing: Validate YAML
+
+See `references/yaml-guardrails.md` for the full checklist. Run:
+
+```bash
+npx js-yaml product-context.yaml > /dev/null && echo "YAML OK"
+```
+
+If this fails, fix the YAML before committing. Common fixes: quote list items containing colons, flatten nested sub-lists, escape embedded double quotes.
+
+### Commit
 
 ```bash
 # Write product-context.yaml (opportunity + product sections)

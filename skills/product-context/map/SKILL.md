@@ -147,7 +147,17 @@ Write the topology to the `topology` section of `product-context.yaml`. Also ini
 
 ## Output
 
-Commit the updated YAML:
+### Before Committing: Validate YAML
+
+See `references/yaml-guardrails.md` for the full checklist. Run:
+
+```bash
+npx js-yaml product-context.yaml > /dev/null && echo "YAML OK"
+```
+
+If this fails, fix the YAML before committing. Common fixes: quote list items containing colons, flatten nested sub-lists, escape embedded double quotes.
+
+### Commit
 
 ```bash
 jj describe -m "feat: add system map, story graph, and agent topology"

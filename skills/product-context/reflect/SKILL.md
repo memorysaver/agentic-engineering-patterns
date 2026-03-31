@@ -142,7 +142,15 @@ Based on the classified feedback, update `product-context.yaml` directly:
 
 4. **Update `topology` section** if routing adjustments are needed
 
-5. **Commit updates:**
+5. **Validate YAML** (see `references/yaml-guardrails.md`):
+
+   ```bash
+   npx js-yaml product-context.yaml > /dev/null && echo "YAML OK"
+   ```
+
+   If this fails, fix the YAML before committing. Common fixes: quote list items containing colons, flatten nested sub-lists, escape embedded double quotes.
+
+6. **Commit updates:**
    ```bash
    jj describe -m "chore: reflect — classify feedback and update product context"
    jj new

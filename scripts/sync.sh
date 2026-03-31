@@ -173,6 +173,32 @@ sync_group() {
     sub_count=$((sub_count + 1))
   done
 
+  # Sync shared directories (references/, templates/) into each skill that references them
+  for shared in references templates; do
+    local shared_src="$src/$shared"
+    [ -d "$shared_src" ] || continue
+
+    # Copy shared dir into every synced skill in this group so relative paths work
+    for sub in "$src"/*/; do
+      [ -d "$sub" ] || continue
+      [ -f "$sub/SKILL.md" ] || continue
+      local subname
+      subname="$(basename "$sub")"
+      local prefixed="${prefix}${subname}"
+      local dst="$TARGET/$prefixed/$shared"
+
+      # Skip if the skill already has its own version of this shared dir
+      [ -d "$sub/$shared" ] && continue
+
+      if [ "$DRY_RUN" = true ]; then
+        echo "  Would copy shared $shared/ → $prefixed/$shared/"
+      else
+        cp -r "$shared_src" "$dst"
+        echo "  → $prefixed/$shared/ (shared)"
+      fi
+    done
+  done
+
   # Remove the old nested group directory if it still exists
   if [ "$DRY_RUN" = false ] && [ -d "$TARGET/$dir" ]; then
     rm -rf "$TARGET/$dir"

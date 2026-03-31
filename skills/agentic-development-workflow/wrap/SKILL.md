@@ -35,6 +35,7 @@ jj st
 > **Rebase your local changes on top of the updated main** (which now includes the merged workspace PRs). If the rebase shows conflicts, resolve them before proceeding.
 >
 > **Check for lost OpenSpec changes:** If the dispatch commit included OpenSpec changes that are now missing (common if the dispatch commit wasn't pushed before launching), recover them:
+>
 > ```bash
 > # Find the original dispatch commit
 > jj log --no-graph -T 'change_id.short(8) ++ " " ++ description.first_line() ++ "\n"' -n 20
@@ -86,22 +87,26 @@ From the signal file (corrected by PR state if needed), extract `story_status`, 
 
 ```yaml
 # Update the matching story:
-status: completed          # from signal story_status
-completed_at: <timestamp>  # from signal completed_at
-pr_url: <url>              # from signal pr_url
-cost_usd: <cost>           # from signal cost_usd
+status: completed # from signal story_status
+completed_at: <timestamp> # from signal completed_at
+pr_url: <url> # from signal pr_url
+cost_usd: <cost> # from signal cost_usd
 ```
 
 If `story_status` is `failed`, update with failure data instead:
+
 ```yaml
 status: failed
 failure_logs:
   - <structured failure_log from signal>
 ```
 
-After updating the story, check if any `pending` stories should transition to `ready` (all dependencies now completed). Commit all transitions atomically:
+After updating the story, check if any `pending` stories should transition to `ready` (all dependencies now completed). Validate and commit all transitions atomically:
 
 ```bash
+# Validate YAML before committing (see product-context references/yaml-guardrails.md)
+npx js-yaml product-context.yaml > /dev/null && echo "YAML OK"
+
 jj describe -m "chore: update story <id> status to completed"
 jj new
 jj git push --change @-
@@ -144,6 +149,7 @@ If `product-context.yaml` exists and this feature was a dispatched story:
 ```
 
 If all stories in the current layer are completed:
+
 - Suggest running the **layer gate integration test** (defined in `layer_gates` section of the YAML)
 - If the gate passes, update `layer_gates[layer].status: passed` and `completed_at`
 - The next `/dispatch` will advance to the next layer

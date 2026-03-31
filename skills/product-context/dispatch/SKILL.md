@@ -37,6 +37,7 @@ When invoked with `--auto`, dispatch runs the **full feature loop without human 
 **The autonomous contract:** Humans own the product design (`/envision`, `/map`, `/validate`, UI/UX). Agents own the implementation loop (`dispatch → design → launch → build → wrap`). The boundary is at `/validate` — once the product context passes validation, agents take over.
 
 **Autonomous mode changes these defaults:**
+
 - Step 4 (Present Queue): **Skipped** — no interactive display
 - Step 5 (Dispatch): Uses `--batch wave` — dispatches top N stories by score
 - Step 7 (Handoff): **Auto-routes** — well-specified stories skip to `/launch`, ambiguous stories run autonomous `/design` (Phase 2 only, skip interactive Phase 1 and 3)
@@ -45,12 +46,14 @@ When invoked with `--auto`, dispatch runs the **full feature loop without human 
 - `/wrap`: **Auto-triggers next dispatch** — calls `/dispatch --auto` instead of suggesting it
 
 **Prerequisites for autonomous mode:**
+
 - `product-context.yaml` must have passed `/validate` (both product design and technical passes)
 - `topology.routing.autonomous: true` must be set in product-context.yaml
 - All stories in the active layer must have `business_value` and `complexity` fields
 - Evaluator criteria must be pre-configured (default from gen-eval scoring-framework, or project-specific)
 
 **When autonomous mode stops and escalates to human:**
+
 - Evaluator loop fails to converge after 5 rounds
 - Layer gate test fails
 - No stories are ready (all blocked or failed)
@@ -132,8 +135,17 @@ For each story with status: blocked:
 ```
 
 **Recovery transitions** (user-initiated, handle if requested):
+
 - `failed → pending` — user resets after fixing the spec
 - `deferred → pending` — user un-defers a story
+
+**Validate** the YAML after all updates (see `references/yaml-guardrails.md`):
+
+```bash
+npx js-yaml product-context.yaml > /dev/null && echo "YAML OK"
+```
+
+If this fails, fix the YAML before proceeding. Common fixes: quote list items containing colons, flatten nested sub-lists, escape embedded double quotes.
 
 **Commit** the synced + cascaded state to YAML before computing scores. Increment `dispatch_epoch`.
 
@@ -211,11 +223,11 @@ L = 4    (slow, expensive)
 
 #### Example Scores
 
-| Story | CP | Value | Unblock | Complexity | Score |
-|-------|-----|-------|---------|------------|-------|
-| Auth middleware (critical path, high priority, unblocks 3) | 10 | 7 | 6 | S=1 | **23.0** |
-| User model (not critical, medium priority, unblocks 2) | 4 | 4 | 4 | S=1 | **12.0** |
-| Dashboard layout (not critical, low priority, leaf) | 2 | 1 | 0 | L=4 | **0.75** |
+| Story                                                      | CP  | Value | Unblock | Complexity | Score    |
+| ---------------------------------------------------------- | --- | ----- | ------- | ---------- | -------- |
+| Auth middleware (critical path, high priority, unblocks 3) | 10  | 7     | 6       | S=1        | **23.0** |
+| User model (not critical, medium priority, unblocks 2)     | 4   | 4     | 4       | S=1        | **12.0** |
+| Dashboard layout (not critical, low priority, leaf)        | 2   | 1     | 0       | L=4        | **0.75** |
 
 ---
 
@@ -263,17 +275,22 @@ Dispatch Queue (Layer 0 — 4 ready, 2 in_progress, WIP 3/5)
 ### Dispatch Modes
 
 #### Interactive (default)
+
 User picks stories one at a time. Best for early layers or learning the system.
 
 #### Slice Batch (`--batch slice`)
+
 Dispatch all ready stories in the current execution slice at once:
+
 ```
 Dispatches all ready stories in Slice N (up to WIP limit)
 Creates N workspaces via /launch
 ```
 
 #### Wave (`--batch wave`)
+
 Dispatch the highest-scored ready stories regardless of slice:
+
 ```
 N = min(ready_count, wip_limit - in_progress_count)
 Dispatches top N stories by dispatch_score
@@ -333,6 +350,7 @@ openspec/changes/<story-id>/
 #### Part 1: Stable Prefix (~10K tokens, shared across agents in same layer)
 
 Extracted from `product-context.yaml`:
+
 - `product.problem` — what we're solving
 - `product.constraints` — tech stack, infrastructure
 - `product.layers[active_layer]` — what the user can do at this layer
@@ -350,13 +368,16 @@ Extracted from `product-context.yaml`:
 
 ```markdown
 ## Files to read first
+
 - <files_affected from story spec>
 
 ## Patterns to explore
+
 - Check existing patterns in <module> directory
 - Read interface contract tests for consumed interfaces
 
 ## Do not read
+
 - Other module internals — use dependency_outputs above
 ```
 
@@ -400,6 +421,7 @@ jj git push --change @-
 Determine the handoff based on story completeness:
 
 ### Well-specified → skip to /launch
+
 - 3+ specific, testable acceptance criteria
 - Interface obligations defined
 - Verification strategy complete
@@ -407,6 +429,7 @@ Determine the handoff based on story completeness:
 - Complexity S or M
 
 ### Ambiguous → go through /design
+
 - Vague or fewer than 3 acceptance criteria
 - Missing interface details
 - Complexity L
@@ -517,6 +540,7 @@ done
 ```
 
 When a workspace completes (signal shows `story_status: completed`):
+
 1. Run `/wrap` for that workspace
 2. `/wrap` updates product-context.yaml
 3. Re-invoke `/dispatch --auto` to cascade and dispatch next stories
@@ -528,12 +552,13 @@ Add to `product-context.yaml`:
 ```yaml
 topology:
   routing:
-    autonomous: true           # Enable --auto mode
-    concurrency_limit: 5       # Max parallel workspaces
-    auto_merge: true           # Skip Phase 12 confirmation
-    auto_design: true          # Auto-generate designs for ambiguous stories
-    skip_human_eval: backend   # Skip Phase 11.5 for backend-only stories
-                               # Options: all, backend, none (default: none)
+    autonomous: true # Enable --auto mode
+    concurrency_limit: 5 # Max parallel workspaces
+    auto_merge: true # Skip Phase 12 confirmation
+    auto_design: true # Auto-generate designs for ambiguous stories
+    skip_human_eval:
+      backend # Skip Phase 11.5 for backend-only stories
+      # Options: all, backend, none (default: none)
 ```
 
 ---
