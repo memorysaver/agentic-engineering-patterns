@@ -8,21 +8,26 @@ import { LayerView } from "@/components/story-map/layer-view";
 import { FilterToolbar } from "@/components/story-map/filter-toolbar";
 import { SummaryStats } from "@/components/story-map/summary-stats";
 import { StoryDetailPanel } from "@/components/story-map/story-detail-panel";
-import { useState, type ComponentType } from "react";
-import { Grid3x3, Layers, Columns3, ListCollapse } from "lucide-react";
+import { JourneyView } from "@/components/story-map/journey-view";
+import { useMemo, useState, type ComponentType } from "react";
+import { Grid3x3, Layers, Columns3, ListCollapse, Route as RouteIcon } from "lucide-react";
 
 export const Route = createFileRoute("/story-map")({
   component: StoryMapPage,
 });
 
-type ViewTab = "grid" | "slice" | "kanban" | "layer";
+type ViewTab = "journey" | "grid" | "slice" | "kanban" | "layer";
 
-const TABS: Array<{ id: ViewTab; label: string; icon: ComponentType<{ className?: string }> }> = [
-  { id: "grid", label: "Module \u00d7 Layer", icon: Grid3x3 },
+type TabDef = { id: ViewTab; label: string; icon: ComponentType<{ className?: string }> };
+
+const BASE_TABS: TabDef[] = [
+  { id: "grid", label: "Architecture", icon: Grid3x3 },
   { id: "slice", label: "By Slice", icon: Layers },
   { id: "kanban", label: "By Status", icon: Columns3 },
   { id: "layer", label: "By Layer", icon: ListCollapse },
 ];
+
+const JOURNEY_TAB: TabDef = { id: "journey", label: "User Journey", icon: RouteIcon };
 
 function StoryMapPage() {
   const { data, isLoading, error } = useQuery(orpc.productContext.getStoryMap.queryOptions());
@@ -30,7 +35,13 @@ function StoryMapPage() {
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [layerFilter, setLayerFilter] = useState<number[]>([]);
-  const [activeTab, setActiveTab] = useState<ViewTab>("grid");
+
+  const hasActivities = (data?.activities?.length ?? 0) > 0;
+  const tabs = useMemo(
+    () => (hasActivities ? [JOURNEY_TAB, ...BASE_TABS] : BASE_TABS),
+    [hasActivities],
+  );
+  const [activeTab, setActiveTab] = useState<ViewTab>(hasActivities ? "journey" : "grid");
 
   if (isLoading) {
     return (
@@ -83,7 +94,7 @@ function StoryMapPage() {
       <div className="flex items-center border-b border-zinc-800/60 bg-zinc-950/60">
         {/* Tabs */}
         <div className="flex">
-          {TABS.map((tab) => (
+          {tabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
@@ -117,6 +128,17 @@ function StoryMapPage() {
 
       {/* View content */}
       <div className="flex-1 overflow-auto">
+        {activeTab === "journey" && hasActivities && (
+          <JourneyView
+            cards={filteredCards}
+            activities={data.activities}
+            lanes={data.lanes}
+            allModules={allModules}
+            onCardClick={(storyId) => setSelectedStoryId(storyId)}
+            selectedStoryId={selectedStoryId}
+          />
+        )}
+
         {activeTab === "grid" && (
           <div className="p-4">
             <StoryMapGrid

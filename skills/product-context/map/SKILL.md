@@ -61,6 +61,7 @@ Once the System Map is confirmed, decompose into stories:
 - **One Integration Story Agent:** Looks at module connections in the System Map. Produces stories that glue modules together — the end-to-end flows crossing module boundaries. These are especially critical at Layer 0.
 
 Each story follows the **Story Spec** format (see `templates/story-spec.md`) and must include:
+
 - What changes when complete (observable behavior)
 - Acceptance criteria automatable as tests
 - Layer assignment (0 = walking skeleton, 1+ = enrichment)
@@ -71,13 +72,23 @@ Each story follows the **Story Spec** format (see `templates/story-spec.md`) and
 
 **All stories start with `status: pending`.** Stories follow a state machine: `pending → ready → in_progress → review → done` (or `blocked` / `failed` as error states). The `/dispatch` skill manages state transitions during execution.
 
+### Activity Mapping
+
+After decomposition agents produce their stories, map each story to a user activity from `product.activities`:
+
+- Stories that directly enable a user-facing capability get the activity they serve (e.g., "Create presigned upload URL" → `create-profile` because it enables the user to upload a selfie).
+- **Infrastructure/foundation stories that don't map to any specific user activity leave `activity` as null.** These are implementation enablers — they appear in the architecture view but NOT in the user journey story map. This is correct and expected.
+- Integration stories use the primary user activity they validate end-to-end.
+
+Not every story needs an activity. The story map shows the user's perspective — technical plumbing is visible in the architecture view.
+
 ### Walking Skeleton (Layer 0)
 
-**Layer 0 is the most important layer.** Each module contributes one minimal story, strung together so a user can complete the crudest possible end-to-end journey from the Context Document's Layer 0 MVP Contract.
+**Layer 0 is the most important layer.** It is a horizontal slice across the activity backbone — the thinnest story from each user activity, strung together so a user can complete the crudest possible end-to-end journey from the Context Document's Layer 0 MVP Contract.
 
 > "Build a skeleton that can walk before building a perfect leg."
 
-Do not go deep into any module before proving the end-to-end path works. This is the most expensive mistake in this workflow.
+Every activity in `product.activities` with `layer_introduced: 0` should have at least one Layer 0 story. Do not go deep into any module before proving the end-to-end path works. This is the most expensive mistake in this workflow.
 
 ---
 
@@ -145,6 +156,7 @@ jj git push --change @-
 ```
 
 **Sections written:**
+
 - `architecture` — system map (modules, interfaces, data flow)
 - `stories` — layered story graph with execution slices (all stories start `status: pending`)
 - `topology` — agent roles, handoff contracts, routing rules

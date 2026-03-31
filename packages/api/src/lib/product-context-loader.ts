@@ -89,6 +89,7 @@ export type StoryMapCard = {
   storyId: string;
   title: string;
   moduleId: string;
+  activity?: string | null;
   layer: number;
   slice: number;
   status: string;
@@ -107,8 +108,17 @@ export type StoryMapEdge = {
   fromStatus: string;
 };
 
+export type ActivityItem = {
+  id: string;
+  name: string;
+  description?: string;
+  order: number;
+  layerIntroduced: number;
+};
+
 export type StoryMapData = {
   backbone: Array<{ id: string; name: string; package?: string; status?: string }>;
+  activities: ActivityItem[];
   lanes: Array<{ id: string; name: string; theme?: string; capabilities?: string[] }>;
   cards: StoryMapCard[];
   edges: StoryMapEdge[];
@@ -119,6 +129,7 @@ export function buildStoryMap(ctx: ProductContext): StoryMapData {
   const modules = ctx.architecture?.modules || [];
   const layers = ctx.product?.layers || [];
   const stories = ctx.stories || [];
+  const rawActivities = (ctx.product as any)?.activities || [];
 
   const backbone = modules.map((m) => ({
     id: m.id || m.name || "",
@@ -126,6 +137,16 @@ export function buildStoryMap(ctx: ProductContext): StoryMapData {
     package: m.package,
     status: m.status,
   }));
+
+  const activities: ActivityItem[] = rawActivities
+    .map((a: any) => ({
+      id: a.id,
+      name: a.name,
+      description: a.description,
+      order: a.order ?? 0,
+      layerIntroduced: a.layer_introduced ?? 0,
+    }))
+    .sort((a: ActivityItem, b: ActivityItem) => a.order - b.order);
 
   const lanes = layers.map((l) => ({
     id: l.id || `layer-${l.layer ?? 0}`,
@@ -138,6 +159,7 @@ export function buildStoryMap(ctx: ProductContext): StoryMapData {
     storyId: s.id,
     title: s.title,
     moduleId: s.module,
+    activity: (s as any).activity ?? null,
     layer: s.layer,
     slice: s.slice,
     status: s.status,
@@ -187,7 +209,7 @@ export function buildStoryMap(ctx: ProductContext): StoryMapData {
     }
   }
 
-  return { backbone, lanes, cards, edges, slices };
+  return { backbone, activities, lanes, cards, edges, slices };
 }
 
 export type ProgressData = {

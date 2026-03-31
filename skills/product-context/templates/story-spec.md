@@ -12,6 +12,7 @@ Quality bar: **a single-responsibility agent reading only this spec, the Context
 - **Title**: [Short, descriptive]
 - **Layer**: [0, 1, 2… — which development layer]
 - **Module**: [Primary module, as defined in System Map]
+- **Activity**: [Which user activity this enables, from `product.activities`. Null for infrastructure stories that don't directly serve a user journey step.]
 - **Execution Slice**: [Which slice within the layer this belongs to]
 - **Dependencies**: [Story IDs that must complete before this starts]
 - **Estimated complexity**: [S / M / L]
@@ -21,9 +22,11 @@ Quality bar: **a single-responsibility agent reading only this spec, the Context
 ## Description
 
 ### What changes when this story is complete
+
 [Observable difference in the system. Focus on behavior, not implementation. The agent decides how; this spec defines what.]
 
 ### Why this story exists
+
 [Connect to the Context Document. Which layer of the MVP contract does this serve? Why this layer and not a later one?]
 
 ---

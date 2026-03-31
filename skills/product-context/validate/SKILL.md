@@ -14,6 +14,7 @@ Run a generator/evaluator pattern against any artifact produced by the AEP workf
 **Why separate agents:** The agent that produced an artifact cannot honestly evaluate it. The generator/evaluator separation is the single most impactful quality improvement in agentic workflows. This skill applies the gen/eval pattern to product artifacts.
 
 **Uses the gen/eval utility pattern.** Read these reference files for the underlying framework:
+
 - **Scoring:** `.claude/skills/aep-gen-eval/references/scoring-framework.md`
 - **Agent contracts:** `.claude/skills/aep-gen-eval/references/agent-contracts.md`
 - **Eval protocol:** `.claude/skills/aep-gen-eval/references/eval-protocol.md`
@@ -71,27 +72,35 @@ Mode A runs **two passes** — product design quality first, then technical corr
 
 **Agents:** Product Design Evaluator + Vision Alignment Checker
 
-| Agent | Role | What it checks |
-|-------|------|---------------|
-| Product Design Evaluator | Review against user story mapping principles | Walking skeleton validity, layer ordering, INVEST compliance, dependency graph quality |
-| Vision Alignment Checker | Trace stories to opportunity brief | Every story maps to a stated user need, no scope creep, JTBD coverage |
+| Agent                    | Role                                         | What it checks                                                                                                                 |
+| ------------------------ | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Product Design Evaluator | Review against user story mapping principles | Walking skeleton validity, layer ordering, INVEST compliance, dependency graph quality, activity coverage, narrative coherence |
+| Vision Alignment Checker | Trace stories to opportunity brief           | Every story maps to a stated user need, no scope creep, JTBD coverage                                                          |
 
 Read the Product Design Evaluator prompt from `.claude/skills/aep-gen-eval/references/agent-contracts.md`.
 Score using the story mapping dimensions from `.claude/skills/aep-gen-eval/references/scoring-framework.md` (Walking Skeleton Validity, Layer Ordering, Vision Alignment, INVEST Compliance).
 
 **Pass 1 hard failures:**
+
 - Walking Skeleton Validity < 3 — Layer 0 is not minimal enough
 - Vision Alignment < 3 — Stories have drifted from the product vision
 - INVEST Compliance < 3 — Stories are not actionable by an autonomous agent
+
+**Pass 1 activity checks** (if `product.activities` exists):
+
+- **Activity Coverage:** Every activity with `layer_introduced: 0` has at least one Layer 0 story. An activity with no stories is a gap in the walking skeleton.
+- **Activity Consistency:** Every story with a non-null `activity` references a valid activity id from `product.activities`.
+- **Narrative Coherence:** Read activities left-to-right by `order` — they should form a coherent user narrative: "User [activity 1], then [activity 2], then..." If it doesn't flow, the backbone needs restructuring.
+- **Infrastructure Ratio:** If more than 60% of Layer 0 stories have null activity, the decomposition may be too technical — consider reframing stories around user capabilities.
 
 #### Pass 2: Technical Validation ("Can we build it correctly?")
 
 **Agents:** Generator + Evaluator + Protocol Checker
 
-| Agent | Role | What it checks |
-|-------|------|---------------|
-| Generator | Dry-run each story/layer | Can each story be implemented? Missing details, ambiguous criteria, dependency gaps |
-| Evaluator | Compare design vs codebase | Package versions, import paths, existing patterns, file existence, API compatibility |
+| Agent            | Role                            | What it checks                                                                         |
+| ---------------- | ------------------------------- | -------------------------------------------------------------------------------------- |
+| Generator        | Dry-run each story/layer        | Can each story be implemented? Missing details, ambiguous criteria, dependency gaps    |
+| Evaluator        | Compare design vs codebase      | Package versions, import paths, existing patterns, file existence, API compatibility   |
 | Protocol Checker | Verify downstream compatibility | Dispatch-required fields, DAG validity, scoring compatibility, file conflict detection |
 
 **Why two passes:** Pass 1 catches product design problems (wrong stories, bad layering, vision drift). Pass 2 catches technical problems (missing fields, broken references, codebase mismatches). Both are required before dispatching to autonomous agents — the agents will faithfully build whatever you give them, right or wrong.
@@ -101,20 +110,20 @@ Score using the story mapping dimensions from `.claude/skills/aep-gen-eval/refer
 **When:** After `/design` — validating OpenSpec artifacts (proposal, design, specs, tasks)
 **Agents:** Generator + Evaluator
 
-| Agent | Role | What it checks |
-|-------|------|---------------|
+| Agent     | Role                                 | What it checks                                                                  |
+| --------- | ------------------------------------ | ------------------------------------------------------------------------------- |
 | Generator | Walk through implementation mentally | Are tasks implementable? Missing technical details, unclear acceptance criteria |
-| Evaluator | Check specs against codebase | Do referenced files exist? Are API assumptions correct? Do types match? |
+| Evaluator | Check specs against codebase         | Do referenced files exist? Are API assumptions correct? Do types match?         |
 
 ### Mode C: Code Validation
 
 **When:** After implementation — validating code changes
 **Agents:** Generator + Evaluator (same as `/build` Phase 5)
 
-| Agent | Role | What it checks |
-|-------|------|---------------|
-| Generator | Review code against spec | Does the code match what was specified? Missing features, incomplete flows |
-| Evaluator | Test the running application | Functional testing, edge cases, security, performance |
+| Agent     | Role                         | What it checks                                                             |
+| --------- | ---------------------------- | -------------------------------------------------------------------------- |
+| Generator | Review code against spec     | Does the code match what was specified? Missing features, incomplete flows |
+| Evaluator | Test the running application | Functional testing, edge cases, security, performance                      |
 
 > **Note:** For code validation in a workspace, prefer `/build` Phase 5 which has the full evaluator loop with tmux split panes. Use this skill for code review on main branch or for lighter validation.
 
@@ -123,10 +132,10 @@ Score using the story mapping dimensions from `.claude/skills/aep-gen-eval/refer
 **When:** Validating any structured document (architecture doc, RFC, migration plan)
 **Agents:** Generator + Evaluator
 
-| Agent | Role | What it checks |
-|-------|------|---------------|
+| Agent     | Role                               | What it checks                                                           |
+| --------- | ---------------------------------- | ------------------------------------------------------------------------ |
 | Generator | Follow the document's instructions | Can someone execute this document? Missing steps, ambiguous instructions |
-| Evaluator | Check claims against reality | Do referenced tools/files/APIs exist? Are version numbers correct? |
+| Evaluator | Check claims against reality       | Do referenced tools/files/APIs exist? Are version numbers correct?       |
 
 ---
 
@@ -137,11 +146,13 @@ For each agent, prepare a focused context package. Irrelevant context degrades e
 ### Generator Context
 
 The generator needs:
+
 1. **The artifact being validated** — full content
 2. **The artifact's purpose** — what downstream consumer will use it (e.g., "dispatch will read stories", "an implementer agent will follow these tasks")
 3. **Constraints** — technical stack, project conventions, existing patterns
 
 The generator does NOT need:
+
 - The full codebase (that's the evaluator's job)
 - History of how the artifact was created
 - Other artifacts not directly consumed
@@ -149,17 +160,20 @@ The generator does NOT need:
 ### Evaluator Context
 
 The evaluator needs:
+
 1. **The artifact being validated** — full content
 2. **Read access to the codebase** — package.json files, existing schemas, config files, source code
 3. **The specific claims to verify** — file paths, import statements, version numbers, API signatures
 
 The evaluator does NOT need:
+
 - Product vision or business context
 - The generator's findings (agents work independently)
 
 ### Protocol Checker Context (Mode A only)
 
 The protocol checker needs:
+
 1. **The artifact being validated** — specifically the stories section
 2. **The downstream protocol specification** — e.g., the dispatch skill's requirements for story fields, scoring formula, DAG validation rules
 3. **The topology and layer gate definitions**
@@ -249,11 +263,11 @@ After all agents return, consolidate their findings into a single action list.
 
 ### Categorize by severity
 
-| Category | Description | Action |
-|----------|-------------|--------|
-| **Blocking** | Would stop downstream consumers from working | Fix immediately |
-| **Important** | Would cause friction, confusion, or rework | Fix before proceeding |
-| **Minor** | Cosmetic, missing optional fields, documentation gaps | Fix if time permits |
+| Category      | Description                                           | Action                |
+| ------------- | ----------------------------------------------------- | --------------------- |
+| **Blocking**  | Would stop downstream consumers from working          | Fix immediately       |
+| **Important** | Would cause friction, confusion, or rework            | Fix before proceeding |
+| **Minor**     | Cosmetic, missing optional fields, documentation gaps | Fix if time permits   |
 
 ### Deduplicate
 
@@ -282,6 +296,7 @@ Important:
 Apply all blocking and important fixes to the artifact. Minor fixes are optional.
 
 **Rules for fixes:**
+
 - Only modify the artifact being validated — never create new files or modify other artifacts
 - Preserve the artifact's existing structure and conventions
 - Add a changelog entry recording what was validated and what changed
@@ -314,21 +329,21 @@ When the agents evaluate, they should consider these dimensions (adapted from th
 
 ### For Product Context (Mode A)
 
-| Dimension | What to check |
-|-----------|--------------|
-| **Completeness** | Are all required sections present? Are enums listed explicitly? Are defaults specified? |
-| **Consistency** | Do field names match across sections? Do stories reference valid module IDs? |
-| **Implementability** | Can each story be implemented with the information given? Missing technical details? |
-| **Security** | Are there security implications in the design that aren't addressed? (auth, data access, PII) |
-| **Downstream compatibility** | Does the artifact work with its consumers? (dispatch, design, build) |
+| Dimension                    | What to check                                                                                 |
+| ---------------------------- | --------------------------------------------------------------------------------------------- |
+| **Completeness**             | Are all required sections present? Are enums listed explicitly? Are defaults specified?       |
+| **Consistency**              | Do field names match across sections? Do stories reference valid module IDs?                  |
+| **Implementability**         | Can each story be implemented with the information given? Missing technical details?          |
+| **Security**                 | Are there security implications in the design that aren't addressed? (auth, data access, PII) |
+| **Downstream compatibility** | Does the artifact work with its consumers? (dispatch, design, build)                          |
 
 ### For Design Artifacts (Mode B)
 
-| Dimension | What to check |
-|-----------|--------------|
-| **Completeness** | Do specs cover all capabilities in the proposal? Are acceptance criteria testable? |
-| **Feasibility** | Can the tasks be implemented with the stated approach? Are file paths correct? |
-| **Scope control** | Are tasks properly bounded? Any scope creep beyond the proposal? |
+| Dimension         | What to check                                                                      |
+| ----------------- | ---------------------------------------------------------------------------------- |
+| **Completeness**  | Do specs cover all capabilities in the proposal? Are acceptance criteria testable? |
+| **Feasibility**   | Can the tasks be implemented with the stated approach? Are file paths correct?     |
+| **Scope control** | Are tasks properly bounded? Any scope creep beyond the proposal?                   |
 
 ### For Code (Mode C)
 
@@ -336,11 +351,11 @@ See `references/evaluator-criteria.md` for the full 5-dimension scoring framewor
 
 ### For Documents (Mode D)
 
-| Dimension | What to check |
-|-----------|--------------|
-| **Accuracy** | Are all factual claims correct? Do referenced resources exist? |
+| Dimension         | What to check                                                        |
+| ----------------- | -------------------------------------------------------------------- |
+| **Accuracy**      | Are all factual claims correct? Do referenced resources exist?       |
 | **Executability** | Can someone follow this document step by step? Are commands correct? |
-| **Completeness** | Are there missing steps or assumptions? |
+| **Completeness**  | Are there missing steps or assumptions?                              |
 
 ---
 
@@ -362,11 +377,13 @@ Create a `validation-criteria.md` file in your project's `.dev-workflow/` direct
 # Project Validation Criteria
 
 ## Additional checks for Mode A (Product Context)
+
 - All stories must have `business_value` field (required by our dispatch)
 - Complexity must use S/M/L format (not small/medium/large)
 - All file paths must be verified against the actual filesystem
 
 ## Additional checks for Mode B (Design)
+
 - All API endpoints must include Zod validation schemas
 - Database schema changes must include migration plan
 ```

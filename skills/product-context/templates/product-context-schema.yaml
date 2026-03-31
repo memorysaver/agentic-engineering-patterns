@@ -14,9 +14,9 @@
 
 schema: v1
 project: <project-name>
-version: "0.1.0"  # semantic: major (opportunity shift), minor (architecture/map change), patch (dispatch/build/wrap)
+version: "0.1.0" # semantic: major (opportunity shift), minor (architecture/map change), patch (dispatch/build/wrap)
 updated_at: <ISO 8601>
-dispatch_epoch: 0  # incremented on every /dispatch run — consistency marker for agents
+dispatch_epoch: 0 # incremented on every /dispatch run — consistency marker for agents
 
 # ─── CONCURRENCY PROTOCOL ────────────────────────────────────
 # Only the MAIN SESSION writes to this file. Workspace agents
@@ -35,7 +35,7 @@ opportunity:
   scale_of_impact: "What magnitude of change if this works?"
   kill_criteria:
     - "Condition that would invalidate the opportunity"
-  decision: proceed  # proceed | kill | defer
+  decision: proceed # proceed | kill | defer
   decided_at: <ISO date>
 
 # ─── PRODUCT (/envision Phase 1) ─────────────────────────────
@@ -59,7 +59,7 @@ product:
       backend: <framework>
       database: <engine>
       orm: <orm>
-    preferred_stack: {}  # overridable with good reason
+    preferred_stack: {} # overridable with good reason
     infrastructure: "Where this runs, deployment targets"
     external_deps:
       - name: <service>
@@ -74,6 +74,17 @@ product:
       name: <layer-name>
       user_can: "Everything from Layer 0, plus..."
       verification: "Test scenario for new capabilities"
+  # ── USER ACTIVITIES (Story Map Backbone) ──
+  # The horizontal axis of a Jeff Patton story map.
+  # Each activity is a discrete step in the user's journey, ordered left-to-right.
+  # Extracted during /envision BEFORE defining layers — backbone first, releases second.
+  # Stories reference activities by id. Infrastructure stories leave activity null.
+  activities:
+    - id: <activity-slug> # e.g., "upload-selfie", "generate-avatar"
+      name: "Human-readable name" # e.g., "Upload Selfie"
+      description: "What the user does" # User-centric verb phrase
+      order: 1 # Sequence in journey (backbone left-to-right)
+      layer_introduced: 0 # Which layer first enables this activity
   success_criteria:
     functional:
       - "Specific, testable condition"
@@ -90,7 +101,7 @@ product:
         - "What else was considered"
   stress_test:
     - challenge: "What was challenged"
-      angle: product_viability  # product_viability | technical_feasibility | scope_control
+      angle: product_viability # product_viability | technical_feasibility | scope_control
       resolution: "How it was resolved"
 
 # ─── ARCHITECTURE (/map Step 1) ──────────────────────────────
@@ -107,20 +118,20 @@ architecture:
         - "Data/state/resources this module is authority on"
       depends_on:
         - <other-module>
-      technology: null  # null = default stack
-      key_concepts:    # domain objects, patterns, abstractions implementers need
+      technology: null # null = default stack
+      key_concepts: # domain objects, patterns, abstractions implementers need
         - "e.g., tokens, sessions, RBAC roles"
   interfaces:
     - from: <module>
       to: <module>
       protocol: "HTTP REST | gRPC | function call | message queue"
       endpoint: "Specific API path or function signature"
-      request: {}   # exact data structure
-      response: {}  # exact data structure
+      request: {} # exact data structure
+      response: {} # exact data structure
       errors:
         - code: <number>
           meaning: "What this error means"
-      sla: null  # expected latency, throughput
+      sla: null # expected latency, throughput
   data_flows:
     - journey: "User journey name"
       path: "User → [Module] → action → [Module] → response"
@@ -131,14 +142,14 @@ architecture:
       failure_mode: "Behavior when down"
   deployment:
     environments: ["local", "staging", "production"]
-    module_runtime: {}  # { "auth": "bun", "worker": "cloudflare-workers" }
-    persistence: {}     # { "users": "postgres", "cache": "redis" }
-  amendment_log:  # boundary/contract issues found during story decomposition
+    module_runtime: {} # { "auth": "bun", "worker": "cloudflare-workers" }
+    persistence: {} # { "users": "postgres", "cache": "redis" }
+  amendment_log: # boundary/contract issues found during story decomposition
     - proposed_by: <agent-or-module>
       module_affected: <module>
       proposed_change: "What should change"
       reasoning: "Why"
-      status: pending  # pending | accepted | rejected
+      status: pending # pending | accepted | rejected
   adrs:
     - id: ADR-001
       title: "Architecture decision title"
@@ -170,47 +181,48 @@ stories:
     title: "Short, descriptive"
     layer: 0
     module: <module-name>
-    slice: 1  # execution slice within layer (parallel batch)
+    activity: null # user activity from product.activities (null for infrastructure stories)
+    slice: 1 # execution slice within layer (parallel batch)
     status: pending
-    priority: critical  # critical | high | medium | low
-    complexity: S  # S | M | L
-    dependencies: []  # story IDs that must complete first
+    priority: critical # critical | high | medium | low
+    complexity: S # S | M | L
+    dependencies: [] # story IDs that must complete first
     description:
       what_changes: "Observable difference when complete"
       why: "Connection to Context Document / layer"
     acceptance_criteria:
       - "Specific, automatable test criterion"
     interface_obligations:
-      implements: []  # interface contracts this story creates/modifies
-      consumes: []    # interface contracts this story calls
+      implements: [] # interface contracts this story creates/modifies
+      consumes: [] # interface contracts this story calls
       contract_tests_required: false
     files_affected:
-      - "path/to/likely/file.ts"  # for conflict detection
-    technical_notes: null  # optional — known pitfalls, guidance to prevent mistakes
+      - "path/to/likely/file.ts" # for conflict detection
+    technical_notes: null # optional — known pitfalls, guidance to prevent mistakes
     verification:
       unit: ["What to unit test"]
       integration: ["Cross-module tests"]
       contract: ["Interface compliance tests"]
     # ── Dispatch scoring (computed by /dispatch, not manually set) ──
-    dispatch_score: null   # (critical_path_urgency + business_value + unblock_potential) / complexity_cost
+    dispatch_score: null # (critical_path_urgency + business_value + unblock_potential) / complexity_cost
     on_critical_path: false
     # ── Execution tracking (updated by /dispatch, /build, /wrap) ──
-    assigned_to: null      # workspace session name
-    openspec_change: null  # OpenSpec change name
-    dispatched_at_epoch: null  # which dispatch_epoch assigned this story
+    assigned_to: null # workspace session name
+    openspec_change: null # OpenSpec change name
+    dispatched_at_epoch: null # which dispatch_epoch assigned this story
     attempt_count: 0
-    max_retries: 4         # override per story (default from topology.routing.retry)
+    max_retries: 4 # override per story (default from topology.routing.retry)
     cost_usd: null
-    started_at: null       # ISO 8601
-    completed_at: null     # ISO 8601
+    started_at: null # ISO 8601
+    completed_at: null # ISO 8601
     pr_url: null
-    failure_logs:          # structured — not free text
+    failure_logs: # structured — not free text
       - attempt: 1
-        error_class: test_failure  # test_failure | timeout | context_overflow | merge_conflict
+        error_class: test_failure # test_failure | timeout | context_overflow | merge_conflict
         approach_summary: "What the agent tried"
         failure_point: "Which step failed"
         root_cause: "Best guess at why"
-        unexplored_alternatives: []  # critical for fresh-agent retries
+        unexplored_alternatives: [] # critical for fresh-agent retries
         timestamp: <ISO 8601>
 
 # ─── TOPOLOGY (/map Step 4) ──────────────────────────────────
@@ -229,7 +241,7 @@ topology:
         - "decide scope"
         - "modify architecture"
         - "skip tests"
-      input_contract:    # schema-defined — agents communicate through structured artifacts
+      input_contract: # schema-defined — agents communicate through structured artifacts
         story_spec: "Full story from stories section"
         context_slice:
           context_document: "Pruned to: problem, constraints, relevant layer"
@@ -260,14 +272,14 @@ topology:
         output_tokens_max: 20000
         alert_threshold_total: 100000
   routing:
-    dispatch: fifo_within_slice  # dispatch policy
-    concurrency_limit: 5         # max parallel agents
+    dispatch: fifo_within_slice # dispatch policy
+    concurrency_limit: 5 # max parallel agents
     conflict_detection: files_affected_overlap
     retry: "2x same agent → failure analyst → fresh agent → human escalation"
   handoffs:
     - from: implementer
       to: evaluator
-      trigger: implementation_complete  # Phase 4 done, Phase 5 starts — evaluator runs BEFORE PR creation
+      trigger: implementation_complete # Phase 4 done, Phase 5 starts — evaluator runs BEFORE PR creation
       payload: "eval-request.md + code diff + contracts.md + feature-verification.json"
       validation:
         - "All tasks in jj change stack are implemented"
@@ -280,13 +292,13 @@ topology:
 # Must pass before advancing to the next layer.
 layer_gates:
   - layer: 0
-    status: not_started  # not_started | running | passed | failed
+    status: not_started # not_started | running | passed | failed
     test_definition: "End-to-end user journey from Layer 0 MVP contract"
-    results:             # structured test results
+    results: # structured test results
       tests_run: 0
       tests_passed: 0
       tests_failed: 0
-      failures: []       # [{ test: "...", error: "...", boundary: "module_a → module_b" }]
+      failures: [] # [{ test: "...", error: "...", boundary: "module_a → module_b" }]
     completed_at: null
 
 # ─── COST TRACKING ───────────────────────────────────────────
@@ -294,12 +306,12 @@ layer_gates:
 # Reviewed by /reflect for optimization opportunities.
 cost:
   total_usd: 0
-  by_layer: {}   # { "0": 12.50, "1": 8.30 }
-  by_module: {}  # { "auth": 5.20, "api": 7.30 }
-  by_story: {}   # { "PROJ-001": 3.10 }
-  alerts:        # structured anomaly records
+  by_layer: {} # { "0": 12.50, "1": 8.30 }
+  by_module: {} # { "auth": 5.20, "api": 7.30 }
+  by_story: {} # { "PROJ-001": 3.10 }
+  alerts: # structured anomaly records
     - story_id: null
-      type: cost_exceeded  # cost_exceeded | retry_concentration | timeout_pattern
+      type: cost_exceeded # cost_exceeded | retry_concentration | timeout_pattern
       detail: "Description of the anomaly"
       threshold: null
       actual: null
@@ -311,8 +323,8 @@ cost:
 # Appended by every skill that modifies this file.
 changelog:
   - date: <ISO date>
-    type: initial  # initial | envision_update | map_update | dispatch | reflect | build | wrap | layer_gate_pass | layer_gate_fail | architecture_review
-    author: human  # human | agent
+    type: initial # initial | envision_update | map_update | dispatch | reflect | build | wrap | layer_gate_pass | layer_gate_fail | architecture_review
+    author: human # human | agent
     summary: "What changed and why"
     sections_changed:
       - <section-name>

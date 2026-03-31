@@ -53,6 +53,16 @@ const LayerSchema = z
   })
   .passthrough();
 
+const ActivitySchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string().optional(),
+    order: z.number(),
+    layer_introduced: z.number().optional().default(0),
+  })
+  .passthrough();
+
 const ProductSchema = z
   .object({
     name: z.string().optional(),
@@ -63,6 +73,7 @@ const ProductSchema = z
     mvp_journey: z.string().optional(),
     ux_model: z.record(z.string()).optional(),
     layers: z.array(LayerSchema).optional(),
+    activities: z.array(ActivitySchema).optional(),
     technical_constraints: z.record(z.unknown()).optional(),
     constraints: z.record(z.unknown()).optional(),
     persona: z.record(z.unknown()).optional(),
@@ -130,6 +141,7 @@ const StorySchema = z
     title: z.string(),
     layer: z.number(),
     module: z.string(),
+    activity: z.string().nullable().optional(),
     slice: z.number(),
     status: StoryStatusEnum,
     business_value: z.enum(["critical", "high", "medium", "low"]).optional(),
@@ -251,5 +263,6 @@ export type Story = z.infer<typeof StorySchema>;
 export type Module = z.infer<typeof ModuleSchema>;
 export type Layer = z.infer<typeof LayerSchema>;
 export type Risk = z.infer<typeof RiskSchema>;
+export type Activity = z.infer<typeof ActivitySchema>;
 export type ChangelogEntry = z.infer<typeof ChangelogEntrySchema>;
 export type LayerGate = z.infer<typeof LayerGateSchema>;

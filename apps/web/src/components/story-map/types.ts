@@ -2,6 +2,7 @@ export type Card = {
   storyId: string;
   title: string;
   moduleId: string;
+  activity?: string | null;
   layer: number;
   slice: number;
   status: string;
