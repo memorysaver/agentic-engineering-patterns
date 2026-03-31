@@ -52,3 +52,4 @@ tmp
 .alchemy
 .claude/worktrees/
 .dev-workflow/
+dogfood-output/

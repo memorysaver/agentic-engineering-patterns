@@ -50,28 +50,51 @@ Ask the user one source at a time. Don't rush — the quality of classification 
 Every piece of feedback becomes one of:
 
 ### Bug
+
 Specified behavior that does not work.
+
 - **Action:** Create a new story in `product-context.yaml` with `priority: high` and `status: pending` in the current layer, route to `/dispatch`
 - **Update:** Add the story directly to the `stories` section of the YAML
 
 ### Refinement
-Working behavior that needs improvement.
-- **Action:** Create a new story in the next layer with `status: pending`, add to the `stories` section of `product-context.yaml`
+
+Working behavior that needs improvement — or existing stories that need to move between layers.
+
+- **Action:** Create a new story in the next layer with `status: pending`, add to the `stories` section of `product-context.yaml`. Alternatively, promote an existing story from a later layer to an earlier one if learning shows it's needed sooner.
 - **Update:** Include appropriate layer assignment and dependencies
 
 ### Discovery
+
 New requirement or invalidated assumption.
+
 - **Action:** Revisit product context
   - If it's a product assumption → update `product` section via `/envision`
   - If it's an architecture issue → update `architecture` section via `/map`
 - **Update:** Mark the affected assumption in the `product` section as revised
 
 ### Opportunity Shift
+
 Fundamentally changes the bet — the original opportunity hypothesis is wrong or has shifted.
+
 - **Action:** Back to `/envision` Phase 0
 - **This is rare** but critical to recognize. Signs: the problem you're solving isn't the problem users actually have, or a market shift made the opportunity moot.
 
 Present the classification to the user for each observation. Let them override — they know their product better than any framework.
+
+---
+
+## Step 2.5: Re-slice the Map
+
+After classifying all feedback, review the current layer assignments. Release lines are pencil marks — they should shift based on what you learned. This is normal iteration, not a sign that something went wrong.
+
+For each layer that has not yet been built:
+
+1. **Review story priorities** in light of classified feedback. Do any stories need to move to an earlier layer? Are any stories in the next layer no longer relevant?
+2. **Promote stories** from later layers to earlier ones when learning shows they're needed sooner. Demote stories that turned out to be less critical.
+3. **Add new stories** from classified Refinements to the appropriate layer and activity.
+4. **Update `product-context.yaml`** — change `layer` assignments in the `stories` section.
+
+**Key rule:** Re-slicing does NOT require going back to `/envision`. You only route there when the backbone (user activities) or product framing changes — not when layer assignments shift. See `docs/release-line-adjustments.md` for the full decision framework.
 
 ---
 
@@ -92,6 +115,7 @@ Record cost observations and any topology adjustment recommendations.
 Based on the classified feedback, update `product-context.yaml` directly:
 
 1. **Append to the `changelog` section** with a full feedback classification entry:
+
    ```yaml
    - date: YYYY-MM-DD
      type: reflection
@@ -131,14 +155,14 @@ Based on the classified feedback, update `product-context.yaml` directly:
 
 Based on the reflection, recommend the next step:
 
-| Feedback type | Next action |
-|---|---|
-| Only bugs | Fix stories added to YAML → `/dispatch` → `/design` → `/build` |
-| Refinements | Next layer stories added to YAML → `/dispatch` → `/design` → `/build` |
-| Discovery (product) | `/envision` to update assumptions |
-| Discovery (architecture) | `/map` to update system map |
-| Opportunity shift | `/envision` Phase 0 (re-validate) |
-| All clear | Next layer or ship to production |
+| Feedback type            | Next action                                                           |
+| ------------------------ | --------------------------------------------------------------------- |
+| Only bugs                | Fix stories added to YAML → `/dispatch` → `/design` → `/build`        |
+| Refinements              | Next layer stories added to YAML → `/dispatch` → `/design` → `/build` |
+| Discovery (product)      | `/envision` to update assumptions                                     |
+| Discovery (architecture) | `/map` to update system map                                           |
+| Opportunity shift        | `/envision` Phase 0 (re-validate)                                     |
+| All clear                | Next layer or ship to production                                      |
 
 ---
 
