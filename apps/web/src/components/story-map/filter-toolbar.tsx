@@ -1,4 +1,4 @@
-import { getStatusColor } from "./status-colors";
+import { getStatusColor, STATUS_ORDER } from "./status-colors";
 
 type FilterToolbarProps = {
   statuses: string[];
@@ -39,9 +39,10 @@ export function FilterToolbar({
     <div className="flex flex-1 flex-wrap items-center gap-3 px-2 py-1">
       <div className="flex items-center gap-1">
         <span className="text-[10px] text-zinc-600 uppercase tracking-wider mr-1">Status</span>
-        {statuses.sort().map((status) => {
+        {STATUS_ORDER.filter((s) => !["done", "review"].includes(s)).map((status) => {
           const colors = getStatusColor(status);
           const isActive = statusFilter.includes(status);
+          const exists = statuses.includes(status);
           return (
             <button
               key={status}
@@ -50,9 +51,11 @@ export function FilterToolbar({
               className={`flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] transition-all ${
                 isActive
                   ? `${colors.border} ${colors.bg}`
-                  : hasFilters
-                    ? "border-transparent opacity-30 hover:opacity-60"
-                    : "border-transparent opacity-70 hover:opacity-100"
+                  : !exists
+                    ? "border-transparent opacity-20"
+                    : hasFilters
+                      ? "border-transparent opacity-40 hover:opacity-70"
+                      : "border-transparent opacity-85 hover:opacity-100"
               }`}
             >
               <span className={`h-1.5 w-1.5 rounded-full ${colors.dot}`} />

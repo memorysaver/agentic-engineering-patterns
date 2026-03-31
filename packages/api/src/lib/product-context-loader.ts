@@ -264,9 +264,10 @@ export function buildProgress(ctx: ProductContext): ProgressData {
       for (const s of sliceStories) {
         statuses[s.status] = (statuses[s.status] || 0) + 1;
       }
+      const execSlice = ctx.execution_slices?.find((es: any) => es.slice === slice);
       return {
         slice,
-        theme: `Slice ${slice}`,
+        theme: execSlice?.theme || `Slice ${slice}`,
         total: sliceStories.length,
         completed: sliceStories.filter((s) => s.status === "completed" || s.status === "done")
           .length,

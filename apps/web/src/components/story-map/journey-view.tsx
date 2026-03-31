@@ -1,5 +1,5 @@
+import { Fragment } from "react";
 import { StoryCard } from "./story-card";
-import { getStatusColor } from "./status-colors";
 import type { Card } from "./types";
 
 type Activity = {
@@ -112,9 +112,9 @@ export function JourneyView({
         {uniqueLayers.map((layerNum) => {
           const lane = layerToLane.get(layerNum);
           return (
-            <>
+            <Fragment key={layerNum}>
               {/* Layer label */}
-              <div key={`label-${layerNum}`} className="border-b border-r border-zinc-800/40 p-2">
+              <div className="border-b border-r border-zinc-800/40 p-2">
                 <p className="text-[10px] font-bold text-zinc-400">L{layerNum}</p>
                 <p className="text-[9px] text-zinc-600">{lane?.name || ""}</p>
               </div>
@@ -130,27 +130,33 @@ export function JourneyView({
                     className="border-b border-r border-zinc-800/40 p-2"
                     style={{ minHeight: 72 }}
                   >
-                    <div className="flex flex-wrap gap-2">
-                      {cellCards.map((card) => (
-                        <StoryCard
-                          key={card.storyId}
-                          storyId={card.storyId}
-                          title={card.title}
-                          status={card.status}
-                          complexity={card.complexity}
-                          moduleId={card.moduleId}
-                          allModules={allModules}
-                          slice={card.slice}
-                          prUrl={card.prUrl}
-                          isSelected={card.storyId === selectedStoryId}
-                          onClick={() => onCardClick(card.storyId)}
-                        />
-                      ))}
-                    </div>
+                    {cellCards.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {cellCards.map((card) => (
+                          <StoryCard
+                            key={card.storyId}
+                            storyId={card.storyId}
+                            title={card.title}
+                            status={card.status}
+                            complexity={card.complexity}
+                            moduleId={card.moduleId}
+                            allModules={allModules}
+                            slice={card.slice}
+                            prUrl={card.prUrl}
+                            isSelected={card.storyId === selectedStoryId}
+                            onClick={() => onCardClick(card.storyId)}
+                          />
+                        ))}
+                      </div>
+                    ) : // Check if this activity has ANY stories across all layers
+                    journeyCards.filter((c) => c.activity === a.id).length === 0 &&
+                      layerNum === uniqueLayers[0] ? (
+                      <p className="text-[10px] text-zinc-600 italic py-2">No stories yet</p>
+                    ) : null}
                   </div>
                 );
               })}
-            </>
+            </Fragment>
           );
         })}
       </div>

@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState, useCallback, Fragment } from "react";
 import { StoryCard } from "./story-card";
 
 type BackboneItem = { id: string; name: string; package?: string; status?: string };
@@ -196,13 +196,9 @@ export function StoryMapGrid({
             : "transparent";
 
           return (
-            <>
+            <Fragment key={layerNum}>
               {/* Layer label */}
-              <div
-                key={`label-${layerNum}`}
-                className="border-b border-r p-2"
-                style={{ backgroundColor: sliceBg }}
-              >
+              <div className="border-b border-r p-2" style={{ backgroundColor: sliceBg }}>
                 <p className="text-xs font-bold">Layer {layerNum}</p>
                 <p className="text-muted-foreground text-[10px]">{lane?.name || ""}</p>
                 {lane?.theme && (
@@ -244,7 +240,7 @@ export function StoryMapGrid({
                   </div>
                 );
               })}
-            </>
+            </Fragment>
           );
         })}
       </div>

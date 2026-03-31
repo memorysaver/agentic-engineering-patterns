@@ -8,8 +8,18 @@ import {
   CardTitle,
 } from "@agentic-engineering-patterns/ui/components/card";
 import { Badge } from "@agentic-engineering-patterns/ui/components/badge";
-import { Progress } from "@agentic-engineering-patterns/ui/components/progress";
 import { getStatusColor } from "@/components/story-map/status-colors";
+
+function ProgressBar({ value, className }: { value: number; className?: string }) {
+  return (
+    <div className={`h-2 w-full overflow-hidden rounded-full bg-zinc-800 ${className || ""}`}>
+      <div
+        className="h-full rounded-full bg-emerald-400 transition-all duration-500"
+        style={{ width: `${value}%` }}
+      />
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/progress")({
   component: ProgressPage,
@@ -60,7 +70,7 @@ function ProgressPage() {
                 {data.completedStories} of {data.totalStories}
               </span>
             </div>
-            <Progress value={completionPct} className="h-3" />
+            <ProgressBar value={completionPct} className="h-3" />
           </div>
 
           {/* Status breakdown */}
@@ -104,7 +114,7 @@ function ProgressPage() {
                       {slice.completed}/{slice.total}
                     </span>
                   </div>
-                  <Progress value={pct} className="h-2" />
+                  <ProgressBar value={pct} />
                   <div className="flex gap-2">
                     {Object.entries(slice.statuses).map(([status, count]) => {
                       const colors = getStatusColor(status);
@@ -156,7 +166,7 @@ function ProgressPage() {
                       {layer.completed}/{layer.total} ({pct}%)
                     </span>
                   </div>
-                  <Progress value={pct} className="h-2" />
+                  <ProgressBar value={pct} />
                 </div>
               );
             })}

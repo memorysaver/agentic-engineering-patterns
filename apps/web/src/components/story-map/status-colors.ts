@@ -43,15 +43,15 @@ export const STATUS_COLORS: Record<
     accentHex: "#a78bfa",
   },
   completed: {
-    bg: "bg-emerald-950/40",
+    bg: "bg-emerald-950/60",
     text: "text-emerald-400",
-    border: "border-emerald-800/40",
+    border: "border-emerald-800/50",
     dot: "bg-emerald-400",
     accent: "border-l-emerald-400",
     accentHex: "#34d399",
   },
   done: {
-    bg: "bg-emerald-950/40",
+    bg: "bg-emerald-950/60",
     text: "text-emerald-400",
     border: "border-emerald-800/40",
     dot: "bg-emerald-400",
