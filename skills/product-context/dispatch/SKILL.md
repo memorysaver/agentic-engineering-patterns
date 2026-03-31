@@ -369,6 +369,32 @@ Extracted from `product-context.yaml`:
 
 ---
 
+## Commit and Push Before Handoff
+
+> **CRITICAL:** Commit and push ALL dispatch artifacts (YAML updates, OpenSpec changes, changelog) to remote BEFORE handing off to `/launch`. If the dispatch commit stays local, it will be lost when workspace PRs merge to main and you rebase. The push ensures OpenSpec changes survive on the remote.
+
+Append to the `changelog` section:
+
+```yaml
+- date: <today>
+  type: dispatch
+  author: human
+  summary: "Dispatched PROJ-003 (auth middleware), PROJ-004 (user model) — Layer 0, Slice 1"
+  sections_changed: [stories]
+```
+
+Commit and push:
+
+```bash
+jj describe -m "feat: dispatch PROJ-003, PROJ-004 — Layer 0 Slice 1"
+jj new
+jj git push --change @-
+```
+
+**Verify the push succeeded** before proceeding to handoff. If push fails (e.g., remote conflict), resolve before launching workspaces.
+
+---
+
 ## Step 7: Hand Off
 
 Determine the handoff based on story completeness:
@@ -408,28 +434,6 @@ Batch dispatched: PROJ-003 (score 23.0), PROJ-004 (score 12.0)
 
   /launch PROJ-003  → tab: auth-middleware
   /launch PROJ-004  → tab: user-model
-```
-
----
-
-## Append Changelog
-
-After dispatching, append to the `changelog` section:
-
-```yaml
-- date: <today>
-  type: dispatch
-  author: human
-  summary: "Dispatched PROJ-003 (auth middleware), PROJ-004 (user model) — Layer 0, Slice 1"
-  sections_changed: [stories]
-```
-
-Commit all changes:
-
-```bash
-jj describe -m "feat: dispatch PROJ-003, PROJ-004 — Layer 0 Slice 1"
-jj new
-jj git push --change @-
 ```
 
 ---

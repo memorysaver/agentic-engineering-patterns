@@ -20,13 +20,25 @@ Spawn an autonomous workspace session to implement a feature. Creates a jj works
 
 ---
 
-## Guardrail: Verify Main is Clean
+## Guardrails Before Launch
+
+### 1. Verify working copy is clean
 
 ```bash
 jj st
 ```
 
 **If any files are modified — ABORT.** Describe and create a new change first (`jj describe -m "..." && jj new`).
+
+### 2. Verify dispatch commit is pushed to remote
+
+```bash
+jj log -r 'heads(::main ~ ::main@origin)' --no-graph -T 'description.first_line() ++ "\n"'
+```
+
+**If any unpushed commits appear — ABORT.** The dispatch commit (YAML updates + OpenSpec changes) must be on the remote before launching workspaces. Without this, workspace PRs will merge to main and when you rebase, the local dispatch commit (with OpenSpec files) can be lost.
+
+Push if needed: `jj git push --bookmark main`
 
 ---
 
@@ -61,12 +73,15 @@ Replace `<name>` with a short feature name (e.g., `add-auth`).
 
 Wait for Claude Code to fully initialize (look for the `❯` prompt in the tmux pane), then send the bootstrap instruction:
 
+> **Skill prefix:** If your project syncs skills with a prefix (e.g., `aep-`), replace `/build` with the prefixed name (e.g., `/aep-build`). Check how the build skill is registered in your project's `.claude/skills/` directory.
+
 ```bash
 # Verify Claude Code is ready before sending (look for the prompt indicator)
 sleep 5
 tmux capture-pane -t <name>:0 -p -S -5 | grep -q '❯' && echo "ready"
 
 # Send bootstrap prompt via cmux
+# NOTE: Replace /build with your project's build skill name (e.g., /aep-build)
 cmux send --surface "$GEN_SURFACE" "/build execute implementation for openspec change <change-name>. Read the worktree-onboarding reference in the build skill's references/worktree-onboarding.md for full setup instructions. Design phases are pre-completed on main.
 "
 ```
@@ -172,7 +187,7 @@ The generator self-orchestrates the evaluation loop at Phase 5. **You do not nee
 └─────────────────────────────────────────────────────┘
 ```
 
-The full loop is documented in `/build` Phase 5. In summary:
+The full loop is documented in the build skill's Phase 5. In summary:
 
 1. Generator writes `eval-request.md` → spawns evaluator in bottom pane
 2. Evaluator evaluates → writes `eval-response-<N>.md`
@@ -243,10 +258,12 @@ Each workspace shares the underlying jj store — no extra disk space, no branch
 
 ## Next Step
 
-The workspace agent is now running autonomously. It follows `/build` to implement, test, and merge the feature.
+The workspace agent is now running autonomously. It follows the build skill to implement, test, and merge the feature.
 
-When the PR merges, run:
+When the PR merges, run the wrap skill:
 
 ```
 /wrap
 ```
+
+> If using a prefix (e.g., `aep-`), run `/aep-wrap` instead.

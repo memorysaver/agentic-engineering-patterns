@@ -253,6 +253,33 @@ Classify feedback, update the product context, plan the next iteration.
 | `/wrap` | agentic-development-workflow | Archive + cleanup + suggest reflect |
 | `/jj-ref` | agentic-development-workflow | jj command reference (on-demand) |
 
+## Syncing Skills to Your Project
+
+A sync script is included to copy AEP skills into any project's `.claude/skills/` directory with the `aep-` prefix.
+
+### Setup
+
+1. Copy `scripts/sync.sh` to your project's `scripts/` directory
+2. Set `AEP_REPO` to point to your local clone of this repo
+
+### Usage
+
+```bash
+# Sync all skills
+AEP_REPO=~/agentic-engineering-patterns bash scripts/sync.sh
+
+# Preview changes without modifying files
+bash scripts/sync.sh --dry-run
+
+# Sync only one group (workflow, product, setup, patterns)
+bash scripts/sync.sh workflow
+
+# Override target directory
+TARGET_DIR=./my-skills bash scripts/sync.sh
+```
+
+The script flattens the nested skill directories and prefixes each with `aep-` (e.g., `skills/product-context/envision/` becomes `.claude/skills/aep-envision/`). Run it whenever you want to pull the latest skill versions.
+
 ## Inspired By
 
 - [Harness Design for Long-Running Application Development](https://www.anthropic.com/engineering/harness-design-long-running-apps) — Anthropic Engineering
