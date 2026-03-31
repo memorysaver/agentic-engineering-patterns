@@ -54,26 +54,6 @@ export function JourneyView({
 
   return (
     <div className="p-4">
-      {/* Narrative sentence */}
-      <div className="mb-4 rounded-lg border border-zinc-800/40 bg-zinc-900/30 px-4 py-2.5">
-        <p className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1">
-          User Journey Narrative
-        </p>
-        <p className="text-sm text-zinc-300">
-          {activities.map((a, i) => (
-            <span key={a.id}>
-              {i > 0 && <span className="text-zinc-600"> → </span>}
-              <span
-                className="font-medium"
-                style={{ color: ACTIVITY_COLORS[i % ACTIVITY_COLORS.length] }}
-              >
-                {a.name}
-              </span>
-            </span>
-          ))}
-        </p>
-      </div>
-
       {/* Story map grid: activities × layers */}
       <div
         className="grid gap-0"
@@ -95,9 +75,17 @@ export function JourneyView({
               className="border-b border-r border-zinc-800/40 p-2 text-center"
               style={{ borderTopWidth: 3, borderTopColor: color }}
             >
-              <p className="text-xs font-semibold" style={{ color }}>
-                {a.name}
-              </p>
+              <div className="flex items-center justify-center gap-1.5">
+                <span
+                  className="flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold"
+                  style={{ backgroundColor: `${color}20`, color }}
+                >
+                  {a.order}
+                </span>
+                <span className="text-xs font-semibold" style={{ color }}>
+                  {a.name}
+                </span>
+              </div>
               {a.description && (
                 <p className="text-[9px] text-zinc-500 mt-0.5 line-clamp-1">{a.description}</p>
               )}
