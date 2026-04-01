@@ -23,7 +23,7 @@ One command to go autonomous. Initializes state, runs the first tick, and starts
        ┌─────────────────────────────────────────────┐
        │  tick ①  sync signals                        │
        │  tick ②  wrap completed workspaces            │
-       │  tick ③  merge ready PRs                      │
+       │  tick ③  detect merged PRs                      │
        │  tick ④  trigger code review via tmux         │
        │  tick ⑤  detect stuck workspaces              │
        │  tick ⑥  dispatch new work (/launch)          │
@@ -152,12 +152,12 @@ Follow the 8-step tick protocol documented in `references/tick-protocol.md`.
    - Remove workspace from state after wrap completes
    - Break to step ⑧
 
-④ MERGE READY → for each workspace where story_status == "in_review" AND pr_url set:
-   - Check CI: gh pr checks <number>
-   - Check reviews: gh pr view <number> --json reviewDecision
-   - Check workspace eval: read latest eval-response file — must show PASS
-   - If all green → gh pr merge <number> --squash --delete-branch
-   - If CI failed → tmux send-keys to workspace requesting fix
+④ DETECT MERGED → for each workspace where story_status == "in_review" AND pr_url set:
+   - Check: gh pr view <number> --json state
+   - If state == "MERGED": update story_status to "completed" (Step ③ wraps next tick)
+   - If state == "CLOSED": update story_status to "failed"
+   - If state == "OPEN": no action — workspace agent owns Phase 12 merge
+   - Autopilot NEVER calls gh pr merge
 
 ⑤ CODE REVIEW → detect workspaces needing gen/eval:
    - Phase 4 complete but no eval-response files → trigger via tmux
@@ -304,7 +304,9 @@ The autopilot maintains strict separation between two gen/eval concerns:
 
 - **Main workspace only** — refuse to run if `pwd` contains `.feature-workspaces`
 - **Never dispatch stories with unmet dependencies** — even under autonomous mode
-- **Never merge without green CI** — always verify `gh pr checks` before merge
+- **Never merge PRs** — workspace agents own Phase 12 merge; autopilot only detects already-merged PRs
+- **Never treat SKIP-only test results as PASS** — at least 1 PASS required for test/integration stories
+- **Never treat "no checks" as passing** — for integration/test stories, require at least one passing check OR explicit eval-response PASS
 - **Never write eval-response files** — that's the workspace evaluator's job
 - **One wrap per tick** — wraps involve git operations that must serialize
 - **One launch per tick** — keeps tick duration under 60 seconds

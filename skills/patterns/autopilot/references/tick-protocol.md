@@ -80,51 +80,21 @@ After wrapping, **skip to step ⑧** (write state). The next tick will handle di
 
 ---
 
-## Step ④: Merge Ready PRs
+## Step ④: Detect Merged PRs
 
 For each workspace where `story_status == "in_review"` AND `pr_url` is set:
 
-### Merge Checklist
-
-All conditions must be true:
-
-```
-[x] pr_url is set in signal
-[x] gh pr checks <number> — all passing (no pending, no failed)
-[x] gh pr view <number> --json reviewDecision — APPROVED or no reviews required
-[x] gh api repos/<owner>/<repo>/pulls/<number>/comments — no unresolved threads
-[x] gh pr view <number> --json mergeable — not CONFLICTING
-[x] Latest eval-response file in workspace shows PASS
-[x] merge_attempted == false (prevent double-merge)
-```
-
-**If all conditions met:**
+### Check PR State
 
 ```bash
-gh pr merge <number> --squash --delete-branch
+gh pr view <number> --json state --jq '.state'
 ```
 
-Set `merge_attempted = true`, `last_action = "merging"`.
+- **If state == `"MERGED"`:** Update workspace `story_status` to `"completed"`, set `completed_at` to current ISO8601 timestamp, set `last_action = "detected_merged"`. The next tick's Step ③ will wrap it.
+- **If state == `"CLOSED"`:** Update workspace `story_status` to `"failed"`, add `failure_log` noting PR was closed without merge, set `last_action = "detected_closed"`.
+- **If state == `"OPEN"`:** No action — the workspace agent owns the merge decision via Phase 12 of `/build`.
 
-**If CI failed:**
-
-```bash
-tmux send-keys -t <workspace-name>:0.0 \
-  "CI checks are failing on your PR. Run 'gh pr checks <number>' to see which checks failed, then fix and push." Enter
-```
-
-Set `last_action = "ci_fix_requested"`.
-
-**If merge conflicts:**
-
-```bash
-tmux send-keys -t <workspace-name>:0.0 \
-  "PR has merge conflicts. Rebase onto main: jj git fetch && jj rebase -d main@origin, then force push with jj git push --bookmark feat-<name>." Enter
-```
-
-Set `last_action = "merge_conflict_feedback"`.
-
-**Can do MULTIPLE merges per tick** — `gh pr merge` is fast.
+**Autopilot NEVER calls `gh pr merge`.** That is the workspace agent's job (Phase 12 of `/build`). This eliminates premature-merge bugs where autopilot merges before the workspace agent has finished its full flow (eval, CI verification, test validation).
 
 ---
 
@@ -277,6 +247,7 @@ If no escalation:
 1. Run `/dispatch` interactively for the top story (autopilot acts as the "user" selecting the story)
 2. Run `/launch` for the dispatched story
 3. Add workspace entry to state:
+
    ```json
    {
      "story_id": "<id>",
@@ -289,7 +260,7 @@ If no escalation:
      "last_action_at": "<ISO8601>",
      "code_review_triggered": false,
      "code_review_triggered_at": null,
-     "merge_attempted": false,
+
      "eval_rounds_completed": 0,
      "consecutive_stuck_ticks": 0,
      "blockers": []
@@ -341,15 +312,15 @@ At natural checkpoints (layer complete, escalation, or autopilot stop), run the 
 
 The autopilot does NOT maintain a formal FSM enum. It derives the logical state from the combination of fields on each tick:
 
-| Derived state  | Condition                                                |
-| -------------- | -------------------------------------------------------- |
-| Initializing   | `phase == 0`                                             |
-| Implementing   | `phase == 4`                                             |
-| Reviewing      | `phase == 5`                                             |
-| Testing        | `phase >= 6 AND phase <= 8`                              |
-| PR created     | `phase == 10 AND story_status == "in_review"`            |
-| CI/Review loop | `phase == 11 AND story_status == "in_review"`            |
-| Ready to merge | `story_status == "in_review"` AND CI green AND eval PASS |
-| Completed      | `story_status == "completed"`                            |
-| Failed         | `story_status == "failed"`                               |
-| Stuck          | `consecutive_stuck_ticks >= 6`                           |
+| Derived state  | Condition                                       |
+| -------------- | ----------------------------------------------- |
+| Initializing   | `phase == 0`                                    |
+| Implementing   | `phase == 4`                                    |
+| Reviewing      | `phase == 5`                                    |
+| Testing        | `phase >= 6 AND phase <= 8`                     |
+| PR created     | `phase == 10 AND story_status == "in_review"`   |
+| CI/Review loop | `phase == 11 AND story_status == "in_review"`   |
+| Awaiting merge | `story_status == "in_review"` AND `phase >= 11` |
+| Completed      | `story_status == "completed"`                   |
+| Failed         | `story_status == "failed"`                      |
+| Stuck          | `consecutive_stuck_ticks >= 6`                  |

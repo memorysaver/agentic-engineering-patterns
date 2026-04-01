@@ -32,7 +32,7 @@ Machine-readable state file. Read and written by the autopilot tick.
       "last_action_at": "2026-04-01T10:20:00Z",
       "code_review_triggered": true,
       "code_review_triggered_at": "2026-04-01T10:20:00Z",
-      "merge_attempted": false,
+
       "eval_rounds_completed": 0,
       "consecutive_stuck_ticks": 0,
       "last_tmux_hash": null,
@@ -77,40 +77,39 @@ Machine-readable state file. Read and written by the autopilot tick.
 
 #### Workspace Entry
 
-| Field                      | Type         | Description                                                                                                |
-| -------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------- |
-| `story_id`                 | string       | Story ID from product-context.yaml                                                                         |
-| `phase`                    | number       | Current build phase (0-12) from signal                                                                     |
-| `phase_name`               | string       | Human-readable phase name from signal                                                                      |
-| `story_status`             | string       | `"in_progress"`, `"in_review"`, `"completed"`, `"failed"`                                                  |
-| `completion_pct`           | number       | 0-100 from signal                                                                                          |
-| `pr_url`                   | string\|null | PR URL once created                                                                                        |
-| `cost_usd`                 | number\|null | Accumulated cost from signal                                                                               |
-| `completed_at`             | string\|null | ISO8601 completion timestamp                                                                               |
-| `failure_log`              | object\|null | Structured failure from signal                                                                             |
-| `last_action`              | string       | Last autopilot action for this workspace                                                                   |
-| `last_action_at`           | string       | ISO8601 of last action                                                                                     |
-| `code_review_triggered`    | boolean      | Whether autopilot has triggered gen/eval                                                                   |
-| `code_review_triggered_at` | string\|null | When gen/eval was triggered                                                                                |
-| `merge_attempted`          | boolean      | Whether merge was attempted (prevents double-merge)                                                        |
-| `eval_rounds_completed`    | number       | How many eval rounds the workspace has completed                                                           |
-| `consecutive_stuck_ticks`  | number       | Ticks with no progress change                                                                              |
-| `last_tmux_hash`           | string\|null | Hash of tmux pane content at last tick. Used for liveness comparison. Null on first tick or after restart. |
-| `blockers`                 | string[]     | Current blockers from signal                                                                               |
+| Field                      | Type         | Description                                               |
+| -------------------------- | ------------ | --------------------------------------------------------- |
+| `story_id`                 | string       | Story ID from product-context.yaml                        |
+| `phase`                    | number       | Current build phase (0-12) from signal                    |
+| `phase_name`               | string       | Human-readable phase name from signal                     |
+| `story_status`             | string       | `"in_progress"`, `"in_review"`, `"completed"`, `"failed"` |
+| `completion_pct`           | number       | 0-100 from signal                                         |
+| `pr_url`                   | string\|null | PR URL once created                                       |
+| `cost_usd`                 | number\|null | Accumulated cost from signal                              |
+| `completed_at`             | string\|null | ISO8601 completion timestamp                              |
+| `failure_log`              | object\|null | Structured failure from signal                            |
+| `last_action`              | string       | Last autopilot action for this workspace                  |
+| `last_action_at`           | string       | ISO8601 of last action                                    |
+| `code_review_triggered`    | boolean      | Whether autopilot has triggered gen/eval                  |
+| `code_review_triggered_at` | string\|null | When gen/eval was triggered                               |
+
+| `eval_rounds_completed` | number | How many eval rounds the workspace has completed |
+| `consecutive_stuck_ticks` | number | Ticks with no progress change |
+| `last_tmux_hash` | string\|null | Hash of tmux pane content at last tick. Used for liveness comparison. Null on first tick or after restart. |
+| `blockers` | string[] | Current blockers from signal |
 
 #### `last_action` Values
 
-| Value                       | Meaning                                 |
-| --------------------------- | --------------------------------------- |
-| `"launched"`                | Workspace just launched via /launch     |
-| `"review_triggered"`        | Gen/eval triggered via tmux             |
-| `"review_re_triggered"`     | Gen/eval re-triggered after stuck       |
-| `"ci_fix_requested"`        | Sent CI fix instruction via tmux        |
-| `"merge_conflict_feedback"` | Sent merge conflict resolution via tmux |
-| `"merging"`                 | Merge command issued                    |
-| `"wrapping"`                | /wrap in progress                       |
-| `"nudged"`                  | Sent stuck nudge via tmux               |
-| `"escalated_stuck"`         | Escalated due to prolonged stuck        |
+| Value                   | Meaning                                  |
+| ----------------------- | ---------------------------------------- |
+| `"launched"`            | Workspace just launched via /launch      |
+| `"review_triggered"`    | Gen/eval triggered via tmux              |
+| `"review_re_triggered"` | Gen/eval re-triggered after stuck        |
+| `"detected_merged"`     | PR detected as merged by workspace agent |
+| `"detected_closed"`     | PR detected as closed without merge      |
+| `"wrapping"`            | /wrap in progress                        |
+| `"nudged"`              | Sent stuck nudge via tmux                |
+| `"escalated_stuck"`     | Escalated due to prolonged stuck         |
 
 #### Escalation Entry
 
@@ -156,7 +155,7 @@ Human-readable status file. Updated at the end of every tick.
 | Workspace       | Story    | Phase           | Progress | Last Action      |
 | --------------- | -------- | --------------- | -------- | ---------------- |
 | auth-middleware | PROJ-003 | 5 (code-review) | 60%      | review triggered |
-| user-model      | PROJ-004 | 10 (pr-created) | 90%      | merging          |
+| user-model      | PROJ-004 | 10 (pr-created) | 90%      | detected_merged  |
 
 ## Escalations
 
