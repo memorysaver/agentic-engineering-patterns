@@ -152,6 +152,18 @@ This principle follows directly from Jeff Patton's guidance: each story map shou
 
 4. **Human readability degrades**: A 500-line YAML with opportunity brief, architecture, 40 stories, topology, cost tracking, and changelog is no longer a document a human can scan to understand the product. The story map — the thing Jeff Patton designed to maintain shared understanding — gets buried under machine state.
 
+### 4.1b Human Alignment Risks of Multi-Map
+
+The multi-map architecture solves real problems but introduces new ones that must be addressed:
+
+**Map fragmentation.** Jeff Patton's story map is one artifact seen at once — that's the entire point. Splitting into per-capability files means humans must mentally reassemble the big picture across `index.yaml` + N `frame.yaml` + N `map.yaml` files. For a two-capability product, that's six files minimum. Mitigation: the dashboard (`apps/web`) must render all capability maps as a unified visual story map. Consider a `/view` command that renders the human-relevant view in-terminal.
+
+**Staleness during execution.** Between `/compile` and `/reflect`, Human Maps freeze while the Machine Graph drifts (story statuses, cost, failures change via `/dispatch` and `/wrap`). The human's map becomes misleading during the period they most need accurate state. Mitigation: `/dispatch` should auto-detect stale maps (`map_hash` mismatch) and either auto-recompile or warn before proceeding. This behavior must be specified, not left implicit.
+
+**"Where do I edit?" confusion.** When a human spots a wrong acceptance criterion, they must decide: edit the stub in `map.yaml` and recompile, or edit `machine-graph.yaml` directly (creating divergence). Mitigation: define a clear policy — direct Machine Graph edits are allowed but flagged as `compile_override: true` on the story, and `/compile` preserves overrides rather than clobbering them.
+
+**Alternative considered:** Single source of truth with computed views (`/view --human`, `/view --machine`) instead of separate documents. This avoids fragmentation and staleness but loses the clean separation of concerns. This alternative should be prototyped alongside multi-map to determine which works better in practice before committing to full implementation.
+
 ### 4.2 Three-Layer, Multi-Map Architecture
 
 #### Layer 1: Human Maps
@@ -594,7 +606,32 @@ changelog:
 9. Write `machine-graph.yaml`
 10. Commit
 
-**Key property:** Deterministic. Same Human Maps + same compile options = same Machine Graph. This means you can re-compile after updating maps without losing dispatch state (compile merges, doesn't overwrite execution tracking fields).
+**Key property:** Compile merges, doesn't overwrite — re-compiling after updating maps preserves execution tracking fields (dispatch state, cost, failure logs).
+
+#### Compilation Complexity Tiers
+
+Not all `/compile` operations are equal. Some are mechanical; others require intelligence:
+
+**Tier 1 — Mechanical (truly deterministic):**
+
+- Copy `layer`, `activity`, `complexity_estimate` from stub to full story
+- Derive `business_value` from priority enum
+- Compute `dispatch_score` from formula
+- Assemble `execution_slices` from dependency DAG
+- Build `layer_gates` from layer verification definitions
+- Initialize cost tracking structure
+
+**Tier 2 — AI-assisted (requires human review):**
+
+- Expand `acceptance_criteria_sketch` into specific, automatable criteria
+- Assign modules from `architecture_hints` + system map
+- Infer `interface_obligations` from module boundaries
+- Estimate `files_affected` from module ownership
+- Compute `readiness_score` and `ambiguity_score`
+
+Tier 1 operations are deterministic. Tier 2 operations use AI inference and MUST present their expansions to the human for review before committing the Machine Graph. `/compile` should output a diff showing all Tier 2 expansions so the human can confirm or correct.
+
+This replaces the binary "deterministic vs AI-inferred" framing in Decision D2. The revisit trigger for full AI compilation without review remains: only when model quality reaches the point where Tier 2 expansions are reliably correct.
 
 ### 4.7 How Existing Commands Adapt
 
@@ -694,6 +731,25 @@ change_group: null # group ID for grouped_change mode
 ```
 
 When `compile_mode: grouped_change`, `/dispatch` dispatches the entire group as one unit, creates one OpenSpec change containing all grouped stories, and tracks the group atomically.
+
+### 5.5 Grouped Change Specification
+
+When `compile_mode: grouped_change`, the following rules apply:
+
+**Dispatch:** The group is scored using the minimum `readiness_score` and maximum `complexity_cost` of any story in the group. This prevents premature dispatch when one story in the group is under-specified.
+
+**OpenSpec packet:** One change packet with:
+
+- `proposal.md` covering the full group rationale
+- `design.md` explaining the cross-story contract
+- `specs/<story-id>/` subdirectory per story
+- `group-verification.md` defining atomic acceptance criteria for the group as a whole
+
+**Build mode:** `/build` implements all stories in dependency order within the group. A single PR contains all changes. The evaluator verifies cross-story contracts in addition to per-story criteria.
+
+**Failure handling:** Failure of any story fails the entire group. The group is retried as a unit. If a single story fails repeatedly, the group should be re-examined in `/design` — the coupling assumption may be wrong.
+
+**Size limit:** Maximum 3 stories per group. Larger groups should be split or require explicit human design review.
 
 ---
 
@@ -869,11 +925,11 @@ v1 offers "light mode" which skips the evaluator entirely. The framework's own d
 
 Replace the binary optional/required with evaluation depth scaled to story risk:
 
-| Risk Level | Trigger                                                                                          | Evaluation Approach                                                                                              |
-| ---------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| **Low**    | S complexity, single module, no interface changes, readiness_score >= 0.8                        | Structured self-review checklist (generator reviews own work against acceptance criteria, no separate evaluator) |
-| **Medium** | M complexity OR touches interfaces OR readiness_score < 0.8                                      | Full generator/evaluator with separate evaluator agent                                                           |
-| **High**   | L complexity OR security-sensitive OR cross-module integration OR previous failure on this story | Full generator/evaluator + protocol checker (three agents)                                                       |
+| Risk Level | Trigger (risk_score)                                                                              | Evaluation Approach                                                      |
+| ---------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| **Low**    | risk_score 1-3: S complexity, single module, no interface changes, readiness_score >= 0.8         | Automated verification only (all tests must pass, no separate evaluator) |
+| **Medium** | risk_score 4-7: M complexity OR touches interfaces OR readiness_score < 0.8                       | Full generator/evaluator with separate evaluator agent                   |
+| **High**   | risk_score 8+: L complexity OR security-sensitive OR cross-module integration OR previous failure | Full generator/evaluator + protocol checker (three agents)               |
 
 ### 9.3 Implementation
 
@@ -882,11 +938,18 @@ In `machine-graph.yaml` topology:
 ```yaml
 routing:
   evaluation_policy:
-    low_risk: self_review_checklist
+    low_risk: automated_verification # all tests must pass, no evaluator agent
     medium_risk: generator_evaluator
     high_risk: generator_evaluator_protocol
-  risk_computation: "complexity * interface_count * (1 + failure_history)"
+  risk_computation: "max(1, complexity_score + interface_count + (failure_history * 2) + security_flag)"
+  # complexity_score: S=1, M=3, L=5
+  # security_flag: 0 (normal) or 3 (security-sensitive module)
+  # Risk tiers: Low 1-3, Medium 4-7, High 8+
 ```
+
+The risk formula is additive with a floor of 1, ensuring no story ever scores zero risk. The previous multiplicative formula (`complexity * interface_count * (1 + failure_history)`) collapsed to zero when any factor was zero — a story rewriting the database migration layer with `interface_count: 0` would score zero risk, which is clearly wrong.
+
+**Note on low-risk evaluation:** The low-risk tier uses "automated verification" (all defined tests must pass), not "self-review checklist." Sections 2.5 and 9.1 establish that agents self-evaluate leniently — routing low-risk stories to self-review would contradict this finding. Automated test verification is both cheaper than spawning an evaluator and more reliable than self-assessment.
 
 The `/dispatch` scoring already knows complexity, interface obligations, and failure history. Adding `evaluation_depth` as a computed field on dispatched stories is a natural extension.
 
@@ -1010,17 +1073,63 @@ Signal files (defined in `skills/agentic-development-workflow/launch/references/
    - Task-level: `"task_current": "reading testing guide"`, `"task_index": 2, "task_total": 7"`
    - Sub-phase: `"sub_phase": "analyzing_codebase"` within phase 0
 
-**Impact on implementation roadmap:** Fix #1 (tmux liveness) should be added to Phase 1 (P0) as it's low effort and addresses a real operational issue. Fixes #3 and #4 belong in Phase 2 alongside signal schema evolution.
+5. **Heartbeat protocol (recommended for autonomous mode).** Instead of inferring liveness from side-effects, have `/build` write a heartbeat timestamp to `status.json` at every major code generation step (minimum every 60 seconds during active work). If the heartbeat is stale beyond the phase-specific grace period, the agent is actually stuck or dead. No inference needed. This is more reliable than tmux capture + jj diff heuristics because it provides a direct, unambiguous liveness signal.
+
+6. **Non-disruptive nudges.** Instead of sending text via `tmux send-keys` (which injects into the agent's input mid-task and can cause the agent to abandon its current approach), write nudge messages to `feedback.md`. The agent already checks `feedback.md` at phase boundaries. This ensures nudges arrive at natural breakpoints, not mid-generation. The current `tmux send-keys` approach risks causing intervention cascades: nudge → agent confusion → errors → more nudges → failure loop.
+
+7. **Dead agent detection.** After the tmux liveness check, also verify the Claude process is still running: check the PID from `tmux list-panes -F '#{pane_pid}'`. If the process is dead, skip nudging and go straight to workspace cleanup and re-dispatch. This catches silent crashes (context window exhaustion, API errors) that leave a stale tmux pane.
+
+8. **Intervention budget.** Track cumulative nudges per workspace. After 3 nudges with no progress change (same phase, same `completion_pct`), kill the workspace and re-dispatch with a fresh agent. In fully autonomous mode, there is no human to escalate to — the system needs a self-repair path rather than an infinite nudge loop.
+
+**Impact on implementation roadmap:** Fix #1 (tmux liveness) should be added to Phase 1 (P0) as it's low effort and addresses a real operational issue. Fixes #3 and #4 belong in Phase 2 alongside signal schema evolution. Fixes #5-#8 are recommended for Phase 2 or Phase 3, with #5 (heartbeat) and #6 (non-disruptive nudges) being the highest priority for autonomous mode reliability.
 
 **Files affected:**
 
-- `skills/patterns/autopilot/references/tick-protocol.md` — add liveness check before stuck counter increment (Step 6)
-- `skills/patterns/autopilot/SKILL.md` — document phase-specific grace periods
-- `skills/agentic-development-workflow/build/SKILL.md` — add more frequent signal write points
+- `skills/patterns/autopilot/references/tick-protocol.md` — add liveness check before stuck counter increment (Step 6), add dead agent detection, add intervention budget tracking
+- `skills/patterns/autopilot/SKILL.md` — document phase-specific grace periods, document nudge-via-feedback.md policy
+- `skills/agentic-development-workflow/build/SKILL.md` — add heartbeat writes to status.json, add more frequent signal write points
 
 ---
 
 ## 12. Implementation Roadmap
+
+### Phase Dependencies
+
+```
+Phase 1 (bugfixes)  ─── independent
+Phase 4 (/design)   ─── independent
+Phase 7 (VCS)       ─── independent
+Phase 2 (dispatch)  ─── soft dependency on Phase 5 (readiness_score computed by /compile)
+Phase 3 (learning)  ─── soft dependency on Phase 5 (references Human Map stubs)
+Phase 5 (multi-map) ─── independent (core change)
+Phase 6 (outcomes)  ─── HARD dependency on Phase 5 (frame.yaml only exists in multi-map)
+```
+
+**Ordering risk:** Phases 1-4 improve `product-context.yaml`. Phase 5 replaces it with multi-map. Schema additions (Phase 1), dispatch formula updates (Phase 2), and learning policy (Phase 3) will need rework when Phase 5 lands. Recommendation: split Phase 1 into "bugfixes" (fix now — enum mismatches, autopilot stuck detection) and "schema additions" (defer to Phase 5 schema — `business_value` field, `execution_slices` section, autonomous routing fields).
+
+### Minimum Viable v2
+
+If scope must be reduced, the minimum viable v2 is:
+
+1. Schema bugfixes (Phase 1 bugfixes only — enum mismatches, missing fields)
+2. Multi-map architecture + `/compile` (Phase 5 — the core thesis)
+3. Updated loader with adapter pattern for both formats
+
+Everything else is independently valuable and can ship as v2.x:
+
+- `/slice` (humans can edit `map.yaml` directly)
+- Enhanced dispatch formula (current formula not proven insufficient)
+- Learning loop (works on v1 or v2)
+- Outcome contracts (product philosophy overlay)
+- VCS abstraction (address when git-only team adopts)
+
+### Validation Gate
+
+Before committing to full Phase 5 implementation:
+
+1. Run AEP v1 on a real project to 15-20 stories. Document actual pain points with single-file format.
+2. Prototype `/compile` — hand-craft a `map.yaml`, run expansion logic, compare against hand-crafted `machine-graph.yaml`. If Tier 2 expansion is too lossy, revise the multi-map thesis.
+3. Prototype the "single source + computed views" alternative (Section 4.1b) for comparison.
 
 ### Phase 1: Schema Fixes (P0, Low Effort)
 
@@ -1127,19 +1236,20 @@ Signal files (defined in `skills/agentic-development-workflow/launch/references/
 
 **Revisit trigger:** If user feedback consistently shows that the multi-file structure is confusing for simple projects, consider a `--simple` flag that generates a flattened single-file view.
 
-### D2: `/compile` as deterministic transformation
+### D2: `/compile` as tiered transformation
 
-**Decision:** `/compile` is a deterministic function: same Human Maps + same options = same Machine Graph.
+**Decision:** `/compile` uses tiered compilation: Tier 1 (mechanical fields — copying, formula computation, DAG assembly) is deterministic; Tier 2 (acceptance criteria expansion, module assignment, interface inference) is AI-assisted with mandatory human review. See Section 4.6 "Compilation Complexity Tiers" for the full breakdown.
 
 **Alternatives considered:**
 
-- (a) `/compile` uses AI to infer stories and dependencies (non-deterministic)
-- (b) `/compile` is a template-based expansion (deterministic, chosen)
+- (a) `/compile` uses AI for all operations (fully non-deterministic)
+- (b) `/compile` is purely template-based (fully deterministic) — originally chosen, revised after design review
 - (c) No `/compile` — humans write Machine Graph directly
+- (d) Tiered: mechanical operations are deterministic, inference operations are AI-assisted with human review (chosen)
 
-**Rationale:** Non-deterministic compilation (a) means you can't predict what `/compile` will produce, which undermines the control plane's purpose. Direct writing (c) defeats the separation of concerns. Deterministic compilation (b) means the human controls the Machine Graph through the Human Maps, and can reason about the transformation.
+**Rationale:** Option (b) was the original choice, but design review revealed that expanding acceptance criteria sketches into automatable criteria and inferring interface obligations from architecture hints are not template operations — they require intelligence. Claiming determinism for these operations creates a false sense of reliability. Option (d) is honest about what is mechanical and what requires judgment, while preserving determinism where it genuinely applies and adding a human review gate where it doesn't.
 
-**Revisit trigger:** If story stub → full story expansion requires too much intelligence for template-based approach, allow AI-assisted compilation with a mandatory human review step (compile-then-review).
+**Revisit trigger:** If model quality improves to the point where Tier 2 expansions are reliably correct without human review, the review gate can be relaxed to opt-in confirmation.
 
 ### D3: `/design` belongs in Control Plane
 
@@ -1207,7 +1317,7 @@ These principles should guide all implementation decisions:
 
 2. **Start extensible, not minimal.** Multi-map from day one. One capability map is fine. The structure supports growth without restructuring.
 
-3. **Compilation is the bridge.** The `/compile` step is where human intent becomes machine instruction. It should be deterministic, auditable, and re-runnable.
+3. **Compilation is the bridge.** The `/compile` step is where human intent becomes machine instruction. Tier 1 (mechanical) operations should be deterministic and re-runnable. Tier 2 (AI-assisted) operations should be auditable with human review.
 
 4. **Every execution teaches.** `/wrap` doesn't just close stories — it records what happened so the system improves. Learning is not optional.
 
@@ -1216,3 +1326,53 @@ These principles should guide all implementation decisions:
 6. **The control plane's weight will shift.** As models improve, less upfront specification may be needed. AEP's "every harness component earns its place" principle applies here: periodically stress-test whether each control plane step is still necessary.
 
 7. **Preserve the story.** Jeff Patton's core insight is that shared understanding comes from narrative, not from backlog items. The Human Map must always be readable as a story about users, not as a queue of work items.
+
+---
+
+## 15. Open Design Questions
+
+These questions surfaced during design review and must be resolved before or during implementation.
+
+### Q1: Cross-Story Context Assembly
+
+When Story B depends on Story A's output, how does Story B's agent get accurate context about Story A's ACTUAL implementation (not just the pre-implementation interface contract)? The `architecture.interfaces` section describes intended contracts, but Story A's agent may have deviated — different error handling, additional middleware, or runtime data shapes not captured in the contract. Story B's agent discovers these deviations at runtime, wasting eval rounds.
+
+**Proposed solution:** `/wrap` extracts a dependency manifest from each completed story (actual exported symbols, endpoint signatures as implemented, deviation notes from the interface contract). `/dispatch` includes this manifest in downstream story context packages instead of relying solely on pre-implementation contracts.
+
+### Q2: `files_affected` Accuracy
+
+`files_affected` is estimated during `/map` when the project may not even exist yet. These estimates will frequently be wrong, causing false-positive file conflicts (blocking parallel dispatch unnecessarily) and false-negative conflicts (allowing actually conflicting stories to run in parallel).
+
+**Proposed solution:** Two-phase field — `files_affected_planned` (from `/map`, used for initial conflict detection) and `files_affected_actual` (populated by `/wrap` from merged PR diff, used for future conflict detection against in-progress stories). The actual values feed back into the Machine Graph for remaining stories.
+
+### Q3: Machine Graph Write Coordination
+
+If `/compile` runs while `/autopilot` ticks trigger `/dispatch` and `/wrap`, concurrent writes to `machine-graph.yaml` can corrupt state. The commit-as-lock pattern from `/dispatch` protects against concurrent dispatches but not against `/compile` overwriting dispatch state.
+
+**Proposed solution:** Explicit `write_lock` field at the top of `machine-graph.yaml` with `holder` (skill name), `acquired_at`, and `expires_at` (auto-expire after 5 minutes to prevent deadlock). Every skill that writes to the Machine Graph must check and acquire the lock. `/autopilot` skips tick if lock is held by another skill.
+
+### Q4: Learning Policy Expressiveness
+
+The rule-based pattern system (`when: "error_class == X", action: "Y"`) uses string-equality conditions against 4 enum values. Real failure patterns are contextual and cross-dimensional: "context overflow when module X interacts with module Y's legacy API, because the generated adapter code is verbose."
+
+**Open question:** Is the rule-based system expressive enough, or should the learning loop be restructured as a structured observation log with `/reflect` analyzing observations and proposing parameter adjustments (e.g., `auth_module.max_context_tokens: 30000`) rather than pattern-matching rules?
+
+### Q5: Multi-Map vs Single Source + Views
+
+The multi-map architecture (Section 4) and the "single source of truth with computed views" alternative (Section 4.1b) both solve the semantic overload problem. Multi-map provides cleaner separation of concerns but risks map fragmentation, staleness during execution, and "where do I edit?" confusion. Single source with views keeps one authoritative file but requires better tooling (dashboard, `/view` command).
+
+**Open question:** Which approach should be prototyped first? What metrics determine which is better? Candidate metrics: time-to-understand for new team members, frequency of stale-state errors, human error rate (editing wrong file), and time from idea to dispatched story.
+
+### Q6: `/compile` Human Review UX
+
+If `/compile` Tier 2 operations require human review (Section 4.6), what does that review experience look like? Options: a full diff of every expanded story, a summary of changes with drill-down, or an interactive confirm/reject per story. The UX of this review determines whether humans actually engage with it or rubber-stamp it.
+
+### Q7: Direct Machine Graph Edits
+
+When a human edits `machine-graph.yaml` directly (fixing a wrong acceptance criterion, adjusting a dispatch score), how is this handled? Options:
+
+- (a) Disallow — require editing the stub + recompile (strict but frustrating)
+- (b) Allow and flag as `compile_override: true` on the story — `/compile` preserves overrides (recommended in Section 4.1b)
+- (c) Allow and auto-propagate back to Human Maps via a `/sync` command
+
+The choice directly affects the integrity of the human/machine separation and how much friction users experience.
