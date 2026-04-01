@@ -240,10 +240,10 @@ Pick a story from the map, spec it, spawn the agent, let it build, archive when 
 **Want hands-free autonomous mode?**
 
 ```
-/autopilot start  →  /loop 5m /autopilot tick
+/autopilot
 ```
 
-Autopilot dispatches, launches, monitors, reviews, merges, and wraps — pausing only when human design input is needed.
+One command. Autopilot dispatches, launches, monitors, reviews, merges, and wraps — pausing only when human design input is needed.
 
 **Shipped something? Close the loop:**
 

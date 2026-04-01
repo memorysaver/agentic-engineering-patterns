@@ -61,13 +61,13 @@ topology:
 ### 3. Start the autopilot
 
 ```
-/autopilot start
+/autopilot
 ```
 
-Then set up periodic ticking:
+One command. Initializes state, runs the first tick, and starts a recurring loop (default: every 5 minutes). Use `--loop` to customize the interval:
 
 ```
-/loop 5m /autopilot tick
+/autopilot --loop 10m
 ```
 
 ---

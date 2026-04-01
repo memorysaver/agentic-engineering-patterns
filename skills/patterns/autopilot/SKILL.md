@@ -1,18 +1,25 @@
 ---
 name: autopilot
 description: |-
-  Orchestrate the full dispatch-launch-monitor-review-wrap-dispatch cycle autonomously via a tick-based state machine. Use when the user says "autopilot", "run autonomously", "auto dispatch loop", "hands-free mode", "start autopilot". Runs from the main workspace only. Integrates with /loop for resilient periodic execution. Subcommands: start, tick, status, stop.
+  Orchestrate the full dispatch-launch-monitor-review-wrap-dispatch cycle autonomously. One command to go hands-free. Use when the user says "autopilot", "run autonomously", "auto dispatch loop", "hands-free mode". Runs from the main workspace only. Usage: /autopilot [--loop 5m] [status|stop]
 ---
 
 # Autopilot
 
-Tick-based autonomous orchestration of the feature lifecycle. Each tick reads current state, decides one action per workspace, executes it, and writes state back. Designed for `/loop` integration — resilient to context resets, idempotent, and composable.
+One command to go autonomous. Initializes state, runs the first tick, and starts a recurring loop — all in one invocation.
+
+```
+/autopilot                  # start with default 5m interval
+/autopilot --loop 10m       # start with custom interval
+/autopilot status           # check progress and escalations
+/autopilot stop             # gracefully stop the loop
+```
 
 **Where this fits:**
 
 ```
 /envision → /map → /validate
-  → /autopilot start + /loop 5m /autopilot tick
+  → /autopilot
        ┌─────────────────────────────────────────────┐
        │  tick ①  sync signals                        │
        │  tick ②  wrap completed workspaces            │
@@ -28,17 +35,22 @@ Tick-based autonomous orchestration of the feature lifecycle. Each tick reads cu
 
 **Session:** Main session only (never from a feature workspace)
 **State:** `.dev-workflow/autopilot-state.json` (machine-readable), `.dev-workflow/autopilot-status.md` (human-readable)
-**Integration:** `/loop 5m /autopilot tick`
 
 ---
 
-## Subcommands
+## `/autopilot` (default — start)
 
-### `/autopilot start`
+Initialize autopilot, run the first tick, and start the recurring loop. This is a single command — no second step needed.
 
-Initialize autopilot and run the first tick.
+**Usage:**
 
-#### Prerequisites
+```
+/autopilot                  # default: 5 minute tick interval
+/autopilot --loop 10m       # custom interval
+/autopilot --loop 3m        # faster for active development
+```
+
+### Prerequisites
 
 ```bash
 # 1. Must be on main workspace (not inside a feature workspace)
@@ -59,7 +71,7 @@ Verify these conditions before proceeding:
 - **Stories available:** At least one story must be `ready` or `in_progress`
 - **Validated:** Product context should have passed `/validate` (both passes)
 
-#### Start Protocol
+### Start Protocol
 
 1. Create `.dev-workflow/` if it doesn't exist:
 
@@ -107,21 +119,19 @@ Verify these conditions before proceeding:
 
 4. Run the first tick immediately (see tick protocol below).
 
-5. Instruct the user:
+5. Start the recurring loop using the `/loop` skill:
 
    ```
-   Autopilot started. To run continuously, execute:
-   /loop 5m /autopilot tick
-
-   To check status at any time: /autopilot status
-   To stop: /autopilot stop
+   /loop <interval> /autopilot tick
    ```
+
+   Where `<interval>` is from `--loop` flag (default: `5m`). This starts the `/loop` skill which will invoke `/autopilot tick` on the specified interval automatically.
 
 ---
 
-### `/autopilot tick`
+## `/autopilot tick`
 
-The per-tick handler. Designed to be invoked by `/loop` every 5 minutes, or manually at any time. **Idempotent** — safe to run multiple times with no state change producing no duplicate actions.
+The per-tick handler invoked by `/loop` on each interval. Can also be run manually at any time. **Idempotent** — safe to run multiple times with no state change producing no duplicate actions.
 
 Follow the 8-step tick protocol documented in `references/tick-protocol.md`.
 
@@ -200,19 +210,19 @@ Also parse `.dev-workflow/autopilot-state.json` and present:
 
 ---
 
-### `/autopilot stop`
+## `/autopilot stop`
 
-Gracefully stop the autopilot.
+Gracefully stop the autopilot and cancel the recurring loop.
 
 1. Set `status: "stopped"` in `.dev-workflow/autopilot-state.json`
 2. Update `.dev-workflow/autopilot-status.md` with stopped state
 3. Log stop event to `.dev-workflow/autopilot-history.jsonl`
+4. Cancel the `/loop` (use the loop skill's cancel mechanism)
 
 **What happens:**
 
-- Next tick sees `stopped` status and exits immediately
+- The recurring loop is cancelled — no more ticks
 - Running workspaces continue autonomously (they don't depend on autopilot)
-- User should also stop the `/loop` if running
 
 **What does NOT happen:**
 
@@ -220,12 +230,9 @@ Gracefully stop the autopilot.
 - Product context is NOT modified
 - No wraps or merges are triggered
 
-Instruct the user:
-
 ```
 Autopilot stopped. Active workspaces continue running independently.
-Remember to stop the /loop as well.
-To resume: /autopilot start
+To resume: /autopilot
 ```
 
 ---
@@ -273,10 +280,10 @@ When escalation triggers:
 After the human resolves the design issue:
 
 ```
-/autopilot start
+/autopilot
 ```
 
-This re-reads the product context (now with refined specs) and resumes the tick loop.
+This re-reads the product context (now with refined specs), re-initializes the loop, and resumes ticking.
 
 ---
 
@@ -316,5 +323,5 @@ After autopilot completes a layer or is stopped:
 | ------------------- | ----------------------------------------------------------------- |
 | `/reflect`          | After layer completes — classify feedback, update product context |
 | `/autopilot status` | Anytime — check progress and escalations                          |
-| `/autopilot start`  | After resolving a pause — resume the loop                         |
+| `/autopilot`        | After resolving a pause — resume the loop                         |
 | `/dispatch`         | Manual mode — pick a specific story interactively                 |
