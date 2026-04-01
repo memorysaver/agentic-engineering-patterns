@@ -29,12 +29,12 @@ ls package.json pyproject.toml Cargo.toml go.mod 2>/dev/null
 
 When generating workspace hooks and e2e-test skills, use these defaults unless the project already uses something different:
 
-| Language | Package Manager | Test Runner | Dev Server |
-|----------|----------------|-------------|------------|
-| TypeScript / JavaScript | bun | vitest (via Turborepo) | `bun run dev` |
-| Python | uv | pytest | `uv run dev` |
-| Rust | cargo | cargo test | `cargo run` |
-| Go | go | go test | `go run .` |
+| Language                | Package Manager | Test Runner            | Dev Server    |
+| ----------------------- | --------------- | ---------------------- | ------------- |
+| TypeScript / JavaScript | bun             | vitest (via Turborepo) | `bun run dev` |
+| Python                  | uv              | pytest                 | `uv run dev`  |
+| Rust                    | cargo           | cargo test             | `cargo run`   |
+| Go                      | go              | go test                | `go run .`    |
 
 ---
 
@@ -50,29 +50,29 @@ Before scaffolding, understand the user's project goals and recommend the right 
 
 Ask what the user is building. The answer shapes every recommendation:
 
-| Project type | Recommended preset |
-|---|---|
-| **SaaS / web app** | Default stack (see below) |
+| Project type                 | Recommended preset                            |
+| ---------------------------- | --------------------------------------------- |
+| **SaaS / web app**           | Default stack (see below)                     |
 | **API-first / microservice** | hono + orpc + postgres + drizzle, no frontend |
-| **Vue / Nuxt app** | nuxt + hono + orpc (tRPC incompatible) |
-| **Svelte app** | svelte + hono + orpc (tRPC incompatible) |
-| **Content site / blog** | astro or next + no API layer |
-| **Mobile app** | native-uniwind + hono + orpc |
-| **Desktop app** | tanstack-router + hono + tauri or electrobun |
-| **Browser extension** | tanstack-router + wxt addon |
-| **AI / LLM app** | Default stack + ai example + mcp addon |
-| **Docs site** | astro + starlight or fumadocs addon |
+| **Vue / Nuxt app**           | nuxt + hono + orpc (tRPC incompatible)        |
+| **Svelte app**               | svelte + hono + orpc (tRPC incompatible)      |
+| **Content site / blog**      | astro or next + no API layer                  |
+| **Mobile app**               | native-uniwind + hono + orpc                  |
+| **Desktop app**              | tanstack-router + hono + tauri or electrobun  |
+| **Browser extension**        | tanstack-router + wxt addon                   |
+| **AI / LLM app**             | Default stack + ai example + mcp addon        |
+| **Docs site**                | astro + starlight or fumadocs addon           |
 
 ### Built-in template presets
 
 If the user's project matches a well-known pattern, the CLI has `--template` presets that skip all selection:
 
-| Template | Stack |
-|---|---|
-| `t3` | Next.js + Prisma + PostgreSQL + tRPC + Better Auth + Biome + Turborepo |
-| `pern` | TanStack Router + Express + Drizzle + PostgreSQL + tRPC + Better Auth + Turborepo + Node |
-| `mern` | React Router + Express + Mongoose + MongoDB + oRPC + Better Auth + Turborepo + Node |
-| `uniwind` | React Native + NativeWind only (no backend/database) |
+| Template  | Stack                                                                                    |
+| --------- | ---------------------------------------------------------------------------------------- |
+| `t3`      | Next.js + Prisma + PostgreSQL + tRPC + Better Auth + Biome + Turborepo                   |
+| `pern`    | TanStack Router + Express + Drizzle + PostgreSQL + tRPC + Better Auth + Turborepo + Node |
+| `mern`    | React Router + Express + Mongoose + MongoDB + oRPC + Better Auth + Turborepo + Node      |
+| `uniwind` | React Native + NativeWind only (no backend/database)                                     |
 
 Usage: `bun create better-t-stack@latest . --yes --template t3 --directory-conflict merge --no-git`
 
@@ -104,22 +104,22 @@ For each customization, explain the tradeoff briefly. Key decisions:
 
 ### All available options
 
-| Topic | Options | Default |
-|-------|---------|---------|
-| **Scaffold location** | `.` (current directory) or `<project-name>` (new subdirectory) | `.` (in-place) |
-| **Frontend** | tanstack-router, react-router, tanstack-start, next, nuxt, svelte, solid, astro, native-bare, native-uniwind, native-unistyles, none | `tanstack-router` |
-| **Backend** | hono, express, fastify, elysia, convex, self, none | `hono` |
-| **Database** | sqlite, postgres, mysql, mongodb, none | `sqlite` |
-| **ORM** | drizzle, prisma, mongoose, none | `drizzle` |
-| **Auth** | better-auth, clerk, none | `better-auth` |
-| **Payments** | polar, none | `none` |
-| **API layer** | trpc, orpc, none | `trpc` |
-| **Runtime** | bun, node, workers | `bun` |
-| **Package manager** | bun, pnpm, npm | `bun` |
-| **Addons** | turborepo, nx, biome, oxlint, ultracite, lefthook, husky, starlight, fumadocs, pwa, tauri, electrobun, mcp, opentui, wxt, skills | `turborepo,biome,skills` |
-| **DB setup** | turso, d1, neon, supabase, prisma-postgres, planetscale, mongodb-atlas, docker, none | (depends on database) |
-| **Examples** | none, todo, ai | `none` |
-| **Deploy** | cloudflare, none | `none` |
+| Topic                 | Options                                                                                                                              | Default                  |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------ |
+| **Scaffold location** | `.` (current directory) or `<project-name>` (new subdirectory)                                                                       | `.` (in-place)           |
+| **Frontend**          | tanstack-router, react-router, tanstack-start, next, nuxt, svelte, solid, astro, native-bare, native-uniwind, native-unistyles, none | `tanstack-router`        |
+| **Backend**           | hono, express, fastify, elysia, convex, self, none                                                                                   | `hono`                   |
+| **Database**          | sqlite, postgres, mysql, mongodb, none                                                                                               | `sqlite`                 |
+| **ORM**               | drizzle, prisma, mongoose, none                                                                                                      | `drizzle`                |
+| **Auth**              | better-auth, clerk, none                                                                                                             | `better-auth`            |
+| **Payments**          | polar, none                                                                                                                          | `none`                   |
+| **API layer**         | trpc, orpc, none                                                                                                                     | `trpc`                   |
+| **Runtime**           | bun, node, workers                                                                                                                   | `bun`                    |
+| **Package manager**   | bun, pnpm, npm                                                                                                                       | `bun`                    |
+| **Addons**            | turborepo, nx, biome, oxlint, ultracite, lefthook, husky, starlight, fumadocs, pwa, tauri, electrobun, mcp, opentui, wxt, skills     | `turborepo,biome,skills` |
+| **DB setup**          | turso, d1, neon, supabase, prisma-postgres, planetscale, mongodb-atlas, docker, none                                                 | (depends on database)    |
+| **Examples**          | none, todo, ai                                                                                                                       | `none`                   |
+| **Deploy**            | cloudflare, none                                                                                                                     | `none`                   |
 
 ### Default: in-place scaffold
 
@@ -138,12 +138,12 @@ for cmd in bun git gh openspec; do
 done
 ```
 
-| Tool | Install command |
-|------|----------------|
-| `bun` | `curl -fsSL https://bun.sh/install \| bash` |
-| `git` | `xcode-select --install` (macOS) |
-| `gh` | `brew install gh` |
-| `openspec` | `bun add -g openspec` |
+| Tool       | Install command                             |
+| ---------- | ------------------------------------------- |
+| `bun`      | `curl -fsSL https://bun.sh/install \| bash` |
+| `git`      | `xcode-select --install` (macOS)            |
+| `gh`       | `brew install gh`                           |
+| `openspec` | `bun add -g openspec`                       |
 
 ---
 
@@ -167,6 +167,7 @@ bun create better-t-stack@latest . --yes --directory-conflict merge --no-git \
 ```
 
 Key flags:
+
 - `.` — scaffold into current directory
 - `--directory-conflict merge` — merge into existing directory
 - `--no-git` — skip git init (repo already has .git)
@@ -182,36 +183,47 @@ Key flags:
 
 ### Compatibility constraints
 
-| Constraint | Rule |
-|---|---|
-| **tRPC + non-React frontend** | tRPC only works with tanstack-router, react-router, tanstack-start, next. For nuxt/svelte/solid/astro, use `orpc`. |
-| **Clerk + non-React frontend** | Clerk only works with React-based frontends. Use `better-auth` for others. |
-| **Backend `self`** | Only valid with meta-frameworks: next, tanstack-start, nuxt, astro. |
-| **Workers runtime** | Requires `hono` backend. Incompatible with mongodb and docker dbSetup. |
-| **Polar payments** | Requires `better-auth` (not clerk). |
-| **turborepo + nx** | Cannot use both — pick one. |
-| **Convex backend** | Incompatible with solid, astro frontends. No separate database/ORM needed. |
+| Constraint                     | Rule                                                                                                               |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| **tRPC + non-React frontend**  | tRPC only works with tanstack-router, react-router, tanstack-start, next. For nuxt/svelte/solid/astro, use `orpc`. |
+| **Clerk + non-React frontend** | Clerk only works with React-based frontends. Use `better-auth` for others.                                         |
+| **Backend `self`**             | Only valid with meta-frameworks: next, tanstack-start, nuxt, astro.                                                |
+| **Workers runtime**            | Requires `hono` backend. Incompatible with mongodb and docker dbSetup.                                             |
+| **Polar payments**             | Requires `better-auth` (not clerk).                                                                                |
+| **turborepo + nx**             | Cannot use both — pick one.                                                                                        |
+| **Convex backend**             | Incompatible with solid, astro frontends. No separate database/ORM needed.                                         |
 
 ---
 
 ## Phase 4: Post-Scaffold Verification
 
 1. **Verify the structure:**
+
    ```bash
    ls apps/ packages/
    ```
 
 2. **Install dependencies:**
+
    ```bash
    bun install
    ```
 
 3. **Verify build:**
+
    ```bash
    turbo build
    ```
 
-4. **Commit the scaffold:**
+4. **Ensure workflow directories are gitignored:**
+
+   ```bash
+   # Add agentic workflow directories to .gitignore if not already present
+   grep -q '.dev-workflow/' .gitignore || echo '\n# Agentic development workflow\n.dev-workflow/' >> .gitignore
+   grep -q '.feature-workspaces/' .gitignore || echo '.feature-workspaces/' >> .gitignore
+   ```
+
+5. **Commit the scaffold:**
    ```bash
    git add -A && git commit -m "feat: scaffold monorepo via Better-T-Stack"
    ```
@@ -228,12 +240,12 @@ openspec init --tools claude,opencode,pi,codex
 
 This creates:
 
-| Path | Purpose |
-|------|---------|
-| `openspec/` | Root OpenSpec directory |
-| `openspec/config.yaml` | Project configuration + context |
-| `openspec/specs/` | Specification documents (source of truth) |
-| `openspec/changes/` | Change proposals and artifacts |
+| Path                                 | Purpose                                               |
+| ------------------------------------ | ----------------------------------------------------- |
+| `openspec/`                          | Root OpenSpec directory                               |
+| `openspec/config.yaml`               | Project configuration + context                       |
+| `openspec/specs/`                    | Specification documents (source of truth)             |
+| `openspec/changes/`                  | Change proposals and artifacts                        |
 | `.claude/skills/openspec-*/SKILL.md` | Claude Code skills (explore, propose, apply, archive) |
 
 > The `--tools` flag accepts a comma-separated list. Use `--tools all` to configure every supported tool.
@@ -285,9 +297,10 @@ tags: [workflow, propose, change]
 ---
 
 Create a new OpenSpec change proposal. This generates:
+
 - proposal.md — what and why
 - design.md — how, key decisions, risks
-- specs/**/*.md — detailed requirements
+- specs/\*_/_.md — detailed requirements
 - tasks.md — implementation checklist
 
 Invoke the openspec-propose skill to begin.
@@ -417,9 +430,9 @@ source .dev-workflow/ports.env
 
 ## Test Scripts
 
-| Script | What it tests | Tools |
-|--------|--------------|-------|
-| seed.sh | DB setup + test account | curl |
+| Script  | What it tests           | Tools |
+| ------- | ----------------------- | ----- |
+| seed.sh | DB setup + test account | curl  |
 
 ## Adding a New Test
 
@@ -503,12 +516,12 @@ git commit -m "feat: add workspace hook and e2e-test skill skeleton"
 
 ## Next Steps
 
-| Command | What it does |
-|---------|-------------|
-| `/dispatch` | Pick the next story and start building (if product context exists) |
-| `/design` | Start designing a feature directly (standalone, no product context) |
-| `bun run dev` | Start the dev server |
-| `openspec list` | List active changes |
+| Command         | What it does                                                        |
+| --------------- | ------------------------------------------------------------------- |
+| `/dispatch`     | Pick the next story and start building (if product context exists)  |
+| `/design`       | Start designing a feature directly (standalone, no product context) |
+| `bun run dev`   | Start the dev server                                                |
+| `openspec list` | List active changes                                                 |
 
 ---
 
@@ -569,6 +582,7 @@ echo "=== Detecting stack ==="
 ```
 
 Present findings to the user and confirm. If package manager is not detected, recommend:
+
 - TypeScript/JavaScript → **bun**
 - Python → **uv**
 
@@ -602,6 +616,13 @@ printf "  %-45s" ".claude/skills/e2e-test/SKILL.md:"
 
 printf "  %-45s" ".claude/skills/e2e-test/scripts/seed.sh:"
 [ -f ".claude/skills/e2e-test/scripts/seed.sh" ] && echo "[x]" || echo "[ ] MISSING"
+
+# Gitignore entries for workflow directories
+printf "  %-45s" ".dev-workflow/ in .gitignore:"
+grep -q '.dev-workflow/' .gitignore 2>/dev/null && echo "[x]" || echo "[ ] MISSING"
+
+printf "  %-45s" ".feature-workspaces/ in .gitignore:"
+grep -q '.feature-workspaces/' .gitignore 2>/dev/null && echo "[x]" || echo "[ ] MISSING"
 ```
 
 Show the user the results. Only proceed to fill gaps for items marked `[ ] MISSING`.
@@ -631,6 +652,13 @@ Follow the same steps as [Phase 7: Generate Workspace Setup Hook](#phase-7-gener
 
 Follow the same steps as [Phase 8: Generate E2E Test Skill Skeleton](#phase-8-generate-e2e-test-skill-skeleton).
 
+### Workflow gitignore entries (if missing)
+
+```bash
+grep -q '.dev-workflow/' .gitignore || echo '\n# Agentic development workflow\n.dev-workflow/' >> .gitignore
+grep -q '.feature-workspaces/' .gitignore || echo '.feature-workspaces/' >> .gitignore
+```
+
 ---
 
 ## Phase 4E: Verify
@@ -651,9 +679,9 @@ git commit -m "feat: initialize agentic development infrastructure"
 
 ## Phase 6E: Next Steps
 
-| Command | What it does |
-|---------|-------------|
-| `/design` | Start designing a feature (standalone mode) |
-| `/dispatch` | Pick the next story (if product context exists) |
+| Command          | What it does                                                |
+| ---------------- | ----------------------------------------------------------- |
+| `/design`        | Start designing a feature (standalone mode)                 |
+| `/dispatch`      | Pick the next story (if product context exists)             |
 | `/testing-guide` | Detailed guide for testing strategy and adding test scripts |
-| `/jj-ref` | jj command reference and concept mapping |
+| `/jj-ref`        | jj command reference and concept mapping                    |

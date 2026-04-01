@@ -82,7 +82,7 @@ The workflow separates **thinking** from **doing**:
 
 **Agents don't talk to each other.** They communicate through structured artifacts — context documents, story specs, interface contracts, signal files. The harness coordinates everything. This is a production system design, not a chatroom-style agent swarm.
 
-## The Three Plugins
+## The Plugins
 
 Each plugin implements one layer of the mental model.
 
@@ -214,44 +214,62 @@ These aren't rules we invented — they're patterns extracted from Anthropic's e
 ## Getting Started
 
 **New to this plugin?**
+
 ```
 /onboard
 ```
+
 Installs prerequisites, verifies tools, configures recommended plugins.
 
 **Have a product idea?**
+
 ```
 /envision  →  /map  →  /scaffold
 ```
+
 Validate the opportunity, decompose into stories, scaffold the project.
 
 **Ready to build a feature?**
+
 ```
 /dispatch  →  /design  →  /launch  →  /build  →  /wrap
 ```
+
 Pick a story from the map, spec it, spawn the agent, let it build, archive when merged.
 
+**Want hands-free autonomous mode?**
+
+```
+/autopilot start  →  /loop 5m /autopilot tick
+```
+
+Autopilot dispatches, launches, monitors, reviews, merges, and wraps — pausing only when human design input is needed.
+
 **Shipped something? Close the loop:**
+
 ```
 /reflect
 ```
+
 Classify feedback, update the product context, plan the next iteration.
 
 ## All Skills
 
-| Skill | Plugin | Purpose |
-|-------|--------|---------|
-| `/envision` | product-context | Opportunity brief + context document |
-| `/map` | product-context | System map + story graph + agent topology |
-| `/dispatch` | product-context | Pick next story + create OpenSpec change |
-| `/reflect` | product-context | Classify feedback + update context |
-| `/onboard` | project-setup | Verify tools + install plugins |
-| `/scaffold` | project-setup | Scaffold monorepo + initialize OpenSpec |
-| `/design` | agentic-development-workflow | Explore + propose + review a feature |
-| `/launch` | agentic-development-workflow | Spawn workspace + optional evaluator |
-| `/build` | agentic-development-workflow | Implement → test → PR → merge |
-| `/wrap` | agentic-development-workflow | Archive + cleanup + suggest reflect |
-| `/jj-ref` | agentic-development-workflow | jj command reference (on-demand) |
+| Skill        | Plugin                       | Purpose                                                  |
+| ------------ | ---------------------------- | -------------------------------------------------------- |
+| `/envision`  | product-context              | Opportunity brief + context document                     |
+| `/map`       | product-context              | System map + story graph + agent topology                |
+| `/dispatch`  | product-context              | Pick next story + create OpenSpec change                 |
+| `/reflect`   | product-context              | Classify feedback + update context                       |
+| `/onboard`   | project-setup                | Verify tools + install plugins                           |
+| `/scaffold`  | project-setup                | Scaffold monorepo + initialize OpenSpec                  |
+| `/design`    | agentic-development-workflow | Explore + propose + review a feature                     |
+| `/launch`    | agentic-development-workflow | Spawn workspace + optional evaluator                     |
+| `/build`     | agentic-development-workflow | Implement → test → PR → merge                            |
+| `/wrap`      | agentic-development-workflow | Archive + cleanup + suggest reflect                      |
+| `/jj-ref`    | agentic-development-workflow | jj command reference (on-demand)                         |
+| `/gen-eval`  | patterns                     | Generator/evaluator separation for honest validation     |
+| `/autopilot` | patterns                     | Autonomous dispatch-launch-monitor-wrap loop via `/loop` |
 
 ## Syncing Skills to Your Project
 

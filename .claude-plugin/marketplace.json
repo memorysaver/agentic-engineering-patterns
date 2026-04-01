@@ -26,10 +26,7 @@
       "description": "One-time project scaffolding and environment setup.",
       "source": "./",
       "strict": false,
-      "skills": [
-        "./skills/project-setup/onboard",
-        "./skills/project-setup/scaffold"
-      ]
+      "skills": ["./skills/project-setup/onboard", "./skills/project-setup/scaffold"]
     },
     {
       "name": "agentic-development-workflow",
@@ -43,6 +40,13 @@
         "./skills/agentic-development-workflow/wrap",
         "./skills/agentic-development-workflow/jj-ref"
       ]
+    },
+    {
+      "name": "patterns",
+      "description": "Reusable design patterns: gen/eval, autopilot orchestration.",
+      "source": "./",
+      "strict": false,
+      "skills": ["./skills/patterns/gen-eval", "./skills/patterns/autopilot"]
     }
   ]
 }
