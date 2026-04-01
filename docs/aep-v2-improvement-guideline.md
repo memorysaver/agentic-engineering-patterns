@@ -116,9 +116,9 @@ The concept of execution slices (parallel batches within a layer) is described i
 
 **Issue 5: Autonomous routing fields undocumented**
 
-`docs/autonomous-loop.md` requires `topology.routing.autonomous: true`, `auto_merge`, `auto_design`, `skip_human_eval`. None of these appear in the YAML template schema.
+`docs/autonomous-loop.md` requires `topology.routing.autonomous: true`, `auto_design`, `skip_human_eval`. None of these appear in the YAML template schema. (Note: `auto_merge` was previously listed here but has been removed — autopilot no longer has merge authority. Workspace agents own Phase 12 merge decisions, so merge behavior is controlled at the workspace level, not via routing config.)
 
-**Fix:** Add all autonomous routing fields to the template schema under `topology.routing` with documentation of their behavior.
+**Fix:** Add autonomous routing fields to the template schema under `topology.routing` with documentation of their behavior. Fields: `autonomous`, `auto_design`, `skip_human_eval`.
 
 ### 3.2 Structural Tensions
 
@@ -512,7 +512,7 @@ topology:
     conflict_detection: files_affected_overlap
     retry: "2x same agent -> failure analyst -> fresh agent -> human escalation"
     autonomous: false
-    auto_merge: false
+
     auto_design: false
     skip_human_eval: none # none | backend | all
   handoffs: []
@@ -1060,9 +1060,9 @@ Signal files (defined in `skills/agentic-development-workflow/launch/references/
 
 **Proposed fixes (ordered by implementation simplicity):**
 
-1. **Tmux liveness check (recommended first fix).** Before incrementing the stuck counter, autopilot should run `tmux capture-pane -t <name>:0 -p -S -20` to check if the agent is actively producing output. If the tmux pane shows recent activity, do NOT count as stuck. This is the simplest change with the highest impact — it adds a secondary progress signal that doesn't require any changes to the workspace agent.
+1. **~~Tmux liveness check~~ (DONE — `e906eda`).** Implemented: autopilot runs `tmux capture-pane` and compares against `last_tmux_hash` before incrementing the stuck counter. If tmux output changed, the agent is active and not counted as stuck.
 
-2. **jj diff check.** If the workspace has uncommitted changes (`jj diff` produces output), the agent is making progress even if signals are stale. This provides a file-system-level liveness signal independent of the agent's signal writing discipline.
+2. **~~jj diff check~~ (DONE — `e906eda`).** Implemented: if tmux hash matches (no terminal activity), autopilot runs `jj diff --stat` to check for uncommitted code changes. If the workspace has uncommitted changes, the agent is making progress via file edits and not counted as stuck.
 
 3. **Phase-specific grace periods.** Phase 0 (initialization) naturally takes longer — reading skills, understanding the codebase, planning the approach. The stuck threshold should be higher for early phases:
    - Phase 0 (init): 12 ticks before stuck (currently 6)
@@ -1081,7 +1081,9 @@ Signal files (defined in `skills/agentic-development-workflow/launch/references/
 
 8. **Intervention budget.** Track cumulative nudges per workspace. After 3 nudges with no progress change (same phase, same `completion_pct`), kill the workspace and re-dispatch with a fresh agent. In fully autonomous mode, there is no human to escalate to — the system needs a self-repair path rather than an infinite nudge loop.
 
-**Impact on implementation roadmap:** Fix #1 (tmux liveness) should be added to Phase 1 (P0) as it's low effort and addresses a real operational issue. Fixes #3 and #4 belong in Phase 2 alongside signal schema evolution. Fixes #5-#8 are recommended for Phase 2 or Phase 3, with #5 (heartbeat) and #6 (non-disruptive nudges) being the highest priority for autonomous mode reliability.
+**Impact on implementation roadmap:** Fixes #1 and #2 (tmux liveness + jj diff) are done (`e906eda`). Fixes #3 and #4 belong in Phase 2 alongside signal schema evolution. Fixes #5-#8 are recommended for Phase 2 or Phase 3, with #5 (heartbeat) and #6 (non-disruptive nudges) being the highest priority for autonomous mode reliability.
+
+**Additional fix applied:** Autopilot merge authority removed entirely (`274ef03`). Autopilot Step ④ changed from "Merge Ready" (autopilot runs `gh pr merge`) to "Detect Merged" (autopilot only checks `gh pr view --json state`). Workspace agents own Phase 12 merge. This eliminates the class of premature-merge bugs (SKIP-only tests accepted, "no checks" treated as passing, eval-response not verified).
 
 **Files affected:**
 
@@ -1135,15 +1137,16 @@ Before committing to full Phase 5 implementation:
 
 **Goal:** Eliminate all schema inconsistencies that cause confusion between skills.
 
-| Task                                  | File                                              | Change                                                                                    |
-| ------------------------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Add `business_value` field to stories | `product-context-schema.yaml`                     | Add `business_value: null # 1-10, derived from priority if not set`                       |
-| Standardize `layer_gates.status`      | `product-context-schema.yaml`, autopilot SKILL.md | Use `not_started` everywhere, remove `pending`                                            |
-| Canonicalize story status enum        | `product-context-schema.yaml`                     | Document canonical 8-state machine, add validation note                                   |
-| Add `execution_slices` section        | `product-context-schema.yaml`                     | Add section matching `/map` Step 3 output                                                 |
-| Document autonomous routing fields    | `product-context-schema.yaml`                     | Add `autonomous`, `auto_merge`, `auto_design`, `skip_human_eval` under `topology.routing` |
-| Autopilot tmux liveness check         | autopilot tick-protocol.md                        | Add `tmux capture-pane` check before stuck counter increment                              |
-| Phase-specific stuck thresholds       | autopilot SKILL.md                                | Phase 0: 12 ticks, Phase 1-4: 6 ticks, Phase 5+: 8 ticks                                  |
+| Task                                  | File                                                  | Change                                                                                                                     |
+| ------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Add `business_value` field to stories | `product-context-schema.yaml`                         | Add `business_value: null # 1-10, derived from priority if not set`                                                        |
+| Standardize `layer_gates.status`      | `product-context-schema.yaml`, autopilot SKILL.md     | Use `not_started` everywhere, remove `pending`                                                                             |
+| Canonicalize story status enum        | `product-context-schema.yaml`                         | Document canonical 8-state machine, add validation note                                                                    |
+| Add `execution_slices` section        | `product-context-schema.yaml`                         | Add section matching `/map` Step 3 output                                                                                  |
+| Document autonomous routing fields    | `product-context-schema.yaml`                         | Add `autonomous`, `auto_design`, `skip_human_eval` under `topology.routing` (no `auto_merge` — workspace agents own merge) |
+| ~~Autopilot tmux liveness check~~     | autopilot tick-protocol.md                            | ~~DONE (`e906eda`)~~ — tmux capture-pane + jj diff before stuck counter increment                                          |
+| Remove autopilot merge authority      | autopilot tick-protocol.md, SKILL.md, state-schema.md | ~~DONE (`274ef03`)~~ — Step ④ changed to "Detect Merged", workspace agents own Phase 12                                    |
+| Phase-specific stuck thresholds       | autopilot SKILL.md                                    | Phase 0: 12 ticks, Phase 1-4: 6 ticks, Phase 5+: 8 ticks                                                                   |
 
 ### Phase 2: Enhanced Dispatch + Evaluator Scaling (P0, Medium Effort)
 
