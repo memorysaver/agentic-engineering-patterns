@@ -271,6 +271,14 @@ Classify feedback, update the product context, plan the next iteration.
 | `/gen-eval`  | patterns                     | Generator/evaluator separation for honest validation     |
 | `/autopilot` | patterns                     | Autonomous dispatch-launch-monitor-wrap loop via `/loop` |
 
+## Documentation
+
+- [Glossary — Ubiquitous Language](docs/glossary.md) — precise definitions for every AEP term
+- [Skills Quick Reference](docs/skills-quick-reference.md) — when to use which skill, decision trees, common sequences
+- [Autonomous Loop](docs/autonomous-loop.md) — how `/autopilot` orchestrates the full cycle
+- [Generator/Evaluator Data Flow](docs/gen-eval-data-flow.md) — the three tracking systems and signal protocol
+- [Release Line Adjustments](docs/release-line-adjustments.md) — when and how to re-slice layers
+
 ## Syncing Skills to Your Project
 
 A sync script is included to copy AEP skills into any project's `.claude/skills/` directory with the `aep-` prefix.
