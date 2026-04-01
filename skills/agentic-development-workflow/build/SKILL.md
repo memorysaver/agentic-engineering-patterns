@@ -33,20 +33,24 @@ Before any work begins, set up the tracking infrastructure, environment, and jj 
    - Read all artifacts: `proposal.md`, `design.md`, `specs/**/*.md`, `tasks.md`
 
 3. **Create the tracking folder:**
+
    ```bash
    mkdir -p .dev-workflow
    ```
 
 4. **Add `.dev-workflow/` to `.gitignore`** if not already present:
+
    ```bash
    grep -q '.dev-workflow' .gitignore || echo '\n# Development workflow tracking (per-workspace)\n.dev-workflow/' >> .gitignore
    ```
 
 5. **Create the progress file** from the template:
+
    ```bash
    cp skills/agentic-development-workflow/build/references/progress-template.md \
       .dev-workflow/progress-$(jj log --no-graph -r @ -T 'change_id.short(8)').md
    ```
+
    Fill in feature name, change ID, date, and OpenSpec change name.
    **Mark design phases as pre-completed** (they were done on main via `/design`).
 
@@ -65,11 +69,13 @@ Before any work begins, set up the tracking infrastructure, environment, and jj 
    ```
 
    Record the change IDs in the progress file:
+
    ```bash
    jj log --no-graph -T 'change_id.short(8) ++ " " ++ description.first_line() ++ "\n"'
    ```
 
 7. **Run project setup** (if a setup hook exists):
+
    ```bash
    SETUP_HOOK=.claude/hooks/workspace-setup.sh
    if [ -f "$SETUP_HOOK" ]; then
@@ -89,6 +95,7 @@ Before any work begins, set up the tracking infrastructure, environment, and jj 
    - `.env` file validation
 
    **Contract:** The hook MUST write `.dev-workflow/ports.env` with at minimum:
+
    ```
    WEB_PORT=<port>
    SERVER_PORT=<port>
@@ -100,44 +107,48 @@ Before any work begins, set up the tracking infrastructure, environment, and jj 
 
 8. **Generate sprint contracts:**
 
-    Read `specs/*.md`, `design.md`, and `tasks.md`. For each task in the change stack, generate a contract entry in `.dev-workflow/contracts.md` using the template at `references/contract-template.md`:
+   Read `specs/*.md`, `design.md`, and `tasks.md`. For each task in the change stack, generate a contract entry in `.dev-workflow/contracts.md` using the template at `references/contract-template.md`:
 
-    ```markdown
-    ## Task: <task-description>
-    **Change ID:** <id>
-    **Source spec:** <matching spec file>
+   ```markdown
+   ## Task: <task-description>
 
-    ### What will be built
-    - [specific files/components]
+   **Change ID:** <id>
+   **Source spec:** <matching spec file>
 
-    ### Success criteria
-    - [extracted from matching spec]
+   ### What will be built
 
-    ### Verification steps
-    1. [concrete, executable step]
-    2. [what to check]
-    ```
+   - [specific files/components]
+
+   ### Success criteria
+
+   - [extracted from matching spec]
+
+   ### Verification steps
+
+   1. [concrete, executable step]
+   2. [what to check]
+   ```
 
 9. **Generate feature verification list:**
 
-    Extract the verification steps from contracts into `.dev-workflow/feature-verification.json`:
+   Extract the verification steps from contracts into `.dev-workflow/feature-verification.json`:
 
-    ```json
-    [
-      {
-        "task": "<task description>",
-        "change_id": "<jj change short ID>",
-        "verification_steps": ["step 1", "step 2", "step 3"],
-        "passes": false,
-        "evaluated_by": null,
-        "round": null
-      }
-    ]
-    ```
+   ```json
+   [
+     {
+       "task": "<task description>",
+       "change_id": "<jj change short ID>",
+       "verification_steps": ["step 1", "step 2", "step 3"],
+       "passes": false,
+       "evaluated_by": null,
+       "round": null
+     }
+   ]
+   ```
 
-    **Rules:**
-    - JSON format is intentional — models tamper with JSON less than Markdown
-    - The generator agent **MUST NOT** modify `verification_steps` or `passes` — only the evaluator (or human) does
+   **Rules:**
+   - JSON format is intentional — models tamper with JSON less than Markdown
+   - The generator agent **MUST NOT** modify `verification_steps` or `passes` — only the evaluator (or human) does
 
 10. **Generate session recovery script:**
 
@@ -201,6 +212,7 @@ Before any work begins, set up the tracking infrastructure, environment, and jj 
     ```
 
     Check for feedback from main session:
+
     ```bash
     cat .dev-workflow/signals/feedback.md 2>/dev/null
     ```
@@ -437,6 +449,7 @@ jj log   # Review the full stack
 ```
 
 - **Split** any change that mixed multiple concerns:
+
   ```bash
   jj edit <change>
   jj split
@@ -477,6 +490,7 @@ REMOTE_URL=$(jj git remote list | head -1 | awk '{print $2}')
 > **CRITICAL — always specify `--base main` (GitHub) or `--target-branch main` (GitLab).** Workspace sessions run from a jj workspace whose local branch is the feature branch, not `main`. Without an explicit base, `gh pr create` may infer the wrong base from the local branch state — causing the PR to target a dispatch bookmark instead of `main`, so the code never lands on the main branch even after merge.
 
 Include in the PR/MR body:
+
 - Summary of changes (from proposal)
 - Test coverage notes
 - Link to manual test plan (if created)
@@ -527,6 +541,7 @@ After PR review fixes are resolved, the human tester evaluates the feature — t
    - Category (UX, logic, edge case, visual)
 
 2. **Fix in the correct change** — Identify which jj change owns each fix:
+
    ```bash
    jj edit <change-that-needs-fixing>
    # ... make the fix ...
@@ -542,6 +557,7 @@ After PR review fixes are resolved, the human tester evaluates the feature — t
 4. **Re-test** — Re-run Phase 5 (code review) and Phase 6 (dogfood) on the changed areas.
 
 5. **Push** — Update the PR:
+
    ```bash
    jj git push --bookmark feat-<name>
    ```
@@ -559,7 +575,10 @@ After PR review fixes are resolved, the human tester evaluates the feature — t
 3. No unresolved review comments
 4. E2E tests passed (if applicable)
 5. Present final status summary
-6. **Ask user for confirmation** to merge
+6. **Merge decision:**
+   - **Interactive mode** (user present in session): Ask user for confirmation before merging
+   - **Autopilot mode** (launched via `/launch` into `.feature-workspaces/`): Merge immediately when all pre-merge checks pass — do not wait for user confirmation. The autopilot orchestrator monitors via signals, not interactive prompts.
+   - **Detection:** If your working directory is inside `.feature-workspaces/`, you are in autopilot mode.
 
 Merge:
 

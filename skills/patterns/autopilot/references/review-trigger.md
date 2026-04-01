@@ -2,6 +2,8 @@
 
 How the autopilot detects when a workspace needs code review and triggers the workspace's own gen/eval loop via tmux. The autopilot **never evaluates code itself** — it triggers and monitors.
 
+> **Note:** Key trigger templates from this file are also inlined in `tick-protocol.md` Step ④ (GUIDE COMPLETION) to ensure the LLM sees them in context during tick execution.
+
 ---
 
 ## Principle: Trigger, Don't Execute
@@ -9,9 +11,9 @@ How the autopilot detects when a workspace needs code review and triggers the wo
 The workspace agent owns code quality evaluation. The autopilot's role is:
 
 1. **Detect** when gen/eval should be running but isn't
-2. **Trigger** the workspace to run its own Phase 5 gen/eval loop
+2. **Trigger** the workspace to run its own Phase 5 gen/eval loop via `tmux send-keys`
 3. **Monitor** the eval-response files for results
-4. **Act** on results (proceed to merge, or request fixes)
+4. **Act** on results (guide workspace toward merge via tmux, or let workspace fix issues)
 
 ---
 
@@ -124,7 +126,7 @@ Read the latest response file. Parse the `## Result: PASS / FAIL` line.
 
 - Set `eval_rounds_completed` to the round number
 - Workspace can proceed to Phase 9+ (it will do so autonomously)
-- Tick step ④ will check merge readiness
+- Tick step ④c will guide workspace toward Phase 12 merge via tmux
 
 **FAIL:**
 

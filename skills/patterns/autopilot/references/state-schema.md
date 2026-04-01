@@ -108,6 +108,8 @@ Machine-readable state file. Read and written by the autopilot tick.
 | `"detected_merged"`     | PR detected as merged by workspace agent |
 | `"detected_closed"`     | PR detected as closed without merge      |
 | `"wrapping"`            | /wrap in progress                        |
+| `"merge_nudged"`        | Sent tmux nudge to proceed to Phase 12   |
+| `"merge_stuck_nudged"`  | Sent stronger nudge for stuck Phase 12   |
 | `"nudged"`              | Sent stuck nudge via tmux                |
 | `"escalated_stuck"`     | Escalated due to prolonged stuck         |
 

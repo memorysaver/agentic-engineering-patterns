@@ -1,9 +1,11 @@
 # Tick Protocol
 
-The 8-step state machine executed on each autopilot tick. Each tick is idempotent — running it twice with no external state change produces the same result and takes no duplicate actions.
+The 7-step state machine executed on each autopilot tick. Each tick is idempotent — running it twice with no external state change produces the same result and takes no duplicate actions.
 
 **Target duration:** <60 seconds per tick
 **Invocation:** `/loop 5m /autopilot tick` or manual `/autopilot tick`
+
+> **BOUNDARY REMINDER:** The autopilot is an orchestrator. Every action on a workspace happens via `tmux send-keys`. Never spawn Agent tools, never read workspace source code, never call `gh pr merge`. See SKILL.md "STOP — Orchestrator Boundaries" section.
 
 ---
 
@@ -76,15 +78,36 @@ For each workspace where `story_status == "completed"`:
 
 **Max ONE wrap per tick.** Wraps modify `product-context.yaml` and involve git operations. Running multiple wraps risks conflicts. If multiple workspaces completed simultaneously, they get wrapped across consecutive ticks.
 
-After wrapping, **skip to step ⑧** (write state). The next tick will handle dispatch of newly-ready stories (which the wrap may have unblocked via cascade).
+After wrapping, **skip to step ⑦** (write state). The next tick will handle dispatch of newly-ready stories (which the wrap may have unblocked via cascade).
 
 ---
 
-## Step ④: Detect Merged PRs
+## Step ④: Guide Completion
 
-For each workspace where `story_status == "in_review"` AND `pr_url` is set:
+**This is the most important step. ALL actions here use `tmux send-keys`. NEVER spawn Agent tools. NEVER call `gh pr merge`. Workspace agents own code review and merging.**
 
-### Check PR State
+For each workspace, guide it through quality gates and toward merge completion. This step combines PR state detection, quality enforcement, and merge guidance.
+
+### Decision Tree (quick reference)
+
+```
+For each workspace:
+  Has pr_url?
+  ├─ YES → ④a: check PR state
+  │   ├─ MERGED/CLOSED → update state, done with this workspace
+  │   └─ OPEN → ④b: has eval-response with PASS?
+  │       ├─ NO  → trigger gen/eval via tmux (if not already triggered)
+  │       └─ YES → ④c: guide to merge via tmux (if not already nudged)
+  └─ NO, phase >= 5?
+      ├─ YES → ④b: has eval-response with PASS?
+      │   ├─ NO  → trigger gen/eval via tmux (if not already triggered)
+      │   └─ YES → leave alone (workspace will create PR autonomously)
+      └─ NO (phase < 5) → skip, still implementing
+```
+
+### Sub-step ④a: Check PR State
+
+For each workspace where `pr_url` is set:
 
 ```bash
 gh pr view <number> --json state --jq '.state'
@@ -92,51 +115,111 @@ gh pr view <number> --json state --jq '.state'
 
 - **If state == `"MERGED"`:** Update workspace `story_status` to `"completed"`, set `completed_at` to current ISO8601 timestamp, set `last_action = "detected_merged"`. The next tick's Step ③ will wrap it.
 - **If state == `"CLOSED"`:** Update workspace `story_status` to `"failed"`, add `failure_log` noting PR was closed without merge, set `last_action = "detected_closed"`.
-- **If state == `"OPEN"`:** No action — the workspace agent owns the merge decision via Phase 12 of `/build`.
+- **If state == `"OPEN"`:** Proceed to sub-steps ④b and ④c.
 
-**Autopilot NEVER calls `gh pr merge`.** That is the workspace agent's job (Phase 12 of `/build`). This eliminates premature-merge bugs where autopilot merges before the workspace agent has finished its full flow (eval, CI verification, test validation).
+**Autopilot NEVER calls `gh pr merge`.** That is the workspace agent's job (Phase 12 of `/build`). This eliminates premature-merge bugs where autopilot merges before the workspace agent has finished its full flow.
 
----
+### Sub-step ④b: Quality Gate — Ensure Gen/Eval
 
-## Step ⑤: Code Review Trigger
-
-Detect workspaces that need gen/eval but haven't run it. See `references/review-trigger.md` for full protocol.
-
-### Detection Logic
-
-For each workspace, check:
-
-1. **Phase 4 complete, no eval:** `phase >= 5` but no `eval-response-*.md` files exist in `.feature-workspaces/<name>/.dev-workflow/signals/`
-   → Trigger: workspace should be running Phase 5 but hasn't started
-
-2. **Stuck at Phase 5:** `phase == 5` AND `consecutive_stuck_ticks >= 2` (10 min with no progress)
-   → Re-trigger: workspace started Phase 5 but appears stuck
-
-3. **Phase 10+ without recent eval:** `phase >= 10` AND the latest `eval-response-*.md` is older than the latest PR commit
-   → Trigger: code changed since last eval, need fresh review
-
-4. **Moved past Phase 5 without PASS:** `phase > 5` AND latest eval-response shows FAIL
-   → Send back: workspace skipped evaluation
-
-### Trigger Command
+**Applies to all workspaces at phase >= 5** — both pre-PR (phase 5-9) and post-PR (phase 10+). This is the universal quality gate. Check whether a passing evaluation exists:
 
 ```bash
+ls .feature-workspaces/<name>/.dev-workflow/signals/eval-response-*.md 2>/dev/null
+```
+
+**If latest eval-response shows "Result: PASS"** → quality gate satisfied, proceed to ④c.
+
+**If no eval-response exists OR latest shows "Result: FAIL":**
+
+Check detection conditions (see `references/review-trigger.md` for full logic):
+
+1. **Phase >= 5, no eval-response, not yet triggered:** First trigger needed
+2. **Phase == 5, stuck 2+ ticks, already triggered:** Re-trigger needed
+3. **Phase >= 10, eval older than latest PR commit:** Fresh review needed
+4. **Phase > 5, latest eval shows FAIL:** Send back to Phase 5
+
+**Trigger gen/eval via tmux (NEVER spawn an Agent tool):**
+
+```bash
+# First trigger (gentle)
 tmux send-keys -t <workspace-name>:0.0 \
   "Run Phase 5 code review now. Write eval-request.md, spawn evaluator via tmux split-window, and execute the gen/eval loop per the build skill Phase 5 protocol. Read .dev-workflow/signals/feedback.md for any additional context." Enter
 ```
 
-Set `code_review_triggered = true`, `code_review_triggered_at = now`, `last_action = "review_triggered"`.
+Set in state: `code_review_triggered = true`, `code_review_triggered_at = now`, `last_action = "review_triggered"`.
 
-**No response after 3 ticks (15 min):** Send stronger nudge:
+**Re-trigger after 3 ticks (15 min) with no response:**
 
 ```bash
 tmux send-keys -t <workspace-name>:0.0 \
   "URGENT: Phase 5 code review has not started. If you had a context reset, read .dev-workflow/init.sh to recover state, then run Phase 5 immediately." Enter
 ```
 
+Set: `last_action = "review_re_triggered"`.
+
+**Send back (moved past Phase 5 without PASS):**
+
+```bash
+tmux send-keys -t <workspace-name>:0.0 \
+  "Your latest eval-response shows FAIL but you moved past Phase 5. Go back to Phase 5: fix the FAIL items identified in the eval-response, then re-run the gen/eval loop. Do not proceed to PR until eval passes." Enter
+```
+
+**Fresh review for PR (Phase 10+ with stale eval):**
+
+```bash
+tmux send-keys -t <workspace-name>:0.0 \
+  "Code has changed since your last evaluation. Re-run Phase 5 code review on the current state before proceeding with the PR. Write a new eval-request.md and spawn a fresh evaluator." Enter
+```
+
+**Escalation:** No eval-response after 6 ticks (30 min) post-trigger → add escalation with type `"eval_not_converging"`.
+
+### Sub-step ④c: Guide to Merge
+
+For workspaces where the quality gate is satisfied (eval PASS exists) AND PR is OPEN.
+
+**Guard: only nudge once.** Check `last_action` before sending — if already `"merge_nudged"`, do not re-send the nudge. The workspace received the instruction and is working on it. Re-nudging every tick floods the workspace with duplicate prompts.
+
+**1. If `phase < 12` AND `last_action != "merge_nudged"` — workspace hasn't started merge yet:**
+
+```bash
+tmux send-keys -t <workspace-name>:0.0 \
+  "Your code review eval has PASSED. Proceed to Phase 12 now: run pre-merge checks (rebase on main, verify CI, check comments) then merge the PR. In autopilot mode you do not need user confirmation — merge when all Phase 12 checks pass." Enter
+```
+
+Set `last_action = "merge_nudged"`, `last_action_at = now`.
+
+**2. If `phase == 12` AND `consecutive_stuck_ticks >= 2` — workspace started merge but is stuck:**
+
+```bash
+tmux send-keys -t <workspace-name>:0.0 \
+  "Complete Phase 12 merge now: 1) jj git fetch && jj rebase -d main@origin 2) Verify CI green 3) gh pr merge <number> --squash --delete-branch. Then update status.json with story_status completed." Enter
+```
+
+Set `last_action = "merge_stuck_nudged"`, `last_action_at = now`.
+
+**3. If `phase == 12` AND progressing normally** → leave alone.
+
+### Monitoring Protocol
+
+Each tick after triggering gen/eval, check for eval-response files:
+
+```bash
+ls .feature-workspaces/<name>/.dev-workflow/signals/eval-response-*.md 2>/dev/null
+```
+
+**PASS:** Set `eval_rounds_completed` to the round number. Workspace can proceed to Phase 9+ (it will do so autonomously). Step ④c will guide toward merge next tick.
+
+**FAIL:** Check if workspace is actively fixing (`phase == 5`, `completion_pct` changing) → let it work. If stuck → re-trigger.
+
+| Ticks since trigger | Action                                                     |
+| ------------------- | ---------------------------------------------------------- |
+| 1-2                 | Wait — workspace may be running eval                       |
+| 3 (15 min)          | Re-trigger with URGENT message                             |
+| 6 (30 min)          | Add escalation: "Workspace not responding to eval trigger" |
+
 ---
 
-## Step ⑥: Detect Stuck Workspaces
+## Step ⑤: Detect Stuck Workspaces
 
 For each workspace, compare current `(phase, completion_pct)` with the values from the previous tick:
 
@@ -205,7 +288,7 @@ If the stuck workspace is on the critical path, consider pausing autopilot to ge
 
 ---
 
-## Step ⑦: Dispatch New Work
+## Step ⑥: Dispatch New Work
 
 ### Check Capacity
 
@@ -284,7 +367,7 @@ At natural checkpoints (layer complete, escalation, or autopilot stop), run the 
 
 ---
 
-## Step ⑧: Write State
+## Step ⑦: Write State
 
 1. **Atomic write:** Write updated state to `.dev-workflow/autopilot-state.json.tmp`, then rename to `.dev-workflow/autopilot-state.json`
 
@@ -294,7 +377,11 @@ At natural checkpoints (layer complete, escalation, or autopilot stop), run the 
    {
      "tick": 42,
      "at": "<ISO8601>",
-     "actions": ["synced 3 workspaces", "merged PROJ-003", "triggered review for PROJ-004"],
+     "actions": [
+       "synced 3 workspaces",
+       "detected PROJ-003 merged",
+       "triggered review for PROJ-004"
+     ],
      "workspaces_active": 2,
      "stories_completed_total": 5
    }

@@ -1,7 +1,7 @@
 ---
 name: autopilot
 description: |-
-  Orchestrate the full dispatch-launch-monitor-review-wrap-dispatch cycle autonomously. One command to go hands-free. Use when the user says "autopilot", "run autonomously", "auto dispatch loop", "hands-free mode". Runs from the main workspace only. Usage: /autopilot [--loop 5m] [status|stop]
+  Orchestrate the full dispatch-launch-monitor-review-wrap-dispatch cycle autonomously. One command to go hands-free. Use when the user says "autopilot", "run autonomously", "auto dispatch loop", "hands-free mode", "start building everything", "go auto", "run the pipeline", "let it run", "manage workspaces", or wants to dispatch and monitor multiple stories without manual intervention. Always trigger this over /dispatch when the user wants continuous autonomous operation rather than a single story dispatch. Runs from the main workspace only.
 ---
 
 # Autopilot
@@ -21,10 +21,10 @@ One command to go autonomous. Initializes state, runs the first tick, and starts
 /envision → /map → /validate
   → /autopilot
        ┌─────────────────────────────────────────────┐
-       │  tick ①  sync signals                        │
-       │  tick ②  wrap completed workspaces            │
-       │  tick ③  detect merged PRs                      │
-       │  tick ④  trigger code review via tmux         │
+       │  tick ①  read state                          │
+       │  tick ②  sync signals                        │
+       │  tick ③  wrap completed workspaces            │
+       │  tick ④  GUIDE COMPLETION (quality + merge)   │
        │  tick ⑤  detect stuck workspaces              │
        │  tick ⑥  dispatch new work (/launch)          │
        │  tick ⑦  write state                          │
@@ -35,6 +35,54 @@ One command to go autonomous. Initializes state, runs the first tick, and starts
 
 **Session:** Main session only (never from a feature workspace)
 **State:** `.dev-workflow/autopilot-state.json` (machine-readable), `.dev-workflow/autopilot-status.md` (human-readable)
+
+---
+
+## STOP — Orchestrator Boundaries
+
+**Read this section FIRST. It overrides everything below.**
+
+You are an **ORCHESTRATOR**, not an **EXECUTOR**. All code operations happen inside workspace agents. The main session never reads, reviews, edits, or evaluates workspace code directly. The single most common autopilot failure is violating this boundary.
+
+### Never Do List
+
+- **NEVER use the Agent tool to spawn code reviewers** — the reviewer needs workspace-local context (files, git state, eval history) that only exists inside the tmux session. A reviewer spawned from main has no access to the implementation it's supposed to evaluate. Instead: `tmux send-keys` to trigger the workspace's own gen/eval loop.
+- **NEVER call `gh pr merge`** — workspace agents run pre-merge checks (rebase, CI verification, comment resolution) as part of Phase 12. Merging from main bypasses these checks and has caused premature merges where incomplete test results were accepted. Instead: send a tmux nudge telling the workspace to complete Phase 12.
+- **NEVER read workspace source files** — only read signal files under `.dev-workflow/signals/`. The main session's job is to observe progress via signals, not to understand the code. If you need code reviewed, trigger the workspace's evaluator.
+- **NEVER use `Read`, `Grep`, or `Bash` to inspect workspace code** — even "just checking" pulls implementation details into main session context, which leads to the main session forming opinions about code quality and then acting on them (spawning reviewers, suggesting fixes). Stay out of workspace code entirely.
+- **NEVER write eval-response files** — evaluation integrity depends on separation between generator and evaluator. The main session is neither — it's the orchestrator. Writing eval responses breaks the trust model.
+
+**If you are about to do any of the above: STOP. Send a tmux command to the workspace agent instead.**
+
+### Allowed Actions (from main session)
+
+| Action                | How                                                                     |
+| --------------------- | ----------------------------------------------------------------------- |
+| Read workspace status | Read `.feature-workspaces/<name>/.dev-workflow/signals/status.json`     |
+| Trigger code review   | `tmux send-keys -t <session>:0.0 "..." Enter`                           |
+| Send feedback         | Write to `.feature-workspaces/<name>/.dev-workflow/signals/feedback.md` |
+| Nudge stuck agent     | `tmux send-keys -t <session>:0.0 "..." Enter`                           |
+| Check PR state        | `gh pr view <number> --json state` (observe only — never act on merge)  |
+
+### Forbidden Actions (from main session)
+
+| Forbidden action     | Do this instead                           |
+| -------------------- | ----------------------------------------- |
+| Read workspace code  | Trigger workspace's gen/eval via tmux     |
+| Spawn review agents  | Send review trigger via tmux send-keys    |
+| Run tests            | Workspace handles its own test phases     |
+| Edit workspace files | Send instructions via tmux or feedback.md |
+| Evaluate code        | Monitor eval-response files for results   |
+| Merge PRs            | Workspace agent merges via Phase 12       |
+
+### Two Gen/Eval Concerns — Strictly Separate
+
+| Concern                    | Owner                    | What it evaluates                                    | Where it runs                       |
+| -------------------------- | ------------------------ | ---------------------------------------------------- | ----------------------------------- |
+| **Code quality**           | Workspace agent          | Code correctness, security, completeness             | Inside workspace tmux session       |
+| **Orchestration learning** | Autopilot (main session) | Patterns across workspaces: failures, costs, retries | Main session, feeds into `/reflect` |
+
+The autopilot does NOT evaluate workspace code. It triggers and monitors the workspace's own gen/eval loop. See `references/review-trigger.md` for detection logic and `references/orchestration-learning.md` for meta-learning.
 
 ---
 
@@ -133,7 +181,9 @@ Verify these conditions before proceeding:
 
 The per-tick handler invoked by `/loop` on each interval. Can also be run manually at any time. **Idempotent** — safe to run multiple times with no state change producing no duplicate actions.
 
-Follow the 8-step tick protocol documented in `references/tick-protocol.md`.
+Follow the 7-step tick protocol documented in `references/tick-protocol.md`.
+
+**Before every tick, re-read the "STOP — Orchestrator Boundaries" section above.**
 
 **Summary:**
 
@@ -150,29 +200,57 @@ Follow the 8-step tick protocol documented in `references/tick-protocol.md`.
 ③ WRAP COMPLETED → for each workspace where story_status == "completed":
    - Run /wrap for this workspace (max ONE per tick — git operations serialize)
    - Remove workspace from state after wrap completes
-   - Break to step ⑧
+   - Break to step ⑦
 
-④ DETECT MERGED → for each workspace where story_status == "in_review" AND pr_url set:
-   - Check: gh pr view <number> --json state
-   - If state == "MERGED": update story_status to "completed" (Step ③ wraps next tick)
-   - If state == "CLOSED": update story_status to "failed"
-   - If state == "OPEN": no action — workspace agent owns Phase 12 merge
-   - Autopilot NEVER calls gh pr merge
+④ GUIDE COMPLETION → for each workspace, guide toward quality and merge:
+   ALL ACTIONS IN THIS STEP USE tmux send-keys. NEVER spawn Agent tools.
+   NEVER call gh pr merge. Workspace agents own merging.
 
-⑤ CODE REVIEW → detect workspaces needing gen/eval:
-   - Phase 4 complete but no eval-response files → trigger via tmux
-   - Phase 10+ but no recent eval → trigger via tmux
-   - Stuck at Phase 5 → re-trigger via tmux
-   - See references/review-trigger.md for tmux command templates
+   Decision tree:
+     has pr_url? → ④a (check state) → OPEN? → ④b (quality gate) → PASS? → ④c (nudge merge)
+     no pr_url, phase >= 5? → ④b (quality gate) → PASS? → leave alone (workspace creates PR)
+     phase < 5? → skip
 
-⑥ DETECT STUCK → for each workspace:
+   ④a. CHECK PR STATE — for workspaces with pr_url set:
+       - gh pr view <number> --json state
+       - MERGED → update story_status to "completed" (Step ③ wraps next tick)
+       - CLOSED → update story_status to "failed"
+       - OPEN → proceed to ④b/④c
+
+   ④b. QUALITY GATE — for ALL workspaces at phase >= 5 (pre-PR and post-PR):
+       - Check for eval-response files in .feature-workspaces/<name>/.dev-workflow/signals/
+       - If no eval-response with PASS exists → trigger gen/eval via tmux:
+         tmux send-keys -t <workspace-name>:0.0 \
+           "Run Phase 5 code review now. Write eval-request.md, spawn evaluator \
+            via tmux split-window, and execute the gen/eval loop per the build \
+            skill Phase 5 protocol." Enter
+       - If stuck at Phase 5 (2+ ticks) → re-trigger via tmux
+       - No response after 6 ticks (30 min) → add escalation
+       - See references/review-trigger.md for full detection logic
+
+   ④c. GUIDE TO MERGE — when eval PASSED AND pr_url set, nudge toward Phase 12:
+       - Only nudge ONCE — skip if last_action is already "merge_nudged"
+       - If eval PASSED but phase < 12 and not yet nudged:
+         tmux send-keys -t <workspace-name>:0.0 \
+           "Your code review eval has PASSED. Proceed to Phase 12: run pre-merge \
+            checks (rebase on main, verify CI, check comments) then merge the PR. \
+            In autopilot mode, merge when all checks pass without waiting for user \
+            confirmation." Enter
+       - If phase == 12 and stuck (2+ ticks):
+         tmux send-keys -t <workspace-name>:0.0 \
+           "Complete Phase 12 merge now: 1) jj git fetch && jj rebase -d main@origin \
+            2) Verify CI green 3) gh pr merge <number> --squash --delete-branch. \
+            Update status.json with story_status completed." Enter
+       - If phase == 12 and progressing → leave alone
+
+⑤ DETECT STUCK → for each workspace:
    - Compare (phase, completion_pct) with previous tick
-   - No change → increment consecutive_stuck_ticks
+   - No change → run liveness check, then increment consecutive_stuck_ticks
    - Changed → reset to 0
    - 6 ticks (30 min) stuck → send tmux nudge
    - 12 ticks (60 min) stuck → add escalation, consider pausing
 
-⑦ DISPATCH NEW WORK → if capacity available:
+⑥ DISPATCH NEW WORK → if capacity available:
    - Read product-context.yaml, run dispatch scoring logic (steps 1-3 from /dispatch)
    - available_slots = concurrency_limit - active_workspace_count
    - For top-scored ready story:
@@ -181,7 +259,7 @@ Follow the 8-step tick protocol documented in `references/tick-protocol.md`.
      - If well-specified → run /launch (max ONE launch per tick)
    - Add new workspace entry to state
 
-⑧ WRITE STATE
+⑦ WRITE STATE
    - Write .dev-workflow/autopilot-state.json (atomic: write .tmp then rename)
    - Append tick summary to .dev-workflow/autopilot-history.jsonl
    - Update .dev-workflow/autopilot-status.md
@@ -287,24 +365,14 @@ This re-reads the product context (now with refined specs), re-initializes the l
 
 ---
 
-## Code Review: Separation of Concerns
-
-The autopilot maintains strict separation between two gen/eval concerns:
-
-| Concern                    | Owner                    | What it evaluates                                    | Where it runs                       |
-| -------------------------- | ------------------------ | ---------------------------------------------------- | ----------------------------------- |
-| **Code quality**           | Workspace agent          | Code correctness, security, completeness             | Inside workspace tmux session       |
-| **Orchestration learning** | Autopilot (main session) | Patterns across workspaces: failures, costs, retries | Main session, feeds into `/reflect` |
-
-**Autopilot does NOT evaluate workspace code.** It triggers and monitors the workspace's own gen/eval loop. See `references/review-trigger.md` for the triggering protocol and `references/orchestration-learning.md` for the meta-learning pattern.
-
----
-
 ## Guardrails
 
 - **Main workspace only** — refuse to run if `pwd` contains `.feature-workspaces`
-- **Never dispatch stories with unmet dependencies** — even under autonomous mode
+- **All code operations happen inside workspace agents** — the main session NEVER reads, reviews, edits, or evaluates workspace code directly. It only sends prompts via tmux and reads signal files
+- **Never spawn Agent tools for code review** — all reviews run inside the workspace's tmux session via `tmux send-keys`. This is the #1 violation to watch for.
 - **Never merge PRs** — workspace agents own Phase 12 merge; autopilot only detects already-merged PRs
+- **Guide workspace agents to merge** — when eval passes and CI is green, send tmux nudge for Phase 12 completion; do not wait passively for workspace to figure it out
+- **Never dispatch stories with unmet dependencies** — even under autonomous mode
 - **Never treat SKIP-only test results as PASS** — at least 1 PASS required for test/integration stories
 - **Never treat "no checks" as passing** — for integration/test stories, require at least one passing check OR explicit eval-response PASS
 - **Never write eval-response files** — that's the workspace evaluator's job
