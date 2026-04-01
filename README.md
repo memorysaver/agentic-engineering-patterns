@@ -298,6 +298,27 @@ TARGET_DIR=./my-skills bash scripts/sync.sh
 
 The script flattens the nested skill directories and prefixes each with `aep-` (e.g., `skills/product-context/envision/` becomes `.claude/skills/aep-envision/`). Run it whenever you want to pull the latest skill versions.
 
+### Push Mode (sync-downstream)
+
+Push skills from the AEP repo to all registered downstream projects at once.
+
+```bash
+# One-time setup: create the config
+bash scripts/sync-downstream.sh --init
+
+# Edit .aep/config.yaml with your project paths
+# Then push to all projects:
+bash scripts/sync-downstream.sh
+
+# Preview changes:
+bash scripts/sync-downstream.sh --dry-run
+
+# Push to one project (name match):
+bash scripts/sync-downstream.sh 91app
+```
+
+The config file (`.aep/config.yaml`) is gitignored — paths are machine-local. Each entry specifies the project path and optionally which skill groups to sync.
+
 ## Inspired By
 
 - [Harness Design for Long-Running Application Development](https://www.anthropic.com/engineering/harness-design-long-running-apps) — Anthropic Engineering

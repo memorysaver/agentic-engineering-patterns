@@ -49,6 +49,7 @@ tmp
 .pnp.js
 
 # Project
+.aep/
 .alchemy
 .claude/worktrees/
 .dev-workflow/
