@@ -170,8 +170,34 @@ tmux send-keys -t <workspace-name>:0.0 \
 
 For each workspace, compare current `(phase, completion_pct)` with the values from the previous tick:
 
-- **Same values:** Increment `consecutive_stuck_ticks`
 - **Different values:** Reset `consecutive_stuck_ticks` to 0
+- **Same values:** Run liveness check before incrementing (see below)
+
+### Liveness Check
+
+When signals are stale (same phase and completion_pct as previous tick), check whether the workspace agent is still actively working before counting it as stuck:
+
+**Step 1 — Check tmux pane activity:**
+
+```bash
+tmux capture-pane -t <workspace-name>:0.0 -p -S -20
+```
+
+Compare the captured output against `last_tmux_hash` stored in the workspace state entry.
+
+- **`last_tmux_hash` is null** (first tick after launch or restart) → Populate `last_tmux_hash` with hash of current output. Do NOT increment `consecutive_stuck_ticks`. The workspace gets benefit of the doubt on its first stale-signal tick.
+- **tmux session doesn't exist** (capture-pane fails) → Treat as no activity. Increment `consecutive_stuck_ticks`.
+- **Output hash differs from `last_tmux_hash`** → Agent is active, signals are lagging. Update `last_tmux_hash`. Do NOT increment `consecutive_stuck_ticks`.
+- **Output hash matches `last_tmux_hash`** → Proceed to Step 2.
+
+**Step 2 — Check for uncommitted code changes:**
+
+```bash
+cd .feature-workspaces/<workspace-name> && jj diff --stat
+```
+
+- **Has uncommitted changes** → Agent is writing code via tool use (file edits happen but no terminal output scrolls). Do NOT increment `consecutive_stuck_ticks`.
+- **No uncommitted changes** → Agent is truly idle. Increment `consecutive_stuck_ticks`.
 
 ### Thresholds
 
