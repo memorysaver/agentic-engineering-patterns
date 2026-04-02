@@ -1,45 +1,57 @@
-# Alchemy CI/CD: From Local Deploy to GitHub Actions
+# Alchemy CI/CD: Deploying to Cloudflare from GitHub Actions / GitLab CI
 
-How to configure a project that was first deployed locally with Alchemy to deploy automatically via GitHub Actions. Covers the gotchas you'll hit when Alchemy's local state doesn't exist in CI.
+How to deploy an Alchemy project to Cloudflare via CI/CD. Covers two scenarios: migrating a locally-deployed project to CI, and setting up CI-only deployment from the start. Distilled from production experience across multiple projects.
 
 ## Prerequisites
 
-- Project deployed locally via `alchemy deploy` (resources exist on Cloudflare)
 - Turborepo monorepo with `packages/infra/alchemy.run.ts`
-- GitHub repository with push access
+- Better-T-Stack (Hono + oRPC + TanStack Start + Better Auth) or similar
+- Cloudflare account with Workers, D1, R2
 
-## The Problem
+## The 5 Gotchas
 
-Alchemy stores deployment state in `.alchemy/` on your local filesystem (encrypted JSON files tracking what resources exist). In CI:
+Every Alchemy CI/CD setup hits some combination of these. Knowing them upfront saves hours.
 
-1. **No `.alchemy/` state** — CI runners are ephemeral, no local state between runs
-2. **No OAuth profile** — Alchemy's local auth uses `~/.alchemy/credentials/`, not available in CI
-3. **CI detection** — Alchemy detects `process.env.CI` and **throws an error** if using the default filesystem state store
-4. **Turbo env filtering** — Turborepo doesn't pass environment variables to child tasks by default
-5. **Existing resources** — Workers/databases already exist from local deploy, Alchemy's `create` phase fails
+| #   | Gotcha                      | Symptom                                           | Fix                                 |
+| --- | --------------------------- | ------------------------------------------------- | ----------------------------------- |
+| 1   | **Turbo strips env vars**   | `ALCHEMY_STATE_TOKEN` not found, `Stage: runner`  | Add `passThroughEnv` to deploy task |
+| 2   | **No remote state store**   | Alchemy throws error in CI                        | Use `CloudflareStateStore`          |
+| 3   | **Stage-dependent naming**  | CI creates new D1/R2 instead of updating existing | Pin resource `name` props           |
+| 4   | **Resources already exist** | `Worker with name 'X' already exists`             | Add `adopt: true`                   |
+| 5   | **No OAuth in CI**          | Auth fails (no `~/.alchemy/credentials/`)         | Use `CLOUDFLARE_API_TOKEN` env var  |
 
-## Solution Overview
+## Two Approaches
 
-```
-Local Dev                          CI (GitHub Actions)
-─────────                          ──────────────────
-OAuth profile auth         →       CLOUDFLARE_API_TOKEN env var
-FileSystemStateStore       →       CloudflareStateStore (Durable Objects)
-Stage: $USER (e.g. "dev")  →       Stage: "production" (explicit)
-.alchemy/ directory        →       Remote state in Cloudflare DO
-```
+### Approach A: CI-Only Deployment (Recommended for New Projects)
 
-## Step 1: Update `alchemy.run.ts`
-
-Three changes: conditional state store, conditional auth, explicit stage.
+CI is the **only** deployer. Local machines never run `alchemy deploy`. This avoids gotcha #4 entirely.
 
 ```ts
-import alchemy from "alchemy";
+// packages/infra/alchemy.run.ts
 import { CloudflareStateStore } from "alchemy/state";
-import {} from /* your resources */ "alchemy/cloudflare";
 
 const app = await alchemy("my-app", {
-  // Explicit stage — don't rely on DEFAULT_STAGE (reads USER env at module load)
+  stage: process.env.ALCHEMY_STAGE ?? "production",
+  stateStore: (scope) => new CloudflareStateStore(scope),
+  // No profile — always use CLOUDFLARE_API_TOKEN
+});
+```
+
+Advantages:
+
+- No state divergence between local and CI
+- No `adopt` needed (CI creates everything on first deploy)
+- Simpler `alchemy.run.ts` (no conditionals)
+
+### Approach B: Migrate Local Deploy to CI (Existing Projects)
+
+Project was deployed locally first. CI needs to adopt existing resources.
+
+```ts
+// packages/infra/alchemy.run.ts
+import { CloudflareStateStore } from "alchemy/state";
+
+const app = await alchemy("my-app", {
   stage: process.env.ALCHEMY_STAGE,
   // Remote state in CI, local filesystem in dev
   stateStore: process.env.CI ? (scope) => new CloudflareStateStore(scope) : undefined,
@@ -48,28 +60,15 @@ const app = await alchemy("my-app", {
 });
 ```
 
-### Why `stage` must be explicit
+This approach requires `adopt: true` on all resources for the first CI deploy, plus pinned `name` props to avoid stage-dependent naming.
 
-`DEFAULT_STAGE` is a module-level constant evaluated at import time:
+## Step-by-Step Setup
 
-```ts
-// In alchemy/src/scope.ts
-export const DEFAULT_STAGE =
-  process.env.ALCHEMY_STAGE ??
-  process.env.USER ?? // "runner" on GitHub Actions
-  process.env.USERNAME ??
-  "dev";
-```
+### 1. Configure `alchemy.run.ts`
 
-Even though `ALCHEMY_STAGE` is set in the workflow, the module may evaluate before the env is available in some bundler scenarios. Passing `stage` explicitly to `alchemy()` is reliable.
+Choose Approach A or B above. Then apply these rules to all resources:
 
-## Step 2: Pin Resource Names
-
-Alchemy generates resource names using `scope.createPhysicalName(id)` which includes the stage. Different stages = different Cloudflare resource names = **new resources instead of updating existing ones**.
-
-Workers with explicit `name` props are fine — the name is used directly regardless of stage. But D1Database without a `name` prop gets `my-app-database-production` in CI vs `my-app-database-dev` locally.
-
-**Pin all resource names:**
+**Pin resource names** — Alchemy generates names using `scope.createPhysicalName(id)` which includes the stage. Different stages = different Cloudflare resource names = new resources instead of updating existing ones.
 
 ```ts
 // BAD: name depends on stage
@@ -80,40 +79,18 @@ const db = await D1Database("database", {
 
 // GOOD: name is fixed
 const db = await D1Database("database", {
-  name: "my-app-database", // ← Always this name
+  name: "my-app-database", // ← Always this name, any stage
   migrationsDir: "../../packages/db/src/migrations",
-  adopt: true,
+  adopt: true, // ← Only needed for Approach B (migrate from local)
 });
 ```
 
-Resources that already have explicit names (like `R2Bucket("assets", { name: "my-assets" })`) don't need changes.
-
-## Step 3: Add `adopt: true` to All Resources
-
-The first CI deploy has empty state (fresh `CloudflareStateStore`). Alchemy's create phase will try to create resources that already exist from local deploy. Without `adopt: true`, you get:
-
-```
-error: Worker with name 'api' already exists. Please use a unique name.
-error: Database with name: 'my-app-database' already exists [7502]
-```
-
-Add `adopt: true` to every resource:
+Workers and R2 buckets that already have explicit `name` props are fine. Add `adopt: true` to everything if migrating from local deploy (Approach B).
 
 ```ts
-const db = await D1Database("database", {
-  name: "my-app-database",
-  adopt: true, // ← Adopt if already exists
-  migrationsDir: "...",
-});
-
-const assets = await R2Bucket("assets", {
-  name: "my-app-assets",
-  adopt: true, // ← Already had this
-});
-
 const web = await TanStackStart("web", {
-  name: "www",
-  adopt: true, // ← Add this
+  name: "my-web",
+  adopt: true, // Approach B only
   url: true,
   cwd: "../../apps/web",
   bindings: {
@@ -122,8 +99,8 @@ const web = await TanStackStart("web", {
 });
 
 const server = await Worker("server", {
-  name: "api",
-  adopt: true, // ← Add this
+  name: "my-api",
+  adopt: true, // Approach B only
   url: true,
   cwd: "../../apps/server",
   bindings: {
@@ -132,13 +109,26 @@ const server = await Worker("server", {
 });
 ```
 
-After the first CI deploy succeeds, state is stored in `CloudflareStateStore`. Subsequent deploys will see existing state and use `update` instead of `create`. The `adopt: true` only matters for the initial migration.
+After the first CI deploy succeeds, state is stored in `CloudflareStateStore`. Subsequent deploys use `update` instead of `create` — `adopt: true` only matters for the initial migration.
 
-## Step 4: Configure Turbo `passThroughEnv`
+### Why `stage` must be explicit
 
-**This is the gotcha that wastes the most time.** Turborepo filters environment variables by default. Your secrets will be set in the GitHub Actions step but **won't reach `alchemy.run.ts`**.
+`DEFAULT_STAGE` is a module-level constant evaluated at import time:
 
-Symptoms: `Stage: runner` instead of `production`, `ALCHEMY_STATE_TOKEN` not found.
+```ts
+// In alchemy/src/scope.ts — evaluated when module is first imported
+export const DEFAULT_STAGE =
+  process.env.ALCHEMY_STAGE ??
+  process.env.USER ?? // "runner" on GitHub Actions
+  process.env.USERNAME ??
+  "dev";
+```
+
+Even when `ALCHEMY_STAGE` is set in the workflow step, Turbo's env filtering (gotcha #1) can prevent it from reaching the subprocess. Passing `stage` explicitly to `alchemy()` is reliable.
+
+### 2. Configure Turbo `passThroughEnv`
+
+**This is the gotcha that wastes the most time.** Turborepo filters environment variables by default. Your secrets will be set in the CI step but won't reach `alchemy.run.ts`.
 
 Add `passThroughEnv` to the deploy task in `turbo.json`:
 
@@ -155,10 +145,6 @@ Add `passThroughEnv` to the deploy task in `turbo.json`:
         "ALCHEMY_STATE_TOKEN",
         "ALCHEMY_STAGE",
         "BETTER_AUTH_SECRET",
-        "WAVESPEED_API_KEY",
-        "R2_ACCESS_KEY_ID",
-        "R2_SECRET_ACCESS_KEY",
-        "R2_ACCOUNT_ID",
         "CORS_ORIGIN",
         "BETTER_AUTH_URL",
         "VITE_SERVER_URL"
@@ -168,9 +154,9 @@ Add `passThroughEnv` to the deploy task in `turbo.json`:
 }
 ```
 
-List every env var that `alchemy.run.ts` reads (via `alchemy.env.*`, `alchemy.secret.env.*`, or `process.env.*`).
+**Rule:** Every env var that `alchemy.run.ts` reads (via `alchemy.env.*`, `alchemy.secret.env.*`, or `process.env.*`) must be listed here. When you add a new env var to `alchemy.run.ts`, also add it to this list.
 
-## Step 5: Create Cloudflare API Token
+### 3. Create Cloudflare API Token
 
 Go to https://dash.cloudflare.com/profile/api-tokens → Create Token → Custom Token:
 
@@ -182,30 +168,39 @@ Go to https://dash.cloudflare.com/profile/api-tokens → Create Token → Custom
 | Account > Workers AI         | Read   |
 | Account > Account Settings   | Read   |
 
-Scope to your specific account. Copy the token.
+Scope to your specific account. Copy the token (shown only once).
 
-## Step 6: Set GitHub Secrets
+### 4. Set CI Secrets
+
+**GitHub Actions:**
 
 ```bash
-# Generate state token
+# Generate tokens
 ALCHEMY_STATE_TOKEN=$(openssl rand -hex 32)
 
-# Set secrets (values from your local .env files)
+# Set secrets
 gh secret set CLOUDFLARE_API_TOKEN --body "your-cf-token"
 gh secret set CLOUDFLARE_ACCOUNT_ID --body "your-account-id"
 gh secret set ALCHEMY_PASSWORD --body "your-alchemy-password"
 gh secret set ALCHEMY_STATE_TOKEN --body "$ALCHEMY_STATE_TOKEN"
 gh secret set BETTER_AUTH_SECRET --body "your-auth-secret"
-gh secret set WAVESPEED_API_KEY --body "your-wavespeed-key"
-gh secret set R2_ACCESS_KEY_ID --body "your-r2-key-id"
-gh secret set R2_SECRET_ACCESS_KEY --body "your-r2-secret"
+# ... add all app-specific secrets
 ```
 
-The `ALCHEMY_PASSWORD` must match the one used locally (in `packages/infra/.env`). It encrypts/decrypts secrets in state.
+**GitLab CI:**
 
-## Step 7: Create the Workflow
+```bash
+glab variable set CLOUDFLARE_API_TOKEN --value "your-cf-token" --masked
+glab variable set ALCHEMY_STATE_TOKEN --value "$ALCHEMY_STATE_TOKEN" --masked
+glab variable set ALCHEMY_PASSWORD --value "your-alchemy-password" --masked
+# ... add all app-specific variables
+```
 
-`.github/workflows/deploy.yml`:
+**Important:** `ALCHEMY_PASSWORD` must match the one used locally (in `packages/infra/.env`). It encrypts/decrypts secrets in state. Changing it between deploys breaks decryption.
+
+### 5. Create the Workflow
+
+**GitHub Actions** (`.github/workflows/deploy.yml`):
 
 ```yaml
 name: Deploy
@@ -239,66 +234,172 @@ jobs:
           ALCHEMY_STATE_TOKEN: ${{ secrets.ALCHEMY_STATE_TOKEN }}
           ALCHEMY_STAGE: production
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
-          WAVESPEED_API_KEY: ${{ secrets.WAVESPEED_API_KEY }}
-          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          R2_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # ... all app-specific env vars
           CORS_ORIGIN: "https://www.your-app.workers.dev"
           BETTER_AUTH_URL: "https://api.your-app.workers.dev"
           VITE_SERVER_URL: "https://api.your-app.workers.dev"
 ```
 
+**GitLab CI** (`.gitlab-ci.yml`):
+
+```yaml
+deploy:
+  image: oven/bun:1
+  stage: deploy
+  only:
+    - main
+  script:
+    - bun install --frozen-lockfile
+    - bun run deploy
+  variables:
+    ALCHEMY_STAGE: production
+    CORS_ORIGIN: "https://my-web.my-subdomain.workers.dev"
+    BETTER_AUTH_URL: "https://my-api.my-subdomain.workers.dev"
+    VITE_SERVER_URL: "https://my-api.my-subdomain.workers.dev"
+```
+
+GitLab injects CI/CD variables automatically — no need to list secrets in the YAML.
+
 **Key decisions:**
 
-- `concurrency: deploy` with `cancel-in-progress: false` — prevents overlapping deploys corrupting state
-- No `environment:` — requires GitHub environment setup; repo-level secrets are simpler
+- `concurrency` / single-pipeline — prevents overlapping deploys corrupting state
+- No `environment:` in GitHub Actions — requires GitHub environment setup; repo-level secrets are simpler to start with
 - `--frozen-lockfile` — reproducible installs
-- `ALCHEMY_STAGE: production` — different state namespace from local dev
+- `ALCHEMY_STAGE: production` — separate state namespace from local dev
+
+## Environment Variable Flow
+
+Env vars travel through a multi-hop chain. Understanding this flow is critical for debugging "env var not reaching the app" issues.
+
+```
++-------------------------------------------------------+
+| 1. SOURCE                                             |
+|                                                       |
+|   .env (local) ─── or ─── CI variable (prod)         |
++---------------------------+---------------------------+
+                            |
+                            v
++-------------------------------------------------------+
+| 2. TURBO passThroughEnv GATE                          |
+|                                                       |
+|   turbo.json: deploy.passThroughEnv: [...]            |
+|                                                       |
+|   ⚠ If a var is NOT listed here, Turbo strips it      |
++---------------------------+---------------------------+
+                            |
+                            v
++-------------------------------------------------------+
+| 3. ALCHEMY (packages/infra/alchemy.run.ts)            |
+|                                                       |
+|   Reads process.env via alchemy.env.* / .secret.env.* |
+|   Falls back to defaults from config package          |
+|   Binds values to Cloudflare Workers                  |
++---------------------------+---------------------------+
+                            |
+                            v
++-------------------------------------------------------+
+| 4. CLOUDFLARE WORKERS                                 |
+|                                                       |
+|   Receives env vars as Worker bindings (env.*)        |
+|   Available at runtime in request handlers            |
++-------------------------------------------------------+
+```
+
+### Debugging Checklist
+
+If an env var isn't reaching your Worker:
+
+| Step | Check                                   | Fix                                       |
+| ---- | --------------------------------------- | ----------------------------------------- |
+| 1    | Is it in `.env` / CI variables?         | Add it                                    |
+| 2    | Is it in `turbo.json` `passThroughEnv`? | Add it (Turbo strips unlisted vars)       |
+| 3    | Is it read in `alchemy.run.ts`?         | Add binding to Worker                     |
+| 4    | Is it available in the Worker handler?  | Check `env.VAR_NAME` in your Hono context |
+
+## Interacting with Remote State
+
+The `CloudflareStateStore` deploys a Worker called `alchemy-state-service` on your Cloudflare account. You can query it directly:
+
+```bash
+# List all resources in a scope
+curl -s -X POST "https://alchemy-state-service.your-subdomain.workers.dev" \
+  -H "Authorization: Bearer $ALCHEMY_STATE_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"method":"list","params":[],"context":{"chain":["my-app","production"]}}'
+
+# Delete a specific orphaned entry
+curl -s -X POST "https://alchemy-state-service.your-subdomain.workers.dev" \
+  -H "Authorization: Bearer $ALCHEMY_STATE_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"method":"delete","params":["resource-name"],"context":{"chain":["my-app","production"]}}'
+```
+
+For local `alchemy read` or `alchemy destroy` commands against production state, set matching credentials in `packages/infra/.env`:
+
+```
+ALCHEMY_PASSWORD=<same-as-CI>
+ALCHEMY_STATE_TOKEN=<same-as-CI>
+```
 
 ## Troubleshooting
 
-### Error: `Missing token for CloudflareStateStore`
+### `Missing token for CloudflareStateStore`
 
 `ALCHEMY_STATE_TOKEN` isn't reaching Alchemy. Check:
 
-1. Secret is set: `gh secret list` should show it
-2. It's in the workflow `env:` block
+1. Secret is set in CI (`gh secret list` / `glab variable list`)
+2. It's in the workflow `env:` block (GitHub) or CI variables (GitLab)
 3. It's in `turbo.json` `passThroughEnv`
 
-### Error: `Worker with name 'X' already exists`
+### `Worker with name 'X' already exists`
 
-Resource exists on Cloudflare but CI has no state for it. Add `adopt: true` to the resource.
+Resource exists on Cloudflare but CI has no state for it (first CI deploy after local). Add `adopt: true` to the resource. Only needed for Approach B.
 
 ### `Stage: runner` instead of `production`
 
-`ALCHEMY_STAGE` isn't reaching Alchemy. Same diagnosis as above. Also ensure `stage: process.env.ALCHEMY_STAGE` is passed explicitly to `alchemy()`.
+`ALCHEMY_STAGE` isn't reaching Alchemy. Same 3-step diagnosis as above. Also ensure `stage: process.env.ALCHEMY_STAGE` is passed explicitly to `alchemy()`.
+
+### `Cannot serialize secret without password`
+
+`ALCHEMY_PASSWORD` is not set. Same 3-step diagnosis.
 
 ### First deploy works, second fails with crypto errors
 
-`ALCHEMY_PASSWORD` changed between deploys. The password encrypts secrets in state — it must be the same across all deploys (local and CI).
+`ALCHEMY_PASSWORD` changed between deploys. The password encrypts secrets in state — it must be identical across all deploys (local and CI).
 
-### dotenv injects 0 vars
+### Nuclear option: destroy and redeploy
 
-Expected. CI doesn't have `.env` files. All config comes from GitHub Actions env vars.
+If state is too corrupted:
 
-## How It All Fits Together
+1. Remove `CloudflareStateStore` from `alchemy.run.ts` temporarily (use default FileSystemStateStore)
+2. Run `bun run destroy` locally (uses local `.alchemy/` state files)
+3. Clear remaining entries from the remote state store via curl
+4. Restore `CloudflareStateStore` in `alchemy.run.ts`
+5. Push to `main` — CI creates all resources fresh
 
+### Skipping CI
+
+Add `[skip ci]` to your commit message:
+
+```bash
+git commit -m "docs: update readme [skip ci]"
 ```
-Push to main
-  → GitHub Actions triggers
-    → bun install
-    → bun run deploy
-      → turbo -F @my-app/infra deploy (passThroughEnv forwards secrets)
-        → alchemy deploy
-          → CloudflareStateStore reads/writes state via Durable Objects
-          → CLOUDFLARE_API_TOKEN authenticates to Cloudflare API
-          → Resources are created (first run) or updated (subsequent)
-          → Workers, D1, R2 deployed to Cloudflare
-```
 
-**First CI deploy (~1 min):** Creates `CloudflareStateStore` worker, adopts all existing resources, stores state.
+## Timeline: What Happens on Each Deploy
 
-**Subsequent deploys (~1 min):** Reads state from DO, diffs against desired state, updates changed resources.
+**First CI deploy (~1-2 min):**
+
+1. Alchemy provisions `alchemy-state-service` Worker (CloudflareStateStore backend)
+2. Creates (or adopts) D1 database, R2 buckets, Workers
+3. Builds and deploys web + server bundles
+4. Stores all resource state in Durable Objects
+
+**Subsequent deploys (~1 min):**
+
+1. Reads state from Durable Objects
+2. Diffs desired state against current state
+3. Updates only changed resources (Workers rebundled, bindings updated)
+4. Writes updated state back
 
 ## Related
 
