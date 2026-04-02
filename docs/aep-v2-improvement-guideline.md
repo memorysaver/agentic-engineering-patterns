@@ -4,6 +4,8 @@
 
 > Synthesized from three independent deep analyses of AEP's design, User Story Mapping (Jeff Patton), OpenSpec integration, and the SDD tool ecosystem. This document serves as the authoritative improvement roadmap for evolving AEP from v1 to v2.
 
+> **Terminology:** For v1 term definitions, see the [Glossary](glossary.md). New v2 terms introduced in this document are previewed in the glossary's [v2 Roadmap section](glossary.md#v2-roadmap-proposed).
+
 ---
 
 ## 1. Executive Summary

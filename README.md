@@ -278,6 +278,7 @@ Classify feedback, update the product context, plan the next iteration.
 - [Autonomous Loop](docs/autonomous-loop.md) — how `/autopilot` orchestrates the full cycle
 - [Generator/Evaluator Data Flow](docs/gen-eval-data-flow.md) — the three tracking systems and signal protocol
 - [Release Line Adjustments](docs/release-line-adjustments.md) — when and how to re-slice layers
+- [v2 Improvement Guideline](docs/aep-v2-improvement-guideline.md) — roadmap for multi-map document architecture
 
 ## Syncing Skills to Your Project
 
