@@ -40,6 +40,7 @@ Collect observations from all sources. Read from `product-context.yaml` to groun
 - **Error logs / monitoring:** Runtime failures, performance issues, unexpected behavior
 - **Cost data:** Review the `cost` section of `product-context.yaml`. If agent execution traces exist, review per-story costs. Which story types were expensive? Where did retries concentrate?
 - **Product instincts:** After seeing the thing work, what does the user's gut say? What feels right, what feels off?
+- **Lessons learned:** Read `lessons-learned/*.md` for observations captured by workspace agents during builds. Summarize patterns across recent lessons — recurring errors, solutions that worked, missing documentation.
 
 Ask the user one source at a time. Don't rush — the quality of classification depends on the quality of input.
 
@@ -63,6 +64,8 @@ Working behavior that needs improvement — or existing stories that need to mov
 - **Action:** Create a new story in the next layer with `status: pending`, add to the `stories` section of `product-context.yaml`. Alternatively, promote an existing story from a later layer to an earlier one if learning shows it's needed sooner.
 - **Update:** Include appropriate layer assignment and dependencies
 
+**Sub-type — Polish:** UI/UX quality gaps in shipped features (generic layouts, missing brand identity, unpolished interactions). When UI observations surface, default to creating stories in the next `.5` layer (e.g., 0.5, 1.5, 2.5) rather than the next integer layer. Polish stories get dispatched with design context from `design-context.yaml` — run `/calibrate` before dispatching `.5` layers if no design context exists.
+
 ### Discovery
 
 New requirement or invalidated assumption.
@@ -78,6 +81,13 @@ Fundamentally changes the bet — the original opportunity hypothesis is wrong o
 
 - **Action:** Back to `/envision` Phase 0
 - **This is rare** but critical to recognize. Signs: the problem you're solving isn't the problem users actually have, or a market shift made the opportunity moot.
+
+### Process
+
+Observations about the workflow itself, not the product. Examples: permission stalls, signal staleness, missing tooling, agent configuration gaps.
+
+- **Action:** Document the pattern in `lessons-learned/process/<observation>.md`. Add a `process_learnings` entry to the `topology.routing` section of `product-context.yaml`.
+- **Important:** If the pattern warrants a skill file change, record it as a proposed amendment in the changelog — **do not auto-edit skill files**. Skill changes are reviewed and applied by a human.
 
 Present the classification to the user for each observation. Let them override — they know their product better than any framework.
 
@@ -171,6 +181,40 @@ Based on the reflection, recommend the next step:
 | Discovery (architecture) | `/map` to update system map                                           |
 | Opportunity shift        | `/envision` Phase 0 (re-validate)                                     |
 | All clear                | Next layer or ship to production                                      |
+
+---
+
+## Step 5.5: Workflow Improvement
+
+Review any observations classified as **Process** in Step 2. For each:
+
+1. **Document the pattern** in `lessons-learned/process/<observation>.md` with:
+   - What happened (description, frequency, impact)
+   - Root cause (if known)
+   - Proposed mitigation
+
+2. **Update product context** — add a `process_learnings` entry to `topology.routing` in `product-context.yaml`:
+
+   ```yaml
+   process_learnings:
+     - pattern: "<description>"
+       mitigation: "<what to do differently>"
+       discovered_at: "<date>"
+   ```
+
+3. **Propose skill amendments** — if the pattern warrants changes to skill files (e.g., adding a guardrail, changing a phase step), record the proposed amendment in the `changelog` section:
+
+   ```yaml
+   - date: YYYY-MM-DD
+     type: process-improvement
+     summary: "Proposed skill amendment: <description>"
+     proposed_changes:
+       - skill: "<skill name>"
+         change: "<what to add/modify>"
+         rationale: "<why>"
+   ```
+
+   **Do not auto-edit skill files.** Skill changes are sensitive — the human reviews and applies proposed amendments.
 
 ---
 

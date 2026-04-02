@@ -219,6 +219,29 @@ Before any work begins, set up the tracking infrastructure, environment, and jj 
 
     See `skills/agentic-development-workflow/launch/references/signals-spec.md` for the full signal file specification.
 
+12. **Create the lessons file:**
+
+    ```bash
+    cat > .dev-workflow/lessons.md <<'TEMPLATE'
+    # Lessons: <change-name>
+
+    Module: <module>
+    Activity: <activity>
+    Date: <date>
+    Story: <story-id>
+
+    ## Solutions
+
+    ## Errors
+
+    ## Missing
+
+    ## Summary for Next Agent
+    TEMPLATE
+    ```
+
+    This file captures what the agent learns during builds — solutions discovered, errors encountered, missing docs, patterns that worked. Fill in the header fields from the OpenSpec change. Sections are populated during Phase 4 (opt-in) and Phase 9 (summary).
+
 Update the Phase 0 checkbox in the progress file when done.
 
 > **Signal update:** Update `.dev-workflow/signals/status.json` with `"phase": 0, "phase_name": "initialized", "completion_pct": 10`.
@@ -290,6 +313,8 @@ Invoke the apply skill for guidance on implementing each task:
 The agent works **one change at a time**. Auto-rebase keeps dependent changes consistent — when you edit an earlier change, all later changes automatically update.
 
 Update the progress file checkbox for each completed task, and mark the Phase 4 checkbox when all tasks are done.
+
+**Lesson capture (opt-in per task):** After completing each task, if you encountered something noteworthy — a non-obvious solution, an error that took multiple attempts, missing documentation — append to `.dev-workflow/lessons.md` under the appropriate section (`## Solutions`, `## Errors`, or `## Missing`). Use a `### <title>` sub-heading with a brief explanation. This is not mandatory for every task — only write when something is genuinely worth passing on to the next agent.
 
 > **Signal update:** Update `.dev-workflow/signals/status.json` with `"phase": 4` at start, update `task_current`, `task_index`, `task_total` as tasks progress, and `completion_pct` proportionally.
 
@@ -441,6 +466,10 @@ Generate a reusable E2E test script if the project has an E2E testing setup. The
 ## Phase 9: Cleanup & Publish
 
 > **Note:** Do NOT run `/opsx:archive` here. Archive runs on `main` after merge (via `/wrap`).
+
+### 0. Write lesson summary
+
+Before publishing, write a final `## Summary for Next Agent` section in `.dev-workflow/lessons.md` (1-3 sentences): what would you tell the next agent building in this module? If the lessons file has no entries beyond the template header, write the summary anyway — even "straightforward implementation, no surprises" is useful signal.
 
 ### 1. Clean up the change stack
 

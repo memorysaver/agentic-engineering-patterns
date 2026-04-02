@@ -334,6 +334,24 @@ Extracted from `product-context.yaml`:
 - Other module internals — use dependency_outputs above
 ```
 
+#### Design Context (for `.5` polish layers)
+
+If `story.layer` is a `.5` layer (e.g., 0.5, 1.5, 2.5) or the story has `design_context: true`:
+
+1. **Include full `design-context.yaml`** — palette, typography, spacing, layout, component patterns, brand signals
+2. **Include reference design files** from `docs/design-references/` matching the story's page (by story activity or title)
+3. **Include design constraint directive:**
+
+   ```markdown
+   This story is part of a visual design calibration layer.
+   Follow the design system in design-context.yaml strictly.
+   Use ONLY colors, fonts, and spacing defined there.
+   Reference docs/design-references/ for layout guidance.
+   Do not introduce new visual tokens not in design-context.yaml.
+   ```
+
+If `design-context.yaml` does not exist, **do not dispatch** `.5` layer stories — instruct the user to run `/calibrate` first.
+
 ### Assembly Rules
 
 1. **Prune aggressively** — irrelevant context degrades agent performance

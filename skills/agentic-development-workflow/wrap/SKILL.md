@@ -114,6 +114,26 @@ jj git push --change @-
 
 > **Concurrency protocol:** This is the only place where story completion status enters `product-context.yaml`. Workspace agents write to signals; `/wrap` (running on main) reads signals and writes to YAML.
 
+### 5.5. Archive lessons learned
+
+Before forgetting the workspace, check for lessons captured during the build:
+
+```bash
+LESSONS=".feature-workspaces/<name>/.dev-workflow/lessons.md"
+if [ -f "$LESSONS" ] && [ "$(wc -l < "$LESSONS")" -gt 12 ]; then
+  # File has content beyond the template header
+  mkdir -p lessons-learned
+  cp "$LESSONS" "lessons-learned/<change-name>.md"
+  jj describe -m "docs: archive lessons from <change-name>"
+  jj new
+  jj git push --change @-
+fi
+```
+
+> **Why before workspace forget:** Once `jj workspace forget` runs, the workspace directory and its `.dev-workflow/lessons.md` are gone. This is the only chance to extract them.
+
+If the lessons file contains only the template header (no Solutions, Errors, Missing, or Summary entries), skip — don't archive empty ceremony.
+
 ### 6. Remove the workspace
 
 ```bash
@@ -129,7 +149,7 @@ jj workspace forget <name>
 - **Always use `jj`** for local changes — never use raw `git commit` or `git add` in a colocated repo.
 - **Verify OpenSpec changes exist before archiving** — if `openspec/changes/<name>/` is missing, the dispatch commit may have been lost during rebase. Recover from the original dispatch commit using `jj restore` before running archive.
 - **Cross-check signals against PR state** — workspace signals can be stale (e.g., showing `in_review` after PR is merged). Always verify via `gh pr view` before updating `product-context.yaml`.
-- **Read signals before forgetting workspaces** — once `jj workspace forget` runs, the workspace directory and its signal files are gone. Extract all needed data first.
+- **Read signals AND lessons before forgetting workspaces** — once `jj workspace forget` runs, the workspace directory, signal files, and `lessons.md` are gone. Extract all needed data (status, lessons) first.
 
 ---
 

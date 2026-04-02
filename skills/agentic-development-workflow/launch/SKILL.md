@@ -40,6 +40,16 @@ jj log -r 'heads(::main ~ ::main@origin)' --no-graph -T 'description.first_line(
 
 Push if needed: `jj git push --bookmark main`
 
+### 3. Verify design context for `.5` layer stories
+
+If the story belongs to a `.5` layer (0.5, 1.5, 2.5):
+
+```bash
+[ -f design-context.yaml ] && echo "design context exists" || echo "MISSING"
+```
+
+**If `design-context.yaml` does not exist — ABORT.** The user must run `/calibrate` first to establish the design system before `.5` layer stories can be launched. Agents dispatched without design context will reproduce the same generic UI that created the need for polish in the first place.
+
 ---
 
 ## Launch Workspace
@@ -79,10 +89,27 @@ Wait for Claude Code to fully initialize (look for the `❯` prompt in the tmux 
 # Verify Claude Code is ready before sending (look for the prompt indicator)
 sleep 5
 tmux capture-pane -t <name>:0 -p -S -5 | grep -q '❯' && echo "ready"
+```
 
+### Inject Prior Lessons (if available)
+
+Before sending the bootstrap prompt, check for relevant lessons from previous builds:
+
+```bash
+# Read lessons matching this story's module or activity
+ls lessons-learned/*.md 2>/dev/null
+ls lessons-learned/process/*.md 2>/dev/null
+```
+
+If relevant lessons exist (matching the story's `module` or `activity`), append a `## Prior Lessons` section to the bootstrap prompt with a summary of relevant entries. Cap at 2000 tokens to avoid context bloat. Also include any relevant process lessons from `lessons-learned/process/*.md` (these apply to all builds, not just module-specific ones).
+
+```bash
 # Send bootstrap prompt via cmux
 # NOTE: Replace /build with your project's build skill name (e.g., /aep-build)
 cmux send --surface "$GEN_SURFACE" "/build execute implementation for openspec change <change-name>. Read the worktree-onboarding reference in the build skill's references/worktree-onboarding.md for full setup instructions. Design phases are pre-completed on main.
+
+## Prior Lessons
+<relevant lessons summary, if any — omit this section if no lessons exist>
 "
 ```
 
@@ -108,13 +135,13 @@ When asked to evaluate their own work, agents consistently rate it positively �
 
 ### When to Use
 
-| Use evaluator | Skip evaluator |
-|--------------|---------------|
-| Complex features with 3+ tasks | Single-file config changes |
-| UI-heavy work (forms, dashboards, layouts) | Simple CRUD endpoints |
-| Auth, payments, or security-sensitive work | Documentation updates |
-| Features at the edge of model capability | Bug fixes with clear repro steps |
-| Multi-component integrations | Dependency upgrades |
+| Use evaluator                              | Skip evaluator                   |
+| ------------------------------------------ | -------------------------------- |
+| Complex features with 3+ tasks             | Single-file config changes       |
+| UI-heavy work (forms, dashboards, layouts) | Simple CRUD endpoints            |
+| Auth, payments, or security-sensitive work | Documentation updates            |
+| Features at the edge of model capability   | Bug fixes with clear repro steps |
+| Multi-component integrations               | Dependency upgrades              |
 
 **Rule of thumb:** If the feature has 3+ tasks in `tasks.md` or touches UI, use an evaluator.
 
@@ -133,13 +160,13 @@ cat openspec/changes/<change-name>/tasks.md
 
 #### b. Identify the feature type
 
-| Feature type | Signals |
-|-------------|---------|
-| **UI-heavy** | Forms, dashboards, layouts, user-facing pages |
-| **API-only** | Endpoints, services, integrations, no frontend |
-| **Security-sensitive** | Auth, payments, data handling, permissions |
-| **Data pipeline** | ETL, migrations, batch processing, data transforms |
-| **Mixed** | Full-stack features spanning multiple categories |
+| Feature type           | Signals                                            |
+| ---------------------- | -------------------------------------------------- |
+| **UI-heavy**           | Forms, dashboards, layouts, user-facing pages      |
+| **API-only**           | Endpoints, services, integrations, no frontend     |
+| **Security-sensitive** | Auth, payments, data handling, permissions         |
+| **Data pipeline**      | ETL, migrations, batch processing, data transforms |
+| **Mixed**              | Full-stack features spanning multiple categories   |
 
 #### c. Propose dimensions
 

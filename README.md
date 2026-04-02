@@ -114,8 +114,11 @@ Context Document                Story Graph                     shift → re-env
                 create OpenSpec change,     (new stories feed back
                 route to /design"            into the dispatch queue)
                     │
-                    ▼
-              /design → /launch → /build → /wrap
+                    ├─── integer layer ──► /design → /launch → /build → /wrap
+                    │
+                    └─── .5 polish layer ──► /calibrate → human designs
+                                               → /calibrate capture
+                                               → /dispatch → /launch → /build → /wrap
 ```
 
 All sections live in one `product-context.yaml` file — opportunity, product, architecture, stories (with state machine), topology, layer gates, cost tracking, and a semantic changelog.
@@ -189,15 +192,38 @@ The workflow is a loop, not a line. After shipping features, `/reflect` classifi
      │  │  ┌────── │ ◄── refinement                    │
      │  │  │        │      (new story in next layer)    │
      │  │  │        │                                  │
-     │  │  │  ┌─── │ ◄── bug                           │
-     │  │  │  │     │      (fix story, back to /design) │
+     │  │  │  ┌─── │ ◄── polish                        │
+     │  │  │  │     │      (.5 layer → /calibrate)      │
      │  │  │  │     │                                  │
-     │  │  │  │     └──────────────────────────────────┘
-     │  │  │  │              /reflect
-     ▼  ▼  ▼  ▼
+     │  │  │  │  ┌─ │ ◄── bug                           │
+     │  │  │  │  │  │      (fix story, back to /design) │
+     │  │  │  │  │  │                                  │
+     │  │  │  │  │  │ ◄── process                       │
+     │  │  │  │  │  │      (workflow improvement)       │
+     │  │  │  │  │  │                                  │
+     │  │  │  │  │  └──────────────────────────────────┘
+     │  │  │  │  │           /reflect
+     ▼  ▼  ▼  ▼  ▼
   Each feedback type routes to the right phase.
   The product context evolves. The cycle continues.
 ```
+
+### UI Polish Layers
+
+Agents build **functional** UI but cannot judge **visual design quality**. After each implementation layer, an optional `.5` polish layer addresses this structural gap:
+
+```
+Layer 0 (walking skeleton)
+  → Layer 0.5 (UI polish: /calibrate → design brief → human explores → capture)
+Layer 1 (core features)
+  → Layer 1.5 (UI polish: extend design system for new patterns)
+```
+
+The `/calibrate` skill generates a design brief from `product-context.yaml`, the human explores with vibe design tools (Stitch, Pencil.dev), then `/calibrate capture` records decisions into `design-context.yaml` — the authoritative visual reference that agents follow when implementing `.5` layer stories.
+
+### Institutional Memory
+
+Workspace agents capture what they learn during builds — solutions discovered, errors encountered, missing docs — in `.dev-workflow/lessons.md`. When `/wrap` archives the workspace, substantive lessons are persisted to `lessons-learned/` at the repo root. `/launch` injects relevant prior lessons into bootstrap prompts, so the next agent building in the same module doesn't start from zero.
 
 ## Design Principles
 
@@ -253,6 +279,14 @@ One command. Autopilot dispatches, launches, monitors, reviews, merges, and wrap
 
 Classify feedback, update the product context, plan the next iteration.
 
+**UI looks generic? Calibrate the design:**
+
+```
+/calibrate  →  human explores  →  /calibrate capture
+```
+
+Generate a design brief, explore with vibe design tools, capture decisions into `design-context.yaml`.
+
 ## All Skills
 
 | Skill        | Plugin                       | Purpose                                                  |
@@ -260,6 +294,7 @@ Classify feedback, update the product context, plan the next iteration.
 | `/envision`  | product-context              | Opportunity brief + context document                     |
 | `/map`       | product-context              | System map + story graph + agent topology                |
 | `/dispatch`  | product-context              | Pick next story + create OpenSpec change                 |
+| `/calibrate` | product-context              | Design brief + capture decisions for `.5` polish layers  |
 | `/reflect`   | product-context              | Classify feedback + update context                       |
 | `/onboard`   | project-setup                | Verify tools + install plugins                           |
 | `/scaffold`  | project-setup                | Scaffold monorepo + initialize OpenSpec                  |
@@ -278,6 +313,8 @@ Classify feedback, update the product context, plan the next iteration.
 - [Autonomous Loop](docs/autonomous-loop.md) — how `/autopilot` orchestrates the full cycle
 - [Generator/Evaluator Data Flow](docs/gen-eval-data-flow.md) — the three tracking systems and signal protocol
 - [Release Line Adjustments](docs/release-line-adjustments.md) — when and how to re-slice layers
+- [Design Calibration Workflow](docs/design-calibration-workflow.md) — the `/calibrate` skill and `.5` polish layer pattern
+- [AEP v2 Lesson Learning](docs/aep-v2-lesson-learning.md) — structural improvements from Layer 0 post-mortem
 
 ## Syncing Skills to Your Project
 
