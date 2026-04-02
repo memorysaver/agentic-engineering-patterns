@@ -143,3 +143,20 @@ When synced to downstream projects, skills are prefixed with `aep-`:
 | `agentic-development-workflow` | design, launch, build, wrap, jj-ref        | `sync.sh workflow` |
 | `patterns`                     | gen-eval, autopilot, workflow-feedback     | `sync.sh patterns` |
 | `project-setup`                | onboard, scaffold, testing-guide           | `sync.sh setup`    |
+
+---
+
+## Proposed Skills (v2)
+
+These skills are planned for v2 but not yet implemented. See the [v2 Improvement Guideline](aep-v2-improvement-guideline.md) for details.
+
+| Skill      | Purpose                                                           | Session |
+| ---------- | ----------------------------------------------------------------- | ------- |
+| `/slice`   | Human-driven release line cutting across capability maps          | Main    |
+| `/compile` | Transform Human Maps into Machine Graph (tiered: mechanical + AI) | Main    |
+
+**v2 workflow extends the sequence:**
+
+```
+/envision → /map → /slice → /compile → /validate → /dispatch → /design → /launch → /build → /wrap → /reflect
+```
