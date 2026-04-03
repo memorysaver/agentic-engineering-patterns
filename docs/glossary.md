@@ -522,6 +522,22 @@ Version format: major (opportunity shift), minor (architecture/map change), patc
 
 See also: **Concurrency Protocol**, **Changelog**
 
+### Upstream Candidate
+
+A lesson or observation from a downstream project build that may warrant changes to AEP skills, documentation, or patterns. Marked during `/workflow-feedback` capture. Only upstream candidates are reviewed during the AEP-side pull process. Items classified as `process` or `tech-stack` are almost always upstream candidates; `discovery` items are upstream only if they reveal a pattern applicable beyond one project.
+
+**Where it appears:** `.dev-workflow/feedback.md` (downstream); `/workflow-feedback` review mode (AEP).
+
+See also: **Workflow Feedback**
+
+### Workflow Feedback
+
+The standardized process for capturing and routing observations about AEP workflow effectiveness. Downstream projects write feedback during or after builds using `/workflow-feedback` capture; the AEP repo reviews and pulls improvements using `/workflow-feedback` review. Distinct from product feedback (handled by `/reflect`): workflow feedback concerns the development process, not the product being built.
+
+**Where it appears:** `/workflow-feedback` skill; `.dev-workflow/feedback.md` (downstream output); `docs/lessons/` and `docs/tech-stack/` (AEP destinations).
+
+See also: **Upstream Candidate**
+
 ---
 
 ## Tools

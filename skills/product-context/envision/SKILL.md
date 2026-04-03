@@ -146,7 +146,7 @@ When revisiting an existing product (triggered by `/reflect` or the user's own i
 
 ### Boundary: When to Use `/envision` vs `/reflect`
 
-Not every post-layer adjustment requires envision. Most learning leads to re-slicing (moving stories between layers), which is handled entirely in `/reflect`. For details, see `docs/release-line-adjustments.md`.
+Not every post-layer adjustment requires envision. Most learning leads to re-slicing (moving stories between layers), which is handled entirely in `/reflect`. For details, see `docs/decisions/release-line-adjustments.md`.
 
 **What does NOT trigger `/envision`** (handle in `/reflect` instead):
 

@@ -88,6 +88,7 @@ Observations about the workflow itself, not the product. Examples: permission st
 
 - **Action:** Document the pattern in `lessons-learned/process/<observation>.md`. Add a `process_learnings` entry to the `topology.routing` section of `product-context.yaml`.
 - **Important:** If the pattern warrants a skill file change, record it as a proposed amendment in the changelog — **do not auto-edit skill files**. Skill changes are reviewed and applied by a human.
+- **For systematic capture and upstream routing** of process and tech-stack observations — especially when reviewing multiple downstream project runs — use `/workflow-feedback` which provides a standardized format and downstream→AEP routing.
 
 Present the classification to the user for each observation. Let them override — they know their product better than any framework.
 
@@ -104,7 +105,7 @@ For each layer that has not yet been built:
 3. **Add new stories** from classified Refinements to the appropriate layer and activity.
 4. **Update `product-context.yaml`** — change `layer` assignments in the `stories` section.
 
-**Key rule:** Re-slicing does NOT require going back to `/envision`. You only route there when the backbone (user activities) or product framing changes — not when layer assignments shift. See `docs/release-line-adjustments.md` for the full decision framework.
+**Key rule:** Re-slicing does NOT require going back to `/envision`. You only route there when the backbone (user activities) or product framing changes — not when layer assignments shift. See `docs/decisions/release-line-adjustments.md` for the full decision framework.
 
 ---
 

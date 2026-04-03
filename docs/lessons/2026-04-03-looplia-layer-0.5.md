@@ -44,14 +44,6 @@
 
 **Fix:** Layer gate tests should include functional verification, not just visual checks. At minimum: can a user complete the core flow end-to-end?
 
-### 6. Rust `keyring` crate needs platform features
-
-**Problem:** `keyring = "3.6"` without platform features (e.g., `apple-native` on macOS, `linux-native` on Linux) has no credential backend. The crate silently returns `NoEntry` for all reads, making it appear like no key is stored.
-
-**Fix:** Always specify platform features: `keyring = { version = "3.6", features = ["apple-native"] }` on macOS.
-
-**Recommendation:** Rust project scaffolding should include platform-specific dependency notes for common crates with required features.
-
 ## Workflow Observations
 
 - **4 stories, 11 autopilot ticks** — from calibrate to layer gate passed

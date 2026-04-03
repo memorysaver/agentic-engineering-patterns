@@ -1,6 +1,6 @@
 # AEP Skills — Quick Reference
 
-A cheat sheet for all 15 AEP skills. For precise term definitions, see the [Glossary](glossary.md).
+A cheat sheet for all 16 AEP skills. For precise term definitions, see the [Glossary](glossary.md).
 
 ---
 
@@ -39,10 +39,11 @@ CONTROL PLANE (human + AI)              EXECUTION PLANE (agents build)
 
 ### Patterns (Reusable)
 
-| Skill        | When to use                           | Input                                      | Output                                   | Session |
-| ------------ | ------------------------------------- | ------------------------------------------ | ---------------------------------------- | ------- |
-| `/gen-eval`  | Run honest evaluation on any artifact | Artifact to evaluate + dimension selection | Scoring results + findings               | Both    |
-| `/autopilot` | Hands-free autonomous orchestration   | `product-context.yaml` with ready stories  | Continuous dispatch → build → wrap cycle | Main    |
+| Skill                | When to use                           | Input                                          | Output                                     | Session |
+| -------------------- | ------------------------------------- | ---------------------------------------------- | ------------------------------------------ | ------- |
+| `/gen-eval`          | Run honest evaluation on any artifact | Artifact to evaluate + dimension selection     | Scoring results + findings                 | Both    |
+| `/autopilot`         | Hands-free autonomous orchestration   | `product-context.yaml` with ready stories      | Continuous dispatch → build → wrap cycle   | Main    |
+| `/workflow-feedback` | Capture or review process learnings   | Lessons from builds, downstream feedback files | Classified feedback in standardized format | Main    |
 
 ### Project Setup (Run Once)
 
@@ -66,6 +67,8 @@ CONTROL PLANE (human + AI)              EXECUTION PLANE (agents build)
 "Ready to start coding"             → /launch
 "Feature is done, PR merged"        → /wrap
 "What did we learn?"                → /reflect
+"Capture process learnings"         → /workflow-feedback
+"Pull learnings from downstreams"   → /workflow-feedback
 "I want hands-free mode"            → /autopilot
 "How do I use jj?"                  → /jj-ref
 "Set up my environment"             → /onboard
@@ -108,6 +111,18 @@ CONTROL PLANE (human + AI)              EXECUTION PLANE (agents build)
 /reflect → new stories feed back into /dispatch
 ```
 
+### After reflecting on process
+
+```
+/reflect → /workflow-feedback capture → docs updated
+```
+
+### Pull upstream improvements
+
+```
+/workflow-feedback review → approve items → sync-downstream.sh
+```
+
 ### Full autonomous mode
 
 ```
@@ -126,5 +141,5 @@ When synced to downstream projects, skills are prefixed with `aep-`:
 | ------------------------------ | ------------------------------------------ | ------------------ |
 | `product-context`              | envision, map, dispatch, validate, reflect | `sync.sh product`  |
 | `agentic-development-workflow` | design, launch, build, wrap, jj-ref        | `sync.sh workflow` |
-| `patterns`                     | gen-eval, autopilot                        | `sync.sh patterns` |
+| `patterns`                     | gen-eval, autopilot, workflow-feedback     | `sync.sh patterns` |
 | `project-setup`                | onboard, scaffold, testing-guide           | `sync.sh setup`    |
