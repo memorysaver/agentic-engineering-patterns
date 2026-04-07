@@ -48,6 +48,30 @@ Quality standard: **every statement must be convertible into a verification cond
 
 [Things that might be added later but are not part of the current effort. Agents should not build toward these unless they come for free.]
 
+> **Important boundary:** "In Scope" defines what the system does. "Goals" (below) defines how you know it's working. A feature can be in scope but not yet a goal for this layer.
+
+---
+
+## Goals and Non-Goals
+
+### Goals
+
+[Behavior-observable statements. Each must be verifiable by observing the running system. Not aspirations — observable behaviors.
+
+Example: "Poll the issue tracker on a fixed cadence and dispatch work to coding agents" is a goal. "Be a good orchestrator" is not.]
+
+1. [Goal — observable behavior]
+2. [Goal — observable behavior]
+
+### Non-Goals
+
+[Things a reasonable person might expect this product to do, but it will NOT. Each explains why — preventing scope creep and setting correct expectations for downstream agents.
+
+Example: "Rich web UI — this is a CLI-first tool. A web dashboard is a separate product."]
+
+1. [Non-goal — why excluded]
+2. [Non-goal — why excluded]
+
 ---
 
 ## Technical Constraints
@@ -67,6 +91,38 @@ Quality standard: **every statement must be convertible into a verification cond
 ### External Dependencies
 
 [Third-party services this project depends on. For each: what it provides, failure behavior, known limitations.]
+
+---
+
+## Failure Model
+
+What goes wrong and what the system does about it. Agents building this system need to implement these recovery behaviors. Undocumented failure modes become undocumented bugs.
+
+### Failure Classes
+
+| Class  | Examples           | Detection                   | Recovery                      | Escalation                     |
+| ------ | ------------------ | --------------------------- | ----------------------------- | ------------------------------ |
+| [Name] | [What triggers it] | [How the system detects it] | [Automatic recovery behavior] | [When/how a human is notified] |
+
+### Degraded Operation
+
+[What the system can still do when a dependency is down. "Nothing" is a valid answer but must be stated.]
+
+---
+
+## Security Model
+
+### Trust Boundaries
+
+[What is trusted (e.g., "the operator's machine") and what is not (e.g., "user-submitted content"). Draw the line explicitly.]
+
+### Authentication & Authorization
+
+[How users prove identity. How access is controlled. "N/A for MVP" is acceptable but must be stated.]
+
+### Secret Handling
+
+[Where secrets come from, how they're stored, how they're passed to components. Never in plaintext config files.]
 
 ---
 

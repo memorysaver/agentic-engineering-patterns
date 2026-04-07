@@ -4,6 +4,14 @@ Defines the architecture at the module level. Serves two functions: (1) establis
 
 A module boundary drawn wrong costs more to fix than any implementation bug. Review carefully before proceeding to story decomposition.
 
+### Callout Conventions
+
+Use these blockquote markers throughout this document to flag precision points that agents must not miss:
+
+> **Important boundary:** Where a responsibility stops and another begins
+> **Important nuance:** Easy-to-miss detail that changes implementation
+> **Important constraint:** Hard limit that shapes design choices
+
 ---
 
 ## System Overview
@@ -32,6 +40,34 @@ A module boundary drawn wrong costs more to fix than any implementation bug. Rev
 
 ---
 
+## Domain Model
+
+Domain entities that span module boundaries or require precise typing. Module-specific concepts remain in the Modules section above. Each entity has typed fields so implementers in any language know exactly what to build. See `references/symphony-spec-reference.md` Pattern 3 for the standard.
+
+### [Entity Name]
+
+**Purpose**: [One sentence — what this entity represents in the system.]
+
+**Fields**:
+
+| Field    | Type   | Default   | Required | Notes                                        |
+| -------- | ------ | --------- | -------- | -------------------------------------------- |
+| `id`     | string | —         | yes      | Stable across restarts. Derived from [rule]. |
+| `status` | enum   | `pending` | yes      | See state machine if applicable.             |
+
+**Normalization rules**:
+
+- [e.g., "All identifiers are lowercased and slugified"]
+- [e.g., "Replace characters not in [A-Za-z0-9._-] with \_"]
+
+**Invariants**:
+
+- [Conditions that must always hold, e.g., "A completed entity always has a non-null completed_at timestamp"]
+
+[Repeat for each domain entity]
+
+---
+
 ## Interface Contracts
 
 For every module-to-module connection. These will be enforced by automated contract tests in Phase 4. An undefined interface is a guaranteed integration failure.
@@ -43,21 +79,51 @@ For every module-to-module connection. These will be enforced by automated contr
 **Endpoint / Channel**: [Specific API path, queue name, or function signature.]
 
 **Request shape**:
+
 ```
 [Exact data structure — TypeScript types, JSON Schema, or equivalent. Specify required vs optional, types, constraints.]
 ```
 
 **Response shape**:
+
 ```
 [Same specificity as request.]
 ```
 
 **Error contract**:
+
 ```
 [What errors can be returned, their shape, what the caller should do for each.]
 ```
 
 **SLA**: [Expected latency, throughput, availability. "TBD" is acceptable if noted as open question.]
+
+---
+
+## Protocol Sequences
+
+For interface contracts that involve multi-step interactions (handshakes, streaming, request-response chains), document the sequence here. Simple request-response contracts don't need this — use it when the interaction has ordering, state, or timing constraints. See `references/symphony-spec-reference.md` Pattern 5 for the standard.
+
+### [Protocol Name]: [Module A] <> [Module B]
+
+**Trigger**: [What initiates this protocol]
+
+**Sequence**:
+
+1. [Module A] sends [message type]:
+   ```json
+   { "type": "init", "payload": { "..." } }
+   ```
+2. [Module B] responds with [message type]:
+   ```json
+   { "type": "ack", "session_id": "..." }
+   ```
+3. [Steady-state interaction description]
+
+**Timeout behavior**: [What happens if step N takes too long]
+**Error behavior**: [What happens if step N fails]
+
+> **Important nuance:** [Easy-to-miss detail about this protocol]
 
 ---
 
@@ -109,8 +175,8 @@ Show which module handles each step, what data passes between them, where state 
 
 During story decomposition, agents may discover boundary or contract issues. Collected here, reviewed in batch.
 
-| Proposed By | Module Affected | Proposed Change | Reasoning | Status |
-|------------|----------------|-----------------|-----------|--------|
-| | | | | pending/accepted/rejected |
+| Proposed By | Module Affected | Proposed Change | Reasoning | Status                    |
+| ----------- | --------------- | --------------- | --------- | ------------------------- |
+|             |                 |                 |           | pending/accepted/rejected |
 
 Trigger Architecture Review when: 3+ pending amendments, or any single amendment affects an interface contract.

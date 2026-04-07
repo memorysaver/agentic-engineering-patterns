@@ -57,6 +57,20 @@ If this story touches a module boundary:
 
 ---
 
+## Implementation Cheat Sheet
+
+[Optional. Intentionally redundant summary of everything an implementer agent needs from the Context Document and System Map, copied here so the agent doesn't need to cross-reference. Include only when the story touches 2+ modules or has complex interface obligations.
+
+This section trades DRY for agent effectiveness — a coding agent implementing this story can work from this section alone without searching other documents.]
+
+- **Stack**: [relevant subset]
+- **Module**: [name] — [one-line responsibility]
+- **Key types**: [TypeScript/schema definitions the agent will need]
+- **Adjacent interfaces**: [endpoints this story calls or implements, with shapes]
+- **Conventions**: [naming, file structure, error handling patterns in this codebase]
+
+---
+
 ## Files Likely Affected
 
 [Optional. Helps orchestrator detect conflicts between parallel stories.]

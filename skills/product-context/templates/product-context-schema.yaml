@@ -46,6 +46,11 @@ product:
   persona:
     description: "Concrete user description with context, skill level, tools, constraints"
     jtbd: "When [situation], I want to [motivation], so I can [outcome]"
+  goals: # behavior-observable statements, verifiable by observing the running system
+    - "e.g., Poll the issue tracker on a fixed cadence and dispatch work with bounded concurrency"
+  non_goals: # things the product deliberately will NOT do, with reasoning
+    - statement: "e.g., Rich web UI"
+      reasoning: "This is a CLI-first tool. A web dashboard is a separate product."
   mvp_boundary:
     in_scope:
       - "Specific capability (testable)"
@@ -85,6 +90,22 @@ product:
       description: "What the user does" # User-centric verb phrase
       order: 1 # Sequence in journey (backbone left-to-right)
       layer_introduced: 0 # Which layer first enables this activity
+  # ── FAILURE MODEL ──
+  # Undocumented failure modes become undocumented bugs.
+  failure_model:
+    classes:
+      - name: "e.g., External Service Failures"
+        examples: "API timeout, non-200 status, malformed response"
+        detection: "HTTP status code checks, response schema validation"
+        recovery: "Retry with exponential backoff, skip dispatch for this tick"
+        escalation: "Log warning, continue service, alert operator after 3 consecutive failures"
+    degraded_operation: "What the system can still do when a dependency is down"
+  # ── SECURITY MODEL ──
+  # Trust boundaries must be explicit. Implicit trust assumptions cause the worst bugs.
+  security_model:
+    trust_boundaries: "What is trusted vs. what is not"
+    auth: "Authentication and authorization approach (or 'N/A for MVP')"
+    secret_handling: "Where secrets come from, how stored, how passed to components"
   success_criteria:
     functional:
       - "Specific, testable condition"
@@ -110,6 +131,7 @@ product:
 architecture:
   style: "e.g., modular monolith, microservices"
   overview: "2-3 sentences on structure and why"
+  technical_spec: null # optional path to standalone technical specification document (e.g., "docs/technical-spec.md")
   modules:
     - name: <module-name>
       responsibility: "What this module does"
@@ -121,6 +143,39 @@ architecture:
       technology: null # null = default stack
       key_concepts: # domain objects, patterns, abstractions implementers need
         - "e.g., tokens, sessions, RBAC roles"
+  # ── DOMAIN MODEL ──
+  # Typed entity definitions for cross-cutting domain objects.
+  # Complements per-module key_concepts with precise schemas when entities span module boundaries.
+  domain_model:
+    - name: <entity-name>
+      purpose: "One sentence — what this entity represents"
+      fields:
+        - name: id
+          type: string
+          default: null
+          required: true
+          notes: "Stable identifier. Derived from [rule]."
+      normalization_rules:
+        - "e.g., Identifiers lowercased and slugified"
+      invariants:
+        - "e.g., A completed entity always has a non-null completed_at"
+  # ── PROTOCOL SEQUENCES ──
+  # Multi-step interaction contracts (handshakes, streaming, stateful exchanges).
+  # Only needed when interface contracts have ordering, state, or timing constraints.
+  protocol_sequences:
+    - name: <protocol-name>
+      participants: ["module-a", "module-b"]
+      trigger: "What initiates this protocol"
+      steps:
+        - sender: module-a
+          message_type: "init"
+          timeout_ms: 5000
+          payload_example: null # optional illustrative JSON payload (e.g., '{"type": "init", "params": {...}}')
+        - sender: module-b
+          message_type: "ack"
+          payload_example: null
+      error_behavior: "What happens if a step fails"
+      timeout_behavior: "What happens if a step takes too long"
   interfaces:
     - from: <module>
       to: <module>

@@ -45,6 +45,24 @@ Produce a **System Map** (see `templates/system-map.md`) from the Context Docume
 
 Write the system map to the `architecture` section of `product-context.yaml`.
 
+### When to Produce a Technical Specification
+
+If the System Map reveals any of these conditions, suggest producing a Technical Specification (see `templates/technical-spec.md`) before proceeding to story decomposition:
+
+- 3+ interface contracts require multi-step protocol sequences
+- The system has 2+ distinct state machines
+- There are explicit failure classes with different recovery behaviors
+- Trust boundaries cross module lines
+
+The System Map defines WHAT the modules are and HOW they connect. The Technical Spec defines HOW those connections behave under all conditions (success, failure, timeout, recovery). Write the Technical Spec as a standalone document and reference it from the architecture section:
+
+```yaml
+architecture:
+  technical_spec: "docs/technical-spec.md"
+```
+
+See `templates/references/symphony-spec-reference.md` for the exemplar standard.
+
 ### Human Review Gate
 
 **The user must review and approve the System Map.** Architecture decisions have the highest error cost in the entire pipeline. Present the map and explicitly ask for approval before proceeding to story decomposition.
