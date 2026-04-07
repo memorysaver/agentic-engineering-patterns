@@ -121,13 +121,22 @@ A dedicated agent receives all stories and produces:
 
 Write all stories to the `stories` section of `product-context.yaml`.
 
-### UI Polish Layers (`.5` Calibration Layers)
+### Alignment Layers (`.5` Layers)
 
-After defining each implementation layer, if the layer contains UI-facing stories (stories where `module` = web, or activity involves user-facing pages like `signup`, `register-daemon`, `configure-guardrails`, `review-audit`), consider adding a `.5` calibration layer after it.
+After defining each implementation layer, review `calibration.plan` from `product-context.yaml` (if populated by `/envision`) or consider which quality dimensions may need human calibration:
 
-- **Layer 0.5** (first `.5` layer): Establishes the design system. Run `/calibrate` before dispatching `.5` stories to generate a design brief and capture design decisions into `design-context.yaml`.
-- **Layer 1.5, 2.5** (subsequent `.5` layers): Extend the design system for NEW UI patterns only. `/calibrate` detects existing `design-context.yaml` and generates a focused brief covering only new patterns.
-- **Opt-in, not automatic.** The `/reflect` step after each layer explicitly asks: "Does this layer need a UI polish pass?" The human decides. But the workflow makes the question unavoidable.
+- **UI-facing stories** → consider visual-design and/or copy-tone calibration
+- **New API endpoints** → consider api-surface calibration
+- **New domain entities** → consider data-model calibration
+- **First user-testable layer** → consider scope-direction calibration
+
+**For heavy dimensions** (visual-design, ux-flow, copy-tone): plan a `.5` alignment layer with stories tagged `calibration_type: <dimension>`. Run `/calibrate <dimension>` before dispatching to generate a brief and capture decisions into `calibration/<type>.yaml`.
+
+**For light dimensions** (api-surface, data-model, scope-direction, performance-quality): plan a `/calibrate <dimension>` checkpoint BEFORE dispatching the relevant stories in the next integer layer. No `.5` layer needed — decisions update `product-context.yaml` directly.
+
+- **Layer 0.5** (first `.5` layer): Typically establishes the visual design system. Run `/calibrate visual-design` to create `calibration/visual-design.yaml`.
+- **Layer 1.5, 2.5** (subsequent `.5` layers): Extend calibration to new patterns. `/calibrate` detects existing calibration artifacts and generates focused briefs covering only the delta.
+- **Opt-in, not automatic.** The `/reflect` step after each layer classifies calibration needs by dimension. The human decides which dimensions need attention. But the workflow makes the question unavoidable.
 
 ### Feedback Loop
 

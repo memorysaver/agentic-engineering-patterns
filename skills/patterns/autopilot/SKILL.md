@@ -253,11 +253,12 @@ Follow the 7-step tick protocol documented in `references/tick-protocol.md`.
 ⑥ DISPATCH NEW WORK → if capacity available:
    - Read product-context.yaml, run dispatch scoring logic (steps 1-3 from /dispatch)
    - available_slots = concurrency_limit - active_workspace_count
-   - LAYER GATE: After completing all stories in a layer, check if a `.5` polish
+   - LAYER GATE: After completing all stories in a layer, check if a `.5` alignment
      layer exists for this layer. If yes, dispatch `.5` layer stories before
      advancing to the next integer layer.
-     - Verify `design-context.yaml` exists before dispatching `.5` stories
-     - If missing → add escalation requesting the user to run `/calibrate`
+     - Verify calibration artifacts exist before dispatching `.5` stories
+       (check `calibration/<type>.yaml` or legacy `design-context.yaml`)
+     - If missing → add escalation requesting the user to run `/calibrate <type>`
    - For top-scored ready story:
      - Check design escalation conditions (see below)
      - If needs design → add escalation, PAUSE autopilot

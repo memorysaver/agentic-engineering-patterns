@@ -64,7 +64,18 @@ Working behavior that needs improvement — or existing stories that need to mov
 - **Action:** Create a new story in the next layer with `status: pending`, add to the `stories` section of `product-context.yaml`. Alternatively, promote an existing story from a later layer to an earlier one if learning shows it's needed sooner.
 - **Update:** Include appropriate layer assignment and dependencies
 
-**Sub-type — Polish:** UI/UX quality gaps in shipped features (generic layouts, missing brand identity, unpolished interactions). When UI observations surface, default to creating stories in the next `.5` layer (e.g., 0.5, 1.5, 2.5) rather than the next integer layer. Polish stories get dispatched with design context from `design-context.yaml` — run `/calibrate` before dispatching `.5` layers if no design context exists.
+**Sub-type — Calibration:** A gap between "works correctly" and "feels right" in any quality dimension. The code works as specified and the spec was correct, but the result doesn't match what the human actually wanted.
+
+Classification questions for calibration observations:
+
+1. Does the code work as specified? (Yes → not a bug)
+2. Was the spec correct? (Yes → not a discovery)
+3. Does the result feel right? (No → calibration need)
+4. What dimension feels off? (visual-design / ux-flow / api-surface / data-model / scope-direction / copy-tone / performance-quality)
+
+For **heavy** dimensions (visual-design, ux-flow, copy-tone): create stories in the next `.5` alignment layer with `calibration_type: <dimension>`. Run `/calibrate <dimension>` before dispatching.
+
+For **light** dimensions (api-surface, data-model, scope-direction, performance-quality): route to `/calibrate <dimension>` directly — may create stories in next integer layer or update product context inline. No `.5` layer needed.
 
 ### Discovery
 
@@ -174,14 +185,16 @@ Based on the classified feedback, update `product-context.yaml` directly:
 
 Based on the reflection, recommend the next step:
 
-| Feedback type            | Next action                                                           |
-| ------------------------ | --------------------------------------------------------------------- |
-| Only bugs                | Fix stories added to YAML → `/dispatch` → `/design` → `/build`        |
-| Refinements              | Next layer stories added to YAML → `/dispatch` → `/design` → `/build` |
-| Discovery (product)      | `/envision` to update assumptions                                     |
-| Discovery (architecture) | `/map` to update system map                                           |
-| Opportunity shift        | `/envision` Phase 0 (re-validate)                                     |
-| All clear                | Next layer or ship to production                                      |
+| Feedback type            | Next action                                                             |
+| ------------------------ | ----------------------------------------------------------------------- |
+| Only bugs                | Fix stories added to YAML → `/dispatch` → `/design` → `/build`          |
+| Refinements              | Next layer stories added to YAML → `/dispatch` → `/design` → `/build`   |
+| Discovery (product)      | `/envision` to update assumptions                                       |
+| Discovery (architecture) | `/map` to update system map                                             |
+| Opportunity shift        | `/envision` Phase 0 (re-validate)                                       |
+| Calibration (heavy)      | `.5` alignment stories created → `/calibrate <dimension>` → `/dispatch` |
+| Calibration (light)      | `/calibrate <dimension>` (inline) → stories may update → `/dispatch`    |
+| All clear                | Next layer or ship to production                                        |
 
 ---
 
@@ -235,4 +248,5 @@ Based on the reflection outcome, proceed to one of:
 - `/dispatch` — pick and execute new stories (bugs or refinements enter the dispatch queue)
 - `/envision` — update product assumptions
 - `/map` — update system architecture
+- `/calibrate` — recalibrate a specific quality dimension (visual design, UX flow, API surface, etc.)
 - Next layer execution cycle

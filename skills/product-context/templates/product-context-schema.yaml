@@ -1,16 +1,17 @@
 # Product Context Schema v1
 #
 # Single source of truth for the entire product.
-# Created by /envision and /map, updated by /dispatch, /build, /wrap, /reflect.
+# Created by /envision and /map, updated by /dispatch, /build, /wrap, /reflect, /calibrate.
 # Committed to git — version history tracks how the product evolves.
 #
 # Sections are populated incrementally:
-#   /envision → opportunity, product
-#   /map      → architecture, stories, topology, layer_gates, cost
-#   /dispatch → stories[].status, stories[].openspec_change (per story)
-#   /build    → .dev-workflow/signals/status.json (story_status, pr_url, cost_usd)
-#   /wrap     → stories[].status, stories[].completed_at, stories[].pr_url, stories[].cost_usd (read from signals)
-#   /reflect  → changelog, stories (new), architecture (amendments)
+#   /envision   → opportunity, product (incl. quality_dimensions), calibration.plan
+#   /map        → architecture, stories, topology, layer_gates, cost
+#   /calibrate  → calibration.history, inline updates to architecture/product sections
+#   /dispatch   → stories[].status, stories[].openspec_change (per story)
+#   /build      → .dev-workflow/signals/status.json (story_status, pr_url, cost_usd)
+#   /wrap       → stories[].status, stories[].completed_at, stories[].pr_url, stories[].cost_usd (read from signals)
+#   /reflect    → changelog, stories (new), architecture (amendments)
 
 schema: v1
 project: <project-name>
@@ -124,6 +125,35 @@ product:
     - challenge: "What was challenged"
       angle: product_viability # product_viability | technical_feasibility | scope_control
       resolution: "How it was resolved"
+  # ── QUALITY DIMENSIONS ──
+  # Dimensions where human judgment is needed that agents cannot provide.
+  # Declared during /envision, checked by /reflect, executed by /calibrate.
+  # Not every dimension needs calibration — only those where "correct but not right" is likely.
+  quality_dimensions:
+    - dimension: visual-design # visual-design | ux-flow | api-surface | data-model | scope-direction | copy-tone | performance-quality
+      criticality: high # high | medium | low
+      first_calibration_layer: 0.5
+      rationale: "Why this dimension needs human calibration"
+
+# ─── CALIBRATION (/envision + /calibrate) ────────────────────
+# Tracks which quality dimensions need human alignment checkpoints
+# and the history of calibration decisions.
+# Plan populated by /envision (refined by /map), history populated by /calibrate.
+# .5 layers are "human alignment layers" — the team pauses agent execution
+# to recalibrate intent across one or more quality dimensions.
+calibration:
+  plan:
+    - layer: 0.5
+      dimensions: ["visual-design"] # from product.quality_dimensions
+      trigger: "Condition that activates this calibration"
+  history:
+    - dimension: visual-design
+      calibrated_at: <ISO date>
+      calibrated_from_layer: 0.5
+      mode: establishment # establishment | extension
+      artifact_path: "calibration/visual-design.yaml" # null for inline (light) calibrations
+      sections_updated: [] # e.g., ["architecture.interfaces"] for inline calibrations
+      summary: "What was decided"
 
 # ─── ARCHITECTURE (/map Step 1) ──────────────────────────────
 # Module boundaries and interface contracts. A wrong boundary costs
@@ -237,6 +267,7 @@ stories:
     layer: 0
     module: <module-name>
     activity: null # user activity from product.activities (null for infrastructure stories)
+    calibration_type: null # visual-design | ux-flow | api-surface | data-model | scope-direction | copy-tone | performance-quality (null for non-calibration stories)
     slice: 1 # execution slice within layer (parallel batch)
     status: pending
     priority: critical # critical | high | medium | low

@@ -1,0 +1,38 @@
+# ux-flow calibration schema
+# Stored at calibration/ux-flow.yaml in projects.
+# Authoritative UX flow reference for all future journey/navigation work.
+
+schema: v1
+project: "" # project name
+calibrated_at: "" # ISO date of last calibration
+calibrated_from_layer: "" # which layer triggered this calibration
+
+journey:
+  # Ordered list of activities as calibrated — may differ from
+  # product.activities if the calibration reordered, merged, or split steps.
+  activities:
+    - id: "" # activity slug
+      name: "" # human-readable name
+      description: "" # what the user does
+      order: 1
+      changed_from: null # if reordered/renamed, what it was before (null if unchanged)
+  transitions:
+    - from: "" # activity id
+      to: "" # activity id
+      feel: "instant" # instant | guided | deliberate
+      notes: "" # how this transition should feel and why
+
+page_map:
+  - activity: "" # activity slug
+    pages:
+      - route: "" # URL path
+        purpose: "" # what this page accomplishes
+        entry_points: [] # how user arrives here (navigation, redirect, deep link)
+        exit_points: [] # where user goes next
+        density: "balanced" # sparse | balanced | dense
+        mobile_behavior: "adapt" # adapt | desktop-only | mobile-specific
+
+decisions:
+  - question: "" # what was decided
+    answer: "" # the human's decision
+    rationale: "" # why

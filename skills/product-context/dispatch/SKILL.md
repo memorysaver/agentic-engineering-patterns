@@ -334,23 +334,30 @@ Extracted from `product-context.yaml`:
 - Other module internals — use dependency_outputs above
 ```
 
-#### Design Context (for `.5` polish layers)
+#### Calibration Context (for `.5` alignment layers and calibrated stories)
 
-If `story.layer` is a `.5` layer (e.g., 0.5, 1.5, 2.5) or the story has `design_context: true`:
+For stories with `calibration_type` set, or stories in `.5` alignment layers:
 
-1. **Include full `design-context.yaml`** — palette, typography, spacing, layout, component patterns, brand signals
-2. **Include reference design files** from `docs/design-references/` matching the story's page (by story activity or title)
-3. **Include design constraint directive:**
+**Heavy calibrations** (visual-design, ux-flow, copy-tone):
+
+1. **Include the calibration artifact** — `calibration/<type>.yaml` (e.g., `calibration/visual-design.yaml`)
+2. **For visual-design:** Also include reference design files from `docs/design-references/` matching the story's page (by story activity or title)
+3. **Include calibration constraint directive:**
 
    ```markdown
-   This story is part of a visual design calibration layer.
-   Follow the design system in design-context.yaml strictly.
-   Use ONLY colors, fonts, and spacing defined there.
-   Reference docs/design-references/ for layout guidance.
-   Do not introduce new visual tokens not in design-context.yaml.
+   This story has calibrated <dimension> decisions.
+   Follow the calibration artifact in calibration/<type>.yaml strictly.
+   Do not introduce new [visual tokens / flow patterns / voice patterns]
+   not defined in the calibration artifact.
    ```
 
-If `design-context.yaml` does not exist, **do not dispatch** `.5` layer stories — instruct the user to run `/calibrate` first.
+If the required `calibration/<type>.yaml` does not exist, **do not dispatch** — instruct the user to run `/calibrate <type>` first.
+
+**Light calibrations** (api-surface, data-model, scope-direction, performance-quality):
+
+No additional context needed — decisions are already in `product-context.yaml` sections (architecture, product) which flow through the stable prefix (Part 1) and story-specific payload (Part 2).
+
+**Backward compatibility:** For `.5` layer stories without `calibration_type` set, default to visual-design. Check both `calibration/visual-design.yaml` and `design-context.yaml` (legacy path).
 
 ### Assembly Rules
 

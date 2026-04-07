@@ -46,7 +46,7 @@ docs/design-references/
 └── notes.md              <- human notes on what they liked and why
 ```
 
-These files are committed to Git and referenced in `design-context.yaml`. Agents read them as visual guidance — they translate the reference into the project's component system, not copy code verbatim.
+These files are committed to Git and referenced in `calibration/visual-design.yaml`. Agents read them as visual guidance — they translate the reference into the project's component system, not copy code verbatim.
 
 ## Format Note
 

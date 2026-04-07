@@ -40,15 +40,17 @@ jj log -r 'heads(::main ~ ::main@origin)' --no-graph -T 'description.first_line(
 
 Push if needed: `jj git push --bookmark main`
 
-### 3. Verify design context for `.5` layer stories
+### 3. Verify calibration context for `.5` layer stories
 
-If the story belongs to a `.5` layer (0.5, 1.5, 2.5):
+If the story belongs to a `.5` layer (0.5, 1.5, 2.5) or has `calibration_type` set:
 
 ```bash
-[ -f design-context.yaml ] && echo "design context exists" || echo "MISSING"
+# Check for calibration artifact (new path first, then legacy)
+type="${calibration_type:-visual-design}"
+[ -f "calibration/${type}.yaml" ] || [ -f design-context.yaml ] && echo "calibration context exists" || echo "MISSING"
 ```
 
-**If `design-context.yaml` does not exist — ABORT.** The user must run `/calibrate` first to establish the design system before `.5` layer stories can be launched. Agents dispatched without design context will reproduce the same generic UI that created the need for polish in the first place.
+**If the calibration artifact does not exist — ABORT.** The user must run `/calibrate <type>` first. Agents dispatched without calibration context will reproduce the same generic output that created the need for alignment in the first place.
 
 ---
 

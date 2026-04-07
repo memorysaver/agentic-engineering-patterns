@@ -1,0 +1,30 @@
+# copy-tone calibration schema
+# Stored at calibration/copy-tone.yaml in projects.
+# Authoritative voice and copy reference for all future UI text.
+
+schema: v1
+project: "" # project name
+calibrated_at: "" # ISO date of last calibration
+calibrated_from_layer: "" # which layer triggered this calibration
+
+voice:
+  personality: "" # e.g., "confident but not cocky, technical but accessible"
+  references: [] # products whose voice to emulate
+  anti_references: [] # products whose voice to avoid
+
+patterns:
+  headings: "" # style guide for headings (e.g., "sentence case, no articles, max 4 words")
+  buttons: "" # label conventions (e.g., "verb + noun: 'Create Project', max 3 words")
+  errors: "" # error message pattern (e.g., "what went wrong + how to fix it, matter-of-fact tone")
+  empty_states: "" # empty state pattern (e.g., "instructional: 'No items yet. Create one to get started.'")
+  confirmations: "" # success message pattern (e.g., "brief and specific: 'Project created.'")
+  placeholders: "" # input placeholder conventions (e.g., "example values, not instructions")
+
+jargon:
+  approach: "embrace" # embrace | translate | mixed
+  notes: "" # when to use technical terms vs plain language
+
+glossary:
+  - term: "" # the canonical term
+    use: "" # when to use this term
+    avoid: "" # alternatives to avoid (e.g., "Don't say 'delete', say 'remove'")

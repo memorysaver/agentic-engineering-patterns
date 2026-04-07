@@ -84,11 +84,26 @@ Continue the conversation from Phase 0, now focused on product specifics. Lines 
 - **MVP boundary:** What is the single most important end-to-end journey the user can complete? What is explicitly excluded, even if adjacent and tempting?
 - **User activities (story map backbone):** What does the user DO, step by step, in the core journey? Map the user's activities as a left-to-right narrative. Each activity is a verb phrase from the user's perspective: "Authenticate", "Create Profile", "Generate Content", "Track Progress", "Download Output". These form the backbone of the story map — the horizontal axis that layers cut across. The activities should read as a coherent sentence: "The user authenticates, then creates a profile, then generates content, then tracks progress, then downloads the output." This comes BEFORE layer definitions — build the backbone first, then draw release lines across it.
 - **Technical constraints:** Non-negotiable stack choices, infrastructure requirements, hard dependencies.
+- **Quality dimensions:** Which dimensions of this product require human judgment that agents cannot provide? Not every dimension needs calibration — only those where "correct but not right" is likely. Common dimensions:
+  - **Visual design** — brand identity, color, typography, layout (nearly always needed for user-facing products)
+  - **UX flow** — user journey, information architecture, page transitions
+  - **API surface** — endpoint naming, grouping, error contracts (when external consumers exist)
+  - **Data model** — entity naming, field semantics (when domain language matters)
+  - **Copy/tone** — brand voice, error messages, empty states
+  - **Scope/direction** — mid-build intent correction (common when PM and builder are different people)
+  - **Performance/quality** — latency thresholds, retry behavior, caching strategy
+
+  For each declared dimension: what layer is it most likely to first need calibration? Why?
+
 - **Layered MVP contract:** Layer 0 is the walking skeleton — a horizontal slice across the activity backbone, picking the thinnest story from each activity. Each subsequent layer adds capabilities. Later layers may introduce new activities that extend the backbone to the right. Define what the user can accomplish at each layer.
+
+  `.5` layers are **human alignment layers**, not just "UI polish." A `.5` layer is any point where the team pauses agent execution to calibrate human intent across one or more quality dimensions. Layer 0.5 might be visual design only. Layer 1.5 might be visual design extension + copy tone. The `calibration.plan` maps layers to expected calibration checkpoints.
 
 ### Stage 2: Structure
 
 Organize everything into the **Context Document** (see `templates/context-document.md`). Present the draft to the user.
+
+Populate `product.quality_dimensions` from the diverge conversation — for each dimension the user identified as needing human calibration, record the dimension, criticality, first calibration layer, and rationale.
 
 Quality standard: **every statement must be convertible into a verification condition.** "The system should be performant" fails. "API p95 latency < 200ms" passes. If a statement cannot be tested, it is not precise enough for agents to act on.
 
@@ -102,6 +117,8 @@ Hand the Context Document to agents that did not participate in the conversation
 
 Each reviewer produces a challenge list. The user resolves each item — either by refining the document or marking it as an explicit `open_question` with a default assumption and a revisit trigger.
 
+> Note: The stress test is itself a form of pre-build calibration — independent agents check alignment before building. Post-build calibration (`/calibrate`) extends this to dimensions that only become visible after agents have produced output: visual design, UX flow, naming, tone.
+
 Record the stress test results in `product.stress_test` within the YAML.
 
 ### Phase 1 Output
@@ -111,6 +128,8 @@ Write the finalized Context Document to the `product` section of `product-contex
 On first run — create `product-context.yaml` with `opportunity` + `product` sections, using `templates/product-context-schema.yaml` as the structural reference.
 
 On subsequent runs — read the existing YAML, update the `opportunity` and/or `product` sections, and preserve all other sections (e.g., `architecture`, `stories`, `topology`).
+
+If quality dimensions were declared, also write the initial `calibration.plan` section — mapping each dimension to the layer where calibration is expected. This plan is refined by `/map` (which has concrete layer definitions) and executed by `/calibrate`.
 
 ### Before Committing: Validate YAML
 

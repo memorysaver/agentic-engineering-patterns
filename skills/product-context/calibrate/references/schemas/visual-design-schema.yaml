@@ -1,0 +1,81 @@
+# visual-design calibration schema
+# Stored at calibration/visual-design.yaml in projects.
+# Authoritative design reference for all future UI work.
+
+schema: v1
+project: "" # project name
+calibrated_at: "" # ISO date of last calibration
+calibrated_from_layer: "" # which .5 layer triggered this calibration
+
+direction:
+  name: "" # chosen direction name
+  description: "" # 1-2 sentence description of the visual direction
+  references: [] # list of reference product names
+
+palette:
+  light:
+    background: "oklch(...)"
+    foreground: "oklch(...)"
+    primary: "oklch(...)"
+    primary-foreground: "oklch(...)"
+    secondary: "oklch(...)"
+    secondary-foreground: "oklch(...)"
+    accent: "oklch(...)"
+    accent-foreground: "oklch(...)"
+    muted: "oklch(...)"
+    muted-foreground: "oklch(...)"
+    destructive: "oklch(...)"
+    border: "oklch(...)"
+    ring: "oklch(...)"
+  dark:
+    background: "oklch(...)"
+    foreground: "oklch(...)"
+    primary: "oklch(...)"
+    primary-foreground: "oklch(...)"
+    secondary: "oklch(...)"
+    secondary-foreground: "oklch(...)"
+    accent: "oklch(...)"
+    accent-foreground: "oklch(...)"
+    muted: "oklch(...)"
+    muted-foreground: "oklch(...)"
+    destructive: "oklch(...)"
+    border: "oklch(...)"
+    ring: "oklch(...)"
+
+typography:
+  font_family_sans: "" # e.g. "Inter Variable"
+  font_family_mono: "" # e.g. "JetBrains Mono"
+  heading_weight: 600
+  body_weight: 400
+  scale_notes: "" # any adjustments to default Tailwind scale
+
+spacing:
+  rhythm: "4px"
+  page_padding: "1.5rem"
+  section_gap: "2rem"
+  card_padding: "1.5rem"
+
+layout:
+  max_width: "1200px"
+  nav_style: "top" # "top" | "sidebar"
+  default_mode: "dark" # "light" | "dark"
+
+components:
+  border_radius: "0.625rem"
+  button:
+    style_notes: "" # description of button treatment
+  card:
+    style_notes: "" # description of card treatment
+  input:
+    style_notes: "" # description of input treatment
+  # Extension mode: add new component patterns here as needed
+  # e.g. data_table, terminal, status_indicator
+
+brand:
+  tagline: ""
+  visual_signals: [] # list of visual cues that communicate the brand
+
+reference_designs:
+  - page: "" # page name (e.g. "landing", "auth", "dashboard")
+    file_path: "" # relative path to reference file in docs/design-references/
+    notes: "" # what makes this design work

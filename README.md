@@ -116,9 +116,9 @@ Context Document                Story Graph                     shift → re-env
                     │
                     ├─── integer layer ──► /design → /launch → /build → /wrap
                     │
-                    └─── .5 polish layer ──► /calibrate → human designs
-                                               → /calibrate capture
-                                               → /dispatch → /launch → /build → /wrap
+                    └─── .5 alignment layer ──► /calibrate → human aligns
+                                                  → /calibrate capture
+                                                  → /dispatch → /launch → /build → /wrap
 ```
 
 All sections live in one `product-context.yaml` file — opportunity, product, architecture, stories (with state machine), topology, layer gates, cost tracking, and a semantic changelog.
@@ -205,21 +205,32 @@ The workflow is a loop, not a line. After shipping features, `/reflect` classifi
      │  │  │  │  │           /reflect
      ▼  ▼  ▼  ▼  ▼
   Each feedback type routes to the right phase.
+  "Polish" is now "Calibration" — covers visual design,
+  UX flow, API surface, data model, copy/tone, scope,
+  and performance quality dimensions.
   The product context evolves. The cycle continues.
 ```
 
-### UI Polish Layers
+### Human Alignment Layers
 
-Agents build **functional** UI but cannot judge **visual design quality**. After each implementation layer, an optional `.5` polish layer addresses this structural gap:
+Agents build to spec, but specs are lossy compressions of human intent. After each implementation layer, optional `.5` alignment layers let the human recalibrate what "right" means across any quality dimension:
 
 ```
 Layer 0 (walking skeleton)
-  → Layer 0.5 (UI polish: /calibrate → design brief → human explores → capture)
+  → /calibrate visual-design → human explores with design tools → capture
+  → Layer 0.5 (alignment: implement with calibrated design context)
 Layer 1 (core features)
-  → Layer 1.5 (UI polish: extend design system for new patterns)
+  → /calibrate api-surface   → 30-min conversation → updates product-context.yaml
+  → /calibrate copy-tone     → establish brand voice → calibration/copy-tone.yaml
+  → Layer 1.5 (alignment: extend design system + apply voice)
 ```
 
-The `/calibrate` skill generates a design brief from `product-context.yaml`, the human explores with vibe design tools (Stitch, Pencil.dev), then `/calibrate capture` records decisions into `design-context.yaml` — the authoritative visual reference that agents follow when implementing `.5` layer stories.
+The `/calibrate` skill supports 7 dimensions — **visual-design**, **ux-flow**, **api-surface**, **data-model**, **scope-direction**, **copy-tone**, **performance-quality** — split into two classes:
+
+- **Heavy** (visual-design, ux-flow, copy-tone): external exploration, standalone YAML artifacts in `calibration/`
+- **Light** (api-surface, data-model, scope-direction, performance-quality): 30-60 min conversation, updates `product-context.yaml` directly
+
+Quality dimensions are declared during `/envision` and checked by `/reflect` after each layer.
 
 ### Institutional Memory
 
@@ -279,13 +290,15 @@ One command. Autopilot dispatches, launches, monitors, reviews, merges, and wrap
 
 Classify feedback, update the product context, plan the next iteration.
 
-**UI looks generic? Calibrate the design:**
+**Something feels off? Calibrate:**
 
 ```
-/calibrate  →  human explores  →  /calibrate capture
+/calibrate visual-design    → design brief → external tools → /calibrate capture
+/calibrate api-surface      → conversation → updates product-context.yaml
+/calibrate scope-direction  → conversation → updates product-context.yaml
 ```
 
-Generate a design brief, explore with vibe design tools, capture decisions into `design-context.yaml`.
+Generate a dimension-specific brief, explore or discuss, capture decisions for agents to follow.
 
 ## All Skills
 
@@ -294,7 +307,7 @@ Generate a design brief, explore with vibe design tools, capture decisions into 
 | `/envision`  | product-context              | Opportunity brief + context document                     |
 | `/map`       | product-context              | System map + story graph + agent topology                |
 | `/dispatch`  | product-context              | Pick next story + create OpenSpec change                 |
-| `/calibrate` | product-context              | Design brief + capture decisions for `.5` polish layers  |
+| `/calibrate` | product-context              | Human alignment checkpoint for any quality dimension     |
 | `/reflect`   | product-context              | Classify feedback + update context                       |
 | `/onboard`   | project-setup                | Verify tools + install plugins                           |
 | `/scaffold`  | project-setup                | Scaffold monorepo + initialize OpenSpec                  |
@@ -313,7 +326,8 @@ Generate a design brief, explore with vibe design tools, capture decisions into 
 - [Autonomous Loop](docs/autonomous-loop.md) — how `/autopilot` orchestrates the full cycle
 - [Generator/Evaluator Data Flow](docs/gen-eval-data-flow.md) — the three tracking systems and signal protocol
 - [Release Line Adjustments](docs/release-line-adjustments.md) — when and how to re-slice layers
-- [Design Calibration Workflow](docs/design-calibration-workflow.md) — the `/calibrate` skill and `.5` polish layer pattern
+- [Design Calibration Workflow](docs/decisions/design-calibration-workflow.md) — the original visual-design `/calibrate` skill
+- [Generalized Calibration Workflow](docs/decisions/generalized-calibration-workflow.md) — multi-dimension `/calibrate` and `.5` alignment layers
 - [AEP v2 Lesson Learning](docs/aep-v2-lesson-learning.md) — structural improvements from Layer 0 post-mortem
 
 ## Syncing Skills to Your Project
