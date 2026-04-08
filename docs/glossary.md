@@ -132,6 +132,14 @@ The architectural blueprint produced by `/map` Step 1. Contains **Modules** with
 
 See also: **Module**, **Interface Contract**
 
+### User Story Map
+
+The visual structure that organizes all AEP work, based on [Jeff Patton's User Story Mapping](https://www.jpattonassociates.com/user-story-mapping/). Read left-to-right for the user journey (**Activity Backbone**), top-to-bottom for enrichment (**Layers**). Within each layer, **Waves** group stories that can run in parallel. `.5` **Alignment Layers** insert human calibration checkpoints between integer build layers. **Release Lines** cut horizontally across the map to define shippable increments.
+
+**Where it appears:** README.md (full ASCII diagram); the structure is implicit in `product-context.yaml` via `product.activities` (columns), `stories[].layer` (rows), and `stories[].slice` (waves).
+
+See also: **Activity Backbone**, **Layer**, **Execution Slice (Wave)**, **Story**, **Alignment Layer**, **Release Line**
+
 ---
 
 ## Execution / Workflow

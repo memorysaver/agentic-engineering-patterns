@@ -82,6 +82,108 @@ The workflow separates **thinking** from **doing**:
 
 **Agents don't talk to each other.** They communicate through structured artifacts — context documents, story specs, interface contracts, signal files. The harness coordinates everything. This is a production system design, not a chatroom-style agent swarm.
 
+## The Story Map
+
+AEP organizes all work as a [Jeff Patton story map](https://www.jpattonassociates.com/user-story-mapping/). Read left-to-right for the user journey, top-to-bottom for enrichment. Every AEP term maps to a position on this structure:
+
+```
+                            ACTIVITY BACKBONE (extracted by /envision)
+    ─────────────────────────────────────────────────────────────────────────────►
+    "The user authenticates, then configures, then monitors, then reviews"
+
+    ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+    │  Authenticate │  │  Configure   │  │   Monitor    │  │    Review    │
+    │  (activity)   │  │  (activity)  │  │  (activity)  │  │  (activity)  │
+    └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘
+           │                 │                 │                 │
+═══════════╪═════════════════╪═════════════════╪═════════════════╪══════════════
+ Layer 0   │  WALKING SKELETON — thinnest end-to-end path       │
+           │                 │                 │                 │
+  Wave 1   │  ┌────────┐    │  ┌────────┐     │  ┌────────┐    │
+           │  │ STORY  │    │  │ STORY  │     │  │ STORY  │    │
+           │  │ db-    │    │  │ api-   │     │  │ web-   │    │
+           │  │ setup  │    │  │ scaff  │     │  │ scaff  │    │
+           │  │   S ◆  │    │  │   S    │     │  │   S    │    │
+           │  └────────┘    │  └────────┘     │  └────────┘    │
+           │                 │                 │                 │
+  Wave 2   │  ┌────────┐    │  ┌────────┐     │                │  ┌────────┐
+  (needs   │  │ STORY  │    │  │ STORY  │     │                │  │ STORY  │
+   wave 1) │  │ auth-  │    │  │ config │     │                │  │ audit- │
+           │  │ setup  │    │  │ basic  │     │                │  │ list   │
+           │  │   M    │    │  │   S    │     │                │  │   M    │
+           │  └────────┘    │  └────────┘     │                │  └────────┘
+           │                 │                 │                 │
+ ─ ─ ─ ─ ─│─ ─ LAYER GATE ─ "user can complete full journey" ─ │─ ─ ─ ─ ─ ─
+           │                 │                 │                 │
+═══════════╪═════════════════╪═════════════════╪═════════════════╪══════════════
+ Layer 0.5 │  ALIGNMENT LAYER — human calibrates quality        │
+           │                 │                 │                 │
+  Wave 1   │  ┌────────┐    │                 │  ┌────────┐    │  ┌────────┐
+  (visual- │  │ STORY  │    │                 │  │ STORY  │    │  │ STORY  │
+   design) │  │ landing│    │                 │  │ dash-  │    │  │ auth-  │
+           │  │ polish │    │                 │  │ board  │    │  │ pages  │
+           │  │  M ✦   │    │                 │  │  M ✦   │    │  │  S ✦   │
+           │  └────────┘    │                 │  └────────┘    │  └────────┘
+           │                 │                 │                 │
+           │  ✦ = calibration_type: visual-design               │
+           │      dispatched with calibration/visual-design.yaml │
+           │                 │                 │                 │
+ ─ ─ ─ ─ ─│─ ─ RELEASE LINE ─ Layer 0 + 0.5 = first release ─ │─ ─ ─ ─ ─ ─
+           │                 │                 │                 │
+═══════════╪═════════════════╪═════════════════╪═════════════════╪══════════════
+ Layer 1   │  CORE FEATURES — deeper capabilities               │
+           │                 │                 │                 │
+  Wave 1   │  ┌────────┐    │  ┌────────┐     │  ┌────────┐    │  ┌────────┐
+           │  │ STORY  │    │  │ STORY  │     │  │ STORY  │    │  │ STORY  │
+           │  │ oauth  │    │  │ guard- │     │  │ live-  │    │  │ audit- │
+           │  │ provid │    │  │ rails  │     │  │ status │    │  │ detail │
+           │  │   L    │    │  │   M    │     │  │   M    │    │  │   L    │
+           │  └────────┘    │  └────────┘     │  └────────┘    │  └────────┘
+           │                 │                 │                 │
+  Wave 2   │                │  ┌────────┐     │  ┌────────┐    │
+           │                │  │ STORY  │     │  │ STORY  │    │
+           │                │  │ rule-  │     │  │ alert- │    │
+           │                │  │ engine │     │  │ system │    │
+           │                │  │   L    │     │  │   M    │    │
+           │                │  └────────┘     │  └────────┘    │
+           │                 │                 │                 │
+ ─ ─ ─ ─ ─│─ ─ LAYER GATE ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ │─ ─ ─ ─ ─ ─
+           │                 │                 │                 │
+═══════════╪═════════════════╪═════════════════╪═════════════════╪══════════════
+ Layer 1.5 │  ALIGNMENT LAYER — multiple calibration types      │
+           │                 │                 │                 │
+           │  ┌──────────────────────────────────────────────┐  │
+           │  │ ✦ visual-design (extension — new patterns)   │  │
+           │  │ ✦ copy-tone    (establishment — brand voice) │  │
+           │  │ ✦ api-surface  (light — inline YAML update)  │  │
+           │  └──────────────────────────────────────────────┘  │
+           │                 │                 │                 │
+ ─ ─ ─ ─ ─│─ ─ RELEASE LINE ─ Layer 1 + 1.5 = second release ─│─ ─ ─ ─ ─ ─
+           │                 │                 │                 │
+           ▼                 ▼                 ▼                 ▼
+```
+
+```
+LEGEND
+
+  STRUCTURE                           EXECUTION
+  Activity    = column (user verb)    Wave      = parallel batch (← →)
+  Layer       = row (enrichment)      Story     = atomic work unit (one PR)
+  Layer Gate  = integration test      Dispatch  = pick + lock + launch
+
+  ALIGNMENT                           SYMBOLS
+  .5 Layer    = human checkpoint      ◆  critical path story
+  Calibration = capture "right"       ✦  calibrated story
+  Quality Dim = what to calibrate     S/M/L  complexity
+
+  SKILLS                              READING ORDER
+  /envision  → activities + layers    left → right  = user journey
+  /map       → stories + waves        top → down    = enrichment
+  /calibrate → alignment decisions    ═══           = layer boundary
+  /dispatch  → scores + launches      ─ ─           = gate / release line
+  /reflect   → feedback → right phase
+```
+
 ## The Plugins
 
 Each plugin implements one layer of the mental model.
