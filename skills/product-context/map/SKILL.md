@@ -16,7 +16,7 @@ Decompose the Context Document into a system map (modules + interfaces), a layer
 
 **Session:** Main, interactive with user (System Map requires human review)
 **Input:** `product-context.yaml` (specifically the `opportunity` and `product` sections from `/envision`)
-**Output:** `product-context.yaml` updated with `architecture`, `stories`, `topology`, `layer_gates`, and `cost` sections
+**Output:** `product-context.yaml` updated with `architecture`, `stories`, `waves`, `topology`, `layer_gates`, and `cost` sections
 
 **YAML Schema:** See `templates/product-context-schema.yaml` for the full structure and field definitions.
 
@@ -87,8 +87,10 @@ Each story follows the **Story Spec** format (see `templates/story-spec.md`) and
 - Dependency declarations
 - Interface obligations (if touching module boundaries)
 - Files likely affected (for conflict detection)
+- `business_value` (1-10, or null to derive from priority)
+- `compile_mode` (default `single_change`; use `grouped_change` for tightly coupled stories, `shared_enabler` for infrastructure)
 
-**All stories start with `status: pending`.** Stories follow a state machine: `pending → ready → in_progress → review → done` (or `blocked` / `failed` as error states). The `/dispatch` skill manages state transitions during execution.
+**All stories start with `status: pending`.** Stories follow a state machine: `pending → ready → in_progress → in_review → completed` (or `blocked` / `failed` as error states). The `/dispatch` skill manages state transitions during execution.
 
 ### Activity Mapping
 
@@ -119,7 +121,21 @@ A dedicated agent receives all stories and produces:
 - **Critical path per layer:** The longest dependency chain, determining minimum time to complete that layer.
 - **Layer gates:** The integration test definition that must pass before advancing to the next layer.
 
-Write all stories to the `stories` section of `product-context.yaml`.
+Write all stories to the `stories` section of `product-context.yaml`. Also populate the `waves` section grouping stories by layer + wave.
+
+### Outcome Contracts
+
+For each layer that has an `outcome_contract` defined (see `product.layers[].outcome_contract`), ensure the layer gate test definition aligns with the success metric. If no outcome contract exists for a layer, consider adding one — Jeff Patton emphasizes that layers should be anchored in outcomes, not just feature completeness.
+
+The outcome contract is evaluated by `/reflect` after layer completion. It answers: "did this layer achieve what we hypothesized?"
+
+### Capability Maps (multi-journey products)
+
+If `product/index.yaml` exists (created by `/envision` for multi-journey products), also write per-capability `map.yaml` files:
+
+- `product/maps/<capability>/map.yaml` — backbone activities, layers, story stubs for this capability
+- Story stubs in `map.yaml` are sketches; the full stories in `product-context.yaml` are the operational versions
+- This is additive — if no capability maps exist, skip this step
 
 ### Alignment Layers (`.5` Layers)
 
@@ -203,9 +219,10 @@ jj git push --change @-
 **Sections written:**
 
 - `architecture` — system map (modules, interfaces, data flow)
-- `stories` — layered story graph with execution slices (all stories start `status: pending`)
+- `stories` — layered story graph with waves (all stories start `status: pending`)
+- `waves` — stories grouped by layer + wave for batch dispatch
 - `topology` — agent roles, handoff contracts, routing rules
-- `layer_gates` — integration test definitions per layer
+- `layer_gates` — integration test definitions per layer (aligned with outcome contracts if defined)
 - `cost` — initial cost budgets and tracking structure
 - `changelog` — append an entry recording what was added
 

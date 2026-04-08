@@ -120,6 +120,26 @@ For each layer that has not yet been built:
 
 ---
 
+## Step 2.75: Evaluate Outcome Contracts
+
+If the completed layer has an `outcome_contract` defined in `product.layers[]`:
+
+1. **Present the hypothesis** to the user: "The hypothesis was: [hypothesis]. The success metric was: [type] [target]."
+2. **Ask for evaluation** — outcome contracts are not automated tests. They may require user testing, analytics review, or qualitative assessment.
+3. **Apply the decision rule:**
+   - If `keep_if` condition met → record as passed, advance to next layer
+   - If `otherwise` triggered → record as failed, recommend re-slicing: promote stories from later layers, adjust backbone if needed
+4. **Record the result** in the changelog:
+   ```yaml
+   - date: YYYY-MM-DD
+     type: outcome_evaluation
+     summary: "Layer N outcome contract: [passed/failed] — [metric] was [actual] vs target [target]"
+   ```
+
+If no outcome contract exists for the completed layer, skip this step.
+
+---
+
 ## Step 3: Cost Review
 
 Review the `cost` section of `product-context.yaml` along with any execution traces from `.dev-workflow/`:

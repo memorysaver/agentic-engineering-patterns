@@ -1,6 +1,6 @@
 ---
 name: dispatch
-description: Pick the next story to work on and bridge it into the feature lifecycle. Use when ready to start building, or when the user says "what's next", "dispatch", "pick a story", "start next feature", "what should I work on". Reads product-context.yaml, syncs workspace signals, scores stories by critical path + business value + unblock potential, assembles context, and hands off to /design or /launch. Supports batch dispatch with WIP limits. For autonomous orchestration, use /autopilot instead.
+description: Pick the next story to work on and bridge it into the feature lifecycle. Use when ready to start building, or when the user says "what's next", "dispatch", "pick a story", "start next feature", "what should I work on". Reads product-context.yaml, syncs workspace signals, scores stories by readiness + business value + unblock potential + reuse leverage (penalized by ambiguity + interface risk), assembles context, and hands off to /design or /launch. Supports batch dispatch with WIP limits. For autonomous orchestration, use /autopilot instead.
 ---
 
 # Dispatch
@@ -136,29 +136,33 @@ For each ready story:
       Mark as conflicted — cannot dispatch until the in_progress story completes
 ```
 
+### Compute Readiness Score
+
+Before scoring, compute each story's readiness (spec completeness):
+
+```
+readiness_score = (
+  min(3, acceptance_criteria_count)      # 0-3
+  + (interface_obligations_defined ? 2 : 0)  # 0 or 2
+  + (files_affected_identified ? 1 : 0)      # 0 or 1
+  + (verification_defined ? 2 : 0)           # 0 or 2
+  + (no_relevant_open_questions ? 2 : 0)     # 0 or 2
+) / 10
+```
+
+Write `readiness_score` to the story in YAML. This is used for routing in Step 7.
+
 ### Compute Dispatch Score
 
 Each remaining ready story gets a score:
 
 ```
-dispatch_score = (critical_path_urgency + business_value + unblock_potential) / complexity_cost
+dispatch_score = (business_value + unblock_potential + critical_path_urgency + reuse_leverage) / (complexity_cost + ambiguity_penalty + interface_risk)
 ```
-
-#### Critical Path Urgency (0-10)
-
-Compute the critical path through the dependency DAG (longest chain from any root to any leaf within the active layer). Stories on the critical path get maximum urgency:
-
-```
-If story is on critical path:
-  critical_path_urgency = 10
-Else:
-  slack = latest_possible_start - earliest_possible_start
-  critical_path_urgency = max(0, 10 - slack)
-```
-
-A critical-path story delayed by 1 hour delays the entire layer by 1 hour.
 
 #### Business Value (1-10)
+
+Use `story.business_value` if explicitly set. Otherwise derive from priority:
 
 ```
 critical = 10
@@ -175,7 +179,29 @@ unblock_potential = min(10, count of stories that directly depend on this one * 
 
 A story that unblocks 5 others scores 10. A leaf story scores 0.
 
-#### Complexity Cost (divisor)
+#### Critical Path Urgency (0-10)
+
+Compute the critical path through the dependency DAG (longest chain from any root to any leaf within the active layer). Stories on the critical path get maximum urgency:
+
+```
+If story is on critical path:
+  critical_path_urgency = 10
+Else:
+  slack = latest_possible_start - earliest_possible_start
+  critical_path_urgency = max(0, 10 - slack)
+```
+
+#### Reuse Leverage (0-10)
+
+Stories that produce shared enablers (auth middleware, base components, shared utilities) score higher:
+
+```
+reuse_leverage = min(10, count_of_modules_depending_on_output * 3)
+```
+
+Only applies to stories with `compile_mode: shared_enabler` or whose module appears in 2+ other modules' `depends_on`.
+
+#### Complexity Cost (denominator term)
 
 ```
 S = 1    (fast feedback)
@@ -183,13 +209,41 @@ M = 2
 L = 4    (slow, expensive)
 ```
 
+#### Ambiguity Penalty (0-5, denominator term)
+
+```
+ambiguity_penalty = 0
+If acceptance_criteria count < 3:     +2
+If interface_obligations empty:       +1
+If relevant open_questions exist:     +1
+If files_affected empty:              +1
+```
+
+Stories with high ambiguity get lower scores, biasing dispatch toward well-specified work.
+
+#### Interface Risk (0-3, denominator term)
+
+```
+interface_risk = min(3, count of interface contracts this story creates or modifies)
+```
+
+Cross-module interface changes carry integration risk in parallel execution.
+
 #### Example Scores
 
-| Story                                                      | CP  | Value | Unblock | Complexity | Score    |
-| ---------------------------------------------------------- | --- | ----- | ------- | ---------- | -------- |
-| Auth middleware (critical path, high priority, unblocks 3) | 10  | 7     | 6       | S=1        | **23.0** |
-| User model (not critical, medium priority, unblocks 2)     | 4   | 4     | 4       | S=1        | **12.0** |
-| Dashboard layout (not critical, low priority, leaf)        | 2   | 1     | 0       | L=4        | **0.75** |
+| Story                                                      | Value | Unblock | CP  | Reuse | Cost | Ambig | IFace | Score    |
+| ---------------------------------------------------------- | ----- | ------- | --- | ----- | ---- | ----- | ----- | -------- |
+| Auth middleware (critical path, high, unblocks 3, enabler) | 7     | 6       | 10  | 6     | S=1  | 0     | 1     | **14.5** |
+| User model (not critical, medium, unblocks 2)              | 4     | 4       | 4   | 0     | S=1  | 0     | 0     | **12.0** |
+| Dashboard layout (not critical, low, leaf, ambiguous)      | 1     | 0       | 2   | 0     | L=4  | 3     | 0     | **0.43** |
+
+### Grouped Change Dispatch
+
+For stories with `compile_mode: grouped_change` sharing the same `change_group`:
+
+- Score the group using **min readiness_score** and **max complexity_cost** of any story in the group
+- Dispatch the entire group as one unit — one OpenSpec change, one workspace, one PR
+- Max 3 stories per group. Failure of any story fails the group.
 
 ---
 
@@ -200,22 +254,19 @@ Show the sorted queue with context:
 ```
 Dispatch Queue (Layer 0 — 4 ready, 2 in_progress, WIP 3/5)
 
-  1. ★ PROJ-003 "Setup auth middleware"           score: 23.0
-     [critical] S | Module: auth | Wave 1 | Critical path
+  1. ★ PROJ-003 "Setup auth middleware"           score: 14.5
+     [high] S | Module: auth | Wave 1 | Critical path | Shared enabler
      Unblocks: PROJ-005, PROJ-007, PROJ-008
-     → Well-specified (3 acceptance criteria, contracts defined)
-     → Recommend: skip to /launch
+     → Readiness: 0.9 — skip to /launch
 
   2.   PROJ-004 "Create user model"                score: 12.0
      [medium] S | Module: db | Wave 1 | 4h slack
      Unblocks: PROJ-006, PROJ-009
-     → Well-specified
-     → Recommend: skip to /launch
+     → Readiness: 0.8 — skip to /launch
 
-  3.   PROJ-010 "Add settings page"                score: 0.75
+  3.   PROJ-010 "Add settings page"                score: 0.43
      [low] L | Module: web | Wave 3 | Leaf
-     → Ambiguous (1 vague criterion, no interface contracts)
-     → Recommend: go through /design
+     → Readiness: 0.3 — go through /design (ambiguous)
 
   Conflicted (waiting):
   • PROJ-006 — files overlap with in_progress PROJ-002
@@ -308,6 +359,7 @@ Extracted from `product-context.yaml`:
 - `product.constraints` — tech stack, infrastructure
 - `product.layers[active_layer]` — what the user can do at this layer
 - `architecture.overview` — high-level structure
+- `architecture.technical_spec` — if set, include the technical specification document (or relevant sections for the story's module). This provides Symphony-style precision for protocol-heavy systems.
 - Coding conventions (conventional commits, jj for local, trunk-based)
 
 #### Part 2: Story-Specific Payload (~20K tokens, unique per agent)
@@ -398,28 +450,34 @@ jj git push --change @-
 
 Determine the handoff based on story completeness:
 
-### Well-specified → skip to /launch
+### Readiness-based routing
+
+Use the `readiness_score` computed in Step 3:
+
+- **readiness_score >= 0.7** → skip to `/launch` (spec is dispatch-ready)
+- **readiness_score 0.5–0.7** → present to user for decision (`/launch` or `/design`)
+- **readiness_score < 0.5** → route to `/design` (spec needs refinement)
+
+### Well-specified (readiness >= 0.7) → skip to /launch
 
 - 3+ specific, testable acceptance criteria
 - Interface obligations defined
 - Verification strategy complete
 - Files affected identified
-- Complexity S or M
 
-### Ambiguous → go through /design
+### Ambiguous (readiness < 0.5) → go through /design
 
 - Vague or fewer than 3 acceptance criteria
 - Missing interface details
-- Complexity L
 - Open questions relevant to this story
 
 ```
-Story PROJ-003 dispatched (score: 23.0, critical path).
+Story PROJ-003 dispatched (score: 14.5, critical path, shared enabler).
 
 OpenSpec change: openspec/changes/PROJ-003/
 Context package: openspec/changes/PROJ-003/.context/
 
-Recommendation: Well-specified (3 criteria, contracts defined, S complexity)
+Recommendation: Readiness 0.9 — well-specified
   → Skip to /launch
 
   /launch    ← start building immediately

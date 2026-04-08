@@ -131,6 +131,18 @@ On subsequent runs — read the existing YAML, update the `opportunity` and/or `
 
 If quality dimensions were declared, also write the initial `calibration.plan` section — mapping each dimension to the layer where calibration is expected. This plan is refined by `/map` (which has concrete layer definitions) and executed by `/calibrate`.
 
+#### Capability Maps (for multi-journey products)
+
+If the product has **2+ distinct user journeys** (e.g., buyer flow and seller flow), also create capability map files:
+
+1. Create `product/index.yaml` with the program frame (opportunity summary, personas, capability list, constraints). The index mirrors the `opportunity` and top-level `product` fields from `product-context.yaml`. See the v2 roadmap (`docs/aep-v2-improvement-guideline.md`, Section 1.3) for the index schema.
+
+2. For the primary capability, create:
+   - `product/maps/<capability-id>/frame.yaml` — scope, boundary, primary user, outcome contract
+   - Leave `map.yaml` empty — `/map` will populate it
+
+Simple single-journey products skip capability maps entirely. The capability maps are additive narrative structure — `product-context.yaml` remains the single operational file for dispatch and execution.
+
 ### Before Committing: Validate YAML
 
 See `references/yaml-guardrails.md` for the full checklist. Run:
