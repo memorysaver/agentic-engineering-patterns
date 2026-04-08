@@ -102,7 +102,7 @@ CONTROL PLANE (human + AI)              EXECUTION PLANE (agents build)
 ### Feature cycle (batch)
 
 ```
-/dispatch --batch slice → /launch (×N) → /build (×N parallel) → /wrap (×N)
+/dispatch --batch wave → /launch (×N) → /build (×N parallel) → /wrap (×N)
 ```
 
 ### After shipping
@@ -146,17 +146,6 @@ When synced to downstream projects, skills are prefixed with `aep-`:
 
 ---
 
-## Proposed Skills (v2)
+## v2 Enhancements
 
-These skills are planned for v2 but not yet implemented. See the [v2 Improvement Guideline](aep-v2-improvement-guideline.md) for details.
-
-| Skill      | Purpose                                                           | Session |
-| ---------- | ----------------------------------------------------------------- | ------- |
-| `/slice`   | Human-driven release line cutting across capability maps          | Main    |
-| `/compile` | Transform Human Maps into Machine Graph (tiered: mechanical + AI) | Main    |
-
-**v2 workflow extends the sequence:**
-
-```
-/envision → /map → /slice → /compile → /validate → /dispatch → /design → /launch → /build → /wrap → /reflect
-```
+v2 improvements enhance existing skills — no new commands. See the [v2 Improvement Roadmap](aep-v2-improvement-guideline.md) for details on: capability maps for multi-journey products, enhanced dispatch formula, outcome contracts, and VCS abstraction.
