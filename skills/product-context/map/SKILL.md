@@ -110,12 +110,12 @@ Every activity in `product.activities` with `layer_introduced: 0` should have at
 
 ---
 
-## Step 3: Dependency Resolution & Execution Slices (Single Agent)
+## Step 3: Dependency Resolution & Waves (Single Agent)
 
 A dedicated agent receives all stories and produces:
 
 - **Story Graph:** A directed acyclic graph organized by layer, showing dependencies and parallelism opportunities.
-- **Execution Slices:** Within each layer, group stories into slices that can be dispatched as a batch. A slice is a set of stories with no mutual dependencies that can run fully in parallel.
+- **Waves (Execution Slices):** Within each layer, group stories into waves that can be dispatched as a batch. A wave is a set of stories with no mutual dependencies that can run fully in parallel. (The YAML field is `stories[].slice`; the user-facing term is "wave.")
 - **Critical path per layer:** The longest dependency chain, determining minimum time to complete that layer.
 - **Layer gates:** The integration test definition that must pass before advancing to the next layer.
 

@@ -201,19 +201,19 @@ Show the sorted queue with context:
 Dispatch Queue (Layer 0 — 4 ready, 2 in_progress, WIP 3/5)
 
   1. ★ PROJ-003 "Setup auth middleware"           score: 23.0
-     [critical] S | Module: auth | Slice 1 | Critical path
+     [critical] S | Module: auth | Wave 1 | Critical path
      Unblocks: PROJ-005, PROJ-007, PROJ-008
      → Well-specified (3 acceptance criteria, contracts defined)
      → Recommend: skip to /launch
 
   2.   PROJ-004 "Create user model"                score: 12.0
-     [medium] S | Module: db | Slice 1 | 4h slack
+     [medium] S | Module: db | Wave 1 | 4h slack
      Unblocks: PROJ-006, PROJ-009
      → Well-specified
      → Recommend: skip to /launch
 
   3.   PROJ-010 "Add settings page"                score: 0.75
-     [low] L | Module: web | Slice 3 | Leaf
+     [low] L | Module: web | Wave 3 | Leaf
      → Ambiguous (1 vague criterion, no interface contracts)
      → Recommend: go through /design
 
@@ -240,12 +240,12 @@ Dispatch Queue (Layer 0 — 4 ready, 2 in_progress, WIP 3/5)
 
 User picks stories one at a time. Best for early layers or learning the system.
 
-#### Slice Batch (`--batch slice`)
+#### Wave Batch (`--batch wave`)
 
-Dispatch all ready stories in the current execution slice at once:
+Dispatch all ready stories in the current wave (execution slice) at once:
 
 ```
-Dispatches all ready stories in Slice N (up to WIP limit)
+Dispatches all ready stories in Wave N (up to WIP limit)
 Creates N workspaces via /launch
 ```
 
@@ -378,14 +378,14 @@ Append to the `changelog` section:
 - date: <today>
   type: dispatch
   author: human
-  summary: "Dispatched PROJ-003 (auth middleware), PROJ-004 (user model) — Layer 0, Slice 1"
+  summary: "Dispatched PROJ-003 (auth middleware), PROJ-004 (user model) — Layer 0, Wave 1"
   sections_changed: [stories]
 ```
 
 Commit and push:
 
 ```bash
-jj describe -m "feat: dispatch PROJ-003, PROJ-004 — Layer 0 Slice 1"
+jj describe -m "feat: dispatch PROJ-003, PROJ-004 — Layer 0 Wave 1"
 jj new
 jj git push --change @-
 ```

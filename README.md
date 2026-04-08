@@ -100,7 +100,7 @@ Opportunity Brief               System Map                      Classify feedbac
     ▼                               ▼                           discovery → update map
 Context Document                Story Graph                     shift → re-envision
 "what exactly to build,         "layered work items,                │
- for whom, within               execution slices"                   │
+ for whom, within               waves + slices"                     │
  what constraints"                  │                               │
     │                               ▼                               │
     │                           Agent Topology                      │

@@ -13,7 +13,7 @@ Quality bar: **a single-responsibility agent reading only this spec, the Context
 - **Layer**: [0, 1, 2… — which development layer]
 - **Module**: [Primary module, as defined in System Map]
 - **Activity**: [Which user activity this enables, from `product.activities`. Null for infrastructure stories that don't directly serve a user journey step.]
-- **Execution Slice**: [Which slice within the layer this belongs to]
+- **Wave**: [Which wave (execution slice) within the layer this belongs to]
 - **Dependencies**: [Story IDs that must complete before this starts]
 - **Estimated complexity**: [S / M / L]
 

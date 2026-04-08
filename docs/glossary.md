@@ -38,11 +38,11 @@ The precise product definition produced by `/envision` Phase 1. Contains the pro
 
 See also: **Opportunity Brief**, **product-context.yaml**
 
-### Execution Slice
+### Execution Slice (Wave)
 
-A batch of **Stories** within a **Layer** that have no mutual dependencies and can run fully in parallel. Slices are numbered sequentially — Slice 1 runs first, then Slice 2 after Slice 1 completes. `/dispatch` can batch-dispatch all ready stories in a slice at once.
+A batch of **Stories** within a **Layer** that have no mutual dependencies and can run fully in parallel. Also called a **Wave** — the user-facing term used in autopilot reporting (e.g., "Wave 1 launched: auth-setup, db-schema, api-scaffold"). Waves are numbered sequentially — Wave 1 runs first, then Wave 2 after Wave 1 completes. `/dispatch` can batch-dispatch all ready stories in a wave at once.
 
-**Where it appears:** `product-context.yaml` → `stories[].slice`; `/map` Step 3 computes them; `/dispatch` uses them for batch dispatch.
+**Where it appears:** `product-context.yaml` → `stories[].slice`; `/map` Step 3 computes them; `/dispatch` uses them for batch dispatch. Presented as "Wave N" in user-facing output.
 
 See also: **Story**, **Layer**, **Dispatch**
 
@@ -114,7 +114,7 @@ The atomic unit of work in AEP. A self-contained spec that a single agent can im
 
 **Where it appears:** `product-context.yaml` → `stories[]`; `/map` creates them; `/dispatch` scores and assigns them; `/build` implements them.
 
-See also: **Execution Slice**, **Dispatch Score**, **Story Graph**
+See also: **Execution Slice (Wave)**, **Dispatch Score**, **Story Graph**
 
 ### Story Graph
 
