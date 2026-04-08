@@ -59,11 +59,11 @@ See also: **Module**, **System Map**
 
 ### Layer
 
-A horizontal slice of enrichment across the **Activity Backbone**. Layer 0 is the **Walking Skeleton** — the thinnest end-to-end path. Each subsequent layer (1, 2, ...) adds capabilities, complexity, and polish. All stories within a layer are built before advancing to the next. Advancement is gated by a **Layer Gate**.
+A horizontal slice of enrichment across the **Activity Backbone**. Layer 0 is the **Walking Skeleton** — the thinnest end-to-end path. Integer layers (1, 2, ...) add capabilities. `.5` layers (0.5, 1.5, 2.5) are **Alignment Layers** — human checkpoints where the team pauses agent execution to **Calibrate** one or more **Quality Dimensions**. All stories within a layer are built before advancing to the next. Advancement is gated by a **Layer Gate**.
 
 **Where it appears:** `product-context.yaml` → `product.layers` and `stories[].layer`; `/envision` defines them; `/map` assigns stories to them.
 
-See also: **Walking Skeleton**, **Layer Gate**, **Release Line**
+See also: **Walking Skeleton**, **Layer Gate**, **Release Line**, **Alignment Layer**
 
 ### Layer 0 (Walking Skeleton)
 
@@ -421,6 +421,37 @@ See also: **Context Assembly**, **Context Package**
 
 ## Product / Planning
 
+### Alignment Layer
+
+A `.5` **Layer** (0.5, 1.5, 2.5) where the team pauses agent execution to recalibrate human intent across one or more **Quality Dimensions**. Formerly called "UI polish layers" — the concept was generalized because the gap between "works correctly" and "is what we actually want" exists across many dimensions, not just visual design.
+
+**Where it appears:** `product-context.yaml` → `stories[].layer` (fractional values); `/map` Step 3 plans them; `/reflect` Step 2 identifies the need; `/calibrate` executes them.
+
+See also: **Layer**, **Calibration**, **Quality Dimension**
+
+### Calibration
+
+The act of pausing agent execution to let a human inspect what was built and capture what "right" actually means in a format agents can consume. Agents optimize for correctness against spec, but specs are lossy compressions of human intent. Calibration corrects the loss. Each calibration targets a specific **Quality Dimension** and follows a two-phase pattern: generate brief → capture decisions.
+
+Calibrations split into two classes:
+
+| Class     | Dimensions                                                    | Method                             | Artifact                                    |
+| --------- | ------------------------------------------------------------- | ---------------------------------- | ------------------------------------------- |
+| **Heavy** | visual-design, ux-flow, copy-tone                             | External tools or deep exploration | Standalone YAML in `calibration/` directory |
+| **Light** | api-surface, data-model, scope-direction, performance-quality | Conversation + code review         | Inline updates to `product-context.yaml`    |
+
+**Where it appears:** `/calibrate` skill (executes); `/envision` (declares quality dimensions); `/reflect` (identifies needs); `product-context.yaml` → `calibration.history`.
+
+See also: **Quality Dimension**, **Alignment Layer**, **Calibration Artifact**
+
+### Calibration Artifact
+
+The machine-readable output of a **Calibration** capture. Heavy calibrations produce standalone YAML files in `calibration/` (e.g., `calibration/visual-design.yaml`, `calibration/ux-flow.yaml`, `calibration/copy-tone.yaml`). Light calibrations update existing sections of `product-context.yaml` directly (e.g., `architecture.interfaces`, `architecture.domain_model`, `product.success_criteria`). Agents query these artifacts for specific values (`palette.dark.primary`, `voice.personality`, `components.border_radius`).
+
+**Where it appears:** `calibration/` directory (heavy types); `product-context.yaml` sections (light types); `/dispatch` Step 6 includes them in **Context Packages** for calibrated stories.
+
+See also: **Calibration**, **Context Assembly**
+
 ### Changelog
 
 A semantic history of how `product-context.yaml` evolved. Unlike git diffs (which show _what_ changed), the changelog records _why_ things changed. Types include: initial, envision_update, map_update, dispatch, reflect, build, wrap, layer_gate_pass/fail, architecture_review. Appended by every skill that modifies the YAML.
@@ -456,18 +487,20 @@ See also: **Autopilot**, **Dispatch**
 
 ### Feedback Classification
 
-The four categories used by `/reflect` to route real-world observations back to the right phase:
+The categories used by `/reflect` to route real-world observations back to the right phase:
 
-| Type                  | Definition                                | Action                                                |
-| --------------------- | ----------------------------------------- | ----------------------------------------------------- |
-| **Bug**               | Specified behavior that doesn't work      | New high-priority fix story in current layer          |
-| **Refinement**        | Working behavior that needs improvement   | New story in next layer (or promote earlier)          |
-| **Discovery**         | New requirement or invalidated assumption | Update product/architecture via `/envision` or `/map` |
-| **Opportunity Shift** | Fundamental bet is wrong                  | Back to `/envision` Phase 0                           |
+| Type                         | Definition                                | Action                                                                                           |
+| ---------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| **Bug**                      | Specified behavior that doesn't work      | New high-priority fix story in current layer                                                     |
+| **Refinement**               | Working behavior that needs improvement   | New story in next layer (or promote earlier)                                                     |
+| **Refinement → Calibration** | Works as specified but doesn't feel right | `/calibrate <dimension>` — heavy types create `.5` layer stories, light types update YAML inline |
+| **Discovery**                | New requirement or invalidated assumption | Update product/architecture via `/envision` or `/map`                                            |
+| **Opportunity Shift**        | Fundamental bet is wrong                  | Back to `/envision` Phase 0                                                                      |
+| **Process**                  | Workflow/tooling observation, not product | Document in `lessons-learned/`, propose skill amendments                                         |
 
 **Where it appears:** `/reflect` Step 2.
 
-See also: **Release Line**
+See also: **Release Line**, **Calibration**, **Quality Dimension**
 
 ### Kill Point
 
@@ -501,20 +534,39 @@ tasks.md             — implementation tasks
 
 See also: **OpenSpec**, **Context Package**
 
+### Quality Dimension
+
+An aspect of a product where human judgment is needed that agents cannot provide — where "correct" and "right" diverge. Declared during `/envision` Phase 1. Seven standard dimensions:
+
+| Dimension               | The gap agents can't judge                                        |
+| ----------------------- | ----------------------------------------------------------------- |
+| **visual-design**       | Brand identity, color, typography, layout                         |
+| **ux-flow**             | User journey, information architecture, page transitions          |
+| **api-surface**         | Endpoint naming, grouping, error contracts                        |
+| **data-model**          | Entity naming, field semantics, domain language                   |
+| **scope-direction**     | Whether what was built matches what the PM actually wanted        |
+| **copy-tone**           | Brand voice, error messages, empty states, terminology            |
+| **performance-quality** | Latency thresholds, retry behavior, caching, degradation strategy |
+
+**Where it appears:** `product-context.yaml` → `product.quality_dimensions`; `/envision` Phase 1 declares them; `/reflect` checks them; `/calibrate` addresses them.
+
+See also: **Calibration**, **Alignment Layer**
+
 ### product-context.yaml
 
 The single source of truth for the entire product. A YAML file committed to git that evolves incrementally across skills:
 
-| Section        | Populated by                    |
-| -------------- | ------------------------------- |
-| `opportunity`  | `/envision` Phase 0             |
-| `product`      | `/envision` Phase 1             |
-| `architecture` | `/map` Step 1                   |
-| `stories`      | `/map` Steps 2–3                |
-| `topology`     | `/map` Step 4                   |
-| `layer_gates`  | `/map` Step 3                   |
-| `cost`         | `/build` → `/wrap`              |
-| `changelog`    | All skills that modify the file |
+| Section        | Populated by                                   |
+| -------------- | ---------------------------------------------- |
+| `opportunity`  | `/envision` Phase 0                            |
+| `product`      | `/envision` Phase 1 (incl. quality_dimensions) |
+| `calibration`  | `/envision` (plan) + `/calibrate` (history)    |
+| `architecture` | `/map` Step 1 + `/calibrate` (light types)     |
+| `stories`      | `/map` Steps 2–3                               |
+| `topology`     | `/map` Step 4                                  |
+| `layer_gates`  | `/map` Step 3                                  |
+| `cost`         | `/build` → `/wrap`                             |
+| `changelog`    | All skills that modify the file                |
 
 Version format: major (opportunity shift), minor (architecture/map change), patch (dispatch/build/wrap). Only the **Main Session** writes to this file (**Concurrency Protocol**).
 
