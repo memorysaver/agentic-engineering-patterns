@@ -253,17 +253,24 @@ Follow the 7-step tick protocol documented in `references/tick-protocol.md`.
 ⑥ DISPATCH NEW WORK → if capacity available:
    - Read product-context.yaml, run dispatch scoring logic (steps 1-3 from /dispatch)
    - available_slots = concurrency_limit - active_workspace_count
+   - WAVE ORDERING: Dispatch Wave 1 before Wave 2 within each layer.
    - LAYER GATE: After completing all stories in a layer, check if a `.5` alignment
      layer exists for this layer. If yes, dispatch `.5` layer stories before
      advancing to the next integer layer.
      - Verify calibration artifacts exist before dispatching `.5` stories
        (check `calibration/<type>.yaml` or legacy `design-context.yaml`)
      - If missing → add escalation requesting the user to run `/calibrate <type>`
-   - For top-scored ready story:
-     - Check design escalation conditions (see below)
-     - If needs design → add escalation, PAUSE autopilot
+   - OUTCOME CONTRACT: If layer has outcome_contract, pause for /reflect evaluation
+     before advancing to next layer.
+   - GROUPED CHANGES: If top story has compile_mode: grouped_change, dispatch
+     the entire change_group as one unit (one workspace, one PR).
+   - For top-scored ready story (or group):
+     - Route by readiness_score: >=0.7 → /launch, <0.5 → escalate or auto-design
+     - If auto_design: true → route through /design automatically (no pause)
+     - If auto_design: false and readiness < 0.7 → add escalation, PAUSE autopilot
+     - If attempt_count >= 2 → always ESCALATE
      - If well-specified → run /launch (max ONE launch per tick)
-   - Add new workspace entry to state
+   - Add new workspace entry to state (with story_ids, wave, readiness_score)
 
 ⑦ WRITE STATE
    - Write .dev-workflow/autopilot-state.json (atomic: write .tmp then rename)
@@ -323,16 +330,26 @@ To resume: /autopilot
 
 ## Design Escalation
 
-The autopilot **pauses entirely** when it encounters a story that needs human design input. This is not a per-story skip — it's a full pause because design decisions may affect other stories.
+When autopilot encounters a story that needs design input, behavior depends on `topology.routing.auto_design`:
 
-### Escalation Conditions
+- **`auto_design: false` (default):** Autopilot **pauses entirely** — design decisions may affect other stories and require human judgment.
+- **`auto_design: true`:** Autopilot routes the story through `/design` automatically, then `/launch`. No pause.
+
+### Escalation Conditions (when `auto_design: false`)
 
 A story triggers design escalation when ANY of:
 
-1. **Complexity L with fewer than 3 acceptance criteria** — large and underspecified
-2. **UI-heavy activity AND complexity M or L** — UI stories need interactive design review (layout, theme, interaction patterns)
-3. **`attempt_count >= 2`** — repeated failures suggest the spec is insufficient, not the implementation
-4. **Story would route to `/design` per dispatch Step 7** — fewer than 3 acceptance criteria, missing interface details, open questions
+1. **`readiness_score < 0.7`** — spec is not dispatch-ready (fewer than 3 acceptance criteria, missing interface obligations, unresolved open questions, etc.)
+2. **`attempt_count >= 2`** — repeated failures suggest the spec is insufficient, not the implementation (always escalates, even with `auto_design: true`)
+
+### Auto-Design Conditions (when `auto_design: true`)
+
+Instead of pausing, autopilot:
+
+1. Runs `/design` for the story to refine the spec
+2. Re-computes `readiness_score` after `/design`
+3. If readiness >= 0.7 → `/launch`
+4. If readiness still < 0.5 → escalate (auto-design couldn't resolve the ambiguity)
 
 ### Pause Protocol
 
@@ -387,7 +404,8 @@ This re-reads the product context (now with refined specs), re-initializes the l
 - **Respect WIP limits** — never exceed `topology.routing.concurrency_limit`
 - **Atomic state writes** — write to `.tmp` then rename to prevent corruption
 - **Tick lock** — prevent overlapping ticks via `tick_in_progress` timestamp
-- **Pause on design ambiguity** — do not auto-design; escalate to human
+- **Pause on design ambiguity** — unless `auto_design: true`, escalate to human when readiness < 0.7
+- **Always escalate on repeated failures** — `attempt_count >= 2` always pauses, even with `auto_design: true`
 
 ---
 
@@ -395,9 +413,9 @@ This re-reads the product context (now with refined specs), re-initializes the l
 
 After autopilot completes a layer or is stopped:
 
-| Action              | When                                                              |
-| ------------------- | ----------------------------------------------------------------- |
-| `/reflect`          | After layer completes — classify feedback, update product context |
-| `/autopilot status` | Anytime — check progress and escalations                          |
-| `/autopilot`        | After resolving a pause — resume the loop                         |
-| `/dispatch`         | Manual mode — pick a specific story interactively                 |
+| Action              | When                                                                              |
+| ------------------- | --------------------------------------------------------------------------------- |
+| `/reflect`          | After layer completes — evaluate outcome contracts (Step 2.75), classify feedback |
+| `/autopilot status` | Anytime — check progress and escalations                                          |
+| `/autopilot`        | After resolving a pause — resume the loop                                         |
+| `/dispatch`         | Manual mode — pick a specific story interactively                                 |

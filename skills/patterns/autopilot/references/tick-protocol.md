@@ -121,7 +121,15 @@ gh pr view <number> --json state --jq '.state'
 
 ### Sub-step ④b: Quality Gate — Ensure Gen/Eval
 
-**Applies to all workspaces at phase >= 5** — both pre-PR (phase 5-9) and post-PR (phase 10+). This is the universal quality gate. Check whether a passing evaluation exists:
+**Applies to all workspaces at phase >= 5** — both pre-PR (phase 5-9) and post-PR (phase 10+). This is the universal quality gate.
+
+**Check `topology.routing.skip_human_eval` first:**
+
+- `skip_human_eval: all` → skip the quality gate entirely for all stories, proceed to ④c
+- `skip_human_eval: backend` → skip the quality gate for stories in non-UI modules (check `story.activity` — if null or infrastructure, skip). UI stories still require eval.
+- `skip_human_eval: none` (default) → apply the full quality gate below
+
+Check whether a passing evaluation exists:
 
 ```bash
 ls .feature-workspaces/<name>/.dev-workflow/signals/eval-response-*.md 2>/dev/null
@@ -306,20 +314,39 @@ Reuse the dispatch scoring logic from `/dispatch` steps 1-3:
 
 1. **Determine active layer** — find the first layer with incomplete stories
 2. **Layer gate check** — if active layer > 0, verify previous layer gate passed
-3. **Filter ready queue** — stories with `status: ready` in active layer, excluding file-conflict stories
-4. **Compute dispatch score** per story:
+3. **Wave ordering** — consult the `waves` section from `product-context.yaml`. Within the active layer, dispatch Wave 1 stories before Wave 2, etc. Only advance to the next wave when all stories in the current wave are completed or in_progress.
+4. **Filter ready queue** — stories with `status: ready` in active layer and current wave, excluding file-conflict stories
+5. **Compute readiness_score** per story (see `/dispatch` Step 3):
    ```
-   dispatch_score = (critical_path_urgency + business_value + unblock_potential) / complexity_cost
+   readiness_score = (min(3, acceptance_criteria_count) + interfaces_defined*2 + files_identified*1 + verification_defined*2 + no_open_questions*2) / 10
    ```
+6. **Compute dispatch_score** per story:
+   ```
+   dispatch_score = (business_value + unblock_potential + critical_path_urgency + reuse_leverage) / (complexity_cost + ambiguity_penalty + interface_risk)
+   ```
+   Where `business_value` uses `story.business_value` if set, otherwise derived from priority (critical=10, high=7, medium=4, low=1).
 
-### Check Design Escalation
+### Grouped Change Handling
 
-For the top-scored story, check escalation conditions:
+Before scoring individual stories, check for `compile_mode: grouped_change`:
 
-- Complexity L with fewer than 3 acceptance criteria → **ESCALATE**
-- UI-heavy activity AND complexity M or L → **ESCALATE**
-- `attempt_count >= 2` → **ESCALATE**
-- Fewer than 3 acceptance criteria, missing interface details → **ESCALATE**
+1. Identify stories sharing the same `change_group`
+2. Score the group as one unit: sum `business_value` and `unblock_potential` across the group; use max `critical_path_urgency` and max `reuse_leverage`; divide by sum of `complexity_cost` + max `ambiguity_penalty` + max `interface_risk`
+3. Use **min readiness_score** of any story in the group as the group's readiness gate
+4. Dispatch the entire group as one unit — one `/launch`, one workspace, one OpenSpec change containing all grouped stories
+
+### Check Routing
+
+For the top-scored story (or group), use `readiness_score` for routing:
+
+- **readiness_score >= 0.7** → dispatch to `/launch`
+- **readiness_score 0.5–0.7** → check `topology.routing.auto_design`:
+  - If `auto_design: true` → route through `/design` automatically (no pause), then `/launch`
+  - If `auto_design: false` → **ESCALATE** (pause for human design input)
+- **readiness_score < 0.5** → check `topology.routing.auto_design`:
+  - If `auto_design: true` → route through `/design` automatically (no pause), then `/launch`
+  - If `auto_design: false` → **ESCALATE** (pause for human design input)
+- **`attempt_count >= 2`** → always **ESCALATE** regardless of readiness (repeated failures need human attention)
 
 If escalation triggers: follow the pause protocol from the main SKILL.md. Do not dispatch.
 
@@ -327,13 +354,20 @@ If escalation triggers: follow the pause protocol from the main SKILL.md. Do not
 
 If no escalation:
 
-1. Run `/dispatch` interactively for the top story (autopilot acts as the "user" selecting the story)
-2. Run `/launch` for the dispatched story
-3. Add workspace entry to state:
+1. Run `/dispatch` for the top story or group (autopilot acts as the "user" selecting the story)
+2. If routed through `/design` (auto_design mode): run `/design` first, then `/launch`
+3. Run `/launch` for the dispatched story (or group)
+4. Add workspace entry to state:
 
    ```json
    {
      "story_id": "<id>",
+     "story_ids": ["<id>"],
+     "compile_mode": "single_change",
+     "change_group": null,
+     "wave": 1,
+     "readiness_score": 0.8,
+     "routed_to": "launch",
      "phase": 0,
      "phase_name": "initializing",
      "story_status": "in_progress",
@@ -343,12 +377,13 @@ If no escalation:
      "last_action_at": "<ISO8601>",
      "code_review_triggered": false,
      "code_review_triggered_at": null,
-
      "eval_rounds_completed": 0,
      "consecutive_stuck_ticks": 0,
      "blockers": []
    }
    ```
+
+   For grouped changes: `story_ids` contains all story IDs in the group, `compile_mode` is `"grouped_change"`, `change_group` is the group ID, and `story_id` is the first story in the group (used as the primary identifier).
 
 **Max ONE launch per tick.** Launching involves creating a jj workspace, starting a tmux session, and sending a bootstrap prompt — too slow for multiple per tick.
 
@@ -357,9 +392,11 @@ If no escalation:
 If all stories in the active layer are completed (after wraps):
 
 1. Suggest running the layer gate integration test
-2. If gate passes: update `layer_gates[layer].status: passed`, advance to next layer
-3. If gate fails: add escalation, pause autopilot (layer gate failures require human judgment)
-4. If all layers complete: stop autopilot, notify human
+2. If gate passes: update `layer_gates[layer].status: passed`
+3. **Outcome contract check:** If `product.layers[active_layer].outcome_contract` exists, add an escalation requesting the user to evaluate the outcome contract before advancing. Autopilot **pauses** — outcome evaluation requires human judgment (user testing, analytics, qualitative assessment). The user runs `/reflect` which evaluates outcome contracts in Step 2.75. After `/reflect` completes, resume autopilot.
+4. If no outcome contract or outcome evaluation passes: advance to next layer
+5. If gate fails: add escalation, pause autopilot (layer gate failures require human judgment)
+6. If all layers complete: stop autopilot, notify human
 
 ### Orchestration Learning Checkpoint
 
