@@ -1,6 +1,6 @@
 ---
 name: dispatch
-description: Pick the next story to work on and bridge it into the feature lifecycle. Use when ready to start building, or when the user says "what's next", "dispatch", "pick a story", "start next feature", "what should I work on". Reads product-context.yaml, syncs workspace signals, scores stories by readiness + business value + unblock potential + reuse leverage (penalized by ambiguity + interface risk), assembles context, and hands off to /design or /launch. Supports batch dispatch with WIP limits. For autonomous orchestration, use /autopilot instead.
+description: Pick the next story to work on and bridge it into the feature lifecycle. Use when ready to start building, or when the user says "what's next", "dispatch", "pick a story", "start next feature", "what should I work on". Reads product-context.yaml, syncs workspace signals, computes readiness score for routing, then scores stories by business value + unblock potential + critical path urgency + reuse leverage (penalized by ambiguity + interface risk), assembles context, and hands off to /design or /launch. Supports batch dispatch with WIP limits. For autonomous orchestration, use /autopilot instead.
 ---
 
 # Dispatch
@@ -241,7 +241,8 @@ Cross-module interface changes carry integration risk in parallel execution.
 
 For stories with `compile_mode: grouped_change` sharing the same `change_group`:
 
-- Score the group using **min readiness_score** and **max complexity_cost** of any story in the group
+- **Readiness gate:** Use **min readiness_score** of any story in the group — if any story is under-specified, the group isn't ready
+- **Dispatch score:** Sum `business_value` and `unblock_potential` across the group; use max `critical_path_urgency` and max `reuse_leverage`; divide by sum of `complexity_cost` + max `ambiguity_penalty` + max `interface_risk`
 - Dispatch the entire group as one unit — one OpenSpec change, one workspace, one PR
 - Max 3 stories per group. Failure of any story fails the group.
 

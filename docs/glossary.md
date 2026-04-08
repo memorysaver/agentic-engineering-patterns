@@ -676,7 +676,7 @@ product/
 
 ### Readiness Score
 
-A per-story spec completeness score (0.0–1.0) computed during `/dispatch` or `/validate`. Components: acceptance criteria count, interface obligations defined, files affected identified, verification defined, no unresolved open questions. Routes stories: < 0.5 → `/design`, >= 0.7 → `/launch`, between → user decision.
+A per-story spec completeness score (0.0–1.0) computed during `/dispatch` (Step 3). Components: acceptance criteria count, interface obligations defined, files affected identified, verification defined, no unresolved open questions. Routes stories: < 0.5 → `/design`, >= 0.7 → `/launch`, between → user decision.
 
 ### Outcome Contract
 

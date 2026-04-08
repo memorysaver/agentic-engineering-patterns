@@ -161,7 +161,7 @@ OpenAI's Symphony SPEC.md demonstrated that a well-written specification documen
 
 ### 2.2 Artifact Location
 
-The technical spec lives at `openspec/technical-spec.md` (one per product). For multi-capability products, each capability may have its own spec at `openspec/<capability>/technical-spec.md`. `/dispatch` includes the relevant spec in agent context packages alongside story-specific OpenSpec artifacts.
+The technical spec path is set in `architecture.technical_spec` (e.g., `docs/technical-spec.md`). For multi-capability products, each capability may have its own spec (e.g., `docs/<capability>-technical-spec.md`). `/dispatch` includes the relevant spec in agent context packages alongside story-specific OpenSpec artifacts.
 
 ### 2.3 When to Produce a Technical Spec
 
@@ -217,7 +217,7 @@ dispatch_score = (business_value + unblock_potential + critical_path_urgency + r
 
 ### 3.3 Readiness Score
 
-Per-story spec completeness score (0.0-1.0), computed in `/dispatch` or `/validate`:
+Per-story spec completeness score (0.0-1.0), computed in `/dispatch` (Step 3):
 
 ```
 readiness_score = (
