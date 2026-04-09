@@ -76,10 +76,19 @@ product:
       name: "Walking Skeleton"
       user_can: "End-to-end journey in concrete steps"
       verification: "Test scenario that proves Layer 0 works"
+      outcome_contract: # optional — anchors the layer in product outcomes, not just feature completion
+        hypothesis: "If users can complete the basic flow, architecture is validated"
+        success_metric:
+          type: task_completion_rate # task_completion_rate | time_to_complete | error_rate | satisfaction_score
+          target: ">= 60%"
+        decision_rule:
+          keep_if: "metric >= target"
+          otherwise: "reflect_and_reslice" # /reflect evaluates and may re-slice
     - layer: 1
       name: <layer-name>
       user_can: "Everything from Layer 0, plus..."
       verification: "Test scenario for new capabilities"
+      outcome_contract: null # same structure as above, or null if not yet defined
   # ── USER ACTIVITIES (Story Map Backbone) ──
   # The horizontal axis of a Jeff Patton story map.
   # Each activity is a discrete step in the user's journey, ordered left-to-right.
@@ -271,7 +280,10 @@ stories:
     slice: 1 # execution slice within layer (parallel batch)
     status: pending
     priority: critical # critical | high | medium | low
+    business_value: null # 1-10 numeric. If null, derived from priority: critical=10, high=7, medium=4, low=1
     complexity: S # S | M | L
+    compile_mode: single_change # single_change | grouped_change | shared_enabler
+    change_group: null # group ID for grouped_change mode (max 3 stories per group)
     dependencies: [] # story IDs that must complete first
     description:
       what_changes: "Observable difference when complete"
@@ -290,7 +302,8 @@ stories:
       integration: ["Cross-module tests"]
       contract: ["Interface compliance tests"]
     # ── Dispatch scoring (computed by /dispatch, not manually set) ──
-    dispatch_score: null # (critical_path_urgency + business_value + unblock_potential) / complexity_cost
+    readiness_score: null # 0.0-1.0 spec completeness (acceptance criteria + interfaces + files + verification + open questions)
+    dispatch_score: null # (business_value + unblock_potential + critical_path_urgency + reuse_leverage) / (complexity_cost + ambiguity_penalty + interface_risk)
     on_critical_path: false
     # ── Execution tracking (updated by /dispatch, /build, /wrap) ──
     assigned_to: null # workspace session name
@@ -362,6 +375,9 @@ topology:
     concurrency_limit: 5 # max parallel agents
     conflict_detection: files_affected_overlap
     retry: "2x same agent → failure analyst → fresh agent → human escalation"
+    autonomous: false # true = /autopilot can dispatch without human confirmation
+    auto_design: false # true = skip /design, go straight to /launch for ambiguous stories
+    skip_human_eval: none # none | backend | all — which stories skip human eval in /wrap
   handoffs:
     - from: implementer
       to: evaluator
@@ -387,6 +403,21 @@ layer_gates:
       failures: [] # [{ test: "...", error: "...", boundary: "module_a → module_b" }]
     completed_at: null
 
+# ─── WAVES (/map Step 3) ─────────────────────────────────────
+# Groups stories by layer + wave for batch dispatch.
+# Computed by /map from the dependency DAG. Wave 1 has no in-layer
+# dependencies; Wave 2 depends on Wave 1 completing; etc.
+# User-facing term: "Wave". YAML field: stories[].slice.
+waves:
+  - layer: 0
+    wave: 1
+    stories: [] # story IDs in this wave
+    theme: "Walking skeleton foundation"
+  - layer: 0
+    wave: 2
+    stories: []
+    theme: "Walking skeleton integration"
+
 # ─── COST TRACKING ───────────────────────────────────────────
 # Accumulated cost data. Updated by /build after each story.
 # Reviewed by /reflect for optimization opportunities.
@@ -409,7 +440,7 @@ cost:
 # Appended by every skill that modifies this file.
 changelog:
   - date: <ISO date>
-    type: initial # initial | envision_update | map_update | dispatch | reflect | build | wrap | layer_gate_pass | layer_gate_fail | architecture_review
+    type: initial # initial | envision_update | map_update | dispatch | reflection | outcome_evaluation | build | wrap | layer_gate_pass | layer_gate_fail | architecture_review
     author: human # human | agent
     summary: "What changed and why"
     sections_changed:

@@ -28,6 +28,16 @@ Is this a **scope gap** (missing features within the right direction) or a **dir
 - **Scope gap indicators:** "It does the right things, just not enough of them"
 - **Direction gap indicators:** "It does things I didn't ask for" or "It works but it's not what I meant"
 
+## Release Line Assessment
+
+[from product.layers — show upcoming layers and their stories]
+
+- **Next layer:** Layer [N+1] — [user_can description]
+  - Stories: [count] ([S/M/L breakdown])
+  - Estimated effort: [complexity summary]
+- **Essential for next release:** [stories that must ship]
+- **Nice-to-have:** [stories that could defer to a later layer]
+
 ## Questions for Calibration
 
 1. Looking at what exists, is this 70% right or 30% right?
@@ -35,7 +45,8 @@ Is this a **scope gap** (missing features within the right direction) or a **dir
 3. Is the gap in scope (missing features) or direction (wrong features)?
 4. Should we adjust the next layer to close this gap, or revise the current layer?
 5. Are there completed stories that should be undone or significantly reworked?
-6. Has the persona or JTBD shifted since `/envision`?
+6. Looking at upcoming layers, what is the absolute minimum to ship a useful release? Should any stories move between layers?
+7. Has the persona or JTBD shifted since `/envision`?
 
 ---
 

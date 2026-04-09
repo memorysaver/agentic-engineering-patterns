@@ -430,7 +430,7 @@ Generate a dimension-specific brief, explore or discuss, capture decisions for a
 - [Release Line Adjustments](docs/release-line-adjustments.md) — when and how to re-slice layers
 - [Design Calibration Workflow](docs/decisions/design-calibration-workflow.md) — the original visual-design `/calibrate` skill
 - [Generalized Calibration Workflow](docs/decisions/generalized-calibration-workflow.md) — multi-dimension `/calibrate` and `.5` alignment layers
-- [AEP v2 Lesson Learning](docs/aep-v2-lesson-learning.md) — structural improvements from Layer 0 post-mortem
+- [v2 Improvement Roadmap](docs/aep-v2-improvement-guideline.md) — capability maps, technical specs, dispatch enhancements
 
 ## Syncing Skills to Your Project
 

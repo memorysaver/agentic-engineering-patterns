@@ -102,7 +102,7 @@ CONTROL PLANE (human + AI)              EXECUTION PLANE (agents build)
 ### Feature cycle (batch)
 
 ```
-/dispatch --batch slice → /launch (×N) → /build (×N parallel) → /wrap (×N)
+/dispatch --batch wave → /launch (×N) → /build (×N parallel) → /wrap (×N)
 ```
 
 ### After shipping
@@ -143,3 +143,9 @@ When synced to downstream projects, skills are prefixed with `aep-`:
 | `agentic-development-workflow` | design, launch, build, wrap, jj-ref        | `sync.sh workflow` |
 | `patterns`                     | gen-eval, autopilot, workflow-feedback     | `sync.sh patterns` |
 | `project-setup`                | onboard, scaffold, testing-guide           | `sync.sh setup`    |
+
+---
+
+## v2 Enhancements
+
+v2 improvements enhance existing skills — no new commands. See the [v2 Improvement Roadmap](aep-v2-improvement-guideline.md) for details on: capability maps for multi-journey products, enhanced dispatch formula, outcome contracts, and VCS abstraction.
