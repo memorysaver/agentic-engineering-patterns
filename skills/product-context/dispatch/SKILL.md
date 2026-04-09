@@ -414,7 +414,7 @@ If the required `calibration/<type>.yaml` does not exist, **do not dispatch** �
 
 **Light calibrations** (api-surface, data-model, scope-direction, performance-quality):
 
-No additional context needed — decisions are already in `product-context.yaml` sections (architecture, product) which flow through the stable prefix (Part 1) and story-specific payload (Part 2).
+No additional context needed — decisions are already in the architecture section of `product-context.yaml` and the product section of `product/index.yaml` (split mode), which flow through the stable prefix (Part 1) and story-specific payload (Part 2).
 
 **Backward compatibility:** For `.5` layer stories without `calibration_type` set, default to visual-design. Check both `calibration/visual-design.yaml` and `design-context.yaml` (legacy path).
 
