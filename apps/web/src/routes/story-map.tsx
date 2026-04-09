@@ -138,6 +138,7 @@ function StoryMapPage() {
             allModules={allModules}
             onCardClick={(storyId) => setSelectedStoryId(storyId)}
             selectedStoryId={selectedStoryId}
+            capabilityJourneys={data.capabilityJourneys}
           />
         )}
 

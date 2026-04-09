@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import { StoryCard } from "./story-card";
 import type { Card } from "./types";
 
@@ -10,6 +10,13 @@ type Activity = {
   layerIntroduced: number;
 };
 
+type CapabilityJourney = {
+  capabilityId: string;
+  capabilityName: string;
+  activities: Activity[];
+  lanes: Array<{ id: string; name: string; theme?: string }>;
+};
+
 type JourneyViewProps = {
   cards: Card[];
   activities: Activity[];
@@ -17,6 +24,7 @@ type JourneyViewProps = {
   allModules: string[];
   onCardClick: (storyId: string) => void;
   selectedStoryId: string | null;
+  capabilityJourneys?: CapabilityJourney[];
 };
 
 const ACTIVITY_COLORS = [
@@ -37,16 +45,39 @@ export function JourneyView({
   allModules,
   onCardClick,
   selectedStoryId,
+  capabilityJourneys,
 }: JourneyViewProps) {
+  const [selectedCapability, setSelectedCapability] = useState<string | null>(null);
+
+  const showTabs = capabilityJourneys && capabilityJourneys.length >= 2;
+
+  // Determine effective activities/lanes based on selected capability
+  const activeJourney =
+    showTabs && selectedCapability
+      ? capabilityJourneys.find((cj) => cj.capabilityId === selectedCapability)
+      : null;
+
+  const effectiveActivities = activeJourney ? activeJourney.activities : activities;
+  const effectiveLanes = activeJourney ? activeJourney.lanes : lanes;
+
+  // Activity ids for filtering cards when a capability is selected
+  const activeActivityIds = activeJourney
+    ? new Set(activeJourney.activities.map((a) => a.id))
+    : null;
+
   // Only show cards that have an activity (user-facing stories)
-  const journeyCards = cards.filter((c) => c.activity);
+  const journeyCards = cards.filter((c) => {
+    if (!c.activity) return false;
+    if (activeActivityIds && !activeActivityIds.has(c.activity)) return false;
+    return true;
+  });
   const infraCards = cards.filter((c) => !c.activity);
 
   // Get unique layers from journey cards
   const uniqueLayers = [...new Set(journeyCards.map((c) => c.layer))].sort((a, b) => a - b);
 
   const layerToLane = new Map(
-    lanes.map((l) => {
+    effectiveLanes.map((l) => {
       const num = l.id.match(/\d+/)?.[0];
       return [Number(num ?? 0), l];
     }),
@@ -54,16 +85,47 @@ export function JourneyView({
 
   return (
     <div className="p-4">
+      {/* Capability tabs */}
+      {showTabs && (
+        <div className="flex rounded-lg bg-zinc-900/80 p-0.5 mb-3">
+          <button
+            type="button"
+            onClick={() => setSelectedCapability(null)}
+            className={`rounded-md px-3 py-1.5 text-[11px] font-medium transition-all ${
+              selectedCapability === null
+                ? "bg-zinc-800 text-zinc-100 shadow-sm shadow-black/20"
+                : "text-zinc-500 hover:text-zinc-300"
+            }`}
+          >
+            All
+          </button>
+          {capabilityJourneys.map((cj) => (
+            <button
+              key={cj.capabilityId}
+              type="button"
+              onClick={() => setSelectedCapability(cj.capabilityId)}
+              className={`rounded-md px-3 py-1.5 text-[11px] font-medium transition-all ${
+                selectedCapability === cj.capabilityId
+                  ? "bg-zinc-800 text-zinc-100 shadow-sm shadow-black/20"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              {cj.capabilityName}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Story map grid: activities × layers */}
       <div
         className="grid gap-0"
         style={{
-          gridTemplateColumns: `100px repeat(${activities.length}, minmax(180px, 1fr))`,
+          gridTemplateColumns: `100px repeat(${effectiveActivities.length}, minmax(180px, 1fr))`,
         }}
       >
         {/* Header row — empty corner + activity names */}
         <div className="border-b border-r border-zinc-800/40 p-2" />
-        {activities.map((a, i) => {
+        {effectiveActivities.map((a, i) => {
           const color = ACTIVITY_COLORS[i % ACTIVITY_COLORS.length];
           const activityCards = journeyCards.filter((c) => c.activity === a.id);
           const completed = activityCards.filter(
@@ -108,7 +170,7 @@ export function JourneyView({
               </div>
 
               {/* Activity cells for this layer */}
-              {activities.map((a) => {
+              {effectiveActivities.map((a) => {
                 const cellCards = journeyCards.filter(
                   (c) => c.activity === a.id && c.layer === layerNum,
                 );

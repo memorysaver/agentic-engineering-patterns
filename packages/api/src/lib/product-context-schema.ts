@@ -1,5 +1,79 @@
 import { z } from "zod";
 
+// ─── Personas (v2 top-level) ──────────────────────────────
+const PersonaSchema = z
+  .object({
+    id: z.string(),
+    description: z.string(),
+    jtbd: z.string().optional(),
+  })
+  .passthrough();
+
+// ─── Capabilities (v2 top-level) ──────────────────────────
+const CapabilitySchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string().optional(),
+    map_path: z.string().optional(),
+    status: z.string().optional(),
+    depends_on: z.array(z.string()).optional(),
+  })
+  .passthrough();
+
+// ─── Capability Maps (from product/maps/) ─────────────────
+const CapabilityFrameSchema = z
+  .object({
+    capability: z.string(),
+    scope: z.string().optional(),
+    primary_user: z.string().optional(),
+    boundary: z.record(z.unknown()).optional(),
+    outcome_contract: z.record(z.unknown()).optional(),
+    out_of_scope: z.array(z.string()).optional(),
+  })
+  .passthrough();
+
+const StoryStubSchema = z
+  .object({
+    id: z.string(),
+    title: z.string(),
+    layer: z.number().optional(),
+    description: z.string().optional(),
+    acceptance_criteria_sketch: z.array(z.string()).optional(),
+    complexity: z.string().optional(),
+    dependencies: z.array(z.string()).optional(),
+  })
+  .passthrough();
+
+const CapabilityMapActivitySchema = z
+  .object({
+    id: z.string(),
+    verb_phrase: z.string().optional(),
+    name: z.string().optional(),
+    description: z.string().optional(),
+    layer_introduced: z.number().optional().default(0),
+    order: z.number().optional(),
+  })
+  .passthrough();
+
+const CapabilityMapLayerSchema = z
+  .object({
+    layer: z.number(),
+    name: z.string(),
+    outcome_hypothesis: z.string().optional(),
+    success_metric: z.record(z.unknown()).optional(),
+  })
+  .passthrough();
+
+const CapabilityMapSchema = z
+  .object({
+    capability: z.string(),
+    activities: z.array(CapabilityMapActivitySchema).optional(),
+    layers: z.array(CapabilityMapLayerSchema).optional(),
+    stories: z.array(StoryStubSchema).optional(),
+  })
+  .passthrough();
+
 // ─── Opportunity ───────────────────────────────────────────
 const ProblemClusterSchema = z
   .object({
@@ -23,20 +97,22 @@ const RiskSchema = z
 
 const OpportunitySchema = z
   .object({
-    core_bet: z.string().optional(),
+    // v2 fields
     bet: z.string().optional(),
+    why_now: z.string().optional(),
+    counter_arguments: z.array(z.string()).optional(),
+    scale_of_impact: z.string().optional(),
+    kill_criteria: z.array(z.string()).optional(),
     decision: z.enum(["proceed", "kill", "defer"]),
-    validated: z.string().optional(),
     decided_at: z.string().optional(),
+    // v1 compat fields
+    core_bet: z.string().optional(),
+    validated: z.string().optional(),
     target_user: z.record(z.string()).optional(),
     persona: z.string().optional(),
     problem_cluster: z.array(ProblemClusterSchema).optional(),
     advantage: z.array(z.string()).optional(),
     risks: z.array(RiskSchema).optional(),
-    why_now: z.string().optional(),
-    counter_arguments: z.array(z.string()).optional(),
-    scale_of_impact: z.string().optional(),
-    kill_criteria: z.array(z.string()).optional(),
   })
   .passthrough();
 
@@ -50,6 +126,7 @@ const LayerSchema = z
     capabilities: z.array(z.string()).optional(),
     user_can: z.string().optional(),
     verification: z.string().optional(),
+    outcome_contract: z.record(z.unknown()).optional(),
   })
   .passthrough();
 
@@ -63,26 +140,139 @@ const ActivitySchema = z
   })
   .passthrough();
 
+const NonGoalSchema = z
+  .object({
+    statement: z.string(),
+    reasoning: z.string().optional(),
+  })
+  .passthrough();
+
+const MvpBoundarySchema = z
+  .object({
+    in_scope: z.array(z.string()).optional(),
+    out_of_scope: z.array(z.string()).optional(),
+    deferred: z.array(z.string()).optional(),
+  })
+  .passthrough();
+
+const FailureClassSchema = z
+  .object({
+    name: z.string(),
+    examples: z.string().optional(),
+    detection: z.string().optional(),
+    recovery: z.string().optional(),
+    escalation: z.string().optional(),
+  })
+  .passthrough();
+
+const FailureModelSchema = z
+  .object({
+    classes: z.array(FailureClassSchema).optional(),
+    degraded_operation: z.string().optional(),
+  })
+  .passthrough();
+
+const SecurityModelSchema = z
+  .object({
+    trust_boundaries: z.string().optional(),
+    auth: z.string().optional(),
+    secret_handling: z.string().optional(),
+  })
+  .passthrough();
+
+const QualityDimensionSchema = z
+  .object({
+    dimension: z.string(),
+    criticality: z.string().optional(),
+    first_calibration_layer: z.number().optional(),
+    rationale: z.string().optional(),
+  })
+  .passthrough();
+
+const StressTestEntrySchema = z
+  .object({
+    challenge: z.string(),
+    angle: z.string().optional(),
+    resolution: z.string().optional(),
+  })
+  .passthrough();
+
+const OpenQuestionSchema = z
+  .object({
+    question: z.string(),
+    default_assumption: z.string().optional(),
+    revisit_trigger: z.string().optional(),
+  })
+  .passthrough();
+
+const DecisionSchema = z
+  .object({
+    decision: z.string(),
+    reasoning: z.string().optional(),
+    alternatives: z.array(z.string()).optional(),
+  })
+  .passthrough();
+
+const SuccessCriteriaSchema = z
+  .object({
+    functional: z.array(z.string()).optional(),
+    non_functional: z.array(z.string()).optional(),
+  })
+  .passthrough();
+
+const ExternalDepSchema = z
+  .object({
+    name: z.string(),
+    provides: z.string().optional(),
+    failure_mode: z.string().optional(),
+  })
+  .passthrough();
+
+const ConstraintsSchema = z
+  .object({
+    required_stack: z.record(z.unknown()).optional(),
+    preferred_stack: z.record(z.unknown()).optional(),
+    infrastructure: z.string().optional(),
+    external_deps: z.array(ExternalDepSchema).optional(),
+  })
+  .passthrough();
+
 const ProductSchema = z
   .object({
     name: z.string().optional(),
     tagline: z.string().optional(),
     problem_statement: z.string().optional(),
     problem: z.string().optional(),
+    // v2 typed fields
+    goals: z.array(z.string()).optional(),
+    non_goals: z.array(NonGoalSchema).optional(),
+    mvp_boundary: z.union([MvpBoundarySchema, z.record(z.unknown())]).optional(),
+    constraints: z.union([ConstraintsSchema, z.record(z.unknown())]).optional(),
+    failure_model: z.union([FailureModelSchema, z.record(z.unknown())]).optional(),
+    security_model: z.union([SecurityModelSchema, z.record(z.unknown())]).optional(),
+    quality_dimensions: z.array(QualityDimensionSchema).optional(),
+    success_criteria: z.union([SuccessCriteriaSchema, z.record(z.unknown())]).optional(),
+    open_questions: z.array(z.union([OpenQuestionSchema, z.record(z.unknown())])).optional(),
+    decisions: z.array(z.union([DecisionSchema, z.record(z.unknown())])).optional(),
+    stress_test: z.union([z.array(StressTestEntrySchema), z.unknown()]).optional(),
+    // Shared fields
+    layers: z.array(LayerSchema).optional(),
+    activities: z.array(ActivitySchema).optional(),
+    persona: z.record(z.unknown()).optional(),
+    // v1 compat fields
     jobs_to_be_done: z.array(z.string()).optional(),
     mvp_journey: z.string().optional(),
     ux_model: z.record(z.string()).optional(),
-    layers: z.array(LayerSchema).optional(),
-    activities: z.array(ActivitySchema).optional(),
     technical_constraints: z.record(z.unknown()).optional(),
-    constraints: z.record(z.unknown()).optional(),
-    persona: z.record(z.unknown()).optional(),
-    mvp_boundary: z.record(z.unknown()).optional(),
-    success_criteria: z.record(z.unknown()).optional(),
-    open_questions: z.array(z.record(z.unknown())).optional(),
-    decisions: z.array(z.record(z.unknown())).optional(),
-    stress_test: z.unknown().optional(),
     references: z.record(z.unknown()).optional(),
+  })
+  .passthrough();
+
+// ─── Calibration ──────────────────────────────────────────
+const CalibrationSchema = z
+  .object({
+    plan: z.array(z.record(z.unknown())).optional(),
+    history: z.array(z.record(z.unknown())).optional(),
   })
   .passthrough();
 
@@ -238,6 +428,16 @@ const ExecutionSliceSchema = z
   })
   .passthrough();
 
+// ─── Waves ────────────────────────────────────────────────
+const WaveSchema = z
+  .object({
+    layer: z.number(),
+    wave: z.number().optional(),
+    stories: z.array(z.string()).optional(),
+    theme: z.string().optional(),
+  })
+  .passthrough();
+
 // ─── Full Product Context ──────────────────────────────────
 export const ProductContextSchema = z
   .object({
@@ -246,15 +446,32 @@ export const ProductContextSchema = z
     version: z.string().optional(),
     updated_at: z.string().optional(),
     dispatch_epoch: z.number().optional(),
+    // v2 top-level fields
+    personas: z.array(PersonaSchema).optional(),
+    capabilities: z.array(CapabilitySchema).optional(),
+    calibration: CalibrationSchema.optional(),
+    // Shared fields
     opportunity: OpportunitySchema.optional(),
     product: ProductSchema.optional(),
     architecture: ArchitectureSchema.optional(),
     stories: z.array(StorySchema).optional().default([]),
     topology: TopologySchema.optional(),
     layer_gates: z.array(LayerGateSchema).optional().default([]),
+    waves: z.array(WaveSchema).optional(),
     cost: CostSchema.optional(),
     changelog: z.array(ChangelogEntrySchema).optional().default([]),
     execution_slices: z.array(ExecutionSliceSchema).optional(),
+    // Populated by loader when capability maps are loaded
+    capability_maps: z
+      .record(
+        z
+          .object({
+            frame: CapabilityFrameSchema.optional(),
+            map: CapabilityMapSchema.optional(),
+          })
+          .passthrough(),
+      )
+      .optional(),
   })
   .passthrough();
 
@@ -266,3 +483,12 @@ export type Risk = z.infer<typeof RiskSchema>;
 export type Activity = z.infer<typeof ActivitySchema>;
 export type ChangelogEntry = z.infer<typeof ChangelogEntrySchema>;
 export type LayerGate = z.infer<typeof LayerGateSchema>;
+export type Persona = z.infer<typeof PersonaSchema>;
+export type Capability = z.infer<typeof CapabilitySchema>;
+export type CapabilityMap = z.infer<typeof CapabilityMapSchema>;
+export type CapabilityFrame = z.infer<typeof CapabilityFrameSchema>;
+export type QualityDimension = z.infer<typeof QualityDimensionSchema>;
+export type Decision = z.infer<typeof DecisionSchema>;
+export type NonGoal = z.infer<typeof NonGoalSchema>;
+export type StressTestEntry = z.infer<typeof StressTestEntrySchema>;
+export type OpenQuestion = z.infer<typeof OpenQuestionSchema>;
