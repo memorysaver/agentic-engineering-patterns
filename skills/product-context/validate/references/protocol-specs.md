@@ -11,33 +11,37 @@ The `/dispatch` skill reads stories from `product-context.yaml` and computes `di
 ### Required Story Fields
 
 ```yaml
-- id: string               # kebab-case unique identifier
-  title: string             # short descriptive title
-  module: string            # package name (e.g., packages/db) or "integration"
-  layer: integer            # 0 = walking skeleton, 1+ = enrichment
-  slice: integer            # execution slice number (parallel batch)
-  status: string            # pending | ready | in_progress | review | done | blocked | failed
-  business_value: string    # critical | high | medium | low
-  complexity: string        # S | M | L
-  description: string       # what changes when complete
-  acceptance_criteria: list  # testable conditions (minimum 3 for well-specified stories)
-  dependencies: list         # story IDs this depends on (empty list if none)
-  files_affected: list       # file paths modified/created
-  attempt_count: integer     # starts at 0, incremented on retry
-  failure_logs: list         # empty list initially, populated on failure
+- id: string # kebab-case unique identifier
+  title: string # short descriptive title
+  module: string # package name (e.g., packages/db) or "integration"
+  layer: integer # 0 = walking skeleton, 1+ = enrichment
+  slice: integer # execution slice number (parallel batch)
+  status: string # pending | ready | in_progress | review | done | blocked | failed
+  business_value: string # critical | high | medium | low
+  complexity: string # S | M | L
+  description: string # what changes when complete
+  acceptance_criteria: list # testable conditions (minimum 3 for well-specified stories)
+  dependencies: list # story IDs this depends on (empty list if none)
+  files_affected: list # file paths modified/created
+  attempt_count: integer # starts at 0, incremented on retry
+  failure_logs: list # empty list initially, populated on failure
 ```
 
 ### Scoring Formula
 
 ```
-dispatch_score = (critical_path_urgency + business_value + unblock_potential) / complexity_cost
+dispatch_score = (business_value + unblock_potential + critical_path_urgency + reuse_leverage) / (complexity_cost + ambiguity_penalty + interface_risk)
 ```
 
 Where:
+
+- `business_value` (1-10): from story field if set, else derived from priority (critical=10, high=7, medium=4, low=1)
+- `unblock_potential` (0-10): min(10, count_of_direct_dependents \* 2)
 - `critical_path_urgency` (0-10): Stories on the longest dependency chain get 10
-- `business_value`: critical=10, high=7, medium=4, low=1
-- `unblock_potential`: min(10, count_of_direct_dependents * 2)
-- `complexity_cost`: S=1, M=2, L=4
+- `reuse_leverage` (0-10): min(10, modules_depending_on_output \* 3) for shared enablers
+- `complexity_cost` (denominator): S=1, M=2, L=4
+- `ambiguity_penalty` (0-5): +2 if <3 criteria, +1 each for missing interfaces/files/questions
+- `interface_risk` (0-3): +1 per interface contract touched
 
 ### DAG Validation Rules
 
@@ -49,13 +53,14 @@ Where:
 ### File Conflict Detection
 
 Stories with overlapping `files_affected` must not be dispatched in parallel. Exceptions:
+
 - Files documented as "append-only" (e.g., router index files) via `conflict_note` field
 - Files in `files_affected: []` (no files — cannot conflict)
 
 ### Top-Level Fields
 
 ```yaml
-dispatch_epoch: integer     # starts at 0, incremented each dispatch run
+dispatch_epoch: integer # starts at 0, incremented each dispatch run
 ```
 
 ### Layer Gate Fields
@@ -64,7 +69,7 @@ dispatch_epoch: integer     # starts at 0, incremented each dispatch run
 layer_gates:
   - layer: integer
     name: string
-    status: string          # pending | passed | failed
+    status: string # pending | passed | failed
     description: string
     tests: list
     pass_criteria: string
@@ -80,12 +85,14 @@ OpenSpec changes created by `/dispatch` and consumed by `/design` must include:
 ### Story Spec Completeness
 
 For `/design` to skip straight to `/launch` (well-specified path):
+
 - 3+ specific, testable acceptance criteria
 - Interface obligations defined (if touching module boundaries)
 - Files affected identified
 - Complexity S or M
 
 For `/design` to refine first (ambiguous path):
+
 - Fewer than 3 acceptance criteria
 - Missing interface details
 - Complexity L
@@ -128,12 +135,14 @@ If the build agent uses verification tracking:
 ```
 
 Rules:
+
 - Generator MUST NOT modify `verification_steps` or `passes`
 - Only evaluator or human updates these fields
 
 ### Signal Protocol
 
 Workspace agents communicate via `.dev-workflow/signals/`:
+
 - `status.json` — phase progress, completion %, PR URL, cost
 - `eval-request.md` — generator requests evaluation
 - `eval-response-<N>.md` — evaluator returns findings
@@ -162,7 +171,7 @@ topology:
 
   routing:
     dispatch_policy: string
-    concurrency_limit: integer    # default 5
+    concurrency_limit: integer # default 5
     conflict_detection: string
     retry_routing: string
 ```

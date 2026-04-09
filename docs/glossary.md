@@ -182,13 +182,16 @@ The mechanism that prevents double-dispatch. When a story is selected, its statu
 The priority formula used to rank **Stories** in the ready queue:
 
 ```
-dispatch_score = (critical_path_urgency + business_value + unblock_potential) / complexity_cost
+dispatch_score = (business_value + unblock_potential + critical_path_urgency + reuse_leverage) / (complexity_cost + ambiguity_penalty + interface_risk)
 ```
 
-- **Critical path urgency** (0–10): 10 if on critical path, otherwise decreasing with slack
-- **Business value** (1–10): critical=10, high=7, medium=4, low=1
+- **Business value** (1–10): from `story.business_value` if set, otherwise derived from priority (critical=10, high=7, medium=4, low=1)
 - **Unblock potential** (0–10): min(10, count_of_dependent_stories × 2)
-- **Complexity cost** (divisor): S=1, M=2, L=4
+- **Critical path urgency** (0–10): 10 if on critical path, otherwise decreasing with slack
+- **Reuse leverage** (0–10): min(10, count_of_modules_depending_on_output × 3) — for shared enablers
+- **Complexity cost** (denominator): S=1, M=2, L=4
+- **Ambiguity penalty** (0–5): +2 if <3 acceptance criteria, +1 each for missing interfaces/files/open questions
+- **Interface risk** (0–3): +1 per interface contract touched
 
 **Where it appears:** `/dispatch` Step 3; `/autopilot` Step 6; `product-context.yaml` → `stories[].dispatch_score`.
 
