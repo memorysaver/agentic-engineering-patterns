@@ -34,7 +34,7 @@ Also usable after any phase:
 ```
 
 **Session:** Main, can be autonomous or interactive
-**Input:** Any AEP artifact (product-context.yaml, OpenSpec change, design doc, code)
+**Input:** Any AEP artifact (`product/index.yaml` + `product-context.yaml` in split mode, or `product-context.yaml` alone in v1 mode, or OpenSpec change, design doc, code)
 **Output:** The same artifact, with issues fixed. A validation report appended to changelog.
 
 ---
@@ -56,6 +56,15 @@ ls .dev-workflow/ 2>/dev/null
 
 If the user doesn't specify what to validate, auto-detect based on the most recently modified artifact.
 
+**File Resolution:**
+
+```bash
+ls product/index.yaml 2>/dev/null && echo "SPLIT MODE" || echo "V1 MODE"
+```
+
+- **Split mode**: Validate both files. Check cross-file consistency.
+- **V1 mode**: Validate `product-context.yaml` only.
+
 ---
 
 ## Step 1: Determine Validation Mode
@@ -64,7 +73,15 @@ The skill operates in one of four modes based on the artifact type. Each mode co
 
 ### Mode A: Product Context Validation
 
-**When:** After `/envision` or `/map` — validating `product-context.yaml`
+**When:** After `/envision` or `/map` — validating `product-context.yaml` (and `product/index.yaml` in split mode)
+
+**Split-mode cross-file checks:**
+
+- `stories[].layer` values must exist in `product/index.yaml` `product.layers[]`
+- `stories[].activity` values must exist in `product/index.yaml` `product.activities[]`
+- `calibration.plan[].dimensions[]` must reference `product/index.yaml` `product.quality_dimensions[]`
+- No `opportunity` or `product` section should exist in `product-context.yaml` when split mode is active
+- `product/index.yaml` must have `personas`, `capabilities`, and `product` sections
 
 Mode A runs **two passes** — product design quality first, then technical correctness:
 

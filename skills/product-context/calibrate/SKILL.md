@@ -18,7 +18,7 @@ Human alignment checkpoint. Agents build to spec, but specs are lossy compressio
 ```
 
 **Session:** Main, interactive with user
-**Input:** Calibration type + `product-context.yaml`
+**Input:** Calibration type + product definition from `product/index.yaml` (split mode) or `product-context.yaml` (v1 mode) + operational state from `product-context.yaml`
 **Output:** Calibration artifact (standalone or inline) + updated `calibration.history`
 
 ---
@@ -33,9 +33,27 @@ Check how the skill was invoked to determine the calibration dimension:
 
 **Path C — Ambient:** User says `/calibrate` with no type. Determine the type:
 
-1. Check `calibration.plan` in `product-context.yaml` — which dimension is next for the current layer?
+1. Check `calibration.plan` in `product-context.yaml` (operational file, both modes) — which dimension is next for the current layer?
 2. Check stories with `calibration_type` set in the current `.5` layer.
 3. If neither applies, ask the user: "What feels off? (visual design / UX flow / API surface / data model / scope direction / copy tone / performance quality)"
+
+---
+
+## File Resolution
+
+```bash
+ls product/index.yaml 2>/dev/null && echo "SPLIT MODE" || echo "V1 MODE"
+cat product-context.yaml
+```
+
+- **Split mode** (`product/index.yaml` exists): Read `quality_dimensions`, `layers`, `activities`, `constraints`, `success_criteria`, `failure_model` from `product/index.yaml`. Read `calibration.plan`, `calibration.history`, `stories`, `architecture` from `product-context.yaml`.
+- **V1 mode**: Read everything from `product-context.yaml`.
+
+**Write targets by calibration type:**
+
+- **Heavy** (visual-design, ux-flow, copy-tone): Write `calibration/<type>.yaml`. Append `calibration.history` + `changelog` in `product-context.yaml`.
+- **Light — architecture** (api-surface, data-model): Update `architecture.interfaces` or `architecture.domain_model` in `product-context.yaml`. Append `calibration.history` + `changelog`.
+- **Light — product intent** (scope-direction, performance-quality): Update `product.goals`, `product.mvp_boundary`, `product.layers`, `product.success_criteria`, or `product.failure_model` in `product/index.yaml` (split mode) or `product-context.yaml` (v1 mode). Append `calibration.history` + `changelog` in `product-context.yaml`.
 
 ---
 
@@ -172,7 +190,7 @@ Write to `calibration/<type>.yaml`.
 
 **Light calibrations:**
 
-Update the relevant section(s) of `product-context.yaml` directly:
+Update the relevant section(s) — see File Resolution above for which file to write to per calibration type:
 
 | Type                | Section to Update                                                  |
 | ------------------- | ------------------------------------------------------------------ |

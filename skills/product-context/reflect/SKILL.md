@@ -16,17 +16,21 @@ Close the feedback loop. Transform real-world observations into actionable chang
 
 **Session:** Main, interactive with user
 **Input:** Observations after shipping (user testing, error logs, cost data, product instincts)
-**Output:** Classified feedback + updated `product-context.yaml`
+**Output:** Classified feedback + updated `product-context.yaml`; if product intent changed, also updated `product/index.yaml` (split mode)
 
 ---
 
 ## Before Starting
 
-Read the current product context:
+**File Resolution:**
 
 ```bash
+ls product/index.yaml 2>/dev/null && echo "SPLIT MODE" || echo "V1 MODE"
 cat product-context.yaml
 ```
+
+- **Split mode** (`product/index.yaml` exists): Read product definition from `product/index.yaml` (what was intended). Read operational state from `product-context.yaml` (what happened).
+- **V1 mode**: Read everything from `product-context.yaml`.
 
 If `product-context.yaml` does not exist, there is nothing to reflect on — run `/envision` and `/map` first.
 
@@ -34,7 +38,7 @@ If `product-context.yaml` does not exist, there is nothing to reflect on — run
 
 ## Step 1: Gather Feedback
 
-Collect observations from all sources. Read from `product-context.yaml` to ground the conversation — review the `product` section for what was intended and the `cost` section for execution data.
+Collect observations from all sources. Read product definition (from `product/index.yaml` in split mode, `product-context.yaml` in v1 mode) for what was intended, and `product-context.yaml` `cost` section for execution data.
 
 - **User testing:** What worked? What confused people? What was missing?
 - **Error logs / monitoring:** Runtime failures, performance issues, unexpected behavior
@@ -154,7 +158,10 @@ Record cost observations and any topology adjustment recommendations.
 
 ## Step 4: Update Product Context
 
-Based on the classified feedback, update `product-context.yaml` directly:
+Based on the classified feedback, update the appropriate file:
+
+- **Operational changes** (new stories, architecture amendments, topology, cost, changelog) → `product-context.yaml`
+- **Product intent changes** (opportunity shift, persona change, goals, mvp_boundary, layers, activities) → `product/index.yaml` (split mode) or `product-context.yaml` (v1 mode)
 
 1. **Append to the `changelog` section** with a full feedback classification entry:
 

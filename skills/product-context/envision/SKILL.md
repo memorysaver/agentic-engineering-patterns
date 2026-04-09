@@ -16,7 +16,7 @@ Transform a fuzzy product idea into a precise, testable product definition. Firs
 
 **Session:** Main, interactive with user
 **Input:** Product idea (vague or refined)
-**Output:** `product-context.yaml` with `opportunity` and `product` sections populated
+**Output:** `product/index.yaml` with `opportunity`, `personas`, `capabilities`, and `product` sections; `product-context.yaml` with `calibration` and `changelog` sections. In v1 fallback mode (no split), writes everything to `product-context.yaml`.
 
 **YAML Schema:** See `templates/product-context-schema.yaml` for the full structure and field definitions.
 
@@ -24,14 +24,20 @@ Transform a fuzzy product idea into a precise, testable product definition. Firs
 
 ## Before Starting
 
-Check if product context already exists:
+Check which mode to operate in:
 
 ```bash
+ls product/index.yaml 2>/dev/null
 ls product-context.yaml 2>/dev/null
 ```
 
-- **No `product-context.yaml` exists:** Start from Phase 0. You will create the file at the end.
-- **`product-context.yaml` exists:** The user is likely iterating. Read the existing file and ask whether they want to revise the existing product context (update mode) or start fresh. In update mode, read the existing YAML first, then focus on what's changed — preserve all sections you are not updating.
+**File Resolution:**
+
+- If `product/index.yaml` exists → **split mode**. Product definition lives in `product/index.yaml`, operational state in `product-context.yaml`.
+- If only `product-context.yaml` exists → **v1 mode** OR **migration candidate**. Ask the user: "Do you want to migrate to split mode (product/index.yaml + product-context.yaml) or keep the single file?"
+- If neither exists → **new project**. Default to split mode. Create `product/` directory.
+
+In update mode, read the existing file(s) and ask whether they want to revise or start fresh. Preserve all sections you are not updating.
 
 ---
 
@@ -65,7 +71,8 @@ If the opportunity does not survive an honest five-minute challenge, it should n
 
 ### Phase 0 Output
 
-Write the finalized Opportunity Brief to the `opportunity` section of `product-context.yaml`.
+**Split mode:** Write the finalized Opportunity Brief to the `opportunity` section of `product/index.yaml`.
+**V1 mode:** Write to the `opportunity` section of `product-context.yaml`.
 
 ---
 
@@ -123,32 +130,46 @@ Record the stress test results in `product.stress_test` within the YAML.
 
 ### Phase 1 Output
 
-Write the finalized Context Document to the `product` section of `product-context.yaml`. Always append an entry to the `changelog` section recording what was created or updated.
+**Split mode:**
 
-On first run — create `product-context.yaml` with `opportunity` + `product` sections, using `templates/product-context-schema.yaml` as the structural reference.
+1. Write the finalized Context Document to `product/index.yaml`:
+   - `opportunity` (from Phase 0)
+   - `personas` (extracted from the persona work — use list format with `id`, `description`, `jtbd`)
+   - `capabilities` (at least one entry; single-journey products get one capability)
+   - `product` subsection: `problem`, `goals`, `non_goals`, `mvp_boundary`, `constraints`, `layers`, `activities`, `failure_model`, `security_model`, `success_criteria`, `quality_dimensions`, `open_questions`, `decisions`, `stress_test`
+2. Write operational initialization to `product-context.yaml`:
+   - Header: `schema: v1`, `project`, `version`, `updated_at`, `dispatch_epoch: 0`
+   - `calibration.plan` (mapped from quality_dimensions)
+   - `calibration.history: []`
+   - `changelog` entry recording what was created
+   - All other operational sections left empty (populated by `/map`)
 
-On subsequent runs — read the existing YAML, update the `opportunity` and/or `product` sections, and preserve all other sections (e.g., `architecture`, `stories`, `topology`).
+**V1 mode:** Write everything to `product-context.yaml` using `templates/product-context-schema.yaml` as the structural reference.
+
+On subsequent runs — read the existing file(s), update the relevant sections, and preserve all other sections (e.g., `architecture`, `stories`, `topology`).
 
 If quality dimensions were declared, also write the initial `calibration.plan` section — mapping each dimension to the layer where calibration is expected. This plan is refined by `/map` (which has concrete layer definitions) and executed by `/calibrate`.
 
 #### Capability Maps (for multi-journey products)
 
-If the product has **2+ distinct user journeys** (e.g., buyer flow and seller flow), also create capability map files:
+If the product has **2+ distinct user journeys**, also create capability map files:
 
-1. Create `product/index.yaml` with the program frame (opportunity summary, personas, capability list, constraints). The index mirrors the `opportunity` and top-level `product` fields from `product-context.yaml`. See the v2 roadmap (`docs/aep-v2-improvement-guideline.md`, Section 1.3) for the index schema.
-
-2. For the primary capability, create:
+1. Ensure `product/index.yaml` has multiple entries in `capabilities[]`
+2. For each capability, create:
    - `product/maps/<capability-id>/frame.yaml` — scope, boundary, primary user, outcome contract
-   - Leave `map.yaml` empty — `/map` will populate it
+   - Story stubs are populated later by `/map`
 
-Simple single-journey products skip capability maps entirely. The capability maps are additive narrative structure — `product-context.yaml` remains the single operational file for dispatch and execution.
+Simple single-journey products get one capability entry but skip `frame.yaml` and `map.yaml`.
 
 ### Before Committing: Validate YAML
 
 See `references/yaml-guardrails.md` for the full checklist. Run:
 
 ```bash
-npx js-yaml product-context.yaml > /dev/null && echo "YAML OK"
+# Split mode
+python3 -c "import yaml; [yaml.safe_load(open(f)) for f in ('product/index.yaml', 'product-context.yaml')]; print('YAML OK')"
+# V1 mode
+python3 -c "import yaml; yaml.safe_load(open('product-context.yaml')); print('YAML OK')"
 ```
 
 If this fails, fix the YAML before committing. Common fixes: quote list items containing colons, flatten nested sub-lists, escape embedded double quotes.
@@ -156,7 +177,9 @@ If this fails, fix the YAML before committing. Common fixes: quote list items co
 ### Commit
 
 ```bash
-# Write product-context.yaml (opportunity + product sections)
+# Split mode: Write product/index.yaml (opportunity + personas + capabilities + product)
+# Split mode: Write product-context.yaml (calibration + changelog, operational sections empty)
+# V1 mode: Write product-context.yaml (all sections)
 jj describe -m "feat: add product context (opportunity brief + context document)"
 jj new
 jj git push --change @-
@@ -168,7 +191,7 @@ jj git push --change @-
 
 When revisiting an existing product (triggered by `/reflect` or the user's own initiative):
 
-1. Read the existing `product-context.yaml`
+1. Read the existing product definition (`product/index.yaml` in split mode, `product-context.yaml` in v1 mode)
 2. Identify what's changed — new learnings, invalidated assumptions, scope shifts
 3. Update the relevant sections (`opportunity` and/or `product`)
 4. Re-run the stress test on changed sections only

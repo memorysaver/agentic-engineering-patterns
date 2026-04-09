@@ -17,7 +17,7 @@ Bridge between the product context (control plane) and the feature lifecycle (ex
 ```
 
 **Session:** Main, interactive
-**Input:** `product-context.yaml` with stories
+**Input:** Product definition from `product/index.yaml` (split mode) or `product-context.yaml` (v1 mode); operational state from `product-context.yaml`
 **Output:** OpenSpec change with pre-assembled context, story status updated, handoff to `/design` or `/launch`
 
 > **For autonomous orchestration:** Use `/autopilot` instead. Autopilot runs the full dispatch-launch-monitor-review-wrap-dispatch cycle as a tick-based state machine via `/loop`. Dispatch remains a single-pass interactive tool.
@@ -26,9 +26,15 @@ Bridge between the product context (control plane) and the feature lifecycle (ex
 
 ## Before Starting
 
+**File Resolution:**
+
 ```bash
+ls product/index.yaml 2>/dev/null && echo "SPLIT MODE" || echo "V1 MODE"
 cat product-context.yaml
 ```
+
+- **Split mode** (`product/index.yaml` exists): Read product definition from `product/index.yaml` for context assembly. Read stories, topology, architecture, cost from `product-context.yaml`.
+- **V1 mode**: Read everything from `product-context.yaml`.
 
 If `product-context.yaml` doesn't exist, run `/envision` then `/map` first.
 If the `stories` section is empty, run `/map` to decompose the product.
@@ -354,7 +360,7 @@ openspec/changes/<story-id>/
 
 #### Part 1: Stable Prefix (~10K tokens, shared across agents in same layer)
 
-Extracted from `product-context.yaml`:
+Extracted from product definition (`product/index.yaml` in split mode, `product-context.yaml` in v1 mode):
 
 - `product.problem` — what we're solving
 - `product.constraints` — tech stack, infrastructure

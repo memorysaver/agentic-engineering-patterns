@@ -15,8 +15,8 @@ Decompose the Context Document into a system map (modules + interfaces), a layer
 ```
 
 **Session:** Main, interactive with user (System Map requires human review)
-**Input:** `product-context.yaml` (specifically the `opportunity` and `product` sections from `/envision`)
-**Output:** `product-context.yaml` updated with `architecture`, `stories`, `waves`, `topology`, `layer_gates`, and `cost` sections
+**Input:** Product definition from `product/index.yaml` (split mode) or `product-context.yaml` (v1 mode)
+**Output:** `product-context.yaml` updated with `architecture`, `stories`, `waves`, `topology`, `layer_gates`, `cost`, and `changelog` sections
 
 **YAML Schema:** See `templates/product-context-schema.yaml` for the full structure and field definitions.
 
@@ -24,13 +24,17 @@ Decompose the Context Document into a system map (modules + interfaces), a layer
 
 ## Before Starting
 
-Read the product context:
+**File Resolution:**
 
 ```bash
+ls product/index.yaml 2>/dev/null && echo "SPLIT MODE" || echo "V1 MODE"
 cat product-context.yaml
 ```
 
-If `product-context.yaml` does not exist or is missing the `product` section, run `/envision` first.
+- **Split mode** (`product/index.yaml` exists): Read product definition (opportunity, personas, product.\*) from `product/index.yaml`. Read operational state from `product-context.yaml`.
+- **V1 mode**: Read everything from `product-context.yaml`.
+
+If product definition is missing (no `product` section in either file), run `/envision` first.
 
 ---
 
@@ -135,11 +139,14 @@ If `product/index.yaml` exists (created by `/envision` for multi-journey product
 
 - `product/maps/<capability>/map.yaml` — backbone activities, layers, story stubs for this capability
 - Story stubs in `map.yaml` are sketches; the full stories in `product-context.yaml` are the operational versions
+
+> **Split mode note:** In split mode, the capability map's `map.yaml` story stubs are narrative sketches. The full stories are written to `product-context.yaml`, and `product/index.yaml` is NOT modified by `/map` (it only reads from it).
+
 - This is additive — if no capability maps exist, skip this step
 
 ### Alignment Layers (`.5` Layers)
 
-After defining each implementation layer, review `calibration.plan` from `product-context.yaml` (if populated by `/envision`) or consider which quality dimensions may need human calibration:
+After defining each implementation layer, review `calibration.plan` from `product-context.yaml` (operational file, both modes) (if populated by `/envision`) or consider which quality dimensions may need human calibration:
 
 - **UI-facing stories** → consider visual-design and/or copy-tone calibration
 - **New API endpoints** → consider api-surface calibration
@@ -234,7 +241,7 @@ Always append to the `changelog` section.
 
 When updating the map (triggered by `/reflect` or new requirements):
 
-1. Read the existing `product-context.yaml`
+1. Read the existing product definition (`product/index.yaml` in split mode, `product-context.yaml` in v1 mode) and operational state from `product-context.yaml`
 2. Identify what's changed — new modules, revised interfaces, new stories
 3. Update affected sections (`architecture`, `stories`, `topology`)
 4. If interface contracts changed → re-verify dependent stories
