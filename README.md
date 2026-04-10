@@ -352,13 +352,15 @@ These aren't rules we invented — they're patterns extracted from Anthropic's e
 
 ## Getting Started
 
+**Brand new to AEP?** Start with the [Orientation Guide](docs/orientation.md) for a 10-minute tour of the mental models, the 16 skills, and the four paths — then run `/onboard`.
+
 **New to this plugin?**
 
 ```
 /onboard
 ```
 
-Installs prerequisites, verifies tools, configures recommended plugins.
+Installs prerequisites, verifies tools, configures recommended plugins, and walks you through the 5-minute mental-model orientation in Phase 0.
 
 **Have a product idea?**
 
@@ -423,6 +425,7 @@ Generate a dimension-specific brief, explore or discuss, capture decisions for a
 
 ## Documentation
 
+- [Orientation Guide](docs/orientation.md) — 10-minute first-hour tour of mental models, skills, and the four paths (start here if you're new)
 - [Glossary — Ubiquitous Language](docs/glossary.md) — precise definitions for every AEP term
 - [Skills Quick Reference](docs/skills-quick-reference.md) — when to use which skill, decision trees, common sequences
 - [Autonomous Loop](docs/autonomous-loop.md) — how `/autopilot` orchestrates the full cycle

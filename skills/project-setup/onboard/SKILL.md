@@ -1,11 +1,31 @@
 ---
 name: onboard
-description: Full environment onboarding for agentic engineering. Use when setting up a new machine, joining the project, or when the user says "get started", "onboard", "setup environment", "install prerequisites", or wants to prepare their dev environment for this plugin.
+description: Full environment onboarding and first-hour orientation for Agentic Engineering Patterns (AEP). Use when setting up a new machine, joining the project, installing the plugin, or when the user says "get started", "onboard", "setup environment", "install prerequisites", "what is this plugin", "help me understand AEP", "I'm new to agentic engineering", "introduce me to this workflow", or wants to prepare their dev environment AND learn the mental model. Always use this first when a user mentions AEP, agentic-engineering-patterns, or this plugin for the first time.
 ---
 
 # Onboard
 
-Set up your environment for agentic TypeScript development. Install the plugin, verify tools, and configure recommended plugins. Run once on first setup, or re-run anytime to verify your environment.
+Set up your environment for agentic TypeScript development AND get oriented to how AEP thinks. Phase 0 gives you the 5-minute mental model; Phases 1–5 install the plugin, verify tools, and configure recommended plugins. Run once on first setup — returning users running for environment verification can skip Phase 0 and jump straight to Phase 1.
+
+---
+
+## Phase 0 — Orient Yourself (5 minutes, first-timers only)
+
+> **Returning user?** If you've run `/onboard` before and you're just re-verifying your environment, skip to Phase 1.
+
+Before installing tools, get the mental model. AEP is not a "command runner" — it's a workflow that separates _thinking_ (what to build) from _doing_ (building it). Installing the tools without understanding this will leave you staring at a blank terminal wondering which of 16 skills to run first.
+
+**The three mental models you need:**
+
+1. **Control plane vs execution plane.** You + AI make high-leverage decisions on the **control plane** (goals, decomposition, architecture, priorities). Agents receive precise specs and build on the **execution plane**. They never share code context directly — only structured artifacts like `product-context.yaml` and signal files. See [README.md "The Mental Model"](../../../README.md#the-mental-model).
+
+2. **The story map.** Your product is organized as a [Jeff Patton story map](https://www.jpattonassociates.com/user-story-mapping/) — a grid with activities (columns, user journey left→right), layers (rows, enrichment top→down), waves (parallel batches within a layer), and release lines (what's shippable). Layer 0 is the **walking skeleton** — the thinnest end-to-end path. See [README.md "The Story Map"](../../../README.md#the-story-map).
+
+3. **Two-session model.** The **main session** runs on your `main` branch where you + AI plan (`/envision`, `/map`, `/dispatch`, `/design`, `/wrap`, `/reflect`). The **workspace session** runs autonomously in an isolated jj workspace where one agent implements a feature (`/build`). They communicate only through signal files in `.dev-workflow/signals/`. See [skills/product-context/README.md](../../product-context/README.md#single-source-of-truth-product-contextyaml).
+
+**v2 split-mode (good to know):** Some projects store product context in two files — `product/index.yaml` (stable intent: opportunity, personas, capabilities, constraints) + `product-context.yaml` (mutable state: architecture, stories, cost, changelog). All skills auto-detect which mode a project uses. If you see only `product-context.yaml`, that's v1 single-file mode and it works exactly the same way. See [docs/aep-v2-improvement-guideline.md](../../../docs/aep-v2-improvement-guideline.md).
+
+**Next step:** for the full 10-minute first-hour guide — including a table of all 16 skills, four concrete paths (new product / existing project / single feature / hands-free), and a glossary shortlist — read **[docs/orientation.md](../../../docs/orientation.md)**. Then come back to Phase 1.
 
 ---
 
@@ -25,17 +45,19 @@ Add the marketplace and install both plugin groups:
 
 ### Plugin Groups
 
-| Group | Skills | Purpose |
-|-------|--------|---------|
-| **product-context** | envision, map, dispatch, reflect | Product-level planning and iteration |
-| **project-setup** | onboard, scaffold | Scaffold projects, configure spec-driven development, environment onboarding |
-| **agentic-development-workflow** | design, launch, build, wrap, jj-ref | Full-lifecycle feature development with jj workspaces |
+| Group                            | Skills                              | Purpose                                                                      |
+| -------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------- |
+| **product-context**              | envision, map, dispatch, reflect    | Product-level planning and iteration                                         |
+| **project-setup**                | onboard, scaffold                   | Scaffold projects, configure spec-driven development, environment onboarding |
+| **agentic-development-workflow** | design, launch, build, wrap, jj-ref | Full-lifecycle feature development with jj workspaces                        |
 
 > **Note:** This installs the agentic-engineering-patterns plugin itself. Recommended third-party plugins (superpowers, agent-browser, etc.) are configured at the project level in Phase 4 via `.claude/settings.json`.
 
 ---
 
 ## Phase 2 — Verify Required Tools
+
+Each tool below earns its place in the agentic workflow — `jj` gives cheap mutable changes and isolated workspaces for parallel agents, `bun` runs the TypeScript monorepo, `openspec` powers spec-driven development, `tmux`/`cmux` host long-running autonomous agents, and `gh` publishes PRs. You need all of them before Phase 4.
 
 Run this check:
 
@@ -48,22 +70,24 @@ done
 
 Install any missing tools:
 
-| Tool | Purpose | Install |
-|------|---------|---------|
-| `jj` | Change-oriented local VCS | `brew install jj` or `cargo install jj-cli` |
-| `bun` | Package manager & runtime | `curl -fsSL https://bun.sh/install \| bash` |
-| `git` | Remote collaboration + GitHub | `xcode-select --install` (macOS) |
-| `claude` | Claude Code CLI | `npm install -g @anthropic-ai/claude-code` |
-| `gh` | GitHub CLI for PRs | `brew install gh` |
-| `openspec` | Spec-driven development | `bun add -g openspec` |
-| `tmux` | Terminal multiplexer | `brew install tmux` |
-| `cmux` | Claude Code tab multiplexer | `bun add -g cmux` |
+| Tool       | Purpose                       | Install                                     |
+| ---------- | ----------------------------- | ------------------------------------------- |
+| `jj`       | Change-oriented local VCS     | `brew install jj` or `cargo install jj-cli` |
+| `bun`      | Package manager & runtime     | `curl -fsSL https://bun.sh/install \| bash` |
+| `git`      | Remote collaboration + GitHub | `xcode-select --install` (macOS)            |
+| `claude`   | Claude Code CLI               | `npm install -g @anthropic-ai/claude-code`  |
+| `gh`       | GitHub CLI for PRs            | `brew install gh`                           |
+| `openspec` | Spec-driven development       | `bun add -g openspec`                       |
+| `tmux`     | Terminal multiplexer          | `brew install tmux`                         |
+| `cmux`     | Claude Code tab multiplexer   | `bun add -g cmux`                           |
 
 All tools must show OK before proceeding.
 
 ---
 
 ## Phase 2.5 — Initialize jj (Colocated Mode)
+
+Colocated mode lets jj manage local changes (mutable until published, cheap workspace spawning, no staging area) while git stays in charge of remotes — agents get the benefits of change-oriented VCS without losing GitHub integration.
 
 If the project has a `.git/` directory but no `.jj/`, initialize jj in colocated mode:
 
@@ -73,6 +97,7 @@ If the project has a `.git/` directory but no `.jj/`, initialize jj in colocated
 ```
 
 This creates a colocated jj+git repo:
+
 - **jj** manages local changes, history, workspaces
 - **git** handles remote push/fetch, GitHub PRs, CI/CD
 - Both `.jj/` and `.git/` coexist in the same repo
@@ -96,10 +121,10 @@ for cmd in agent-browser portless; do
 done
 ```
 
-| Tool | Purpose | Install |
-|------|---------|---------|
-| `agent-browser` | Browser automation testing | Claude Code plugin: `agent-browser@agent-browser` |
-| `portless` | Port management (.localhost) | `bun add -g portless` |
+| Tool            | Purpose                      | Install                                           |
+| --------------- | ---------------------------- | ------------------------------------------------- |
+| `agent-browser` | Browser automation testing   | Claude Code plugin: `agent-browser@agent-browser` |
+| `portless`      | Port management (.localhost) | `bun add -g portless`                             |
 
 These are optional — the workflow works without them but is enhanced by them.
 
@@ -107,7 +132,7 @@ These are optional — the workflow works without them but is enhanced by them.
 
 ## Phase 4 — Configure Project Plugins
 
-Configure recommended plugins at the project level.
+Configure recommended plugins at the project level. These plugins are not optional cosmetics — `superpowers` provides the planning/TDD skills that `/design` assumes exist, `mgrep` powers deeper search, `frontend-design` is assumed by visual calibration work, `code-review` is used by `/build`, and the hooks enforce the concurrency protocol that keeps parallel workspace agents from corrupting `product-context.yaml`.
 
 ### What to write
 
@@ -168,14 +193,14 @@ Read `.claude/settings.json` if it exists. Merge the following keys into it (or 
 
 ### Plugin reference
 
-| Plugin | Marketplace | Purpose |
-|--------|------------|---------|
-| `superpowers` | `superpowers-marketplace` | Planning, debugging, TDD, code review workflows |
-| `agent-browser` | `agent-browser` | Browser automation for testing |
-| `frontend-design` | `claude-plugins-official` | High-quality UI generation |
-| `code-review` | `claude-plugins-official` | PR code review |
-| `mgrep` | `Mixedbread-Grep` | Semantic search (local + web) |
-| `skill-creator` | `claude-plugins-official` | Create and test new skills |
+| Plugin            | Marketplace               | Purpose                                         |
+| ----------------- | ------------------------- | ----------------------------------------------- |
+| `superpowers`     | `superpowers-marketplace` | Planning, debugging, TDD, code review workflows |
+| `agent-browser`   | `agent-browser`           | Browser automation for testing                  |
+| `frontend-design` | `claude-plugins-official` | High-quality UI generation                      |
+| `code-review`     | `claude-plugins-official` | PR code review                                  |
+| `mgrep`           | `Mixedbread-Grep`         | Semantic search (local + web)                   |
+| `skill-creator`   | `claude-plugins-official` | Create and test new skills                      |
 
 ### Merging rules
 
@@ -209,21 +234,84 @@ If all core tools show OK, the environment is ready.
 
 ---
 
-## Next Steps
+## Next Steps — Pick Your Path
 
-| Command | What it does |
-|---------|-------------|
-| `/envision` | Validate a product idea and create the context document |
-| `/scaffold` | Scaffold a full-stack TypeScript monorepo + initialize OpenSpec |
-| `/dispatch` | Pick the next story from the map and start building |
-| `/design` | Start designing a feature (explore + propose + review) |
+Your next move depends on your situation. Pick the path that matches what you're trying to do. Full context for each path (including why each step is in the order it's in) is in [docs/orientation.md](../../../docs/orientation.md) section 4, "The Four Paths".
 
-Typical flow: `/envision` → `/map` → `/scaffold` → `/dispatch` → `/design` → `/launch` → `/build` → `/wrap` → `/reflect`
+### Path A — New product from scratch
+
+You have an idea and a fresh repo.
+
+```
+/envision  →  /map  →  /validate  →  /scaffold  →  /autopilot
+```
+
+`/envision` validates the opportunity and extracts the activity backbone. `/map` decomposes it into a system map + story graph + agent topology. `/validate` runs gen/eval checks. `/scaffold` creates the monorepo + OpenSpec. `/autopilot` (optional) takes over hands-free — or drive it manually with `/dispatch → /design → /launch → /build → /wrap`.
+
+### Path B — Onboarding an existing project
+
+You have a codebase and want to add AEP workflows to it.
+
+```
+/scaffold  →  /dispatch  →  /design  →  /launch  →  /build  →  /wrap
+```
+
+`/scaffold` adds agentic infrastructure (OpenSpec, workspace hooks, E2E skeleton) to existing code. Then start a feature cycle with `/dispatch`. Use `/envision` later if you want to retrofit a product context.
+
+### Path C — Single feature, no product context
+
+You just want to ship one feature with AEP workflows.
+
+```
+/design  →  /launch  →  /build  →  /wrap
+```
+
+`/design` produces an OpenSpec change on `main`. `/launch` spawns an isolated jj workspace and boots the agent. `/build` implements, tests, reviews, and merges. `/wrap` archives.
+
+### Path D — Hands-free autonomous mode
+
+You have a validated product context and want to go grab coffee.
+
+```
+/autopilot
+```
+
+One command. Pauses only for design escalations or layer gate failures. Deep dive: [docs/workflow/autonomous-loop.md](../../../docs/workflow/autonomous-loop.md).
+
+**Still unsure which path?** See the decision tree in [docs/skills-quick-reference.md](../../../docs/skills-quick-reference.md#decision-tree).
 
 ---
 
 ## Guardrails
 
 - **Run from the project root** — tools and plugins are verified relative to the current environment
-- **Re-run anytime** — safe to re-run to verify environment is still complete
+- **Re-run anytime** — safe to re-run to verify environment is still complete. Returning users can skip Phase 0 (orientation) and jump to Phase 1.
 - **Checks only** — this skill verifies and installs tools, it does not scaffold projects or modify code
+
+---
+
+## Learn More
+
+Pointers for going deeper. None of these are required reading — check what's relevant when you need it.
+
+**Mental models & concepts**
+
+- [docs/orientation.md](../../../docs/orientation.md) — the canonical first-hour guide (mental models + 16 skills + four paths)
+- [README.md "Why This Exists"](../../../README.md#why-this-exists) — the full argument for spec-precision-over-execution-speed
+- [docs/glossary.md](../../../docs/glossary.md) — precise definitions for every AEP term (ubiquitous language)
+
+**Skills decision guide**
+
+- [docs/skills-quick-reference.md](../../../docs/skills-quick-reference.md) — cheat sheet + decision tree + common sequences
+
+**Autonomous mode**
+
+- [docs/workflow/autonomous-loop.md](../../../docs/workflow/autonomous-loop.md) — how `/autopilot` orchestrates dispatch → launch → monitor → wrap
+
+**v2 upgrades**
+
+- [docs/aep-v2-improvement-guideline.md](../../../docs/aep-v2-improvement-guideline.md) — split-mode, capability maps, readiness scoring, outcome contracts, technical specs, grouped changes
+
+**jj concepts (change-oriented VCS)**
+
+- [skills/agentic-development-workflow/jj-ref/SKILL.md](../../agentic-development-workflow/jj-ref/SKILL.md) — jj command reference, accessed on-demand via `/jj-ref`

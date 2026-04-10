@@ -1,6 +1,6 @@
 # AEP Skills — Quick Reference
 
-A cheat sheet for all 16 AEP skills. For precise term definitions, see the [Glossary](glossary.md).
+A cheat sheet for all 16 AEP skills. For precise term definitions, see the [Glossary](glossary.md). For a guided first-hour introduction to the mental models behind these skills, see the [Orientation Guide](orientation.md).
 
 ---
 
