@@ -1,6 +1,6 @@
 # Sprint Contract Template
 
-A sprint contract is generated during Phase 0 for each task in the jj change stack. It bridges the gap between OpenSpec's high-level specs and concrete implementation by defining **what will be built** and **how success will be verified** before any code is written.
+A sprint contract is generated during Phase 0 for each task in `tasks.md`. It bridges the gap between OpenSpec's high-level specs and concrete implementation by defining **what will be built** and **how success will be verified** before any code is written.
 
 Anthropic's harness design research found that having the generator propose implementation details and success criteria — then having the evaluator review them before coding begins — prevents the common failure where agents build the wrong thing. This "sprint contract" negotiation continues until both sides agree.
 
@@ -10,9 +10,9 @@ Anthropic's harness design research found that having the generator propose impl
 
 ## How Contracts Are Generated
 
-During Phase 0, after creating the jj change stack:
+During Phase 0:
 
-1. Read `tasks.md` for the task list
+1. Read `tasks.md` for the task list (this is your linear plan — one commit per task in Phase 4)
 2. Read `specs/*.md` for detailed requirements
 3. Read `design.md` for technical approach
 4. For each task, extract the matching spec requirements and generate a contract
@@ -33,30 +33,35 @@ Date: <YYYY-MM-DD>
 
 ## Task: <task description from tasks.md>
 
-**Change ID:** <jj change short ID>
 **Source spec:** <which spec file this maps to>
+**Commit SHA:** <filled in after Phase 4 commits this task; 8-char short SHA>
 
 ### What will be built
+
 - [Specific files to create or modify]
 - [Components, routes, or endpoints to add]
 - [Database changes if any]
 
 ### Success criteria
+
 - [Extracted from matching spec — what "done" looks like]
 - [Observable behaviors, not implementation details]
 - [Include error and edge case handling from spec]
 
 ### Verification steps
+
 1. [Concrete, executable step — e.g., "Navigate to /settings"]
 2. [What to check — e.g., "Verify form shows current values"]
 3. [Edge case — e.g., "Submit with empty required field, verify error shown"]
 4. [Error path — e.g., "Disconnect network, verify offline message"]
 
 ### Dependencies
+
 - [Other tasks this depends on, if any]
 - [External services or APIs needed]
 
 ### Risks
+
 - [Known unknowns or areas of uncertainty]
 
 ---
@@ -69,10 +74,11 @@ Date: <YYYY-MM-DD>
 ```markdown
 ## Task: Add password reset flow
 
-**Change ID:** kqx8m2vn
 **Source spec:** specs/authentication.md
+**Commit SHA:** a1b2c3d4
 
 ### What will be built
+
 - `apps/web/src/pages/forgot-password.tsx` — Request reset form
 - `apps/web/src/pages/reset-password.tsx` — New password form
 - `apps/server/src/routes/auth/reset.ts` — Reset token API endpoints
@@ -80,6 +86,7 @@ Date: <YYYY-MM-DD>
 - Email template for reset link
 
 ### Success criteria
+
 - User can request a password reset by entering their email
 - System sends a reset email with a time-limited token
 - User can set a new password using the token link
@@ -88,6 +95,7 @@ Date: <YYYY-MM-DD>
 - After reset, user is redirected to login
 
 ### Verification steps
+
 1. Navigate to /forgot-password
 2. Enter a registered email, submit — verify success message shown
 3. Check server logs for reset email sent
@@ -99,10 +107,12 @@ Date: <YYYY-MM-DD>
 9. Submit /forgot-password with unregistered email — verify same success message (no email enumeration)
 
 ### Dependencies
+
 - Authentication system from Task 1 must be complete
 - Email service must be configured
 
 ### Risks
+
 - Email delivery may be slow in dev environment
 - Token expiration timing needs to be configurable
 ```

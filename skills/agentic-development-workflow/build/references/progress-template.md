@@ -1,13 +1,14 @@
 # Development Progress
 
-| Field | Value |
-|-------|-------|
-| **Feature** | <!-- feature name --> |
-| **Change ID** | <!-- jj change ID --> |
-| **Started** | <!-- YYYY-MM-DD --> |
-| **OpenSpec Change** | <!-- change name --> |
-| **Mode** | <!-- full / light --> |
-| **Evaluator** | <!-- yes / no --> |
+| Field               | Value                                                                   |
+| ------------------- | ----------------------------------------------------------------------- |
+| **Feature**         | <!-- feature name -->                                                   |
+| **Branch**          | <!-- feat/<name> -->                                                    |
+| **Base commit**     | <!-- short SHA from `git rev-parse --short HEAD` at branch creation --> |
+| **Started**         | <!-- YYYY-MM-DD -->                                                     |
+| **OpenSpec Change** | <!-- change name -->                                                    |
+| **Mode**            | <!-- full / light -->                                                   |
+| **Evaluator**       | <!-- yes / no -->                                                       |
 
 ---
 
@@ -26,7 +27,7 @@
 
 ## Part C — Launch Workspace
 
-- [ ] Workspace created (`jj workspace add`)
+- [ ] Worktree created (`git worktree add -b feat/<name>`)
 - [ ] tmux/cmux session started
 - [ ] Bootstrap prompt sent
 - [ ] Evaluator agent launched (full mode only)
@@ -35,7 +36,7 @@
 
 - [ ] Phase 0: Tracking initialized
   - [ ] Progress file created
-  - [ ] jj change stack created (skeleton-first)
+  - [ ] tasks.md read (linear plan, one commit per task)
   - [ ] Dependencies installed
   - [ ] Dev server running
   - [ ] Port config written
@@ -43,18 +44,18 @@
   - [ ] Feature verification list generated (`.dev-workflow/feature-verification.json`)
   - [ ] Session recovery script generated (`.dev-workflow/init.sh`)
   - [ ] Inter-agent signals initialized (`.dev-workflow/signals/`)
-- [ ] Phase 4: OpenSpec Apply (jj edit each change)
-  - [ ] Task 1: <!-- task description -->
-  - [ ] Task 2: <!-- task description -->
-  - [ ] Task 3: <!-- task description -->
+- [ ] Phase 4: OpenSpec Apply (one commit per task)
+  - [ ] Task 1: <!-- task description --> — commit: <!-- short SHA -->
+  - [ ] Task 2: <!-- task description --> — commit: <!-- short SHA -->
+  - [ ] Task 3: <!-- task description --> — commit: <!-- short SHA -->
 - [ ] Phase 5: Code Review & Verification
-  - [ ] Completeness check (per-change review)
+  - [ ] Completeness check (per-commit review via `git show`)
   - [ ] Contracts verified (`.dev-workflow/contracts.md`)
   - [ ] Quality review (evaluator or self-review)
   - [ ] Evaluator round 1: <!-- PASS/FAIL + summary -->
   - [ ] Evaluator round 2: <!-- if needed -->
   - [ ] `feature-verification.json` updated
-  - [ ] Issues fixed
+  - [ ] Issues fixed (follow-up commits)
 - [ ] Phase 6: Browser Testing (Dogfood)
   - [ ] Dogfood report created
   - [ ] Issues fixed
@@ -65,18 +66,18 @@
   - [ ] All results reviewed
   - [ ] No blocking issues
 - [ ] Phase 9: Cleanup & Publish
-  - [ ] Changes split/squashed as needed
-  - [ ] Rebased onto latest main
-  - [ ] Bookmark created and pushed
+  - [ ] Commit history reviewed (`git log --oneline main..HEAD`)
+  - [ ] Rebased onto latest origin/main
+  - [ ] Pushed (`git push -u origin feat/<name>`)
 - [ ] Phase 10: Create PR
-  - [ ] PR created
+  - [ ] PR created (`gh pr create --base main`)
   - [ ] PR URL: <!-- url -->
 - [ ] Phase 11: PR Review Loop
   - [ ] Round 1: <!-- status -->
 - [ ] Phase 11.5: Human Evaluation & Iteration
   - [ ] Iteration round 1: _[findings summary]_
     - [ ] Findings documented
-    - [ ] Code fixed (jj edit + squash)
+    - [ ] Code fixed (follow-up commit)
     - [ ] OpenSpec change aligned
     - [ ] Re-tested
     - [ ] Pushed
@@ -85,13 +86,13 @@
   - [ ] CI green
   - [ ] Reviews resolved
   - [ ] User confirmed
-  - [ ] Merged
+  - [ ] Merged (`gh pr merge --squash --delete-branch`)
 
 ## Part E — Post-Merge (on main)
 
 - [ ] Phase 13: Archive & Cleanup
-  - [ ] Fetched merged state (`jj git fetch`)
+  - [ ] Fetched merged state (`git fetch && git pull --ff-only origin main`)
   - [ ] Dev server stopped
   - [ ] `/opsx:archive` run
   - [ ] Archive committed + pushed
-  - [ ] Workspace forgotten (`jj workspace forget`)
+  - [ ] Worktree removed (`git worktree remove .feature-workspaces/<name> && git branch -d feat/<name>`)

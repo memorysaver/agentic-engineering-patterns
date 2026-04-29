@@ -8,13 +8,13 @@ Four skills, one lifecycle:
 /design → /launch → /build → /wrap
 ```
 
-| Skill | What it does | Session |
-|-------|-------------|---------|
-| [/design](design/SKILL.md) | Explore + propose + review | Main, interactive |
-| [/launch](launch/SKILL.md) | Spawn workspace + evaluator | Main, automated |
-| [/build](build/SKILL.md) | Init → implement → test → PR → merge | Workspace, autonomous |
-| [/wrap](wrap/SKILL.md) | Archive + cleanup | Main, post-merge |
-| [/jj-ref](jj-ref/SKILL.md) | jj command reference | On-demand |
+| Skill                        | What it does                         | Session               |
+| ---------------------------- | ------------------------------------ | --------------------- |
+| [/design](design/SKILL.md)   | Explore + propose + review           | Main, interactive     |
+| [/launch](launch/SKILL.md)   | Spawn worktree + evaluator           | Main, automated       |
+| [/build](build/SKILL.md)     | Init → implement → test → PR → merge | Workspace, autonomous |
+| [/wrap](wrap/SKILL.md)       | Archive + cleanup                    | Main, post-merge      |
+| [/git-ref](git-ref/SKILL.md) | git + worktree reference for AEP     | On-demand             |
 
 ## Inspired By
 
@@ -47,7 +47,7 @@ The harness wraps around the agent to provide structure, recovery, and quality a
 │  ┌─────────────────────────────────────────────────────────────┐    │
 │  │                    GENERATOR AGENT                          │    │
 │  │                                                             │    │
-│  │  Reads specs ► Writes contracts ► Implements via jj stack   │    │
+│  │  Reads specs ► Writes contracts ► Implements task-by-task    │    │
 │  │  ► Requests evaluation ► Fixes failures ► Publishes PR      │    │
 │  └─────────────────────────────────────────────────────────────┘    │
 │                                                                     │
@@ -165,7 +165,7 @@ GENERATOR                                           EVALUATOR
 
 ```
 .dev-workflow/                          ← gitignored, per-workspace
-├── progress-<change-id>.md             ← checkbox tracking
+├── progress-<short-sha>.md             ← checkbox tracking
 ├── contracts.md                        ← per-task success criteria + verification steps
 ├── feature-verification.json           ← JSON verification list (evaluator updates)
 ├── init.sh                             ← session recovery script (chmod +x)

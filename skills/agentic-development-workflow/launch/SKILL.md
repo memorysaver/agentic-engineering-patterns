@@ -1,11 +1,11 @@
 ---
 name: launch
-description: Spawn an autonomous workspace session for feature implementation. Use after /design is complete, or when the user says "launch workspace", "start building", "spawn agent", "send it to build". Creates a jj workspace, starts a Claude Code session in tmux/cmux, and optionally sets up a separate evaluator agent. Followed by /build (which runs autonomously in the workspace).
+description: Spawn an autonomous workspace session for feature implementation. Use after /design is complete, or when the user says "launch workspace", "start building", "spawn agent", "send it to build". Creates a git worktree on a feature branch, starts a Claude Code session in tmux/cmux, and optionally sets up a separate evaluator agent. Followed by /build (which runs autonomously in the workspace).
 ---
 
 # Launch
 
-Spawn an autonomous workspace session to implement a feature. Creates a jj workspace, bootstraps a Claude Code agent via tmux/cmux, and optionally sets up a separate evaluator agent for quality assurance.
+Spawn an autonomous workspace session to implement a feature. Creates a git worktree on a fresh feature branch, bootstraps a Claude Code agent via tmux/cmux, and optionally sets up a separate evaluator agent for quality assurance.
 
 **Where this fits:**
 
@@ -25,20 +25,21 @@ Spawn an autonomous workspace session to implement a feature. Creates a jj works
 ### 1. Verify working copy is clean
 
 ```bash
-jj st
+git status --porcelain
 ```
 
-**If any files are modified — ABORT.** Describe and create a new change first (`jj describe -m "..." && jj new`).
+**If any files are modified or staged — ABORT.** Commit them first (`git add <files> && git commit -m "..."`) or stash them with `git stash`.
 
 ### 2. Verify dispatch commit is pushed to remote
 
 ```bash
-jj log -r 'heads(::main ~ ::main@origin)' --no-graph -T 'description.first_line() ++ "\n"'
+git fetch origin
+git log --oneline origin/main..main
 ```
 
-**If any unpushed commits appear — ABORT.** The dispatch commit (YAML updates + OpenSpec changes) must be on the remote before launching workspaces. Without this, workspace PRs will merge to main and when you rebase, the local dispatch commit (with OpenSpec files) can be lost.
+**If any unpushed commits appear — ABORT.** The dispatch commit (YAML updates + OpenSpec changes) must be on the remote before launching workspaces. Without this, workspace branches base off a `main` that doesn't include the dispatch commit, and the OpenSpec files won't be visible inside the worktree.
 
-Push if needed: `jj git push --bookmark main`
+Push if needed: `git push origin main`
 
 ### 3. Verify calibration context for `.5` layer stories
 
@@ -60,9 +61,9 @@ type="${calibration_type:-visual-design}"
 > `.claude/` as sensitive and blocks file writes with permission prompts, even with `--dangerously-skip-permissions`.
 
 ```bash
-# 1. Create the jj workspace (outside .claude/ to avoid sensitive path protection)
+# 1. Create the git worktree on a fresh feature branch (outside .claude/ to avoid sensitive path protection)
 mkdir -p .feature-workspaces
-jj workspace add .feature-workspaces/<name>
+git worktree add -b feat/<name> .feature-workspaces/<name> main
 
 # 2. Start Claude Code in a tmux session
 tmux new-session -d -s <name> \
@@ -75,9 +76,11 @@ cmux send --surface "$GEN_SURFACE" "tmux attach -t <name>\n"
 cmux rename-tab --surface "$GEN_SURFACE" "<name>"
 ```
 
-Replace `<name>` with a short feature name (e.g., `add-auth`).
+Replace `<name>` with a short feature name (e.g., `add-auth`). The branch will be `feat/add-auth`.
 
-> **Note:** Add `.feature-workspaces/` to your project's `.gitignore` — workspace directories are ephemeral and should not be committed.
+> **Note:** Add `.feature-workspaces/` to your project's `.gitignore` — worktree directories are ephemeral and should not be tracked.
+
+> **Disk note:** Each worktree shares `.git/objects` with the main repo (no history duplication), but the working tree itself is duplicated. Budget ~working-tree-size per active workspace.
 
 ---
 
@@ -238,7 +241,7 @@ Read these files:
 5. .dev-workflow/feature-verification.json (if exists)
 
 Then:
-1. Review code changes via jj diff
+1. Review code changes via `git diff main...HEAD`
 2. Test the running application if possible
 3. Score each dimension per your criteria
 4. Write structured feedback to .dev-workflow/signals/eval-response-<N>.md
@@ -281,7 +284,7 @@ The main workspace stays on `main` and can:
 - Switch between sessions by clicking tabs
 - Handle `/wrap` after each PR merges
 
-Each workspace shares the underlying jj store — no extra disk space, no branch naming conflicts between agents.
+Each worktree gets its own working tree on its own `feat/<name>` branch. They share `.git/objects` so history isn't duplicated, but each working tree adds its own checkout-size to disk.
 
 ---
 

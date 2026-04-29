@@ -28,9 +28,10 @@ This skill works in two modes, auto-detected at startup:
 ls product-context.yaml 2>/dev/null
 ```
 
-**Standalone mode** *(no `product-context.yaml`)* — Feature lifecycle runs independently. Proceed directly to prerequisites and design phases.
+**Standalone mode** _(no `product-context.yaml`)_ — Feature lifecycle runs independently. Proceed directly to prerequisites and design phases.
 
-**Product-cycle mode** *(has `product-context.yaml`)* — Feature is part of a larger product lifecycle (`/envision` → `/map` → `/dispatch` → `/design`):
+**Product-cycle mode** _(has `product-context.yaml`)_ — Feature is part of a larger product lifecycle (`/envision` → `/map` → `/dispatch` → `/design`):
+
 - Read from `product-context.yaml` for project-wide context
 - If a story was dispatched (has `openspec_change` set in the YAML), load that story's acceptance criteria, interface obligations, and relevant architecture module
 - When dispatched from `/dispatch`, the OpenSpec change already exists — `/opsx:propose` refines it rather than starting from scratch
@@ -46,7 +47,7 @@ Before starting, verify dependencies are available.
 Run this check:
 
 ```bash
-for cmd in jj git openspec; do
+for cmd in git openspec; do
   printf "%-15s" "$cmd:"
   which $cmd >/dev/null 2>&1 && echo "OK ($(which $cmd))" || echo "MISSING"
 done
@@ -79,6 +80,7 @@ Before starting design, decide on the workflow mode. This choice carries through
 ### Full mode (default)
 
 All phases + separate evaluator agent. Use for:
+
 - Complex features with 3+ tasks
 - UI-heavy work
 - Security-sensitive features
@@ -87,6 +89,7 @@ All phases + separate evaluator agent. Use for:
 ### Light mode
 
 Simplified flow, no evaluator. Use for:
+
 - Simple CRUD
 - Config changes
 - Small bug fixes
@@ -157,12 +160,13 @@ If adjustments are needed, update the OpenSpec change files directly.
 After design is complete, commit all artifacts to `main`:
 
 ```bash
-jj describe -m "feat: add <change-name> architecture doc and OpenSpec change"
-jj new
-jj git push --change @-
+git pull --ff-only origin main
+git add openspec/changes/<change-name>/ docs/
+git commit -m "feat: add <change-name> architecture doc and OpenSpec change"
+git push origin main
 ```
 
-This ensures the workspace will have all artifacts when it's created from `main`.
+This ensures the workspace will have all artifacts when it's created from `main`. The `--ff-only` pull avoids overwriting concurrent pushes.
 
 ---
 
