@@ -242,22 +242,24 @@ MAIN SESSION (you + AI)                WORKSPACE SESSION (agent alone)
 /design
   refine the spec
   (or skip if well-specified) ────►   /build
-         │                              init tracking + jj change stack
-/launch                                 implement each task
-  create jj workspace                   code review (+ evaluator loop)
+         │                              init tracking, read tasks.md
+/launch                                 implement each task linearly
+  create git worktree                   (one git commit per task)
+  on feat/<name> branch                 code review (+ evaluator loop)
   bootstrap agent             ◄────     create PR, handle review
-  optional: spawn evaluator             merge
+  optional: spawn evaluator             merge (squash + delete branch)
          │                                     │
 /wrap    ◄─────────────────────────────────────┘
   archive OpenSpec change
   update story status in YAML
+  remove worktree + branch
   check layer gate
   suggest /reflect
 ```
 
 **Why two sessions:** Design needs human judgment — you decide direction, scope, tradeoffs. Implementation is mechanical — the agent follows the spec, implements, tests, publishes. Separating them lets the agent work autonomously for hours while you do other things.
 
-**Why jj (not git):** Changes are mutable until published. No staging area. Auto-rebase when editing earlier changes. `jj workspace add` gives each agent an isolated working copy with no extra disk space. The agent generates rough code, then cleans up with `split`/`squash` — a natural post-generation step.
+**Why git + worktree:** `git worktree add -b feat/<name>` gives each agent an isolated working tree on its own branch, sharing `.git/objects` so history isn't duplicated. Linear commits (one per `tasks.md` row) make the PR's commit list a readable table of contents. Squash-merge keeps `main`'s history clean. AEP previously used Jujutsu (jj); see [docs/decisions/migrate-from-jj-to-git.md](docs/decisions/migrate-from-jj-to-git.md) for why we switched.
 
 ### 3. Project Setup — the one-time foundation
 
@@ -268,9 +270,9 @@ Gets your machine and project ready. Run once.
     │                                    │
     ▼                                    ▼
 Verify tools                         Scaffold monorepo
-(jj, bun, git, gh,                   (Better-T-Stack: frontend,
- claude, openspec,                    backend, database, auth,
- tmux, cmux)                         API layer, addons)
+(bun, git, gh, claude,               (Better-T-Stack: frontend,
+ openspec, tmux, cmux)                backend, database, auth,
+                                      API layer, addons)
     │                                    │
     ▼                                    ▼
 Install plugins                      Initialize OpenSpec
@@ -419,7 +421,7 @@ Generate a dimension-specific brief, explore or discuss, capture decisions for a
 | `/launch`    | agentic-development-workflow | Spawn workspace + optional evaluator                     |
 | `/build`     | agentic-development-workflow | Implement → test → PR → merge                            |
 | `/wrap`      | agentic-development-workflow | Archive + cleanup + suggest reflect                      |
-| `/jj-ref`    | agentic-development-workflow | jj command reference (on-demand)                         |
+| `/git-ref`   | agentic-development-workflow | AEP git + worktree conventions (on-demand)               |
 | `/gen-eval`  | patterns                     | Generator/evaluator separation for honest validation     |
 | `/autopilot` | patterns                     | Autonomous dispatch-launch-monitor-wrap loop via `/loop` |
 

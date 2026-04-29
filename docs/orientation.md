@@ -75,7 +75,7 @@ Full ASCII diagram: [README.md "The Story Map"](../README.md#the-story-map).
 
 ```
 MAIN SESSION                         WORKSPACE SESSION
-(you + AI, on main branch)           (one agent, in a jj workspace)
+(you + AI, on main branch)           (one agent, in a git worktree on feat/<name>)
 ─────────────────────────────        ────────────────────────────────
 /envision → /map → /dispatch          /build
 /design (refine spec)                   init harness
@@ -85,7 +85,7 @@ MAIN SESSION                         WORKSPACE SESSION
 ```
 
 - **Main session**: interactive, on `main` branch. Where you + AI make high-leverage decisions. Runs `/envision`, `/map`, `/dispatch`, `/design`, `/wrap`, `/reflect`, `/calibrate`.
-- **Workspace session**: autonomous, in an isolated jj workspace. Where one agent implements a feature end-to-end. Spawned by `/launch`; runs `/build`.
+- **Workspace session**: autonomous, in an isolated git worktree on a `feat/<name>` branch. Where one agent implements a feature end-to-end. Spawned by `/launch`; runs `/build`.
 - **Communication channel**: **signal files** only, in `.dev-workflow/signals/` (status.json, feedback.md, eval-request.md, ready-for-review.flag). The main session never reads workspace code directly.
 
 **Why two sessions:** design needs fresh human-judgment context; implementation needs fresh spec-execution context. Separating them lets the agent work autonomously for hours while you do other things.
@@ -111,7 +111,7 @@ More: [README.md "The Feature Lifecycle"](../README.md) and [skills/agentic-deve
 | `/launch`            | agentic-development-workflow | Main      | Spawn autonomous workspace + optional evaluator                 |
 | `/build`             | agentic-development-workflow | Workspace | Implement → test → PR → merge (autonomous)                      |
 | `/wrap`              | agentic-development-workflow | Main      | Post-merge archive + cleanup + update story status              |
-| `/jj-ref`            | agentic-development-workflow | Main      | jj command reference (on-demand, maps jj to git)                |
+| `/git-ref`           | agentic-development-workflow | Main      | AEP git + worktree conventions (on-demand)                      |
 | `/autopilot`         | patterns                     | Main      | Hands-free dispatch → launch → monitor → wrap loop              |
 | `/gen-eval`          | patterns                     | Both      | Reusable generator/evaluator pattern for honest evaluation      |
 | `/workflow-feedback` | patterns                     | Main      | Capture + review process learnings from builds                  |
@@ -205,7 +205,7 @@ One-line pointers so you know what to look up when you hit an unfamiliar term. F
 - **Readiness score routing** (v2) — `/dispatch` checks each story's spec completeness. Score < 0.5 routes to `/design`; score >= 0.7 routes straight to `/launch`.
 - **Outcome contracts** (v2) — layer-level success metrics with hypothesis, success_metric, and decision_rule. `/reflect` uses them to decide whether to advance or re-slice.
 - **OpenSpec** — the spec-driven development CLI (`explore → propose → apply → archive`) that `/design`, `/dispatch`, and `/build` operate on.
-- **jj workspaces** — isolated working copies sharing the same repo store. `jj workspace add` is cheap (no disk duplication), so every story can have its own isolated environment.
+- **Git worktrees** — `git worktree add -b feat/<name> .feature-workspaces/<name> main` gives each agent an isolated working tree on its own branch. Worktrees share `.git/objects` (no history duplication) but each adds one working-tree copy on disk. AEP migrated from jj to git+worktree in 2026-04 — see [decisions/migrate-from-jj-to-git.md](decisions/migrate-from-jj-to-git.md).
 
 ---
 
@@ -217,23 +217,23 @@ One-line pointers so you know what to look up when you hit an unfamiliar term. F
 - [ ] Pick your path from Section 4 above (A/B/C/D).
 - [ ] Run the **first** command of your path — don't batch them, do one at a time and read the output.
 - [ ] When stuck, check [docs/skills-quick-reference.md](skills-quick-reference.md) for the decision tree.
-- [ ] If you encounter an unfamiliar command, run `/jj-ref` (for jj commands) or read the skill's own `SKILL.md` directly.
+- [ ] If you need a refresher on AEP's git + worktree conventions, run `/git-ref`. For any other unfamiliar command, read the skill's own `SKILL.md` directly.
 
 ---
 
 ## 8. Where to Go Next
 
-| I want to…                                       | Read                                                                                                          |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
-| Understand the full workflow philosophy          | [README.md](../README.md) (10 min)                                                                            |
-| Look up a specific term                          | [docs/glossary.md](glossary.md)                                                                               |
-| Decide which skill to use                        | [docs/skills-quick-reference.md](skills-quick-reference.md)                                                   |
-| Understand v2 upgrades                           | [docs/aep-v2-improvement-guideline.md](aep-v2-improvement-guideline.md)                                       |
-| Run hands-free autonomous mode                   | [docs/workflow/autonomous-loop.md](workflow/autonomous-loop.md)                                               |
-| Understand the generator/evaluator pattern       | [docs/workflow/gen-eval-data-flow.md](workflow/gen-eval-data-flow.md)                                         |
-| Learn jj (change-oriented VCS)                   | [skills/agentic-development-workflow/jj-ref/SKILL.md](../skills/agentic-development-workflow/jj-ref/SKILL.md) |
-| Understand how the product-context plugin thinks | [skills/product-context/README.md](../skills/product-context/README.md)                                       |
-| Understand how the dev-workflow plugin thinks    | [skills/agentic-development-workflow/README.md](../skills/agentic-development-workflow/README.md)             |
+| I want to…                                       | Read                                                                                                            |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| Understand the full workflow philosophy          | [README.md](../README.md) (10 min)                                                                              |
+| Look up a specific term                          | [docs/glossary.md](glossary.md)                                                                                 |
+| Decide which skill to use                        | [docs/skills-quick-reference.md](skills-quick-reference.md)                                                     |
+| Understand v2 upgrades                           | [docs/aep-v2-improvement-guideline.md](aep-v2-improvement-guideline.md)                                         |
+| Run hands-free autonomous mode                   | [docs/workflow/autonomous-loop.md](workflow/autonomous-loop.md)                                                 |
+| Understand the generator/evaluator pattern       | [docs/workflow/gen-eval-data-flow.md](workflow/gen-eval-data-flow.md)                                           |
+| Learn AEP's git + worktree conventions           | [skills/agentic-development-workflow/git-ref/SKILL.md](../skills/agentic-development-workflow/git-ref/SKILL.md) |
+| Understand how the product-context plugin thinks | [skills/product-context/README.md](../skills/product-context/README.md)                                         |
+| Understand how the dev-workflow plugin thinks    | [skills/agentic-development-workflow/README.md](../skills/agentic-development-workflow/README.md)               |
 
 ---
 
