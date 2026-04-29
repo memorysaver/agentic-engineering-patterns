@@ -596,8 +596,8 @@ Run through the infrastructure checklist and report what exists vs what's missin
 echo "=== Infrastructure Audit ==="
 
 # VCS
-printf "  %-45s" "jj colocated mode (.jj/ exists):"
-[ -d ".jj" ] && echo "[x]" || echo "[ ] MISSING"
+printf "  %-45s" "git repository (.git/ exists):"
+[ -d ".git" ] && echo "[x]" || echo "[ ] MISSING"
 
 # OpenSpec
 printf "  %-45s" "openspec/ initialized:"
@@ -633,11 +633,12 @@ Show the user the results. Only proceed to fill gaps for items marked `[ ] MISSI
 
 For each missing item, generate it. **Never overwrite existing files.**
 
-### jj colocated mode (if missing)
+### Git repository (if missing)
 
 ```bash
-jj git init --colocate
-echo '.jj/' >> .gitignore
+git init -b main
+git add -A
+git commit -m "chore: initial commit"
 ```
 
 ### OpenSpec (if missing)
@@ -670,8 +671,7 @@ Re-run the audit checklist from Phase 2E. Everything should now be `[x]`.
 ## Phase 5E: Commit
 
 ```bash
-git add .claude/ openspec/
-grep -q '.jj/' .gitignore && git add .gitignore
+git add .claude/ openspec/ .gitignore
 git commit -m "feat: initialize agentic development infrastructure"
 ```
 
@@ -684,4 +684,4 @@ git commit -m "feat: initialize agentic development infrastructure"
 | `/design`        | Start designing a feature (standalone mode)                 |
 | `/dispatch`      | Pick the next story (if product context exists)             |
 | `/testing-guide` | Detailed guide for testing strategy and adding test scripts |
-| `/jj-ref`        | jj command reference and concept mapping                    |
+| `/git-ref`       | AEP git + worktree reference (worktree lifecycle, naming)   |

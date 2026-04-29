@@ -21,7 +21,7 @@ Before installing tools, get the mental model. AEP is not a "command runner" —
 
 2. **The story map.** Your product is organized as a [Jeff Patton story map](https://www.jpattonassociates.com/user-story-mapping/) — a grid with activities (columns, user journey left→right), layers (rows, enrichment top→down), waves (parallel batches within a layer), and release lines (what's shippable). Layer 0 is the **walking skeleton** — the thinnest end-to-end path. See [README.md "The Story Map"](../../../README.md#the-story-map).
 
-3. **Two-session model.** The **main session** runs on your `main` branch where you + AI plan (`/envision`, `/map`, `/dispatch`, `/design`, `/wrap`, `/reflect`). The **workspace session** runs autonomously in an isolated jj workspace where one agent implements a feature (`/build`). They communicate only through signal files in `.dev-workflow/signals/`. See [skills/product-context/README.md](../../product-context/README.md#single-source-of-truth-product-contextyaml).
+3. **Two-session model.** The **main session** runs on your `main` branch where you + AI plan (`/envision`, `/map`, `/dispatch`, `/design`, `/wrap`, `/reflect`). The **workspace session** runs autonomously in an isolated git worktree on a `feat/<name>` branch where one agent implements a feature (`/build`). They communicate only through signal files in `.dev-workflow/signals/`. See [skills/product-context/README.md](../../product-context/README.md#single-source-of-truth-product-contextyaml).
 
 **v2 split-mode (good to know):** Some projects store product context in two files — `product/index.yaml` (stable intent: opportunity, personas, capabilities, constraints) + `product-context.yaml` (mutable state: architecture, stories, cost, changelog). All skills auto-detect which mode a project uses. If you see only `product-context.yaml`, that's v1 single-file mode and it works exactly the same way. See [docs/aep-v2-improvement-guideline.md](../../../docs/aep-v2-improvement-guideline.md).
 
@@ -45,11 +45,11 @@ Add the marketplace and install both plugin groups:
 
 ### Plugin Groups
 
-| Group                            | Skills                              | Purpose                                                                      |
-| -------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------- |
-| **product-context**              | envision, map, dispatch, reflect    | Product-level planning and iteration                                         |
-| **project-setup**                | onboard, scaffold                   | Scaffold projects, configure spec-driven development, environment onboarding |
-| **agentic-development-workflow** | design, launch, build, wrap, jj-ref | Full-lifecycle feature development with jj workspaces                        |
+| Group                            | Skills                               | Purpose                                                                      |
+| -------------------------------- | ------------------------------------ | ---------------------------------------------------------------------------- |
+| **product-context**              | envision, map, dispatch, reflect     | Product-level planning and iteration                                         |
+| **project-setup**                | onboard, scaffold                    | Scaffold projects, configure spec-driven development, environment onboarding |
+| **agentic-development-workflow** | design, launch, build, wrap, git-ref | Full-lifecycle feature development with git worktrees                        |
 
 > **Note:** This installs the agentic-engineering-patterns plugin itself. Recommended third-party plugins (superpowers, agent-browser, etc.) are configured at the project level in Phase 4 via `.claude/settings.json`.
 
@@ -57,12 +57,12 @@ Add the marketplace and install both plugin groups:
 
 ## Phase 2 — Verify Required Tools
 
-Each tool below earns its place in the agentic workflow — `jj` gives cheap mutable changes and isolated workspaces for parallel agents, `bun` runs the TypeScript monorepo, `openspec` powers spec-driven development, `tmux`/`cmux` host long-running autonomous agents, and `gh` publishes PRs. You need all of them before Phase 4.
+Each tool below earns its place in the agentic workflow — `git` provides version control and worktrees (one isolated working tree per parallel agent), `bun` runs the TypeScript monorepo, `openspec` powers spec-driven development, `tmux`/`cmux` host long-running autonomous agents, and `gh` publishes PRs. You need all of them before Phase 4.
 
 Run this check:
 
 ```bash
-for cmd in jj bun git gh claude openspec tmux cmux; do
+for cmd in bun git gh claude openspec tmux cmux; do
   printf "%-15s" "$cmd:"
   which $cmd >/dev/null 2>&1 && echo "OK ($(which $cmd))" || echo "MISSING"
 done
@@ -70,45 +70,19 @@ done
 
 Install any missing tools:
 
-| Tool       | Purpose                       | Install                                     |
-| ---------- | ----------------------------- | ------------------------------------------- |
-| `jj`       | Change-oriented local VCS     | `brew install jj` or `cargo install jj-cli` |
-| `bun`      | Package manager & runtime     | `curl -fsSL https://bun.sh/install \| bash` |
-| `git`      | Remote collaboration + GitHub | `xcode-select --install` (macOS)            |
-| `claude`   | Claude Code CLI               | `npm install -g @anthropic-ai/claude-code`  |
-| `gh`       | GitHub CLI for PRs            | `brew install gh`                           |
-| `openspec` | Spec-driven development       | `bun add -g openspec`                       |
-| `tmux`     | Terminal multiplexer          | `brew install tmux`                         |
-| `cmux`     | Claude Code tab multiplexer   | `bun add -g cmux`                           |
+| Tool       | Purpose                     | Install                                     |
+| ---------- | --------------------------- | ------------------------------------------- |
+| `git`      | Version control + worktrees | `xcode-select --install` (macOS)            |
+| `bun`      | Package manager & runtime   | `curl -fsSL https://bun.sh/install \| bash` |
+| `claude`   | Claude Code CLI             | `npm install -g @anthropic-ai/claude-code`  |
+| `gh`       | GitHub CLI for PRs          | `brew install gh`                           |
+| `openspec` | Spec-driven development     | `bun add -g openspec`                       |
+| `tmux`     | Terminal multiplexer        | `brew install tmux`                         |
+| `cmux`     | Claude Code tab multiplexer | `bun add -g cmux`                           |
 
 All tools must show OK before proceeding.
 
----
-
-## Phase 2.5 — Initialize jj (Colocated Mode)
-
-Colocated mode lets jj manage local changes (mutable until published, cheap workspace spawning, no staging area) while git stays in charge of remotes — agents get the benefits of change-oriented VCS without losing GitHub integration.
-
-If the project has a `.git/` directory but no `.jj/`, initialize jj in colocated mode:
-
-```bash
-# Check if jj is already initialized
-[ -d .jj ] && echo "jj already initialized" || jj git init --colocate
-```
-
-This creates a colocated jj+git repo:
-
-- **jj** manages local changes, history, workspaces
-- **git** handles remote push/fetch, GitHub PRs, CI/CD
-- Both `.jj/` and `.git/` coexist in the same repo
-
-Add `.jj/` to `.gitignore` if not already present:
-
-```bash
-grep -q '\.jj' .gitignore 2>/dev/null || echo '\n# jj local state\n.jj/' >> .gitignore
-```
-
-> **Rule:** After initialization, use `jj` commands for all local work. Use `jj git` subcommands for remote operations. Never use raw `git commit` or `git add` in a colocated repo.
+> **Note on parallelism:** Each parallel feature agent runs in its own `git worktree` at `.feature-workspaces/<name>/` on its own `feat/<name>` branch. Worktrees share the underlying `.git/objects` (no history duplication) but each adds one full working-tree copy on disk — budget accordingly when running many agents in parallel.
 
 ---
 
@@ -179,7 +153,7 @@ Read `.claude/settings.json` if it exists. Merge the following keys into it (or 
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command // \"\"' | { read -r cmd; if [[ \"$PWD\" == */.feature-workspaces/* ]] && echo \"$cmd\" | grep -qE '(git\\s+(add|commit)|jj\\s+(describe|new|commit)).*product-context\\.yaml'; then echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"CONCURRENCY PROTOCOL: Workspace sessions must not commit product-context.yaml. Write to .dev-workflow/signals/status.json instead.\"}}'; fi; }",
+            "command": "jq -r '.tool_input.command // \"\"' | { read -r cmd; if [[ \"$PWD\" == */.feature-workspaces/* ]] && echo \"$cmd\" | grep -qE 'git\\s+(add|commit).*product-context\\.yaml'; then echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"CONCURRENCY PROTOCOL: Workspace sessions must not commit product-context.yaml. Write to .dev-workflow/signals/status.json instead.\"}}'; fi; }",
             "statusMessage": "Checking concurrency protocol..."
           }
         ]
@@ -215,7 +189,7 @@ Read `.claude/settings.json` if it exists. Merge the following keys into it (or 
 
 ```bash
 echo "=== Core Tools ==="
-for cmd in jj bun git gh claude openspec tmux cmux; do
+for cmd in bun git gh claude openspec tmux cmux; do
   printf "%-15s" "$cmd:"
   which $cmd >/dev/null 2>&1 && echo "OK" || echo "MISSING"
 done
@@ -226,8 +200,9 @@ for cmd in agent-browser portless; do
   which $cmd >/dev/null 2>&1 && echo "OK" || echo "MISSING (optional)"
 done
 echo ""
-echo "=== jj Colocated ==="
-[ -d .jj ] && echo "jj initialized: OK" || echo "jj not initialized — run: jj git init --colocate"
+echo "=== Git Repo ==="
+[ -d .git ] && echo "git repo: OK" || echo "Not a git repo — run: git init"
+git worktree list 2>/dev/null | head -5
 ```
 
 If all core tools show OK, the environment is ready.
@@ -266,7 +241,7 @@ You just want to ship one feature with AEP workflows.
 /design  →  /launch  →  /build  →  /wrap
 ```
 
-`/design` produces an OpenSpec change on `main`. `/launch` spawns an isolated jj workspace and boots the agent. `/build` implements, tests, reviews, and merges. `/wrap` archives.
+`/design` produces an OpenSpec change on `main`. `/launch` spawns an isolated git worktree on a `feat/<name>` branch and boots the agent. `/build` implements, tests, reviews, and merges. `/wrap` archives and removes the worktree.
 
 ### Path D — Hands-free autonomous mode
 
@@ -312,6 +287,6 @@ Pointers for going deeper. None of these are required reading — check what's r
 
 - [docs/aep-v2-improvement-guideline.md](../../../docs/aep-v2-improvement-guideline.md) — split-mode, capability maps, readiness scoring, outcome contracts, technical specs, grouped changes
 
-**jj concepts (change-oriented VCS)**
+**Git + worktree conventions**
 
-- [skills/agentic-development-workflow/jj-ref/SKILL.md](../../agentic-development-workflow/jj-ref/SKILL.md) — jj command reference, accessed on-demand via `/jj-ref`
+- [skills/agentic-development-workflow/git-ref/SKILL.md](../../agentic-development-workflow/git-ref/SKILL.md) — AEP git + worktree reference (worktree lifecycle, branch naming, commit-per-task pattern, recovery), accessed on-demand via `/git-ref`

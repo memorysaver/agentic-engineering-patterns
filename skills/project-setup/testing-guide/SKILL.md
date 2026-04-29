@@ -36,6 +36,7 @@ A convention-based script that `/build` calls during Phase 0 (workspace init) an
 ### Contract
 
 The hook **MUST**:
+
 - Install dependencies (bun/npm/pnpm/cargo/poetry/etc.)
 - Start the dev server (or verify it's running)
 - Write `.dev-workflow/ports.env` with at minimum:
@@ -48,6 +49,7 @@ The hook **MUST**:
 - Handle port scanning for parallel workspace isolation
 
 The hook **MAY**:
+
 - Validate `.env` files against `.env.example` templates
 - Run database migrations
 - Seed test accounts
@@ -67,11 +69,13 @@ set -euo pipefail
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
 cd "$REPO_ROOT"
 
-# ── PROJECT-SPECIFIC: Detect workspace vs main ──
-# Uncomment if your project uses git worktrees alongside jj workspaces:
-# MAIN_REPO="$(git worktree list --porcelain 2>/dev/null | head -1 | sed 's/^worktree //')" || MAIN_REPO="$REPO_ROOT"
-# IS_WORKSPACE=false
-# [ "$REPO_ROOT" != "$MAIN_REPO" ] && IS_WORKSPACE=true
+# ── Detect workspace vs main ──
+# AEP runs feature work in git worktrees at .feature-workspaces/<name>/.
+# `git worktree list --porcelain` lists the main checkout first, so its first
+# entry is the canonical main repo. Compare to detect whether we're in a worktree.
+MAIN_REPO="$(git worktree list --porcelain 2>/dev/null | head -1 | sed 's/^worktree //')" || MAIN_REPO="$REPO_ROOT"
+IS_WORKSPACE=false
+[ "$REPO_ROOT" != "$MAIN_REPO" ] && IS_WORKSPACE=true
 
 # ── PROJECT-SPECIFIC: Validate .env files ──
 # Example for monorepo with multiple .env files:
@@ -125,6 +129,7 @@ Make executable: `chmod +x .claude/hooks/workspace-setup.sh`
 ### Idempotency
 
 The hook will be called:
+
 - Once during `/build` Phase 0 (initial setup)
 - Again on every `init.sh` run (session recovery after context reset)
 
@@ -176,10 +181,10 @@ source .dev-workflow/ports.env
 
 ## Test Scripts
 
-| Script | What it tests | Tools |
-|--------|--------------|-------|
-| seed.sh | DB migrations + test account | curl, sqlite3 |
-| [feature]-e2e.sh | [description] | agent-browser, curl |
+| Script           | What it tests                | Tools               |
+| ---------------- | ---------------------------- | ------------------- |
+| seed.sh          | DB migrations + test account | curl, sqlite3       |
+| [feature]-e2e.sh | [description]                | agent-browser, curl |
 
 ## Adding a New Test
 
@@ -194,9 +199,9 @@ All scripts follow this structure — copy it when creating new tests.
 
 ## Test Account
 
-| Field | Value |
-|-------|-------|
-| Email | [PROJECT-SPECIFIC] |
+| Field    | Value              |
+| -------- | ------------------ |
+| Email    | [PROJECT-SPECIFIC] |
 | Password | [PROJECT-SPECIFIC] |
 ```
 
@@ -303,15 +308,15 @@ During `/build` Phase 4, the build agent runs the project's test command after i
 
 ### API Integration Tests (Phase 5 — e2e-test skill)
 
-| Aspect | Detail |
-|--------|--------|
-| **What** | Endpoint contracts: request/response shapes, auth, error codes |
-| **Runner** | curl scripts or test framework with HTTP client |
-| **Scope** | API boundaries, auth flows, error handling, data persistence |
-| **Convention** | `scripts/api/` or `__tests__/api/` or inline in E2E scripts |
-| **When** | After Phase 4 implementation, as part of Phase 5 verification |
-| **Who runs** | Build agent during code review |
-| **Catches** | Contract breaks, auth gaps, missing error handling, wrong status codes |
+| Aspect         | Detail                                                                 |
+| -------------- | ---------------------------------------------------------------------- |
+| **What**       | Endpoint contracts: request/response shapes, auth, error codes         |
+| **Runner**     | curl scripts or test framework with HTTP client                        |
+| **Scope**      | API boundaries, auth flows, error handling, data persistence           |
+| **Convention** | `scripts/api/` or `__tests__/api/` or inline in E2E scripts            |
+| **When**       | After Phase 4 implementation, as part of Phase 5 verification          |
+| **Who runs**   | Build agent during code review                                         |
+| **Catches**    | Contract breaks, auth gaps, missing error handling, wrong status codes |
 
 **How to add:**
 
@@ -337,15 +342,15 @@ API tests can live inside E2E scripts (the curl-based sections) or as standalone
 
 ### E2E Browser Tests (Phases 6-7 — e2e-test skill)
 
-| Aspect | Detail |
-|--------|--------|
-| **What** | Full user flows through the UI |
-| **Runner** | agent-browser (headless Chrome) |
-| **Scope** | Login, navigation, form submission, visual state, multi-step flows |
-| **Convention** | `.claude/skills/e2e-test/scripts/<feature>-e2e.sh` |
-| **When** | Phase 7, after dogfood exploration (Phase 6) identifies what to cover |
-| **Who runs** | Build agent (Phase 7-8) + CI/CD |
-| **Catches** | Integration failures, UI regressions, flow breaks, visual state errors |
+| Aspect         | Detail                                                                 |
+| -------------- | ---------------------------------------------------------------------- |
+| **What**       | Full user flows through the UI                                         |
+| **Runner**     | agent-browser (headless Chrome)                                        |
+| **Scope**      | Login, navigation, form submission, visual state, multi-step flows     |
+| **Convention** | `.claude/skills/e2e-test/scripts/<feature>-e2e.sh`                     |
+| **When**       | Phase 7, after dogfood exploration (Phase 6) identifies what to cover  |
+| **Who runs**   | Build agent (Phase 7-8) + CI/CD                                        |
+| **Catches**    | Integration failures, UI regressions, flow breaks, visual state errors |
 
 **How to add:** Follow the E2E Script Pattern in Part 2.
 
@@ -362,6 +367,7 @@ Phase 8 (review)     → run all e2e-test scripts + unit tests
 ```
 
 Each layer catches different failure modes:
+
 - **Unit tests** (framework) — logic errors, edge cases, data transforms
 - **API tests** (e2e-test skill) — contract breaks, auth gaps, wrong status codes
 - **E2E browser** (e2e-test skill) — integration failures, UI regressions, flow breaks
@@ -370,14 +376,14 @@ Each layer catches different failure modes:
 
 Not every project needs both e2e-test layers. Unit tests are always the project framework's responsibility — this table covers what the e2e-test skill should include:
 
-| Project type | API tests (curl) | E2E browser (agent-browser) |
-|---|---|---|
-| Full-stack web app | Yes | Yes |
-| API-only service | Yes | Skip |
-| CLI tool | Skip | Skip |
-| Static site / landing page | Skip | E2E only |
-| Library / package | Skip | Skip |
-| Mobile app (API backend) | Yes | Skip (use native testing) |
+| Project type               | API tests (curl) | E2E browser (agent-browser) |
+| -------------------------- | ---------------- | --------------------------- |
+| Full-stack web app         | Yes              | Yes                         |
+| API-only service           | Yes              | Skip                        |
+| CLI tool                   | Skip             | Skip                        |
+| Static site / landing page | Skip             | E2E only                    |
+| Library / package          | Skip             | Skip                        |
+| Mobile app (API backend)   | Yes              | Skip (use native testing)   |
 
 ---
 
@@ -447,12 +453,12 @@ Add them to your CI pipeline:
 
 ## Quick Reference
 
-| What | Where | Managed by |
-|------|-------|------------|
-| Workspace setup hook | `.claude/hooks/workspace-setup.sh` | Project (you create this) |
-| E2E test skill | `.claude/skills/e2e-test/SKILL.md` | Project (you create this) |
-| Seed script | `.claude/skills/e2e-test/scripts/seed.sh` | e2e-test skill |
-| API contract tests | `.claude/skills/e2e-test/scripts/<feature>-e2e.sh` | e2e-test skill (Phase 5) |
-| E2E browser tests | `.claude/skills/e2e-test/scripts/<feature>-e2e.sh` | e2e-test skill (Phase 6-7) |
-| Unit tests | Co-located with source | Project test framework (Phase 4) |
-| Feature verification | `.dev-workflow/feature-verification.json` | `/build` plugin (Phase 5) |
+| What                 | Where                                              | Managed by                       |
+| -------------------- | -------------------------------------------------- | -------------------------------- |
+| Workspace setup hook | `.claude/hooks/workspace-setup.sh`                 | Project (you create this)        |
+| E2E test skill       | `.claude/skills/e2e-test/SKILL.md`                 | Project (you create this)        |
+| Seed script          | `.claude/skills/e2e-test/scripts/seed.sh`          | e2e-test skill                   |
+| API contract tests   | `.claude/skills/e2e-test/scripts/<feature>-e2e.sh` | e2e-test skill (Phase 5)         |
+| E2E browser tests    | `.claude/skills/e2e-test/scripts/<feature>-e2e.sh` | e2e-test skill (Phase 6-7)       |
+| Unit tests           | Co-located with source                             | Project test framework (Phase 4) |
+| Feature verification | `.dev-workflow/feature-verification.json`          | `/build` plugin (Phase 5)        |
