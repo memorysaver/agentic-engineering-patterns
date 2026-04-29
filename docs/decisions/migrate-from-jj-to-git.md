@@ -93,3 +93,59 @@ This list exists so we don't have to reconstruct the change set from scratch if 
 - [docs/aep-v2-improvement-guideline.md § 6](../aep-v2-improvement-guideline.md) — the closed-out proposal
 - [Avoid Losing Work with Jujutsu (jj) for AI Coding Agents — Anthony Panozzo, 2025-11](https://www.panozzaj.com/blog/2025/11/22/avoid-losing-work-with-jujutsu-jj-for-ai-coding-agents/) — exemplifies the async-snapshot footgun
 - [Parallel Agentic Development With Git Worktrees — MindStudio](https://www.mindstudio.ai/blog/parallel-agentic-development-git-worktrees) — established patterns for the model we're adopting
+
+---
+
+## Verification (run once after the migration lands)
+
+### Automated (mechanical)
+
+From the repo root:
+
+```bash
+./scripts/smoke-test-worktree.sh
+```
+
+Should print `PASS: smoke-test-worktree.sh`. Re-runnable, idempotent. Catches the worktree mechanics — `git worktree add`, `IS_WORKSPACE` detection in `workspace-setup.sh`, autopilot's `git -C <worktree> diff --stat` liveness check, `git worktree remove`, branch deletion, and both regression scenarios (orphan branch, orphan registration). Doesn't exercise tmux, cmux, or a real Claude session.
+
+### Manual (real `/launch`)
+
+Pick or create a tiny dispatchable story (one with a 1-line `tasks.md`). On `main`, with the dispatch commit pushed:
+
+1. Run `/launch <test-story-name>`.
+2. Within 30 seconds, expect:
+   - `git worktree list` shows `.feature-workspaces/<test-story-name>` on `feat/<test-story-name>`
+   - `tmux ls` shows session `<test-story-name>` alive
+   - the cmux GUI shows a tab named `<test-story-name>`
+3. Attach to the cmux tab. Expect a Claude Code prompt loaded inside the worktree directory. The bootstrap prompt (`/build execute implementation for ...`) should already be on screen.
+4. Let it run Phase 0. The agent should `cat openspec/changes/<test-story-name>/tasks.md` and create `.dev-workflow/`. Verify `.feature-workspaces/<test-story-name>/.dev-workflow/signals/status.json` exists.
+5. Kill the agent (Ctrl-C inside cmux) and the tmux session: `tmux kill-session -t <test-story-name>`.
+6. From `main`, run `/wrap` against the test story.
+7. After `/wrap`:
+   - `git worktree list` no longer lists the test worktree
+   - `git branch --list 'feat/<test-story-name>'` is empty
+   - `.feature-workspaces/<test-story-name>/` is gone
+8. Re-run `/launch <test-story-name>` to test idempotent re-launch:
+   - Should NOT fail with `branch already exists` or `already registered but missing on disk`
+   - The Step 4 cleanup in `/launch` should silently prune any orphans before `git worktree add`
+
+### Force the regression scenarios
+
+Confirm Step 4's defensive cleanup actually catches the migration-introduced regressions:
+
+```bash
+# Case A: orphan branch (workspace died, branch persisted)
+git branch feat/regression-test main
+# Re-run /launch regression-test in a clean shell — should detect the orphan
+# branch with 0 commits ahead of main, log "Removing orphan branch ...", and
+# proceed to git worktree add without error.
+
+# Case B: orphan worktree registration (manual rm -rf without git worktree remove)
+/launch orphan-reg
+rm -rf .feature-workspaces/orphan-reg
+# Re-run /launch orphan-reg in a clean shell — should detect the orphan
+# registration in .git/worktrees/, log "Pruning orphan worktree
+# registration ...", and proceed without error.
+```
+
+If either case errors out, Step 4 is broken and needs investigation. If both pass, the migration's two introduced failure modes are handled.

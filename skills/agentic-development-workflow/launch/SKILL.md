@@ -53,6 +53,34 @@ type="${calibration_type:-visual-design}"
 
 **If the calibration artifact does not exist — ABORT.** The user must run `/calibrate <type>` first. Agents dispatched without calibration context will reproduce the same generic output that created the need for alignment in the first place.
 
+### 4. Clean up orphan worktree/branch from prior failed launches
+
+Git worktree, unlike jj's `jj workspace forget`, does not auto-clean if a previous `/launch` died mid-flight. Two failure modes can block re-launch — both are silent and confusing on first encounter. Run these idempotent checks before `git worktree add`:
+
+```bash
+# Check 1: orphan branch with no unmerged work → safe to delete
+if git show-ref --verify --quiet refs/heads/feat/<name>; then
+  ahead=$(git rev-list --count main..feat/<name> 2>/dev/null || echo 0)
+  if [ "$ahead" = "0" ]; then
+    echo "Removing orphan branch feat/<name> (no commits ahead of main)"
+    git branch -D feat/<name>
+  else
+    echo "ABORT: feat/<name> has $ahead unmerged commit(s). Investigate before re-launching."
+    echo "  - If the work is salvageable: git checkout feat/<name> && finish manually"
+    echo "  - If the work is abandoned:   git branch -D feat/<name> && retry /launch"
+    exit 1
+  fi
+fi
+
+# Check 2: orphan worktree registration → prune
+if [ -d ".git/worktrees/<name>" ] && [ ! -d ".feature-workspaces/<name>" ]; then
+  echo "Pruning orphan worktree registration for <name>"
+  git worktree prune
+fi
+```
+
+The branch deletion is gated on `ahead == 0` so live workspaces are never affected — if the orphan branch has unmerged commits, abort and let the user investigate. The worktree prune is gated on the working directory being missing, so it only fires after a manual `rm -rf` of the worktree dir.
+
 ---
 
 ## Launch Workspace
