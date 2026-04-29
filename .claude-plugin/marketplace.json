@@ -38,7 +38,7 @@
         "./skills/agentic-development-workflow/launch",
         "./skills/agentic-development-workflow/build",
         "./skills/agentic-development-workflow/wrap",
-        "./skills/agentic-development-workflow/jj-ref"
+        "./skills/agentic-development-workflow/git-ref"
       ]
     },
     {
