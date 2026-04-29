@@ -5,7 +5,7 @@
     "email": "mho@looplia.run"
   },
   "metadata": {
-    "version": "0.4.0",
+    "version": "1.0.0",
     "description": "Skills for product planning, project scaffolding, and agentic development workflows."
   },
   "plugins": [
