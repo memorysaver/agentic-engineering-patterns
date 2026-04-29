@@ -26,7 +26,7 @@ The gen/eval pattern uses three complementary tracking systems. Each answers a d
 [
   {
     "task": "feat: add creator_profile table with cascade deletion",
-    "change_id": "motvylon",
+    "commit_sha": "a1b2c3d4",
     "verification_steps": [
       "creator_profile table exists in Drizzle schema",
       "userId has unique constraint and cascade delete",
