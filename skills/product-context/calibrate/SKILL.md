@@ -1,6 +1,6 @@
 ---
 name: calibrate
-description: Human alignment checkpoint for any quality dimension during rapid agent development. Use when /reflect identifies a gap between "works" and "right", when the user says "calibrate", "align", "design brief", "capture", or before dispatching .5 alignment layers. Supports calibration types: visual-design, ux-flow, api-surface, data-model, scope-direction, copy-tone, performance-quality. Phase 1 generates a dimension-specific brief; Phase 2 captures decisions into the appropriate artifact.
+description: Human alignment checkpoint for any quality dimension during rapid agent development. Use when /reflect identifies a gap between "works" and "right", when the user says "calibrate", "align", "design brief", "capture", or before dispatching .5 alignment layers. Supports calibration types — visual-design, ux-flow, api-surface, data-model, scope-direction, copy-tone, performance-quality. Phase 1 generates a dimension-specific brief; Phase 2 captures decisions into the appropriate artifact.
 ---
 
 # Calibrate

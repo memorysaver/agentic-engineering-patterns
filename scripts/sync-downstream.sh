@@ -22,6 +22,20 @@ Usage: bash scripts/sync-downstream.sh [OPTIONS] [PROJECT_NAME]
 
 Push AEP skills to registered downstream projects.
 
+By default each project receives skills under both runtime paths:
+  - Claude Code  → <project>/.claude/skills/
+  - OpenAI Codex → <project>/.agents/skills/
+
+Per-project `targets:` field in .aep/config.yaml can opt out of one runtime.
+
+Safety pre-flight (per project, no override):
+  - Project must be a git repo
+  - Must be on `main` branch
+  - Working tree must be clean
+  Projects failing any check are SKIPPED with a clear reason; the run continues.
+
+After syncing each runtime, orphan `aep-*` skills no longer in source are pruned.
+
 Options:
   --dry-run    Preview changes without modifying files
   --init       Create .aep/config.yaml template
@@ -37,7 +51,7 @@ Config file: .aep/config.yaml
   Run --init to create a template, then fill in your project paths.
 
 Examples:
-  bash scripts/sync-downstream.sh              # push to all
+  bash scripts/sync-downstream.sh              # push to all (claude + codex)
   bash scripts/sync-downstream.sh --dry-run    # preview all
   bash scripts/sync-downstream.sh 91app        # push to matching project
   bash scripts/sync-downstream.sh monet        # push to matching project
@@ -59,6 +73,8 @@ init_config() {
 # Fields:
 #   name:    Display name (also used for filtering: bash sync-downstream.sh 91app)
 #   path:    Absolute path or ~/relative to the downstream project root
+#   targets: Which runtime skill dirs to write to. Options: claude, codex
+#            Default: [claude, codex] (both runtimes)
 #   groups:  Which skill groups to sync. Options: workflow, product, setup, patterns
 #            Default: all groups
 #   prefix:  Skill name prefix. Default: aep-
@@ -66,11 +82,13 @@ init_config() {
 downstream:
   - name: 91app-agent-platform
     path: ~/Documents/github/91app-agent-platform
+    # targets: [claude, codex]
     # groups: [workflow, product, setup, patterns]
     # prefix: aep-
 
   - name: monetlab-ai
     path: ~/Documents/github/monetlab-ai
+    # targets: [claude, codex]
     # groups: [workflow, product, setup, patterns]
     # prefix: aep-
 YAML
@@ -112,11 +130,11 @@ fi
 
 # --- Parse YAML (lightweight, no jq/yq required) ---
 # Extracts downstream entries from the simple YAML format.
-# Each entry has: name, path, groups (optional), prefix (optional).
+# Each entry has: name, path, targets (optional), groups (optional), prefix (optional).
 
 parse_entries() {
   local in_entry=false
-  local name="" path="" groups="" prefix=""
+  local name="" path="" groups="" prefix="" targets=""
 
   while IFS= read -r line; do
     # Skip comments and empty lines
@@ -127,12 +145,13 @@ parse_entries() {
     if [[ "$line" =~ ^[[:space:]]*-[[:space:]]*name:[[:space:]]*(.+) ]]; then
       # Emit previous entry if exists
       if [ -n "$name" ] && [ -n "$path" ]; then
-        echo "${name}|${path}|${groups}|${prefix}"
+        echo "${name}|${path}|${groups}|${prefix}|${targets}"
       fi
       name="${BASH_REMATCH[1]}"
       path=""
       groups=""
       prefix=""
+      targets=""
       in_entry=true
       continue
     fi
@@ -144,13 +163,15 @@ parse_entries() {
         groups="${BASH_REMATCH[1]}"
       elif [[ "$line" =~ ^[[:space:]]*prefix:[[:space:]]*(.+) ]]; then
         prefix="${BASH_REMATCH[1]}"
+      elif [[ "$line" =~ ^[[:space:]]*targets:[[:space:]]*\[(.+)\] ]]; then
+        targets="${BASH_REMATCH[1]}"
       fi
     fi
   done < "$CONFIG"
 
   # Emit last entry
   if [ -n "$name" ] && [ -n "$path" ]; then
-    echo "${name}|${path}|${groups}|${prefix}"
+    echo "${name}|${path}|${groups}|${prefix}|${targets}"
   fi
 }
 
@@ -176,9 +197,19 @@ echo ""
 
 TOTAL=0
 SYNCED=0
+SKIPPED=0
 FAILED=0
 
-while IFS='|' read -r name path groups prefix; do
+# Map a target keyword to its skills subpath inside a project.
+target_subpath() {
+  case "$1" in
+    claude) echo ".claude/skills" ;;
+    codex)  echo ".agents/skills" ;;
+    *)      echo "" ;;
+  esac
+}
+
+while IFS='|' read -r name path groups prefix targets; do
   # Apply name filter
   if [ -n "$NAME_FILTER" ]; then
     if [[ ! "$name" == *"$NAME_FILTER"* ]]; then
@@ -205,31 +236,114 @@ while IFS='|' read -r name path groups prefix; do
     continue
   fi
 
+  # --- Safety pre-flight (no override) ---
+  # 1. Must be a git repo.
+  if ! git -C "$path" rev-parse --git-dir >/dev/null 2>&1; then
+    echo "  SKIP — not a git repository"
+    SKIPPED=$((SKIPPED + 1))
+    echo ""
+    continue
+  fi
+
+  # 2. Must be on `main`.
+  current_branch="$(git -C "$path" symbolic-ref --short HEAD 2>/dev/null || echo '')"
+  if [ -z "$current_branch" ]; then
+    echo "  SKIP — detached HEAD, expected branch 'main'"
+    SKIPPED=$((SKIPPED + 1))
+    echo ""
+    continue
+  fi
+  if [ "$current_branch" != "main" ]; then
+    echo "  SKIP — on '$current_branch', expected 'main'"
+    SKIPPED=$((SKIPPED + 1))
+    echo ""
+    continue
+  fi
+
+  # 3. Working tree must be clean.
+  if [ -n "$(git -C "$path" status --porcelain 2>/dev/null)" ]; then
+    echo "  SKIP — working tree has uncommitted changes"
+    SKIPPED=$((SKIPPED + 1))
+    echo ""
+    continue
+  fi
+
   # Set defaults
   prefix="${prefix:-aep-}"
   prefix="$(echo "$prefix" | xargs)"
-  local_target="$path/.claude/skills"
 
-  # Build sync args
+  # Resolve targets (default: both runtimes)
+  if [ -z "$targets" ]; then
+    targets="claude, codex"
+  fi
+  IFS=',' read -ra TARGET_LIST <<< "$targets"
+
+  # Build sync args (dry-run + always prune)
   SYNC_ARGS=()
   if [ "$DRY_RUN" = true ]; then
     SYNC_ARGS+=(--dry-run)
   fi
+  SYNC_ARGS+=(--prune)
 
-  # If groups specified, sync each group separately
-  if [ -n "$groups" ]; then
-    # Parse comma-separated groups: "workflow, product, setup" → loop
-    IFS=',' read -ra GROUP_LIST <<< "$groups"
-    for group in "${GROUP_LIST[@]}"; do
-      group="$(echo "$group" | xargs)"  # trim whitespace
+  # Loop over each runtime target. Dedupe by canonical real path so that
+  # migrated projects (where .claude/skills and .agents/skills both symlink
+  # to ../skills) only sync once. Non-migrated projects keep dual-write.
+  seen_canonicals=" "
+
+  for target_kw in "${TARGET_LIST[@]}"; do
+    target_kw="$(echo "$target_kw" | xargs)"  # trim whitespace
+    [ -z "$target_kw" ] && continue
+
+    sub="$(target_subpath "$target_kw")"
+    if [ -z "$sub" ]; then
+      echo "  WARN: unknown target '$target_kw' (expected: claude, codex) — skipping"
+      continue
+    fi
+
+    local_target="$path/$sub"
+
+    # Canonical real path for dedupe. If the target exists (real dir or
+    # symlink), follow it; otherwise use the intended path string (mkdir
+    # would create a fresh real dir there).
+    if [ -d "$local_target" ] || [ -L "$local_target" ]; then
+      canonical="$(cd "$local_target" 2>/dev/null && pwd -P)"
+    else
+      canonical="$local_target"
+    fi
+
+    # Already wrote to this canonical via a prior target keyword?
+    if [[ "$seen_canonicals" == *" $canonical "* ]]; then
+      echo "  → target: $target_kw ($sub) — same canonical as prior target, skipping duplicate write"
+      continue
+    fi
+    seen_canonicals="$seen_canonicals$canonical "
+
+    if [ "$local_target" != "$canonical" ]; then
+      echo "  → target: $target_kw ($sub → $canonical)"
+    else
+      echo "  → target: $target_kw ($sub)"
+    fi
+
+    # Ensure target dir exists (looplia/Rewarc may not have .agents/skills/ yet)
+    if [ "$DRY_RUN" = false ]; then
+      mkdir -p "$local_target"
+    fi
+
+    # If groups specified, sync each group separately
+    if [ -n "$groups" ]; then
+      # Parse comma-separated groups: "workflow, product, setup" → loop
+      IFS=',' read -ra GROUP_LIST <<< "$groups"
+      for group in "${GROUP_LIST[@]}"; do
+        group="$(echo "$group" | xargs)"  # trim whitespace
+        AEP_REPO="$AEP_REPO" TARGET_DIR="$local_target" \
+          bash "$SCRIPT_DIR/sync.sh" "${SYNC_ARGS[@]}" "$group" 2>&1 | sed 's/^/    /'
+      done
+    else
+      # Sync all groups
       AEP_REPO="$AEP_REPO" TARGET_DIR="$local_target" \
-        bash "$SCRIPT_DIR/sync.sh" "${SYNC_ARGS[@]}" "$group" 2>&1 | sed 's/^/  /'
-    done
-  else
-    # Sync all groups
-    AEP_REPO="$AEP_REPO" TARGET_DIR="$local_target" \
-      bash "$SCRIPT_DIR/sync.sh" "${SYNC_ARGS[@]}" 2>&1 | sed 's/^/  /'
-  fi
+        bash "$SCRIPT_DIR/sync.sh" "${SYNC_ARGS[@]}" 2>&1 | sed 's/^/    /'
+    fi
+  done
 
   SYNCED=$((SYNCED + 1))
   echo ""
@@ -252,8 +366,17 @@ fi
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 if [ "$DRY_RUN" = true ]; then
   echo "Dry run complete: $TOTAL projects checked"
+  if [ "$SKIPPED" -gt 0 ]; then
+    echo "  $SKIPPED projects skipped (see SKIP reasons above)"
+  fi
+  if [ "$FAILED" -gt 0 ]; then
+    echo "  $FAILED projects failed (check paths in $CONFIG)"
+  fi
 else
   echo "Sync complete: $SYNCED/$TOTAL projects synced"
+  if [ "$SKIPPED" -gt 0 ]; then
+    echo "  $SKIPPED projects skipped — switch them to clean main and re-run"
+  fi
   if [ "$FAILED" -gt 0 ]; then
     echo "  $FAILED projects failed (check paths in $CONFIG)"
   fi

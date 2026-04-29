@@ -6,6 +6,7 @@
 # Usage:
 #   bash scripts/sync.sh              # sync all groups
 #   bash scripts/sync.sh --dry-run    # preview changes
+#   bash scripts/sync.sh --prune      # also delete orphan ${prefix}* skills no longer in source
 #   bash scripts/sync.sh workflow     # sync one group
 #   bash scripts/sync.sh --help       # show help
 #
@@ -25,6 +26,9 @@ Sync AEP skills into your project's .claude/skills/ directory.
 
 Options:
   --dry-run    Preview changes without modifying files
+  --prune      Delete `aep-*` skills in TARGET_DIR that no longer exist in
+               any source group (e.g. the renamed `aep-jj-ref`). Honors
+               --dry-run. Only touches dirs matching the `aep-` prefix.
   --help       Show this help message
 
 Groups:
@@ -82,11 +86,13 @@ resolve_aep_repo() {
 # --- Parse args ---
 
 DRY_RUN=false
+PRUNE=false
 FILTER=""
 
 for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY_RUN=true ;;
+    --prune) PRUNE=true ;;
     --help|-h) show_help; exit 0 ;;
     workflow|product|setup|patterns) FILTER="$arg" ;;
     *)
@@ -220,6 +226,52 @@ sync_group "patterns" "patterns"                     "aep-"
 if [ "$SYNCED" -eq 0 ]; then
   echo "Nothing synced. Available groups: workflow, product, setup, patterns"
   exit 1
+fi
+
+# --- Prune orphans ---
+# Remove `aep-*` skills in TARGET that don't correspond to any current source skill.
+# Only runs when --prune is set, and never when a single group filter is in effect
+# (because then we don't have visibility into the other groups' skills and would
+# falsely flag them as orphans).
+if [ "$PRUNE" = true ]; then
+  if [ -n "$FILTER" ]; then
+    echo "Skipping prune: --prune ignored when a single group is specified"
+    echo ""
+  elif [ ! -d "$TARGET" ]; then
+    : # nothing to prune; sync would have created TARGET if it had work
+  else
+    # Build the set of valid `aep-*` skill names from the source.
+    valid_names=""
+    for group_dir in agentic-development-workflow product-context project-setup patterns; do
+      src="$AEP_REPO/skills/$group_dir"
+      [ -d "$src" ] || continue
+      for sub in "$src"/*/; do
+        [ -d "$sub" ] || continue
+        [ -f "$sub/SKILL.md" ] || continue
+        valid_names="$valid_names aep-$(basename "$sub")"
+      done
+    done
+
+    pruned=0
+    for entry in "$TARGET"/aep-*/; do
+      [ -d "$entry" ] || continue
+      name="$(basename "$entry")"
+      # Match exact name against the valid set (space-padded so partial matches don't pass).
+      if [[ " $valid_names " != *" $name "* ]]; then
+        if [ "$DRY_RUN" = true ]; then
+          echo "  Would prune orphan: $name/"
+        else
+          rm -rf "$entry"
+          echo "  Pruned orphan: $name/"
+        fi
+        pruned=$((pruned + 1))
+      fi
+    done
+
+    if [ "$pruned" -gt 0 ]; then
+      echo ""
+    fi
+  fi
 fi
 
 if [ "$DRY_RUN" = true ]; then
