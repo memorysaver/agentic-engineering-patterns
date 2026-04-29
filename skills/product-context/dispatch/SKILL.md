@@ -367,7 +367,7 @@ Extracted from product definition (`product/index.yaml` in split mode, `product-
 - `product.layers[active_layer]` — what the user can do at this layer
 - `architecture.overview` — high-level structure
 - `architecture.technical_spec` — if set, include the technical specification document (or relevant sections for the story's module). This provides Symphony-style precision for protocol-heavy systems.
-- Coding conventions (conventional commits, jj for local, trunk-based)
+- Coding conventions (conventional commits, git + worktree workflow, trunk-based)
 
 #### Part 2: Story-Specific Payload (~20K tokens, unique per agent)
 
@@ -444,9 +444,10 @@ Append to the `changelog` section:
 Commit and push:
 
 ```bash
-jj describe -m "feat: dispatch PROJ-003, PROJ-004 — Layer 0 Wave 1"
-jj new
-jj git push --change @-
+git pull --ff-only origin main
+git add product-context.yaml openspec/changes/
+git commit -m "feat: dispatch PROJ-003, PROJ-004 — Layer 0 Wave 1"
+git push origin main
 ```
 
 **Verify the push succeeded** before proceeding to handoff. If push fails (e.g., remote conflict), resolve before launching workspaces.

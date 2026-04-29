@@ -233,9 +233,10 @@ Also append to `changelog`:
 ### Step 4: Commit
 
 ```bash
-jj describe -m "feat: calibrate <dimension> — <brief summary>"
-jj new
-jj git push --change @-
+git pull --ff-only origin main
+git add calibration/ product-context.yaml
+git commit -m "feat: calibrate <dimension> — <brief summary>"
+git push origin main
 ```
 
 ---

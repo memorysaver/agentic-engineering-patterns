@@ -201,9 +201,10 @@ Based on the classified feedback, update the appropriate file:
 
 6. **Commit updates:**
    ```bash
-   jj describe -m "chore: reflect — classify feedback and update product context"
-   jj new
-   jj git push --change @-
+   git pull --ff-only origin main
+   git add product-context.yaml product/
+   git commit -m "chore: reflect — classify feedback and update product context"
+   git push origin main
    ```
 
 ---
