@@ -330,9 +330,10 @@ After producing both artifacts:
 
 ```bash
 # Commit design artifacts
-jj describe -m "feat: establish design system via /calibrate — [direction name]"
-jj new
-jj git push --change @-
+git pull --ff-only origin main
+git add calibration/ globals.css product-context.yaml
+git commit -m "feat: establish design system via /calibrate — [direction name]"
+git push origin main
 ```
 
 ---

@@ -295,29 +295,23 @@ EXECUTION PLANE: /launch → /build → /wrap
 
 ---
 
-## 6. VCS Abstraction
+## 6. VCS Abstraction (resolved 2026-04 — migrated to pure git)
 
-jj provides genuine value (workspace isolation, mutable changes, auto-rebase) but remains niche. Requiring it is the largest adoption barrier.
+The original v2 proposal here was to introduce a backend-agnostic VCS abstraction (jj-backend.md + git-backend.md), keeping jj as the recommended path while making git a compatible fallback.
 
-**Proposed:** Create a VCS abstraction in the existing `/jj-ref` skill:
+**Decision:** Superseded by a single-shot migration to pure git + git worktree. AEP no longer uses or supports jj. The migration was driven by repeated agent friction in Claude Code and Codex sessions — see [docs/decisions/migrate-from-jj-to-git.md](decisions/migrate-from-jj-to-git.md) for the full rationale, what we lost, and the workaround for each lost feature.
 
-```
-skills/project-setup/vcs-ref/
-  SKILL.md           # VCS abstraction reference
-  references/
-    jj-backend.md    # jj-specific commands (current jj-ref content)
-    git-backend.md   # git equivalents
-```
+| Former jj Operation       | Replacement                                                                            |
+| ------------------------- | -------------------------------------------------------------------------------------- |
+| `jj workspace add`        | `git worktree add -b feat/<name>`                                                      |
+| `jj edit <change>`        | (removed — implement linearly, one commit per task)                                    |
+| `jj squash`               | (removed — squash-merge at PR-merge time)                                              |
+| `jj describe`             | `git commit -m "..."`                                                                  |
+| `jj git push --change @-` | `git push origin main` (control plane) or `git push -u origin feat/<name>` (workspace) |
+| auto-rebase               | `git rebase origin/main` + `git push --force-with-lease`                               |
+| `jj op log` / `jj undo`   | `git reflog` + `git reset` / `git restore --source`                                    |
 
-| jj Operation       | git Equivalent          | Trade-off                     |
-| ------------------ | ----------------------- | ----------------------------- |
-| `jj workspace add` | `git worktree add`      | None                          |
-| `jj edit <change>` | `git checkout <branch>` | No mutable changes            |
-| `jj squash`        | `git rebase -i`         | Harder to automate            |
-| `jj describe`      | `git commit --amend`    | Equivalent                    |
-| auto-rebase        | Manual `git rebase`     | Agents must handle explicitly |
-
-**Priority:** P2 — important for adoption but not blocking.
+This item is closed; do not relitigate without a new lessons-driven case.
 
 ---
 

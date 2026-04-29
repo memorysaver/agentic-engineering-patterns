@@ -217,21 +217,21 @@ See also: **Workspace Session**, **Two-Session Model**, **Orchestrator Boundarie
 
 A numbered stage in the feature lifecycle. Phases 1–3 (explore, propose, review) happen on main via `/design`. Phase 0 (workspace init) and Phases 4–12 happen in the **Workspace Session** via `/build`:
 
-| Phase | Name                          | Session          |
-| ----- | ----------------------------- | ---------------- |
-| 0     | Initialize tracking           | Workspace        |
-| 1–3   | Explore, propose, review      | Main (`/design`) |
-| 4     | Implement via jj change stack | Workspace        |
-| 5     | Code review (gen/eval loop)   | Workspace        |
-| 6     | Browser testing (dogfood)     | Workspace        |
-| 7     | E2E test script generation    | Workspace        |
-| 8     | Review results                | Workspace        |
-| 9     | Cleanup & publish             | Workspace        |
-| 10    | Create PR                     | Workspace        |
-| 11    | PR review feedback loop       | Workspace        |
-| 11.5  | Human evaluation (optional)   | Workspace        |
-| 12    | Pre-merge checks & merge      | Workspace        |
-| 13    | Archive & cleanup             | Main (`/wrap`)   |
+| Phase | Name                                     | Session          |
+| ----- | ---------------------------------------- | ---------------- |
+| 0     | Initialize tracking                      | Workspace        |
+| 1–3   | Explore, propose, review                 | Main (`/design`) |
+| 4     | Implement linearly (one commit per task) | Workspace        |
+| 5     | Code review (gen/eval loop)              | Workspace        |
+| 6     | Browser testing (dogfood)                | Workspace        |
+| 7     | E2E test script generation               | Workspace        |
+| 8     | Review results                           | Workspace        |
+| 9     | Cleanup & publish                        | Workspace        |
+| 10    | Create PR                                | Workspace        |
+| 11    | PR review feedback loop                  | Workspace        |
+| 11.5  | Human evaluation (optional)              | Workspace        |
+| 12    | Pre-merge checks & merge                 | Workspace        |
+| 13    | Archive & cleanup                        | Main (`/wrap`)   |
 
 **Where it appears:** `/design` (1–3); `/build` (0, 4–12); `/wrap` (13).
 
@@ -271,7 +271,7 @@ See also: **Tick**
 
 ### Two-Session Model
 
-The architectural separation between the **Main Session** (human + AI on main branch) and the **Workspace Session** (autonomous agent in an isolated jj workspace). Design happens on main (human judgment). Implementation happens in workspace (autonomous execution). Separation eliminates context reset between planning and building.
+The architectural separation between the **Main Session** (human + AI on main branch) and the **Workspace Session** (autonomous agent in an isolated git worktree on a `feat/<name>` branch). Design happens on main (human judgment). Implementation happens in workspace (autonomous execution). Separation eliminates context reset between planning and building.
 
 **Where it appears:** README; `/launch` creates the workspace session; `/build` runs in it; `/wrap` cleans it up.
 
@@ -287,7 +287,7 @@ See also: **Dispatch**, **Workspace Session**
 
 ### Workspace Session
 
-An autonomous Claude Code session running in a tmux window inside an isolated **jj workspace**. Created by `/launch`, executes `/build` phases 0–12 without user interaction. Communicates progress via **Signal Files**. One workspace per **Story**.
+An autonomous Claude Code session running in a tmux window inside an isolated **Git Worktree** on a fresh `feat/<name>` branch. Created by `/launch`, executes `/build` phases 0–12 without user interaction. Communicates progress via **Signal Files**. One worktree per **Story**.
 
 **Where it appears:** `.feature-workspaces/<name>/`; `/launch` creates it; `/build` runs in it; `/wrap` removes it.
 
@@ -296,14 +296,6 @@ See also: **Main Session**, **Two-Session Model**, **Signal Files**
 ---
 
 ## Agent / Pattern
-
-### Auto-Rebase
-
-A jj feature where editing an earlier change in the stack automatically rebases all dependent changes. Enables the **Skeleton-First Pattern** — create empty changes, then fill them in any order. Dependent changes stay consistent without manual rebasing.
-
-**Where it appears:** `/build` Phase 4; `/jj-ref`.
-
-See also: **Skeleton-First Pattern**, **jj**
 
 ### Autopilot
 
@@ -404,13 +396,13 @@ These boundaries prevent the orchestrator from becoming an executor and eliminat
 
 See also: **Orchestrator**, **Two-Session Model**
 
-### Skeleton-First Pattern
+### One-Commit-per-Task Pattern
 
-Create empty jj changes with descriptions for each task _before_ implementing any of them. Then implement by editing changes in any order — **Auto-Rebase** keeps dependents consistent. Separates planning (change structure) from execution (filling in code). A natural fit for agent workflows where rough code is generated first, then cleaned up with `split`/`squash`.
+The Phase 4 implementation pattern: read `tasks.md`, then implement each task in order, committing once per task with a conventional-commit message. The resulting commit history mirrors `tasks.md` 1:1, which makes the PR's commit list a readable table of contents matching the spec. Squash-merge at PR-merge time keeps `main`'s history clean while preserving the per-task review trail in the PR's commits tab.
 
-**Where it appears:** `/build` Phase 0 (creates the change stack); `/jj-ref` (documents the pattern).
+**Where it appears:** `/build` Phase 4; `/git-ref` (documents the pattern).
 
-See also: **Auto-Rebase**, **jj**
+See also: **Feature Branch**, **Git Worktree**
 
 ### Sprint Contract
 
@@ -611,14 +603,6 @@ A full-stack TypeScript monorepo scaffold engine used by `/scaffold`. Default st
 
 **Where it appears:** `/scaffold` Phase 3.
 
-### Bookmark (jj)
-
-A publishing-time branch marker in **jj**. Unlike git branches that move with commits, jj bookmarks are explicitly created when changes are ready to push. Created at **Phase** 9 (cleanup & publish), pushed to remote for PR creation.
-
-**Where it appears:** `/build` Phase 9; `/jj-ref`.
-
-See also: **jj**
-
 ### cmux
 
 A Claude Code tab multiplexer that creates visual tabs for parallel **Workspace Sessions**. Each workspace gets its own cmux tab for terminal display, making it easy to monitor multiple agents working in parallel.
@@ -627,21 +611,21 @@ A Claude Code tab multiplexer that creates visual tabs for parallel **Workspace 
 
 See also: **tmux**, **Workspace Session**
 
-### Colocated Mode
+### Feature Branch
 
-Running **jj** and git in the same repository (`.jj/` + `.git/`), managed by jj. Use `jj` for all local work and `jj git` subcommands for remote operations. Never use raw `git commit` or `git add` in colocated mode. Initialized via `jj git init --colocate`.
+The git branch a workspace agent works on, named `feat/<name>` and created by `/launch` together with the worktree (`git worktree add -b feat/<name>`). One feature branch per **Story**. PRs target `main` and are squash-merged with `--delete-branch`, after which `/wrap` removes the corresponding worktree and the local branch.
 
-**Where it appears:** `/onboard` Phase 2.5; `/jj-ref`.
+**Where it appears:** `/launch` (creates branch + worktree); `/build` (commits to it); `/wrap` (removes it).
 
-See also: **jj**
+See also: **Git Worktree**, **One-Commit-per-Task Pattern**, **Workspace Session**
 
-### jj (Jujutsu)
+### Git Worktree
 
-A change-oriented version control system used for all local work in AEP. Key mental model shifts from git: the working copy IS a change, there's no staging area, changes are mutable until published, and you clean up history after generation (not during). Provides workspaces (isolated working copies sharing one object store) with no extra disk space — essential for parallel agent execution.
+A `git worktree` is a separate working tree backed by the same `.git/objects` store as the main checkout. AEP creates one per parallel agent at `.feature-workspaces/<name>/` — sharing history (no duplication) but with its own independent working tree and checked-out branch. Created by `/launch`, removed by `/wrap`. Replaces the previous jj-workspace abstraction.
 
-**Where it appears:** Every execution-plane skill; `/jj-ref` (full reference); `/onboard` (verifies installation).
+**Where it appears:** `/launch` (`git worktree add -b feat/<name> .feature-workspaces/<name> main`); `/wrap` (`git worktree remove`); `/git-ref` (full lifecycle reference).
 
-See also: **Colocated Mode**, **Bookmark**, **Auto-Rebase**, **Skeleton-First Pattern**
+See also: **Feature Branch**, **Workspace Session**, **/git-ref**
 
 ### OpenSpec CLI
 
@@ -685,6 +669,6 @@ A per-story spec completeness score (0.0–1.0) computed during `/dispatch` (Ste
 
 A testable hypothesis attached to each layer in `product-context.yaml`. Format: "If users can do X, then Y business outcome follows" with a success metric, target, and decision rule (keep_if / otherwise). Evaluated by `/reflect` after layer completion — not automated test results, but product-level learning.
 
-### VCS Abstraction
+### VCS Abstraction (resolved — 2026-04)
 
-Proposed abstraction layer that replaces direct jj references in skills with backend-agnostic VCS operations. jj remains recommended (workspaces, mutable changes, auto-rebase), but git becomes a compatible backend via `git worktree` equivalents. Addresses the largest adoption barrier.
+The original v2 proposal was a dual-backend abstraction (jj-backend.md + git-backend.md). It was superseded in 2026-04 by a single-shot migration to pure git + worktree — see [docs/decisions/migrate-from-jj-to-git.md](decisions/migrate-from-jj-to-git.md). The "VCS abstraction" entry in the v2 roadmap is closed.

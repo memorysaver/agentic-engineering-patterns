@@ -124,7 +124,7 @@ If the build agent uses verification tracking:
 [
   {
     "task": "string — task description",
-    "change_id": "string — jj change short ID",
+    "commit_sha": "string — git short SHA (8 chars)",
     "verification_steps": ["step 1", "step 2"],
     "passes": false,
     "evaluated_by": null,

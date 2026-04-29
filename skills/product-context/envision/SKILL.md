@@ -180,9 +180,10 @@ If this fails, fix the YAML before committing. Common fixes: quote list items co
 # Split mode: Write product/index.yaml (opportunity + personas + capabilities + product)
 # Split mode: Write product-context.yaml (calibration + changelog, operational sections empty)
 # V1 mode: Write product-context.yaml (all sections)
-jj describe -m "feat: add product context (opportunity brief + context document)"
-jj new
-jj git push --change @-
+git pull --ff-only origin main
+git add product-context.yaml product/ docs/
+git commit -m "feat: add product context (opportunity brief + context document)"
+git push origin main
 ```
 
 ---

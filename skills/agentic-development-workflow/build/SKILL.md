@@ -1,11 +1,11 @@
 ---
 name: build
-description: Autonomous feature implementation in a workspace session. Use when a workspace agent starts building, or when the user says "build", "implement", "execute implementation". Covers the full autonomous flow — initialize harness, implement via jj change stack, review, test, create PR, handle review feedback, and merge. Runs in an isolated jj workspace without user interaction.
+description: Autonomous feature implementation in a workspace session. Use when a workspace agent starts building, or when the user says "build", "implement", "execute implementation". Covers the full autonomous flow — initialize harness, implement linearly with one commit per task, review, test, create PR, handle review feedback, and merge. Runs in an isolated git worktree on a feature branch without user interaction.
 ---
 
 # Build
 
-Autonomous feature implementation inside an isolated jj workspace. Initialize the harness, implement each task via jj change stack, review, test, create a PR, handle feedback, and merge — all without user interaction.
+Autonomous feature implementation inside an isolated git worktree on a fresh `feat/<name>` branch. Initialize the harness, implement tasks linearly (one commit per `tasks.md` row), review, test, create a PR, handle feedback, and merge — all without user interaction.
 
 > **Phase numbering note:** Phases 1-3 (explore, propose, review) were completed on main via `/design`. This skill begins at Phase 0 (workspace init) and continues from Phase 4 (implementation).
 
@@ -24,7 +24,7 @@ Autonomous feature implementation inside an isolated jj workspace. Initialize th
 
 ## Phase 0: Initialize Tracking
 
-Before any work begins, set up the tracking infrastructure, environment, and jj change stack.
+Before any work begins, set up the tracking infrastructure and environment. The branch is already created by `/launch` (`feat/<name>`); you do not pre-create commits — implement linearly in Phase 4.
 
 1. **Read the worktree-onboarding guide** at `skills/agentic-development-workflow/build/references/worktree-onboarding.md`.
 
@@ -48,31 +48,19 @@ Before any work begins, set up the tracking infrastructure, environment, and jj 
 
    ```bash
    cp skills/agentic-development-workflow/build/references/progress-template.md \
-      .dev-workflow/progress-$(jj log --no-graph -r @ -T 'change_id.short(8)').md
+      .dev-workflow/progress-$(git rev-parse --short HEAD).md
    ```
 
-   Fill in feature name, change ID, date, and OpenSpec change name.
+   Fill in feature name, base commit SHA, date, and OpenSpec change name.
    **Mark design phases as pre-completed** (they were done on main via `/design`).
 
-6. **Materialize the OpenSpec tasks as a jj change stack:**
-
-   Read `tasks.md` and create one change per task (skeleton-first pattern):
+6. **Read tasks.md** to understand the task list:
 
    ```bash
-   jj new main
-   jj describe -m "<task-1-description>"
-   jj new
-   jj describe -m "<task-2-description>"
-   jj new
-   jj describe -m "<task-3-description>"
-   # ... one change per OpenSpec task
+   cat openspec/changes/<change-name>/tasks.md
    ```
 
-   Record the change IDs in the progress file:
-
-   ```bash
-   jj log --no-graph -T 'change_id.short(8) ++ " " ++ description.first_line() ++ "\n"'
-   ```
+   `tasks.md` _is_ the skeleton. You will implement tasks linearly in Phase 4, committing once per task with conventional-commit messages — the resulting commit history will mirror the task list 1:1.
 
 7. **Run project setup** (if a setup hook exists):
 
@@ -107,12 +95,11 @@ Before any work begins, set up the tracking infrastructure, environment, and jj 
 
 8. **Generate sprint contracts:**
 
-   Read `specs/*.md`, `design.md`, and `tasks.md`. For each task in the change stack, generate a contract entry in `.dev-workflow/contracts.md` using the template at `references/contract-template.md`:
+   Read `specs/*.md`, `design.md`, and `tasks.md`. For each task, generate a contract entry in `.dev-workflow/contracts.md` using the template at `references/contract-template.md`:
 
    ```markdown
    ## Task: <task-description>
 
-   **Change ID:** <id>
    **Source spec:** <matching spec file>
 
    ### What will be built
@@ -137,7 +124,7 @@ Before any work begins, set up the tracking infrastructure, environment, and jj 
    [
      {
        "task": "<task description>",
-       "change_id": "<jj change short ID>",
+       "commit_sha": null,
        "verification_steps": ["step 1", "step 2", "step 3"],
        "passes": false,
        "evaluated_by": null,
@@ -145,6 +132,8 @@ Before any work begins, set up the tracking infrastructure, environment, and jj 
      }
    ]
    ```
+
+   `commit_sha` starts as `null` and is filled in (8-char prefix) after each task is committed in Phase 4.
 
    **Rules:**
    - JSON format is intentional — models tamper with JSON less than Markdown
@@ -172,8 +161,9 @@ Before any work begins, set up the tracking infrastructure, environment, and jj 
     source .dev-workflow/ports.env 2>/dev/null
 
     # Current state
-    echo "=== Change Stack ==="
-    jj log --no-graph -T 'change_id.short(8) ++ " " ++ description.first_line() ++ "\n"'
+    echo "=== Branch & Commits ==="
+    echo "Branch: $(git branch --show-current)"
+    git log --oneline main..HEAD 2>/dev/null || git log --oneline -10
 
     echo "=== Progress ==="
     grep '\[x\]' .dev-workflow/progress-*.md 2>/dev/null | tail -10
@@ -293,15 +283,21 @@ If `product-context.yaml` doesn't exist, skip this tracking (standalone feature 
 
 ## Phase 4: OpenSpec Apply
 
-Implement each task by editing its corresponding jj change:
+Implement each task in `tasks.md` linearly. After each task, commit with a conventional-commit message and record the resulting commit SHA in `feature-verification.json`:
 
 ```bash
-# For each task in the change stack:
-jj edit <change-id>       # Jump to the task's change
-# ... implement the task ...
-jj diff                   # Verify the change matches the task
-# ... run targeted tests for this change ...
-# Move to next task
+# For each task in tasks.md, in order:
+# ... implement the task — edit files directly ...
+git status                                  # Inspect changes
+git diff                                    # Verify the change matches the task
+# ... run targeted tests for this task ...
+git add -A
+git commit -m "feat(<scope>): <task description>"
+
+# Record the commit SHA in feature-verification.json:
+SHA=$(git rev-parse --short HEAD)
+# Update the matching task entry's commit_sha field with $SHA
+# (use jq or a small inline script — never modify verification_steps or passes)
 ```
 
 Invoke the apply skill for guidance on implementing each task:
@@ -310,9 +306,11 @@ Invoke the apply skill for guidance on implementing each task:
 /opsx:apply
 ```
 
-The agent works **one change at a time**. Auto-rebase keeps dependent changes consistent — when you edit an earlier change, all later changes automatically update.
+The agent works **one task at a time**. Each task = one commit. The branch's commit history mirrors `tasks.md` 1:1, which makes per-task code review on the PR straightforward.
 
 Update the progress file checkbox for each completed task, and mark the Phase 4 checkbox when all tasks are done.
+
+> **If you need to amend a just-committed task** (e.g., you forgot a file), use `git commit --amend --no-edit` _before_ moving on. Once you've committed the next task, leave prior commits alone — fixes belong as a follow-up commit, not a rewrite.
 
 **Lesson capture (opt-in per task):** After completing each task, if you encountered something noteworthy — a non-obvious solution, an error that took multiple attempts, missing documentation — append to `.dev-workflow/lessons.md` under the appropriate section (`## Solutions`, `## Errors`, or `## Missing`). Use a `### <title>` sub-heading with a brief explanation. This is not mandatory for every task — only write when something is genuinely worth passing on to the next agent.
 
@@ -331,9 +329,9 @@ After implementation, verify the code before moving to testing. This phase uses 
 ### Completeness check (always done by generator)
 
 1. Re-read the proposal (including any design review adjustments)
-2. Walk through each change in the stack, reviewing with `jj diff -r <change>` against its task description
+2. Walk through each task's commit, reviewing with `git show <commit-sha>` against its task description
 3. Check `.dev-workflow/contracts.md` — verify each task's success criteria are met
-4. If any task is incomplete, `jj edit <change>` and loop back to Phase 4
+4. If any task is incomplete, add a follow-up commit (`feat(<scope>): complete <task>` or `fix(<scope>): <issue>`) and loop back to Phase 4. Do not rewrite prior commits.
 
 ### Quality review
 
@@ -388,7 +386,7 @@ For each round N (starting at 1, max 5):
    tmux kill-pane -t :.1
    ```
 
-6. **Fix FAIL items** — edit the appropriate jj changes and loop back to step 1 with round N+1.
+6. **Fix FAIL items** — add follow-up commits addressing each FAIL item, then loop back to step 1 with round N+1. Do not rewrite history; the PR review should see the fix as new commits on top.
 
 7. **Max 5 rounds** — if not converging, escalate to human (see convergence rules in `eval-protocol.md`).
 
@@ -471,37 +469,30 @@ Generate a reusable E2E test script if the project has an E2E testing setup. The
 
 Before publishing, write a final `## Summary for Next Agent` section in `.dev-workflow/lessons.md` (1-3 sentences): what would you tell the next agent building in this module? If the lessons file has no entries beyond the template header, write the summary anyway — even "straightforward implementation, no surprises" is useful signal.
 
-### 1. Clean up the change stack
+### 1. Review the commit history
 
 ```bash
-jj log   # Review the full stack
+git log --oneline main..HEAD
 ```
 
-- **Split** any change that mixed multiple concerns:
-
-  ```bash
-  jj edit <change>
-  jj split
-  ```
-
-- **Squash** any fix that belongs in an earlier change:
-  ```bash
-  jj squash
-  ```
+The history should be a clean linear sequence: one commit per `tasks.md` task, optionally followed by review-fix commits. The PR will be squash-merged on merge, so per-commit hygiene matters for review readability, not main history.
 
 ### 2. Rebase onto latest main
 
 ```bash
-jj git fetch
-jj rebase -d main@origin
+git fetch origin
+git rebase origin/main
 ```
 
-### 3. Create bookmark and push
+If conflicts arise, resolve them in the working tree, then `git add <files>` and `git rebase --continue`. Abort with `git rebase --abort` if conflicts are too tangled — surface to the orchestrator via the signal file.
+
+### 3. Push the feature branch
 
 ```bash
-jj bookmark create feat-<name> -r @-
-jj git push --bookmark feat-<name>
+git push -u origin feat/<name>
 ```
+
+The `-u` (`--set-upstream`) flag is needed only on the first push; subsequent pushes can drop it.
 
 ---
 
@@ -510,13 +501,13 @@ jj git push --bookmark feat-<name>
 **Auto-detect the platform:**
 
 ```bash
-REMOTE_URL=$(jj git remote list | head -1 | awk '{print $2}')
+REMOTE_URL=$(git remote get-url origin)
 ```
 
 - `github.com` → `gh pr create --title "<title>" --body "<body>" --base main`
 - `gitlab` → `glab mr create --title "<title>" --description "<body>" --target-branch main`
 
-> **CRITICAL — always specify `--base main` (GitHub) or `--target-branch main` (GitLab).** Workspace sessions run from a jj workspace whose local branch is the feature branch, not `main`. Without an explicit base, `gh pr create` may infer the wrong base from the local branch state — causing the PR to target a dispatch bookmark instead of `main`, so the code never lands on the main branch even after merge.
+> **CRITICAL — always specify `--base main` (GitHub) or `--target-branch main` (GitLab).** Workspace sessions run from a worktree whose checked-out branch is `feat/<name>`, not `main`. Without an explicit base, `gh pr create` may infer the wrong base from the most recent merged branch — causing the PR to target a stale base and never land on main even after merge.
 
 Include in the PR/MR body:
 
@@ -541,16 +532,17 @@ Monitor for CI and review feedback.
 1. Triage all comments
 2. Create fix plan at `.dev-workflow/pr-fix-plan-<round>.md`
 3. Reply to skipped/discussed comments
-4. **Edit the correct change** — identify which change owns each fix:
+4. **Add follow-up commits** for each fix:
    ```bash
-   jj edit <change-that-needs-fixing>
    # ... make the fix ...
-   jj squash   # if fix is in a new change, fold into the right parent
+   git add -A
+   git commit -m "fix(<scope>): address review feedback on <topic>"
    ```
+   Squash-merge at PR-merge time keeps main history clean, so per-commit hygiene on the feature branch only matters for reviewer readability.
 5. Re-run tests
 6. Re-push:
    ```bash
-   jj git push --bookmark feat-<name>
+   git push origin feat/<name>
    ```
 7. Repeat until CI green and reviews resolved
 
@@ -569,12 +561,12 @@ After PR review fixes are resolved, the human tester evaluates the feature — t
    - Severity (minor / moderate)
    - Category (UX, logic, edge case, visual)
 
-2. **Fix in the correct change** — Identify which jj change owns each fix:
+2. **Add a follow-up commit per fix:**
 
    ```bash
-   jj edit <change-that-needs-fixing>
    # ... make the fix ...
-   jj squash   # if fix is in a new change, fold into the right parent
+   git add -A
+   git commit -m "fix(<scope>): <human-eval finding>"
    ```
 
 3. **Align OpenSpec change** — Update `openspec/changes/<name>/` artifacts:
@@ -588,7 +580,7 @@ After PR review fixes are resolved, the human tester evaluates the feature — t
 5. **Push** — Update the PR:
 
    ```bash
-   jj git push --bookmark feat-<name>
+   git push origin feat/<name>
    ```
 
 6. **Repeat** — If the human tester finds more issues, start a new round.
@@ -599,7 +591,7 @@ After PR review fixes are resolved, the human tester evaluates the feature — t
 
 ## Phase 12: Pre-merge Checks & Merge
 
-1. Up-to-date with main: `jj git fetch && jj rebase -d main@origin`
+1. Up-to-date with main: `git fetch origin && git rebase origin/main && git push --force-with-lease origin feat/<name>`
 2. CI checks green
 3. No unresolved review comments
 4. E2E tests passed (if applicable)
@@ -612,27 +604,30 @@ After PR review fixes are resolved, the human tester evaluates the feature — t
 Merge:
 
 ```bash
-REMOTE_URL=$(jj git remote list | head -1 | awk '{print $2}')
+REMOTE_URL=$(git remote get-url origin)
 ```
 
 - GitHub: `gh pr merge <number> --squash --delete-branch`
 - GitLab: `glab mr merge <number> --squash --remove-source-branch`
 
+> **Why `--force-with-lease`:** rebasing rewrites the feature branch's commit SHAs. `--force-with-lease` forces the push only if the remote hasn't advanced since you last fetched — protecting concurrent collaborators while still letting you push the rebased history.
+
 ---
 
 ## Guardrails
 
-- **Never skip the tracking initialization** (Phase 0). Every workflow needs a progress file and jj change stack.
+- **Never skip the tracking initialization** (Phase 0). Every workflow needs a progress file and contracts.
 - **Never run `/opsx:archive` from a workspace** — it writes to `openspec/specs/` and causes conflicts. Archive always runs on `main` via `/wrap`.
 - **Never write to `product-context.yaml` from a workspace** — only the main session writes to the YAML. Report all status through `.dev-workflow/signals/status.json`. This is the concurrency protocol.
 - **Always confirm with the user** before creating PRs, merging, or pushing to shared branches.
 - **The `.dev-workflow/` folder is ephemeral** — gitignored, local to each workspace.
 - **Resume support**: If returning to an in-progress workflow, run `.dev-workflow/init.sh` if it exists, then read the progress file.
 - **Phase skipping**: Users may ask to skip phases. Update progress file accordingly.
-- **Always use `jj` for local changes** — never use raw `git commit` or `git add` in a colocated repo.
-- **Bookmarks are publish-time only** — create them in Phase 9 when ready to push, not during implementation.
+- **One commit per task** in Phase 4 — the PR review reads cleanly when the commit list mirrors `tasks.md`. Don't bundle multiple tasks into one commit; don't split one task across multiple commits.
+- **Don't rewrite history mid-stream** — once you've moved past a committed task, fixes go in as new commits, not amends or rebases. Squash-merge at PR-merge handles the cleanup.
+- **Use `git push --force-with-lease`, never `--force`** — the `lease` variant fails safely if someone else pushed to the same branch since your last fetch.
 - **Signal updates are required** — update `.dev-workflow/signals/status.json` at the start and end of every phase. Check `.dev-workflow/signals/feedback.md` for main session feedback at phase boundaries.
-- **Generator must not modify verification data** — never modify `verification_steps` or `passes` in `feature-verification.json`. Only the evaluator or human updates these fields.
+- **Generator must not modify verification data** — never modify `verification_steps` or `passes` in `feature-verification.json`. Only `commit_sha` is generator-writable. The evaluator or human updates `passes` / `evaluated_by` / `round`.
 - **Evaluator loop max 5 rounds** — if the generator-evaluator loop hasn't converged after 5 rounds, escalate to human.
 
 ---

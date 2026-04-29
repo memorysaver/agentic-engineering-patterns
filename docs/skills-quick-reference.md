@@ -33,7 +33,7 @@ CONTROL PLANE (human + AI)              EXECUTION PLANE (agents build)
 | Skill     | When to use                           | Input                                      | Output                                                      | Session   |
 | --------- | ------------------------------------- | ------------------------------------------ | ----------------------------------------------------------- | --------- |
 | `/design` | Refine an ambiguous story spec        | Dispatched story (OpenSpec change on main) | Refined OpenSpec artifacts (proposal, design, specs, tasks) | Main      |
-| `/launch` | Spawn autonomous agent for a story    | Well-specified story with OpenSpec change  | jj workspace + tmux session + running `/build` agent        | Main      |
+| `/launch` | Spawn autonomous agent for a story    | Well-specified story with OpenSpec change  | git worktree + tmux session + running `/build` agent        | Main      |
 | `/build`  | Agent implements a feature end-to-end | OpenSpec artifacts on disk                 | Merged PR                                                   | Workspace |
 | `/wrap`   | Archive after PR merges               | Completed workspace with merged PR         | Archived OpenSpec, updated story status, cleaned workspace  | Main      |
 
@@ -47,12 +47,12 @@ CONTROL PLANE (human + AI)              EXECUTION PLANE (agents build)
 
 ### Project Setup (Run Once)
 
-| Skill            | When to use                                | Input             | Output                                               | Session |
-| ---------------- | ------------------------------------------ | ----------------- | ---------------------------------------------------- | ------- |
-| `/onboard`       | First-time environment setup               | (none)            | Tools verified, plugins installed, jj initialized    | Main    |
-| `/scaffold`      | Create new project or onboard existing one | Stack preferences | Monorepo + OpenSpec + workspace hooks + E2E skeleton | Main    |
-| `/testing-guide` | Set up quality infrastructure              | Project context   | Workspace setup hook + E2E test skill                | Main    |
-| `/jj-ref`        | Need help with jj commands                 | (none)            | Command reference + concept mapping                  | Main    |
+| Skill            | When to use                                | Input             | Output                                                 | Session |
+| ---------------- | ------------------------------------------ | ----------------- | ------------------------------------------------------ | ------- |
+| `/onboard`       | First-time environment setup               | (none)            | Tools verified, plugins installed                      | Main    |
+| `/scaffold`      | Create new project or onboard existing one | Stack preferences | Monorepo + OpenSpec + workspace hooks + E2E skeleton   | Main    |
+| `/testing-guide` | Set up quality infrastructure              | Project context   | Workspace setup hook + E2E test skill                  | Main    |
+| `/git-ref`       | AEP git + worktree conventions             | (none)            | Worktree lifecycle, branch naming, recovery procedures | Main    |
 
 ---
 
@@ -70,7 +70,7 @@ CONTROL PLANE (human + AI)              EXECUTION PLANE (agents build)
 "Capture process learnings"         → /workflow-feedback
 "Pull learnings from downstreams"   → /workflow-feedback
 "I want hands-free mode"            → /autopilot
-"How do I use jj?"                  → /jj-ref
+"How do AEP worktrees work?"        → /git-ref
 "Set up my environment"             → /onboard
 "Create a new project"              → /scaffold
 "Set up testing infrastructure"     → /testing-guide
@@ -140,7 +140,7 @@ When synced to downstream projects, skills are prefixed with `aep-`:
 | Group                          | Skills                                     | Sync command       |
 | ------------------------------ | ------------------------------------------ | ------------------ |
 | `product-context`              | envision, map, dispatch, validate, reflect | `sync.sh product`  |
-| `agentic-development-workflow` | design, launch, build, wrap, jj-ref        | `sync.sh workflow` |
+| `agentic-development-workflow` | design, launch, build, wrap, git-ref       | `sync.sh workflow` |
 | `patterns`                     | gen-eval, autopilot, workflow-feedback     | `sync.sh patterns` |
 | `project-setup`                | onboard, scaffold, testing-guide           | `sync.sh setup`    |
 

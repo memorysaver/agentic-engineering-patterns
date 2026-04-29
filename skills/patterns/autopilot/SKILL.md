@@ -238,8 +238,9 @@ Follow the 7-step tick protocol documented in `references/tick-protocol.md`.
             confirmation." Enter
        - If phase == 12 and stuck (2+ ticks):
          tmux send-keys -t <workspace-name>:0.0 \
-           "Complete Phase 12 merge now: 1) jj git fetch && jj rebase -d main@origin \
-            2) Verify CI green 3) gh pr merge <number> --squash --delete-branch. \
+           "Complete Phase 12 merge now: 1) git fetch origin && git rebase origin/main && \
+            git push --force-with-lease origin feat/<name> 2) Verify CI green \
+            3) gh pr merge <number> --squash --delete-branch. \
             Update status.json with story_status completed." Enter
        - If phase == 12 and progressing → leave alone
 

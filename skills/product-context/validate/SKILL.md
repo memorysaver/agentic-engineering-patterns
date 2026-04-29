@@ -334,8 +334,10 @@ Apply all blocking and important fixes to the artifact. Minor fixes are optional
 ## Step 6: Commit
 
 ```bash
-jj describe -m "fix: validate {artifact-name} — {N} issues found and fixed"
-jj new
+git pull --ff-only origin main
+git add <validated-files>
+git commit -m "fix: validate {artifact-name} — {N} issues found and fixed"
+git push origin main
 ```
 
 ---

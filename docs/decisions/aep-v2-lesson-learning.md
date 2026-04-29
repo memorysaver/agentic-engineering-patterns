@@ -51,7 +51,7 @@ Workspace agents capture what they learn during builds — solutions discovered,
 
 ### Why
 
-Layer 0 workspace agents solved 17 stories independently. Each one discovered things: workarounds for library quirks, patterns for oRPC routes, Rust async PTY patterns, jj workspace gotchas. All of that knowledge **died when the workspace was forgotten**. The next agent building a similar story starts from zero.
+Layer 0 workspace agents solved 17 stories independently. Each one discovered things: workarounds for library quirks, patterns for oRPC routes, Rust async PTY patterns, worktree gotchas. All of that knowledge **died when the workspace was removed**. The next agent building a similar story starts from zero.
 
 ### Data Flow
 
@@ -74,7 +74,7 @@ Layer 0 workspace agents solved 17 stories independently. Each one discovered th
 │                                                                 │
 │  /wrap (main session, Phase 13)                                 │
 │                                                                 │
-│  BEFORE jj workspace forget:                                    │
+│  BEFORE git worktree remove:                                    │
 │    1. Read .feature-workspaces/<name>/.dev-workflow/lessons.md   │
 │    2. If non-empty, commit to lessons-learned/<change-name>.md  │
 │    3. Then proceed with workspace cleanup                       │

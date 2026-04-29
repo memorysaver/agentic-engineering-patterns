@@ -26,7 +26,7 @@ The gen/eval pattern uses three complementary tracking systems. Each answers a d
 [
   {
     "task": "feat: add creator_profile table with cascade deletion",
-    "change_id": "motvylon",
+    "commit_sha": "a1b2c3d4",
     "verification_steps": [
       "creator_profile table exists in Drizzle schema",
       "userId has unique constraint and cascade delete",
@@ -42,15 +42,15 @@ The gen/eval pattern uses three complementary tracking systems. Each answers a d
 
 ### Field Ownership
 
-| Field                | Who creates            | Who can modify     | When                                       |
-| -------------------- | ---------------------- | ------------------ | ------------------------------------------ |
-| `task`               | Generator (Phase 0)    | Nobody             | Set once during init                       |
-| `change_id`          | Generator (Phase 0)    | Nobody             | Set once when creating jj change stack     |
-| `verification_steps` | Generator (Phase 0)    | **Nobody**         | Extracted from contracts/specs — immutable |
-| `passes`             | Generator sets `false` | **Evaluator only** | Updated after running each step            |
-| `evaluated_by`       | Generator sets `null`  | **Evaluator only** | Agent identifier                           |
-| `round`              | Generator sets `null`  | **Evaluator only** | Which eval round                           |
-| `notes`              | Generator sets `null`  | **Evaluator only** | Detailed findings per task                 |
+| Field                | Who creates            | Who can modify     | When                                              |
+| -------------------- | ---------------------- | ------------------ | ------------------------------------------------- |
+| `task`               | Generator (Phase 0)    | Nobody             | Set once during init                              |
+| `commit_sha`         | Generator (Phase 4)    | Nobody             | Set after committing each task; `null` until then |
+| `verification_steps` | Generator (Phase 0)    | **Nobody**         | Extracted from contracts/specs — immutable        |
+| `passes`             | Generator sets `false` | **Evaluator only** | Updated after running each step                   |
+| `evaluated_by`       | Generator sets `null`  | **Evaluator only** | Agent identifier                                  |
+| `round`              | Generator sets `null`  | **Evaluator only** | Which eval round                                  |
+| `notes`              | Generator sets `null`  | **Evaluator only** | Detailed findings per task                        |
 
 **Critical rule:** The generator MUST NOT modify `verification_steps`, `passes`, `evaluated_by`, `round`, or `notes`. This ensures the generator cannot mark its own work as passing.
 
@@ -74,7 +74,7 @@ The gen/eval pattern uses three complementary tracking systems. Each answers a d
 
 ## What to evaluate
 
-- All 5 OpenSpec tasks implemented across jj change stack
+- All 5 OpenSpec tasks committed on the feature branch (one commit each)
 - Dev server running on port 3000
 
 ## Changes since last round
@@ -213,8 +213,8 @@ The generator never writes eval-response files. The evaluator never writes eval-
 ┌─────────────────────────────────────────────────────────────────────┐
 │ Phase 4: Implementation                                             │
 │                                                                     │
-│  Generator implements each task in jj change stack                  │
-│  (one change per task from tasks.md)                                │
+│  Generator implements each task linearly, one git commit per task   │
+│  (commit history mirrors tasks.md row-for-row)                      │
 └─────────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -225,8 +225,9 @@ The generator never writes eval-response files. The evaluator never writes eval-
 │  │     GENERATOR        │                                           │
 │  │                      │                                           │
 │  │  1. Self-check:      │                                           │
-│  │     jj diff -r each  │                                           │
-│  │     change vs spec   │                                           │
+│  │     git show <sha>   │                                           │
+│  │     each commit vs   │                                           │
+│  │     matching task    │                                           │
 │  │                      │                                           │
 │  │  2. Write:           │                                           │
 │  │     signals/         │                                           │

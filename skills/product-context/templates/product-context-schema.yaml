@@ -403,7 +403,7 @@ topology:
       trigger: implementation_complete # Phase 4 done, Phase 5 starts — evaluator runs BEFORE PR creation
       payload: "eval-request.md + code diff + contracts.md + feature-verification.json"
       validation:
-        - "All tasks in jj change stack are implemented"
+        - "All tasks committed on the feature branch"
         - "Dev server running and accessible"
         - "eval-request.md created with round number and change summary"
       on_validation_failure: "reject handoff, notify source agent"

@@ -60,7 +60,7 @@ bottleneck, so heavy upfront investment in unambiguous specs pays back
 exponentially. The **Control Plane** (`/envision`, `/map`, `/dispatch`,
 `/calibrate`, `/reflect`, `/design`) is where humans and AI decide _what_ to
 build; the **Execution Plane** (`/launch`, `/build`, `/wrap`) is where agents
-build _in isolation_ — each story in its own `jj` workspace, each agent session
+build _in isolation_ — each story in its own `git worktree` on a `feat/<name>` branch, each agent session
 hosted in `tmux/cmux`, with communication strictly through structured signal
 files rather than chat. Structural primitives come from Jeff Patton's user
 story mapping: **activities** (user journey, left→right), **layers**
@@ -84,7 +84,7 @@ that pushes skills into downstream projects' `.claude/skills/`.
 | **Philosophical frame**  | Indie-builder pragmatism; anti-enterprise-theater                                                                                                                                                                                                                          | Anthropic-engineering derived; spec-precision thesis                                                                                                                            |
 | **Primary unit of work** | Phase (numbered, within a milestone)                                                                                                                                                                                                                                       | Story (point on `activity × layer × wave` grid)                                                                                                                                 |
 | **Context store**        | Many markdown files: `PROJECT.md`, `REQUIREMENTS.md`, `ROADMAP.md`, `STATE.md`, per-phase `CONTEXT.md`, per-task `PLAN.md`, `SUMMARY.md`, `threads/`, `seeds/`, `todos/`                                                                                                   | Single `product-context.yaml` (optionally split as `product/index.yaml` + capability maps); `technical-spec.md` for complex systems                                             |
-| **Orchestration model**  | Task subagents of main CC session; each gets fresh ~200K                                                                                                                                                                                                                   | Separate `tmux` + `jj` workspace per story; main session never inspects workspace code directly; signal files are the only channel                                              |
+| **Orchestration model**  | Task subagents of main CC session; each gets fresh ~200K                                                                                                                                                                                                                   | Separate `tmux` + `git worktree` per story (on a `feat/<name>` branch); main session never inspects workspace code directly; signal files are the only channel                  |
 | **Design refinement**    | `/gsd-discuss-phase` surfaces gray areas by feature type (visual / API / content / organization); writes `CONTEXT.md` consumed by researcher + planner; has `discuss` vs `assumptions` modes                                                                               | `/design` refines one spec interactively; `/calibrate` handles seven quality dimensions with heavy / light classes; `.5` alignment layers are structural                        |
 | **Verification**         | `/gsd-verify-work` extracts testable deliverables, walks user through each, auto-diagnoses failures, spawns fix-plans; `/gsd-audit-milestone` checks Definition of Done; `/gsd-secure-phase` anchors verification to threat model; `/gsd-review` runs cross-AI peer review | Layer gates (integration tests at layer boundaries); generator/evaluator separation (`/gen-eval`); `/validate` artifact quality gates; `/reflect` classifies post-ship feedback |
 | **Distribution**         | `npx get-shit-done-cc@latest`, 14 runtimes, `--global` / `--local`, `--uninstall` per runtime                                                                                                                                                                              | Local repo + `scripts/sync.sh` to copy skills into any project's `.claude/skills/` with `aep-` prefix                                                                           |
@@ -162,12 +162,12 @@ comes next.
 GSD has both `/gsd-forensics` (post-mortem for failed workflow runs) and
 `/gsd-health --repair` (integrity check and auto-fix). AEP's `/autopilot` and
 `/validate` cover parts of this but there is no single diagnostic pass that
-checks workspace state, `jj` integrity, signal-file consistency, and OpenSpec
+checks workspace state, `git worktree` integrity, signal-file consistency, and OpenSpec
 artifact completeness.
 
 **Proposed addition:** `/validate --diagnose` that runs an integrity sweep and
 reports anomalies — stuck ticks, missing signal files, orphan workspaces,
-unpushed `jj` changes, stories with status mismatched against PR state.
+unpushed feature branches, stories with status mismatched against PR state.
 Optional `--repair` flag for safe auto-fixes (e.g., re-sync story status from
 PR).
 
@@ -274,14 +274,14 @@ genuine strength — lessons adopted from GSD should honor it.
 ### 5.2 Moving agents back into the main session
 
 GSD's orchestrator-spawns-Task-subagents model is simpler than AEP's
-`tmux + jj workspace` isolation, but it loses two properties:
+`tmux + git worktree` isolation, but it loses two properties:
 
 1. **Long-running parallel isolation.** Subagents share the main process; a
    crashed agent affects the session. AEP's `tmux` hosts survive main-session
    restarts.
 2. **Filesystem-level separation.** Two subagents editing adjacent files can
-   create race conditions. AEP's `jj workspace add` gives each agent its own
-   working copy.
+   create race conditions. AEP's `git worktree add -b feat/<name>` gives each
+   agent its own working tree on its own branch.
 
 For long-running autonomous work, AEP's model is structurally safer and
 should not be abandoned in the name of simplicity.

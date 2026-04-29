@@ -218,9 +218,10 @@ If this fails, fix the YAML before committing. Common fixes: quote list items co
 ### Commit
 
 ```bash
-jj describe -m "feat: add system map, story graph, and agent topology"
-jj new
-jj git push --change @-
+git pull --ff-only origin main
+git add product-context.yaml product/
+git commit -m "feat: add system map, story graph, and agent topology"
+git push origin main
 ```
 
 **Sections written:**
