@@ -69,7 +69,7 @@ For each workspace where `story_status == "completed"`:
 
 1. Verify the workspace hasn't already been wrapped (`last_action != "wrapping"` and `last_action != "wrapped"`)
 2. Run `/wrap` for this workspace:
-   - This runs on main: `jj git fetch`, rebase, archive OpenSpec change, sync story status to YAML, remove workspace
+   - This runs on main: `git fetch && git pull --ff-only origin main`, archive OpenSpec change, sync story status to YAML, remove worktree
 3. Set `last_action = "wrapping"`
 4. After wrap completes:
    - Remove workspace entry from state
@@ -200,7 +200,7 @@ Set `last_action = "merge_nudged"`, `last_action_at = now`.
 
 ```bash
 tmux send-keys -t <workspace-name>:0.0 \
-  "Complete Phase 12 merge now: 1) jj git fetch && jj rebase -d main@origin 2) Verify CI green 3) gh pr merge <number> --squash --delete-branch. Then update status.json with story_status completed." Enter
+  "Complete Phase 12 merge now: 1) git fetch origin && git rebase origin/main && git push --force-with-lease origin feat/<name> 2) Verify CI green 3) gh pr merge <number> --squash --delete-branch. Then update status.json with story_status completed." Enter
 ```
 
 Set `last_action = "merge_stuck_nudged"`, `last_action_at = now`.
@@ -254,7 +254,7 @@ Compare the captured output against `last_tmux_hash` stored in the workspace sta
 **Step 2 — Check for uncommitted code changes:**
 
 ```bash
-cd .feature-workspaces/<workspace-name> && jj diff --stat
+git -C .feature-workspaces/<workspace-name> diff --stat
 ```
 
 - **Has uncommitted changes** → Agent is writing code via tool use (file edits happen but no terminal output scrolls). Do NOT increment `consecutive_stuck_ticks`.
@@ -385,7 +385,7 @@ If no escalation:
 
    For grouped changes: `story_ids` contains all story IDs in the group, `compile_mode` is `"grouped_change"`, `change_group` is the group ID, and `story_id` is the first story in the group (used as the primary identifier).
 
-**Max ONE launch per tick.** Launching involves creating a jj workspace, starting a tmux session, and sending a bootstrap prompt — too slow for multiple per tick.
+**Max ONE launch per tick.** Launching involves creating a git worktree, starting a tmux session, and sending a bootstrap prompt — too slow for multiple per tick.
 
 ### Layer Completion
 

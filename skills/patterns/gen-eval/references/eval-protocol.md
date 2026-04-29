@@ -106,12 +106,12 @@ If not converged → escalate to human
 
 ### Choosing the mode
 
-| Artifact type | Mode | Rationale |
-|--------------|------|-----------|
-| Product context / design docs | Single-pass | Document doesn't change between eval rounds |
-| Code implementation (active) | Multi-round | Generator can fix issues between rounds |
-| Code review (PR) | Single-pass | Code is already written; findings are for the author |
-| Structured documents | Single-pass | Documents are fixed; validation is a one-time check |
+| Artifact type                 | Mode        | Rationale                                            |
+| ----------------------------- | ----------- | ---------------------------------------------------- |
+| Product context / design docs | Single-pass | Document doesn't change between eval rounds          |
+| Code implementation (active)  | Multi-round | Generator can fix issues between rounds              |
+| Code review (PR)              | Single-pass | Code is already written; findings are for the author |
+| Structured documents          | Single-pass | Documents are fixed; validation is a one-time check  |
 
 ---
 
@@ -125,17 +125,21 @@ Used in multi-round mode (workspace context). Files live in `.dev-workflow/signa
 # Evaluation Request — Round <N>
 
 ## What to evaluate
+
 - [summary of implementation state]
 - [which tasks are complete]
 
 ## Changes since last round
+
 - [what was fixed since previous evaluation, or "first evaluation"]
 
 ## Known issues
+
 - [anything the generator is aware of but hasn't fixed yet]
 
 ## Files changed
-[output of jj diff --stat or git diff --stat]
+
+[output of git diff --stat main...HEAD]
 ```
 
 ### eval-response-N.md (evaluator writes)
@@ -146,6 +150,7 @@ Used in multi-round mode (workspace context). Files live in `.dev-workflow/signa
 ## Findings
 
 ### [PASS/FAIL]: [Finding title] ([Dimension]: [Score])
+
 - Steps to reproduce: [concrete steps]
 - Expected: [what should happen]
 - Actual: [what actually happens]
@@ -153,6 +158,7 @@ Used in multi-round mode (workspace context). Files live in `.dev-workflow/signa
 - Fix: [specific, actionable suggestion]
 
 ## Scores
+
 - Completeness: [1-5] — [justification]
 - Correctness: [1-5] — [justification]
 - UX Quality: [1-5] — [justification]
@@ -160,9 +166,11 @@ Used in multi-round mode (workspace context). Files live in `.dev-workflow/signa
 - Code Quality: [1-5] — [justification]
 
 ## Result: PASS / FAIL
+
 [If FAIL: which hard failure thresholds were violated]
 
 ## Verification Updates
+
 [Which items in feature-verification.json were updated, with new pass/fail status]
 ```
 
@@ -191,7 +199,7 @@ Task-level tracking for code evaluation. Format is intentionally JSON — models
 [
   {
     "task": "string — task description from tasks.md",
-    "change_id": "string — jj change short ID (8 chars)",
+    "commit_sha": "string — git short SHA (8 chars), null until task is committed",
     "verification_steps": [
       "string — concrete, executable verification step",
       "string — another step"
@@ -206,17 +214,17 @@ Task-level tracking for code evaluation. Format is intentionally JSON — models
 
 ### Field ownership
 
-| Field | Written by | When |
-|-------|-----------|------|
-| `task` | Generator (Phase 0) | During initialization |
-| `change_id` | Generator (Phase 0) | When creating jj change stack |
-| `verification_steps` | Generator (Phase 0) | Extracted from contracts/specs |
-| `passes` | **Evaluator only** | After running verification steps |
-| `evaluated_by` | **Evaluator only** | Agent identifier |
-| `round` | **Evaluator only** | Which eval round |
-| `notes` | **Evaluator only** | Detailed findings for this task |
+| Field                | Written by          | When                                                    |
+| -------------------- | ------------------- | ------------------------------------------------------- |
+| `task`               | Generator (Phase 0) | During initialization                                   |
+| `commit_sha`         | Generator (Phase 4) | After committing each task; starts as `null` in Phase 0 |
+| `verification_steps` | Generator (Phase 0) | Extracted from contracts/specs                          |
+| `passes`             | **Evaluator only**  | After running verification steps                        |
+| `evaluated_by`       | **Evaluator only**  | Agent identifier                                        |
+| `round`              | **Evaluator only**  | Which eval round                                        |
+| `notes`              | **Evaluator only**  | Detailed findings for this task                         |
 
-**Critical rule:** The generator MUST NOT modify `verification_steps`, `passes`, `evaluated_by`, `round`, or `notes`. Only the evaluator or a human can update these fields. This ensures the generator cannot mark its own work as passing.
+**Critical rule:** The generator MUST NOT modify `verification_steps`, `passes`, `evaluated_by`, `round`, or `notes`. The generator may write `commit_sha` after each Phase 4 task commit. Only the evaluator or a human can update the verification fields. This ensures the generator cannot mark its own work as passing.
 
 ### Example (real-world, round 1)
 
@@ -224,7 +232,7 @@ Task-level tracking for code evaluation. Format is intentionally JSON — models
 [
   {
     "task": "feat: expose WORKSPACE_CONTAINER DO binding in wrangler config",
-    "change_id": "motvylon",
+    "commit_sha": "a1b2c3d4",
     "verification_steps": [
       "wrangler.jsonc includes workspace_container durable_object binding",
       "WorkspaceContainer class is exported from the entrypoint",
@@ -237,7 +245,7 @@ Task-level tracking for code evaluation. Format is intentionally JSON — models
   },
   {
     "task": "feat: add source_type column to marketplace_plugins table",
-    "change_id": "llzqmpto",
+    "commit_sha": "e5f6g7h8",
     "verification_steps": [
       "Drizzle schema includes source_type column with enum constraint",
       "Migration generated and applies cleanly",
@@ -257,13 +265,13 @@ Task-level tracking for code evaluation. Format is intentionally JSON — models
 
 ### When to stop the loop
 
-| Condition | Action |
-|-----------|--------|
-| All dimensions pass thresholds | **STOP — PASS** |
-| Round N reaches max_rounds (default 5) | **STOP — ESCALATE** to human |
-| Same findings appear 3+ consecutive rounds | **STOP — ESCALATE** (generator can't fix it) |
-| Evaluator finds new issues each round (not converging) | **STOP — ESCALATE** after max_rounds |
-| Generator and evaluator disagree on pass/fail | **STOP — ESCALATE** for human judgment |
+| Condition                                              | Action                                       |
+| ------------------------------------------------------ | -------------------------------------------- |
+| All dimensions pass thresholds                         | **STOP — PASS**                              |
+| Round N reaches max_rounds (default 5)                 | **STOP — ESCALATE** to human                 |
+| Same findings appear 3+ consecutive rounds             | **STOP — ESCALATE** (generator can't fix it) |
+| Evaluator finds new issues each round (not converging) | **STOP — ESCALATE** after max_rounds         |
+| Generator and evaluator disagree on pass/fail          | **STOP — ESCALATE** for human judgment       |
 
 ### Escalation format
 
@@ -271,24 +279,27 @@ Task-level tracking for code evaluation. Format is intentionally JSON — models
 # Escalation — Eval Loop Not Converging
 
 ## Round history
+
 - Round 1: FAIL (Correctness 2, Security 2) — 4 findings
 - Round 2: FAIL (Correctness 3, Security 2) — 3 findings (1 fixed, 0 new)
 - Round 3: FAIL (Security 2) — 2 findings (1 fixed, 0 new)
 
 ## Persistent issues
+
 1. [Issue that generator cannot fix — explain why]
 2. [Issue that requires architectural decision]
 
 ## Recommendation
+
 [What the human should decide or do]
 ```
 
 ### Round budgets
 
-| Artifact type | Max rounds | Typical rounds |
-|--------------|------------|----------------|
-| Code (implementation) | 5 | 2-3 |
-| Code (PR review) | 1 | 1 (single-pass) |
-| Product context | 1 | 1 (single-pass) |
-| Design artifacts | 1-2 | 1 |
-| Documents | 1 | 1 (single-pass) |
+| Artifact type         | Max rounds | Typical rounds  |
+| --------------------- | ---------- | --------------- |
+| Code (implementation) | 5          | 2-3             |
+| Code (PR review)      | 1          | 1 (single-pass) |
+| Product context       | 1          | 1 (single-pass) |
+| Design artifacts      | 1-2        | 1               |
+| Documents             | 1          | 1 (single-pass) |

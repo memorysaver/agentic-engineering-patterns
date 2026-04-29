@@ -45,26 +45,27 @@ Anthropic's harness design research uses file-based communication between agents
 
 **Fields:**
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `phase` | number | Current phase number (0–13) |
-| `phase_name` | string | Human-readable phase name |
-| `task_current` | string | Current task being worked on (Phase 4 only) |
-| `task_index` | number | 1-based index of current task |
-| `task_total` | number | Total number of tasks |
-| `started_at` | string | ISO 8601 timestamp of phase start |
-| `blockers` | string[] | List of blockers preventing progress |
-| `completion_pct` | number | Estimated completion percentage (0–100) |
-| `last_updated` | string | ISO 8601 timestamp of last update |
-| `story_status` | string | Story state for `/dispatch` sync: `"in_progress"`, `"in_review"`, `"completed"`, `"failed"` |
-| `pr_url` | string | PR URL once created (Phase 10+) |
-| `cost_usd` | number | Accumulated cost estimate for this story |
-| `completed_at` | string | ISO 8601 timestamp when story completed (Phase 12) |
-| `failure_log` | object | Structured failure record (Phase 12 failure only) — `error_class`, `approach_summary`, `failure_point`, `root_cause`, `unexplored_alternatives` |
+| Field            | Type     | Description                                                                                                                                     |
+| ---------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `phase`          | number   | Current phase number (0–13)                                                                                                                     |
+| `phase_name`     | string   | Human-readable phase name                                                                                                                       |
+| `task_current`   | string   | Current task being worked on (Phase 4 only)                                                                                                     |
+| `task_index`     | number   | 1-based index of current task                                                                                                                   |
+| `task_total`     | number   | Total number of tasks                                                                                                                           |
+| `started_at`     | string   | ISO 8601 timestamp of phase start                                                                                                               |
+| `blockers`       | string[] | List of blockers preventing progress                                                                                                            |
+| `completion_pct` | number   | Estimated completion percentage (0–100)                                                                                                         |
+| `last_updated`   | string   | ISO 8601 timestamp of last update                                                                                                               |
+| `story_status`   | string   | Story state for `/dispatch` sync: `"in_progress"`, `"in_review"`, `"completed"`, `"failed"`                                                     |
+| `pr_url`         | string   | PR URL once created (Phase 10+)                                                                                                                 |
+| `cost_usd`       | number   | Accumulated cost estimate for this story                                                                                                        |
+| `completed_at`   | string   | ISO 8601 timestamp when story completed (Phase 12)                                                                                              |
+| `failure_log`    | object   | Structured failure record (Phase 12 failure only) — `error_class`, `approach_summary`, `failure_point`, `root_cause`, `unexplored_alternatives` |
 
 > **Concurrency protocol:** These story-tracking fields replace direct writes to `product-context.yaml`. The main session (via `/wrap` and `/dispatch` signal sync) reads these fields and updates the YAML. Workspace agents must never write to `product-context.yaml`.
 
 **Update points:**
+
 - Phase 0: After initialization completes
 - Phase 4: At start of each task and on completion
 - Phase 5–8: At start and completion of each phase
@@ -81,15 +82,18 @@ Anthropic's harness design research uses file-based communication between agents
 # Feedback
 
 ## 2026-03-25 11:45
+
 Priority: high
 Focus on the auth flow first — the settings page can wait until a follow-up PR.
 
 ## 2026-03-25 14:20
+
 Priority: low
 The button colors look off on dark mode. Not blocking.
 ```
 
 **Rules:**
+
 - Main session appends new entries with timestamp and priority
 - Workspace agent checks for new feedback at the start of each phase
 - High-priority feedback should be addressed before continuing
@@ -109,6 +113,7 @@ echo "Feature ready for testing at http://localhost:3000" > .dev-workflow/signal
 ```
 
 The main session can watch for this file:
+
 ```bash
 # Main session polls (or uses filesystem watcher):
 cat .feature-workspaces/<name>/.dev-workflow/signals/ready-for-review.flag
@@ -128,17 +133,21 @@ cat .feature-workspaces/<name>/.dev-workflow/signals/ready-for-review.flag
 **Requested by:** generator
 
 ## What to evaluate
-- All tasks in the jj change stack are implemented
+
+- All tasks committed on the feature branch
 - Dev server running on port 3000 (web) / 3001 (server)
 
 ## Changes since last round
+
 - [First evaluation — all changes are new]
 
 ## Known issues
+
 - [Any issues the generator is already aware of]
 
 ## Files changed
-[Output of jj diff --stat]
+
+[Output of git diff --stat main...HEAD]
 ```
 
 ### `eval-response-<N>.md` — Evaluation Response
