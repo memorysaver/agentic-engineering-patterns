@@ -30,6 +30,7 @@ The presentation is meant for an engineering or AI product audience that already
 
 - `index.html` — the slide deck.
 - `assets/motion.min.js` — local Motion One fallback for offline playback.
+- `images/` — generated editorial architecture art used as atmospheric chapter visuals.
 - `qa/` — screenshots used to visually verify key slides.
 
-The deck intentionally uses HTML/CSS diagrams for the core workflow modules so the diagrams remain editable and explanatory.
+The deck intentionally uses HTML/CSS diagrams for the core workflow modules so the diagrams remain editable and explanatory. Generated images are used only as visual atmosphere on hero or transition slides.
