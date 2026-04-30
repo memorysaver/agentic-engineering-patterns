@@ -276,8 +276,8 @@ Verify tools                         Scaffold monorepo
     │                                    │
     ▼                                    ▼
 Install plugins                      Initialize OpenSpec
-(superpowers, agent-browser,         (explore/propose/apply/archive
- frontend-design, mgrep)             commands for spec-driven dev)
+(superpowers, frontend-design,       (explore/propose/apply/archive
+ mgrep; browser optional)            commands for spec-driven dev)
 ```
 
 ## The Feedback Loop

@@ -117,7 +117,7 @@ The cycle continues until:
 | Dispatch                | User picks stories                  | Auto-select by score, 1 per tick                   |
 | Design routing          | User chooses /launch or /design     | Auto-route; escalate ambiguous to human            |
 | Code review             | Workspace self-orchestrates Phase 5 | Autopilot triggers via tmux if workspace misses it |
-| Human eval (Phase 11.5) | User tests running app              | Skipped for non-UI, agent-browser for UI           |
+| Human eval (Phase 11.5) | User tests running app              | Skipped for non-UI; browser eval only when healthy |
 | Merge (Phase 12)        | User confirms merge                 | Auto-merge when CI green + eval PASS               |
 | Wrap                    | User runs /wrap                     | Autopilot runs /wrap on next tick                  |
 | Next dispatch           | User runs /dispatch                 | Autopilot dispatches on next tick                  |

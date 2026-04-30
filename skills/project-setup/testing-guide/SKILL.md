@@ -181,10 +181,10 @@ source .dev-workflow/ports.env
 
 ## Test Scripts
 
-| Script           | What it tests                | Tools               |
-| ---------------- | ---------------------------- | ------------------- |
-| seed.sh          | DB migrations + test account | curl, sqlite3       |
-| [feature]-e2e.sh | [description]                | agent-browser, curl |
+| Script           | What it tests                | Tools                        |
+| ---------------- | ---------------------------- | ---------------------------- |
+| seed.sh          | DB migrations + test account | curl, sqlite3                |
+| [feature]-e2e.sh | [description]                | curl, optional agent-browser |
 
 ## Adding a New Test
 
@@ -235,6 +235,11 @@ pass() { echo "  PASS: $1"; PASS=$((PASS + 1)); }
 fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 skip() { echo "  SKIP: $1"; SKIP=$((SKIP + 1)); }
 
+agent_browser_healthy() {
+  command -v agent-browser >/dev/null 2>&1 || return 1
+  agent-browser navigate about:blank >/tmp/agent-browser-smoke.log 2>&1
+}
+
 # ── 1. [Test Group Name] ──
 echo "=== 1. [Test Group] ==="
 
@@ -247,12 +252,12 @@ else
 fi
 
 # Browser-level test (agent-browser)
-if command -v agent-browser &>/dev/null; then
+if agent_browser_healthy; then
   agent-browser navigate "$BASE_URL/login"
   # ... browser assertions ...
   pass "Login page loads"
 else
-  skip "Login page (agent-browser not installed)"
+  skip "Login page (agent-browser unavailable or Chrome launch failed)"
 fi
 
 # ── 2. [Next Test Group] ──
@@ -289,7 +294,7 @@ Two categories of tests, owned by different parts of the system:
 │ (vitest, jest, pytest, etc.)    │  │ (.claude/skills/e2e-test/)       │
 │                                 │  │                                  │
 │ Unit tests                      │  │ API integration tests (curl)     │
-│  - co-located with source       │  │ E2E browser tests (agent-browser)│
+│  - co-located with source       │  │ E2E browser tests (optional)     │
 │  - run during Phase 4           │  │                                  │
 │  - use project's test command   │  │  - live in scripts/              │
 │                                 │  │  - run during Phase 5-8          │
@@ -345,12 +350,20 @@ API tests can live inside E2E scripts (the curl-based sections) or as standalone
 | Aspect         | Detail                                                                 |
 | -------------- | ---------------------------------------------------------------------- |
 | **What**       | Full user flows through the UI                                         |
-| **Runner**     | agent-browser (headless Chrome)                                        |
+| **Runner**     | agent-browser when its Chrome smoke test passes; otherwise skip        |
 | **Scope**      | Login, navigation, form submission, visual state, multi-step flows     |
 | **Convention** | `.claude/skills/e2e-test/scripts/<feature>-e2e.sh`                     |
 | **When**       | Phase 7, after dogfood exploration (Phase 6) identifies what to cover  |
 | **Who runs**   | Build agent (Phase 7-8) + CI/CD                                        |
 | **Catches**    | Integration failures, UI regressions, flow breaks, visual state errors |
+
+Before adding browser-level tests on macOS, run:
+
+```bash
+agent-browser navigate about:blank
+```
+
+If Google Chrome crashes with `_RegisterApplication`, `TransformProcessType`, or `abort() called`, treat browser automation as unavailable on that machine. Keep API/unit tests running and mark browser checks `SKIP` until Chrome or agent-browser is fixed locally.
 
 **How to add:** Follow the E2E Script Pattern in Part 2.
 
@@ -361,7 +374,7 @@ Features start with zero tests and build up through `/build` phases:
 ```
 Phase 4 (implement)  → run project's unit tests (framework-level)
 Phase 5 (review)     → API contract tests via e2e-test scripts
-Phase 6 (dogfood)    → agent-browser exploration, find gaps
+Phase 6 (dogfood)    → browser exploration when available, find gaps
 Phase 7 (e2e)        → codify findings into e2e-test scripts
 Phase 8 (review)     → run all e2e-test scripts + unit tests
 ```
@@ -376,14 +389,14 @@ Each layer catches different failure modes:
 
 Not every project needs both e2e-test layers. Unit tests are always the project framework's responsibility — this table covers what the e2e-test skill should include:
 
-| Project type               | API tests (curl) | E2E browser (agent-browser) |
-| -------------------------- | ---------------- | --------------------------- |
-| Full-stack web app         | Yes              | Yes                         |
-| API-only service           | Yes              | Skip                        |
-| CLI tool                   | Skip             | Skip                        |
-| Static site / landing page | Skip             | E2E only                    |
-| Library / package          | Skip             | Skip                        |
-| Mobile app (API backend)   | Yes              | Skip (use native testing)   |
+| Project type               | API tests (curl) | E2E browser (optional)    |
+| -------------------------- | ---------------- | ------------------------- |
+| Full-stack web app         | Yes              | Yes                       |
+| API-only service           | Yes              | Skip                      |
+| CLI tool                   | Skip             | Skip                      |
+| Static site / landing page | Skip             | E2E only                  |
+| Library / package          | Skip             | Skip                      |
+| Mobile app (API backend)   | Yes              | Skip (use native testing) |
 
 ---
 
@@ -405,7 +418,7 @@ Don't worry about coverage. The goal is **one green test end-to-end**.
 Each subsequent feature adds tests via the e2e-test skill:
 
 - New API endpoint → API contract test (curl in e2e-test script)
-- New user flow → E2E browser test script (agent-browser)
+- New user flow → E2E browser test script when browser automation is healthy
 
 Unit tests are added alongside code during Phase 4 using the project's test framework — the e2e-test skill doesn't manage these.
 

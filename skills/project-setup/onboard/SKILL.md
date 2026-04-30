@@ -51,7 +51,7 @@ Add the marketplace and install both plugin groups:
 | **project-setup**                | onboard, scaffold                    | Scaffold projects, configure spec-driven development, environment onboarding |
 | **agentic-development-workflow** | design, launch, build, wrap, git-ref | Full-lifecycle feature development with git worktrees                        |
 
-> **Note:** This installs the agentic-engineering-patterns plugin itself. Recommended third-party plugins (superpowers, agent-browser, etc.) are configured at the project level in Phase 4 via `.claude/settings.json`.
+> **Note:** This installs the agentic-engineering-patterns plugin itself. Recommended third-party plugins are configured at the project level in Phase 4 via `.claude/settings.json`; browser automation is added only after its local smoke test passes.
 
 ---
 
@@ -100,7 +100,13 @@ done
 | `agent-browser` | Browser automation testing   | Claude Code plugin: `agent-browser@agent-browser` |
 | `portless`      | Port management (.localhost) | `bun add -g portless`                             |
 
-These are optional — the workflow works without them but is enhanced by them.
+These are optional — the workflow works without them but is enhanced by them. On macOS, do not enable `agent-browser` until a one-command smoke test can launch a page without crashing Chrome:
+
+```bash
+agent-browser navigate about:blank
+```
+
+If macOS shows a Google Chrome crash report with `_RegisterApplication`, `TransformProcessType`, or `abort() called`, leave `agent-browser` disabled and use non-browser checks (`curl`, unit tests, screenshots from the user, or the host agent's browser tool) until the local Chrome/agent-browser combination is healthy.
 
 ---
 
@@ -121,16 +127,12 @@ Read `.claude/settings.json` if it exists. Merge the following keys into it (or 
     "superpowers-marketplace": {
       "source": { "source": "github", "repo": "obra/superpowers-marketplace" }
     },
-    "agent-browser": {
-      "source": { "source": "github", "repo": "vercel-labs/agent-browser" }
-    },
     "Mixedbread-Grep": {
       "source": { "source": "github", "repo": "mixedbread-ai/mgrep" }
     }
   },
   "enabledPlugins": {
     "superpowers@superpowers-marketplace": true,
-    "agent-browser@agent-browser": true,
     "frontend-design@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
     "mgrep@Mixedbread-Grep": true,
@@ -165,12 +167,29 @@ Read `.claude/settings.json` if it exists. Merge the following keys into it (or 
 
 > **Concurrency protocol hooks:** The `hooks` section enforces the rule that only the main session writes to `product-context.yaml`. When a workspace agent attempts to edit, write, or commit `product-context.yaml`, the hook blocks the action and explains how to use signals instead. This is defense-in-depth — the skill instructions also direct agents to use signals, but the hook catches any model drift.
 
+### Optional browser automation
+
+Only add `agent-browser` after the Phase 3 smoke test succeeds. It launches a local Chrome process, and some macOS/Chrome combinations crash during application registration before the test can run.
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "agent-browser": {
+      "source": { "source": "github", "repo": "vercel-labs/agent-browser" }
+    }
+  },
+  "enabledPlugins": {
+    "agent-browser@agent-browser": true
+  }
+}
+```
+
 ### Plugin reference
 
 | Plugin            | Marketplace               | Purpose                                         |
 | ----------------- | ------------------------- | ----------------------------------------------- |
 | `superpowers`     | `superpowers-marketplace` | Planning, debugging, TDD, code review workflows |
-| `agent-browser`   | `agent-browser`           | Browser automation for testing                  |
+| `agent-browser`   | `agent-browser`           | Optional browser automation for testing         |
 | `frontend-design` | `claude-plugins-official` | High-quality UI generation                      |
 | `code-review`     | `claude-plugins-official` | PR code review                                  |
 | `mgrep`           | `Mixedbread-Grep`         | Semantic search (local + web)                   |
