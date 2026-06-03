@@ -64,17 +64,17 @@ topology:
 /autopilot
 ```
 
-One command. Initializes state, runs the first tick, and starts a recurring loop (default: every 10 minutes). Use `--loop` to customize the interval:
+One command. Initializes state, runs the first tick, and starts a recurring loop (default: every 5 minutes). Use `--loop` to customize the interval:
 
 ```
-/autopilot --loop 15m
+/autopilot --loop 10m
 ```
 
 ---
 
 ## The Autonomous Cycle
 
-Autopilot runs as a tick-based state machine. Every 10 minutes, a tick executes:
+Autopilot runs as a tick-based state machine. Every 5 minutes, a tick executes:
 
 ```
 /autopilot tick

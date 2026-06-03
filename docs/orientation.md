@@ -169,7 +169,7 @@ You have a validated product context and want to go grab coffee.
 /autopilot
 ```
 
-One command. Autopilot ticks every 10 minutes: sync signals → wrap completed → guide stuck workspaces → dispatch new stories → write state. It pauses only for design escalations, layer gate failures, or when it runs out of ready stories.
+One command. Autopilot ticks every 5 minutes: sync signals → wrap completed → guide stuck workspaces → dispatch new stories → write state. It pauses only for design escalations, layer gate failures, or when it runs out of ready stories.
 
 Deep dive: [docs/workflow/autonomous-loop.md](workflow/autonomous-loop.md).
 

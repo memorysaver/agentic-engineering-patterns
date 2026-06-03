@@ -19,13 +19,6 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 ## [Unreleased]
 
-### Changed
-
-- `/autopilot` default tick interval is now **10 minutes** (was 5). Stuck/eval
-  escalation thresholds are unchanged in tick count, so their wall-clock doubles
-  (nudge at 6 ticks ≈ 60 min, escalate at 12 ticks ≈ 120 min); use
-  `/autopilot --loop 5m` for the previous cadence.
-
 ## [1.2.0] - 2026-06-03
 
 Host-agnostic executor: the feature lifecycle now runs under Claude Code **or**

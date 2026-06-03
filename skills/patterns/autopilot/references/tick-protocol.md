@@ -3,7 +3,7 @@
 The 7-step state machine executed on each autopilot tick. Each tick is idempotent — running it twice with no external state change produces the same result and takes no duplicate actions.
 
 **Target duration:** <60 seconds per tick
-**Invocation:** `/loop 10m /autopilot tick` or manual `/autopilot tick`
+**Invocation:** `/loop 5m /autopilot tick` or manual `/autopilot tick`
 
 > **BOUNDARY REMINDER:** The autopilot is an orchestrator. Every action on a workspace is `executor.nudge()` / `executor.liveness()` — and autopilot runs only on **session backends (B1/B2)**, where those verbs are `tmux send-keys` / `tmux capture-pane` (the recipe shown throughout this file). Never spawn Agent tools from main, never read workspace source code, never call `gh pr merge`. See SKILL.md "STOP — Orchestrator Boundaries" and `aep-executor/references/backends.md`.
 
@@ -156,7 +156,7 @@ tmux send-keys -t <workspace-name>:0.0 \
 
 Set in state: `code_review_triggered = true`, `code_review_triggered_at = now`, `last_action = "review_triggered"`.
 
-**Re-trigger after 3 ticks (30 min) with no response:**
+**Re-trigger after 3 ticks (15 min) with no response:**
 
 ```bash
 tmux send-keys -t <workspace-name>:0.0 \
@@ -179,7 +179,7 @@ tmux send-keys -t <workspace-name>:0.0 \
   "Code has changed since your last evaluation. Re-run Phase 5 code review on the current state before proceeding with the PR. Write a new eval-request.md and spawn a fresh evaluator." Enter
 ```
 
-**Escalation:** No eval-response after 6 ticks (60 min) post-trigger → add escalation with type `"eval_not_converging"`.
+**Escalation:** No eval-response after 6 ticks (30 min) post-trigger → add escalation with type `"eval_not_converging"`.
 
 ### Sub-step ④c: Guide to Merge
 
@@ -222,8 +222,8 @@ ls .feature-workspaces/<name>/.dev-workflow/signals/eval-response-*.md 2>/dev/nu
 | Ticks since trigger | Action                                                     |
 | ------------------- | ---------------------------------------------------------- |
 | 1-2                 | Wait — workspace may be running eval                       |
-| 3 (30 min)          | Re-trigger with URGENT message                             |
-| 6 (60 min)          | Add escalation: "Workspace not responding to eval trigger" |
+| 3 (15 min)          | Re-trigger with URGENT message                             |
+| 6 (30 min)          | Add escalation: "Workspace not responding to eval trigger" |
 
 ---
 
@@ -264,18 +264,18 @@ git -C .feature-workspaces/<workspace-name> diff --stat
 
 | Stuck ticks | Duration | Action                                                        |
 | ----------- | -------- | ------------------------------------------------------------- |
-| 3           | 30 min   | Check if workspace has blockers. If yes, log but don't nudge. |
-| 6           | 60 min   | Send tmux nudge (see below). Log warning.                     |
-| 12          | 120 min  | Add escalation. Consider pausing if on critical path.         |
+| 3           | 15 min   | Check if workspace has blockers. If yes, log but don't nudge. |
+| 6           | 30 min   | Send tmux nudge (see below). Log warning.                     |
+| 12          | 60 min   | Add escalation. Consider pausing if on critical path.         |
 
-### Nudge Command (60 min stuck)
+### Nudge Command (30 min stuck)
 
 ```bash
 tmux send-keys -t <workspace-name>:0.0 \
-  "You appear stuck at Phase <N> (<phase_name>) for 60 minutes. Check for errors, read .dev-workflow/signals/feedback.md for any instructions, and continue. If you need help, update status.json with blockers." Enter
+  "You appear stuck at Phase <N> (<phase_name>) for 30 minutes. Check for errors, read .dev-workflow/signals/feedback.md for any instructions, and continue. If you need help, update status.json with blockers." Enter
 ```
 
-### Escalation (120 min stuck)
+### Escalation (60 min stuck)
 
 Add to `escalations[]`:
 
@@ -284,7 +284,7 @@ Add to `escalations[]`:
   "type": "stuck",
   "story_id": "<story_id>",
   "workspace": "<name>",
-  "reason": "Workspace stuck at Phase <N> for 120 minutes",
+  "reason": "Workspace stuck at Phase <N> for 60 minutes",
   "phase": <N>,
   "blockers": [...],
   "created_at": "<ISO8601>",
