@@ -9,8 +9,8 @@ description: |-
 One command to go autonomous. Initializes state, runs the first tick, and starts a recurring loop — all in one invocation.
 
 ```
-/autopilot                  # start with default 5m interval
-/autopilot --loop 10m       # start with custom interval
+/autopilot                  # start with default 10m interval
+/autopilot --loop 15m       # start with custom interval
 /autopilot status           # check progress and escalations
 /autopilot stop             # gracefully stop the loop
 ```
@@ -28,7 +28,7 @@ One command to go autonomous. Initializes state, runs the first tick, and starts
        │  tick ⑤  detect stuck workspaces              │
        │  tick ⑥  dispatch new work (/launch)          │
        │  tick ⑦  write state                          │
-       │  ... repeat every 5 min ...                   │
+       │  ... repeat every 10 min ...                  │
        └─────────────────────────────────────────────┘
   → /reflect (after layer completes or autopilot stops)
 ```
@@ -113,9 +113,9 @@ Initialize autopilot, run the first tick, and start the recurring loop. This is 
 **Usage:**
 
 ```
-/autopilot                  # default: 5 minute tick interval
-/autopilot --loop 10m       # custom interval
-/autopilot --loop 3m        # faster for active development
+/autopilot                  # default: 10 minute tick interval
+/autopilot --loop 15m       # custom interval
+/autopilot --loop 5m        # faster for active development
 ```
 
 ### Prerequisites
@@ -193,7 +193,7 @@ Verify these conditions before proceeding:
    /loop <interval> /autopilot tick
    ```
 
-   Where `<interval>` is from `--loop` flag (default: `5m`). This starts the `/loop` skill which will invoke `/autopilot tick` on the specified interval automatically.
+   Where `<interval>` is from `--loop` flag (default: `10m`). This starts the `/loop` skill which will invoke `/autopilot tick` on the specified interval automatically.
 
 ---
 
@@ -245,7 +245,7 @@ Follow the 7-step tick protocol documented in `references/tick-protocol.md`.
             via tmux split-window, and execute the gen/eval loop per the build \
             skill Phase 5 protocol." Enter
        - If stuck at Phase 5 (2+ ticks) → re-trigger via tmux
-       - No response after 6 ticks (30 min) → add escalation
+       - No response after 6 ticks (60 min) → add escalation
        - See references/review-trigger.md for full detection logic
 
    ④c. GUIDE TO MERGE — when eval PASSED AND pr_url set, nudge toward Phase 12:
@@ -268,8 +268,8 @@ Follow the 7-step tick protocol documented in `references/tick-protocol.md`.
    - Compare (phase, completion_pct) with previous tick
    - No change → run liveness check, then increment consecutive_stuck_ticks
    - Changed → reset to 0
-   - 6 ticks (30 min) stuck → send tmux nudge
-   - 12 ticks (60 min) stuck → add escalation, consider pausing
+   - 6 ticks (60 min) stuck → send tmux nudge
+   - 12 ticks (120 min) stuck → add escalation, consider pausing
 
 ⑥ DISPATCH NEW WORK → if capacity available:
    - Read product-context.yaml, run dispatch scoring logic (steps 1-3 from /dispatch)

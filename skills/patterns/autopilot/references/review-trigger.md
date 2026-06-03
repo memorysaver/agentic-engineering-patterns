@@ -85,7 +85,7 @@ tmux send-keys -t <workspace-name>:0.0 \
 
 Set in state: `code_review_triggered = true`, `code_review_triggered_at = now`, `last_action = "review_triggered"`.
 
-### Re-trigger (after 3 ticks / 15 min no response)
+### Re-trigger (after 3 ticks / 30 min no response)
 
 ```bash
 tmux send-keys -t <workspace-name>:0.0 \
@@ -139,8 +139,8 @@ Read the latest response file. Parse the `## Result: PASS / FAIL` line.
 | Ticks since trigger | Action                                                     |
 | ------------------- | ---------------------------------------------------------- |
 | 1-2                 | Wait — workspace may be running eval                       |
-| 3 (15 min)          | Re-trigger with URGENT message                             |
-| 6 (30 min)          | Add escalation: "Workspace not responding to eval trigger" |
+| 3 (30 min)          | Re-trigger with URGENT message                             |
+| 6 (60 min)          | Add escalation: "Workspace not responding to eval trigger" |
 
 ---
 
@@ -149,7 +149,7 @@ Read the latest response file. Parse the `## Result: PASS / FAIL` line.
 Escalate to human when:
 
 - Workspace has completed 5 eval rounds without PASS (workspace's own max convergence)
-- Workspace has not responded to 2 trigger attempts over 30 minutes
+- Workspace has not responded to 2 trigger attempts over 60 minutes
 - Eval response shows the same findings 3+ consecutive rounds (not converging)
 
 Escalation entry:

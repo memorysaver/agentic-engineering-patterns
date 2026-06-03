@@ -255,7 +255,7 @@ See also: **Concurrency Protocol**, **Generator**, **Evaluator**
 
 ### Tick
 
-One iteration of the **Autopilot** orchestration loop (default interval: 5 minutes). Each tick is idempotent and targets < 60 seconds of execution. Follows a 7-step protocol: read state → sync signals → wrap completed → guide completion → detect stuck → dispatch new → write state.
+One iteration of the **Autopilot** orchestration loop (default interval: 10 minutes). Each tick is idempotent and targets < 60 seconds of execution. Follows a 7-step protocol: read state → sync signals → wrap completed → guide completion → detect stuck → dispatch new → write state.
 
 **Where it appears:** `/autopilot` skill; `references/tick-protocol.md`.
 
@@ -299,7 +299,7 @@ See also: **Main Session**, **Two-Session Model**, **Signal Files**
 
 ### Autopilot
 
-The fully autonomous orchestration mode. A tick-based state machine that runs the dispatch → launch → monitor → review → wrap → dispatch cycle on a configurable interval (default 5 minutes). Invoked via `/autopilot`. Pauses only for **Design Escalation** or **Layer Gate** failures.
+The fully autonomous orchestration mode. A tick-based state machine that runs the dispatch → launch → monitor → review → wrap → dispatch cycle on a configurable interval (default 10 minutes). Invoked via `/autopilot`. Pauses only for **Design Escalation** or **Layer Gate** failures.
 
 **Where it appears:** `/autopilot` skill; `references/tick-protocol.md`.
 
