@@ -438,6 +438,10 @@ Generate a dimension-specific brief, explore or discuss, capture decisions for a
 - [Generalized Calibration Workflow](docs/decisions/generalized-calibration-workflow.md) — multi-dimension `/calibrate` and `.5` alignment layers
 - [v2 Improvement Roadmap](docs/aep-v2-improvement-guideline.md) — capability maps, technical specs, dispatch enhancements
 
+## Version History
+
+Human-readable release notes for each version are in [CHANGELOG.md](CHANGELOG.md). The plugin version is the `metadata.version` field in `.claude-plugin/marketplace.json` and follows [Semantic Versioning](https://semver.org/).
+
 ## Installing Skills
 
 AEP skills follow the open [Agent Skills](https://agentskills.io/) format, so any project — under
@@ -519,6 +523,8 @@ bash scripts/sync-downstream.sh 91app    # push to one (name match)
 ```
 
 For everyone else, `npx skills add` above is the supported path.
+
+> **Releasing:** bumping `metadata.version` in `.claude-plugin/marketplace.json` must come with a matching [CHANGELOG.md](CHANGELOG.md) entry in the same PR (move the `[Unreleased]` notes under the new `[X.Y.Z] - DATE` heading), and a `vX.Y.Z` git tag on merge to `main`.
 
 ### Contributing skills (shared resources)
 
