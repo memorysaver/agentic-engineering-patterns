@@ -5,7 +5,14 @@ The 7-step state machine executed on each autopilot tick. Each tick is idempoten
 **Target duration:** <60 seconds per tick
 **Invocation:** `/loop 5m /autopilot tick` or manual `/autopilot tick`
 
-> **BOUNDARY REMINDER:** The autopilot is an orchestrator. Every action on a workspace happens via `tmux send-keys`. Never spawn Agent tools, never read workspace source code, never call `gh pr merge`. See SKILL.md "STOP — Orchestrator Boundaries" section.
+> **BOUNDARY REMINDER:** The autopilot is an orchestrator. Every action on a workspace is `executor.nudge()` / `executor.liveness()` — and autopilot runs only on **session backends (B1/B2)**, where those verbs are `tmux send-keys` / `tmux capture-pane` (the recipe shown throughout this file). Never spawn code reviewers from main, never read workspace source code, never call `gh pr merge`. See SKILL.md "STOP — Orchestrator Boundaries" and `aep-executor/references/backends.md`.
+
+**EXECUTION MODEL — CHECK → ACT** (see SKILL.md "Execution model"). A tick is two halves:
+
+- **CHECK** — steps ①②⑤, the read-only/scoring parts of ④⑥, and the ⑦ state write. These run in a cheap, context-isolated agent via `executor.check()` (Claude Code Haiku subagent / Codex `codex exec`) and produce an **action list**. The CHECK reads signals only — never workspace code.
+- **ACT** — the orchestrator performs the emitted actions: ③ wrap, ④/⑤ nudges, ⑥ launch, escalations.
+
+The action-list schema is `{summary, state_written, actions[]}`, each action `{type, workspace, story_id, message, reason}` (full schema in `aep-executor/references/backends.md`). The step recipes below are both the content of the CHECK prompt and the templates the ACT executes.
 
 ---
 
@@ -247,7 +254,7 @@ tmux capture-pane -t <workspace-name>:0.0 -p -S -20
 Compare the captured output against `last_tmux_hash` stored in the workspace state entry.
 
 - **`last_tmux_hash` is null** (first tick after launch or restart) → Populate `last_tmux_hash` with hash of current output. Do NOT increment `consecutive_stuck_ticks`. The workspace gets benefit of the doubt on its first stale-signal tick.
-- **tmux session doesn't exist** (capture-pane fails) → Treat as no activity. Increment `consecutive_stuck_ticks`.
+- **tmux session doesn't exist** (capture-pane fails) → First confirm this workspace is a **session backend** (B1/B2). Autopilot only runs on session backends (see SKILL.md "Executor backend"), so a missing session means a crashed/exited agent → treat as no activity and increment `consecutive_stuck_ticks`. (If a workspace was somehow launched under B3/B4, pane-liveness does not apply — fall through to the Step 2 git-diff check and the signals in `monitor()`, do **not** count it stuck on the missing pane alone.)
 - **Output hash differs from `last_tmux_hash`** → Agent is active, signals are lagging. Update `last_tmux_hash`. Do NOT increment `consecutive_stuck_ticks`.
 - **Output hash matches `last_tmux_hash`** → Proceed to Step 2.
 

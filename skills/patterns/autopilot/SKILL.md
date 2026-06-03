@@ -44,9 +44,45 @@ One command to go autonomous. Initializes state, runs the first tick, and starts
 
 You are an **ORCHESTRATOR**, not an **EXECUTOR**. All code operations happen inside workspace agents. The main session never reads, reviews, edits, or evaluates workspace code directly. The single most common autopilot failure is violating this boundary.
 
+### Executor backend (read once, applies throughout)
+
+Autopilot steers running workspace sessions, so it requires a **session backend
+(B1/B2)** from the executor abstraction — a workspace you can instruct mid-flight.
+Every "send to workspace" action in this skill is `executor.nudge(ws, msg)`, and
+every liveness probe is `executor.liveness(ws)`. The `tmux send-keys` /
+`tmux capture-pane` commands shown throughout the tick protocol are the **B1/B2
+implementation** of those verbs (see `.claude/skills/aep-executor/references/backends.md`).
+
+- **B1/B2:** proceed normally — `nudge` = `tmux send-keys`, `liveness` = `tmux capture-pane` (+ `git diff --stat`).
+  - **Multi-line nudge form:** the nudge messages below are multi-line, so send each as
+    `tmux send-keys -t <ws>:0.0 -l -- "<msg>"` followed by `tmux send-keys -t <ws>:0.0 Enter`.
+    A bare `tmux send-keys "<msg>" Enter` lets embedded newlines submit the message
+    line-by-line — always use the `-l` + separate-`Enter` form (this is `executor.nudge()`).
+- **B3/B4 (no session to steer):** autopilot's tick/nudge model does not apply. If
+  the user wants hands-free batch under Claude Code, that is the **dynamic-workflow
+  path (B4)** reached via `/dispatch … with workflow`, which is its own
+  orchestrator — not something autopilot drives. If detection yields B3/B4, report
+  that autopilot needs a session backend and stop.
+
+### The tick CHECK runs in a cheap delegate (token isolation)
+
+Each tick splits into **CHECK** (read + analyze + write state) and **ACT**
+(execute). The CHECK is delegated to a **cheap, context-isolated agent** via
+`executor.check()` (Claude Code: a Haiku subagent; Codex: a `codex exec` cheap
+one-shot) so the long-lived orchestrator session doesn't accumulate per-tick
+reading. The CHECK reads **only** `autopilot-state.json` + workspace
+`signals/` + `gh pr view` — **never workspace code** — and returns a compact
+action list; the orchestrator then ACTs on it (nudge / wrap / launch / escalate).
+
+> **This is NOT a violation of the next rule.** The CHECK delegate is the
+> orchestrator offloading its own _signal reading and bookkeeping_ to a cheap
+> context. It never reads workspace code and never reviews code. The forbidden
+> thing is spawning a **code reviewer** (which would read the implementation) from
+> main — that stays forbidden. Signals-only analysis ≠ code review.
+
 ### Never Do List
 
-- **NEVER use the Agent tool to spawn code reviewers** — the reviewer needs workspace-local context (files, git state, eval history) that only exists inside the tmux session. A reviewer spawned from main has no access to the implementation it's supposed to evaluate. Instead: `tmux send-keys` to trigger the workspace's own gen/eval loop.
+- **NEVER use the Agent tool to spawn code reviewers from the main session** — this is categorical, not a context problem you can engineer around. Even a worktree-bound reviewer spawned from main pulls workspace code and quality judgments into the orchestrator's context, which is exactly what the boundary forbids; "but I could give it the worktree" is **not** a valid exception. Instead: `executor.nudge()` (B1/B2 = `tmux send-keys`) to trigger the workspace's own gen/eval loop. (The executor's B3/B4 backends do spawn worktree-bound agents — but that is `/launch`/`/build` spawning the builder/evaluator _inside_ the workspace, never autopilot spawning a reviewer from main; autopilot runs only on session backends anyway.)
 - **NEVER call `gh pr merge`** — workspace agents run pre-merge checks (rebase, CI verification, comment resolution) as part of Phase 12. Merging from main bypasses these checks and has caused premature merges where incomplete test results were accepted. Instead: send a tmux nudge telling the workspace to complete Phase 12.
 - **NEVER read workspace source files** — only read signal files under `.dev-workflow/signals/`. The main session's job is to observe progress via signals, not to understand the code. If you need code reviewed, trigger the workspace's evaluator.
 - **NEVER use `Read`, `Grep`, or `Bash` to inspect workspace code** — even "just checking" pulls implementation details into main session context, which leads to the main session forming opinions about code quality and then acting on them (spawning reviewers, suggesting fixes). Stay out of workspace code entirely.
@@ -167,43 +203,86 @@ Verify these conditions before proceeding:
 
 4. Run the first tick immediately (see tick protocol below).
 
-5. Start the recurring loop using the `/loop` skill:
+5. Start the recurring **periodic driver** that fires `/autopilot tick` every
+   interval. The driver is host-specific (the tick itself is host-agnostic):
+
+   **Claude Code — `/loop` (GA, in-session):**
 
    ```
    /loop <interval> /autopilot tick
    ```
 
-   Where `<interval>` is from `--loop` flag (default: `5m`). This starts the `/loop` skill which will invoke `/autopilot tick` on the specified interval automatically.
+   Where `<interval>` is from `--loop` flag (default: `5m`). `/loop` invokes
+   `/autopilot tick` each interval; the tick keeps the main session cheap by
+   delegating its CHECK to a Haiku subagent (see below).
+
+   **Codex — no native `/loop`; schedule `codex exec` externally.** Run each tick
+   as a fresh cheap one-shot (already context-isolated, so no nested CHECK needed).
+   Recommended: a macOS `launchd` agent with `StartInterval=300` (or cron / a
+   `while … sleep 300` loop) running:
+
+   ```bash
+   codex exec -m gpt-5.4-mini -c model_reasoning_effort=low \
+     -C "$PWD" --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox \
+     "/autopilot tick" < /dev/null    # < /dev/null: exec hangs on stdin otherwise
+   ```
+
+   Tell the user the exact scheduler snippet for their platform; AEP does not
+   install it for them.
 
 ---
 
 ## `/autopilot tick`
 
-The per-tick handler invoked by `/loop` on each interval. Can also be run manually at any time. **Idempotent** — safe to run multiple times with no state change producing no duplicate actions.
+The per-tick handler invoked by the periodic driver. Can also be run manually at any time. **Idempotent** — safe to run multiple times with no state change producing no duplicate actions.
 
-Follow the 7-step tick protocol documented in `references/tick-protocol.md`.
+**Execution model — CHECK → ACT.** A tick is two halves:
+
+- **CHECK (cheap, isolated):** run the read + analyze + write-state work via
+  `executor.check(prompt, schema)` — a Haiku subagent (Claude Code) or a `codex exec`
+  cheap one-shot (Codex). It reads `autopilot-state.json` + every workspace
+  `signals/` + `gh pr view`, computes transitions / stuck / dispatch capacity,
+  **writes the updated `autopilot-state.json` + `autopilot-status.md`**, and returns
+  the compact **action list** (schema in `aep-executor/references/backends.md`:
+  `{summary, state_written, actions:[{type, workspace, story_id, message, reason}]}`).
+  All the token-heavy reading stays in the throwaway agent.
+- **ACT (orchestrator):** execute the returned `actions` — `nudge` via
+  `executor.nudge()`, `wrap` via `/wrap` (max one per tick), `launch` via `/launch`
+  (max one per tick), `escalate`/`design` per the pause protocol. These are few, so
+  the main session stays cheap.
+
+> **On Codex** the whole tick already runs as an isolated cheap `codex exec`, so the
+> CHECK can run inline (no nested `executor.check` needed) — the ACT still applies.
+> **On Claude Code** the long-lived `/loop` session is exactly why the CHECK is
+> delegated to a Haiku subagent.
+
+The 7-step protocol below is the **content of the CHECK prompt** (steps ①②④a④b-detect
+⑤⑥-scoring ⑦ = analysis + state write) plus the **ACT items** it emits (③ wrap,
+④b/④c nudges, ⑥ launch, escalations). Full detail in `references/tick-protocol.md`.
 
 **Before every tick, re-read the "STOP — Orchestrator Boundaries" section above.**
 
-**Summary:**
+**Summary (annotated `[CHECK]` analysis vs `[ACT]` orchestrator action):**
 
 ```
-① READ STATE → read .dev-workflow/autopilot-state.json
+① READ STATE [CHECK] → read .dev-workflow/autopilot-state.json
    - Exit if status != "running"
    - Exit if tick lock active (previous tick still running)
    - Set tick lock
 
-② SYNC SIGNALS → for each workspace in state:
+② SYNC SIGNALS [CHECK] → for each workspace in state:
    - Read .feature-workspaces/<name>/.dev-workflow/signals/status.json
    - Update workspace entry in state (phase, story_status, completion_pct, pr_url, blockers)
 
-③ WRAP COMPLETED → for each workspace where story_status == "completed":
+③ WRAP COMPLETED [ACT] → for each workspace where story_status == "completed":
+   (CHECK emits a `wrap` action per completed workspace; orchestrator runs it)
    - Run /wrap for this workspace (max ONE per tick — git operations serialize)
    - Remove workspace from state after wrap completes
    - Break to step ⑦
 
-④ GUIDE COMPLETION → for each workspace, guide toward quality and merge:
-   ALL ACTIONS IN THIS STEP USE tmux send-keys. NEVER spawn Agent tools.
+④ GUIDE COMPLETION [CHECK detect → ACT nudge] → for each workspace, guide toward quality and merge:
+   (CHECK reads PR/eval state and decides; orchestrator sends the `nudge` actions)
+   ALL NUDGE ACTIONS USE executor.nudge() (B1/B2 = tmux send-keys). NEVER spawn code reviewers.
    NEVER call gh pr merge. Workspace agents own merging.
 
    Decision tree:
@@ -244,14 +323,14 @@ Follow the 7-step tick protocol documented in `references/tick-protocol.md`.
             Update status.json with story_status completed." Enter
        - If phase == 12 and progressing → leave alone
 
-⑤ DETECT STUCK → for each workspace:
+⑤ DETECT STUCK [CHECK detect → ACT nudge] → for each workspace:
    - Compare (phase, completion_pct) with previous tick
    - No change → run liveness check, then increment consecutive_stuck_ticks
    - Changed → reset to 0
    - 6 ticks (30 min) stuck → send tmux nudge
    - 12 ticks (60 min) stuck → add escalation, consider pausing
 
-⑥ DISPATCH NEW WORK → if capacity available:
+⑥ DISPATCH NEW WORK [CHECK score → ACT launch] → if capacity available:
    - Read product-context.yaml, run dispatch scoring logic (steps 1-3 from /dispatch)
    - available_slots = concurrency_limit - active_workspace_count
    - WAVE ORDERING: Dispatch Wave 1 before Wave 2 within each layer.
@@ -273,7 +352,7 @@ Follow the 7-step tick protocol documented in `references/tick-protocol.md`.
      - If well-specified → run /launch (max ONE launch per tick)
    - Add new workspace entry to state (with story_ids, wave, readiness_score)
 
-⑦ WRITE STATE
+⑦ WRITE STATE [CHECK]
    - Write .dev-workflow/autopilot-state.json (atomic: write .tmp then rename)
    - Append tick summary to .dev-workflow/autopilot-history.jsonl
    - Update .dev-workflow/autopilot-status.md

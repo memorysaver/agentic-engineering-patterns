@@ -408,22 +408,23 @@ Generate a dimension-specific brief, explore or discuss, capture decisions for a
 
 ## All Skills
 
-| Skill        | Plugin                       | Purpose                                                  |
-| ------------ | ---------------------------- | -------------------------------------------------------- |
-| `/envision`  | product-context              | Opportunity brief + context document                     |
-| `/map`       | product-context              | System map + story graph + agent topology                |
-| `/dispatch`  | product-context              | Pick next story + create OpenSpec change                 |
-| `/calibrate` | product-context              | Human alignment checkpoint for any quality dimension     |
-| `/reflect`   | product-context              | Classify feedback + update context                       |
-| `/onboard`   | project-setup                | Verify tools + install plugins                           |
-| `/scaffold`  | project-setup                | Scaffold monorepo + initialize OpenSpec                  |
-| `/design`    | agentic-development-workflow | Explore + propose + review a feature                     |
-| `/launch`    | agentic-development-workflow | Spawn workspace + optional evaluator                     |
-| `/build`     | agentic-development-workflow | Implement → test → PR → merge                            |
-| `/wrap`      | agentic-development-workflow | Archive + cleanup + suggest reflect                      |
-| `/git-ref`   | agentic-development-workflow | AEP git + worktree conventions (on-demand)               |
-| `/gen-eval`  | patterns                     | Generator/evaluator separation for honest validation     |
-| `/autopilot` | patterns                     | Autonomous dispatch-launch-monitor-wrap loop via `/loop` |
+| Skill        | Plugin                       | Purpose                                                                          |
+| ------------ | ---------------------------- | -------------------------------------------------------------------------------- |
+| `/envision`  | product-context              | Opportunity brief + context document                                             |
+| `/map`       | product-context              | System map + story graph + agent topology                                        |
+| `/dispatch`  | product-context              | Pick next story + create OpenSpec change                                         |
+| `/calibrate` | product-context              | Human alignment checkpoint for any quality dimension                             |
+| `/reflect`   | product-context              | Classify feedback + update context                                               |
+| `/onboard`   | project-setup                | Verify tools + install plugins                                                   |
+| `/scaffold`  | project-setup                | Scaffold monorepo + initialize OpenSpec                                          |
+| `/design`    | agentic-development-workflow | Explore + propose + review a feature                                             |
+| `/launch`    | agentic-development-workflow | Spawn workspace (claude/codex; tmux/cmux/subagent/workflow) + optional evaluator |
+| `/build`     | agentic-development-workflow | Implement → test → PR → merge                                                    |
+| `/wrap`      | agentic-development-workflow | Archive + cleanup + suggest reflect                                              |
+| `/git-ref`   | agentic-development-workflow | AEP git + worktree conventions (on-demand)                                       |
+| `/gen-eval`  | patterns                     | Generator/evaluator separation for honest validation                             |
+| `/executor`  | patterns                     | Host-agnostic backend for spawning/steering workspace agents                     |
+| `/autopilot` | patterns                     | Autonomous dispatch-launch-monitor-wrap loop via `/loop`                         |
 
 ## Documentation
 
@@ -436,6 +437,10 @@ Generate a dimension-specific brief, explore or discuss, capture decisions for a
 - [Design Calibration Workflow](docs/decisions/design-calibration-workflow.md) — the original visual-design `/calibrate` skill
 - [Generalized Calibration Workflow](docs/decisions/generalized-calibration-workflow.md) — multi-dimension `/calibrate` and `.5` alignment layers
 - [v2 Improvement Roadmap](docs/aep-v2-improvement-guideline.md) — capability maps, technical specs, dispatch enhancements
+
+## Version History
+
+Human-readable release notes for each version are in [CHANGELOG.md](CHANGELOG.md). The plugin version is the `metadata.version` field in `.claude-plugin/marketplace.json` and follows [Semantic Versioning](https://semver.org/).
 
 ## Installing Skills
 
@@ -499,7 +504,7 @@ The `skills` CLI selects by skill name (there's no "group" flag). The groups map
 | **Workflow** (agentic-development-workflow) | `aep-design`, `aep-launch`, `aep-build`, `aep-wrap`, `aep-git-ref`                        |
 | **Product** (product-context)               | `aep-envision`, `aep-map`, `aep-dispatch`, `aep-validate`, `aep-calibrate`, `aep-reflect` |
 | **Setup** (project-setup)                   | `aep-onboard`, `aep-scaffold`, `aep-testing-guide`                                        |
-| **Patterns** (patterns)                     | `aep-gen-eval`, `aep-autopilot`, `aep-workflow-feedback`                                  |
+| **Patterns** (patterns)                     | `aep-gen-eval`, `aep-executor`, `aep-autopilot`, `aep-workflow-feedback`                  |
 
 ### Maintainer (legacy) workflow
 
@@ -518,6 +523,8 @@ bash scripts/sync-downstream.sh 91app    # push to one (name match)
 ```
 
 For everyone else, `npx skills add` above is the supported path.
+
+> **Releasing:** bumping `metadata.version` in `.claude-plugin/marketplace.json` must come with a matching [CHANGELOG.md](CHANGELOG.md) entry in the same PR (move the `[Unreleased]` notes under the new `[X.Y.Z] - DATE` heading), and a `vX.Y.Z` git tag on merge to `main`.
 
 ### Contributing skills (shared resources)
 

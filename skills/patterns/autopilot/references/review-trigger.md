@@ -1,6 +1,6 @@
 # Workspace Gen/Eval Triggering Protocol
 
-How the autopilot detects when a workspace needs code review and triggers the workspace's own gen/eval loop via tmux. The autopilot **never evaluates code itself** — it triggers and monitors.
+How the autopilot detects when a workspace needs code review and triggers the workspace's own gen/eval loop via `executor.nudge()` (on a session backend, B1/B2, this is `tmux send-keys` — the recipe shown throughout this file). The autopilot **never evaluates code itself** — it triggers and monitors.
 
 > **Note:** Key trigger templates from this file are also inlined in `tick-protocol.md` Step ④ (GUIDE COMPLETION) to ensure the LLM sees them in context during tick execution.
 

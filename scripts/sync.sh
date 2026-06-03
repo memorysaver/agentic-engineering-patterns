@@ -35,7 +35,7 @@ Groups:
   workflow     Feature development lifecycle (design, launch, build, wrap, jj-ref)
   product      Product planning skills (envision, map, validate, dispatch, reflect)
   setup        Project scaffolding (onboard, scaffold, testing-guide)
-  patterns     Reusable patterns (gen-eval, autopilot)
+  patterns     Reusable patterns (gen-eval, executor, autopilot, workflow-feedback)
 
 Environment variables:
   AEP_REPO     Path to the agentic-engineering-patterns repo clone.

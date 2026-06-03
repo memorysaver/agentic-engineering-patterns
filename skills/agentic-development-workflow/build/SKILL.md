@@ -337,10 +337,24 @@ After implementation, verify the code before moving to testing. This phase uses 
 
 **With separate evaluator (full mode):**
 
-If `.dev-workflow/evaluator-criteria.md` exists (written during `/launch`), spawn an evaluator in a tmux bottom split pane. The generator orchestrates the entire evaluation loop — no manual intervention needed. This uses **Context A: Tmux Split Panes** from the eval protocol.
+If `.dev-workflow/evaluator-criteria.md` exists (written during `/launch`), spawn an evaluator via `executor.spawn_evaluator()`. The generator orchestrates the entire evaluation loop — no manual intervention needed. The execution context tracks the active executor backend (read `.claude/skills/aep-executor/references/backends.md`):
 
-> **Why tmux splits, not cmux splits:** The generator runs inside tmux but was not spawned by cmux,
-> so it cannot use cmux socket commands. Use `tmux split-window` instead — the cmux surface attached
+| Backend                  | Evaluator spawn (`executor.spawn_evaluator`)                    | eval-protocol mechanism                                                       |
+| ------------------------ | --------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **B1/B2** (session)      | `tmux split-window` — evaluator in a bottom pane                | **Context A** (tmux split)                                                    |
+| **B3** (native subagent) | Agent/Task tool (`isolation: worktree`) or `codex exec -C <ws>` | **Context B mechanism**, worktree-bound — _not_ its read-only `/validate` use |
+| **B4** (workflow)        | the workflow's `verify` stage (worktree-isolated)               | **Context C mechanism**, in-host — _not_ API/SDK CI                           |
+
+> **Always worktree-bound.** Whatever the backend, the evaluator runs against this
+> workspace's worktree (files + git state), per `executor.spawn_evaluator()`. The
+> Context labels name the spawn _mechanism_, not the read-only/CI _use cases_ those
+> contexts describe in eval-protocol — so B3 is **not** a main-session read-only
+> reviewer, and B4 is **not** an API/SDK CI job.
+
+The B1/B2 recipe is shown below — it is the common case. For B3/B4, see the `spawn_evaluator` recipe in `aep-executor/references/backends.md`; the request/response signal files and convergence rules are identical across backends.
+
+> **Why tmux splits, not cmux splits (B1/B2):** The generator runs inside tmux but was not spawned by cmux,
+> so it cannot use cmux socket commands. Use `tmux split-window` instead — under B1 the cmux surface attached
 > to the tmux session will display both panes automatically.
 
 #### Evaluation round
@@ -349,28 +363,40 @@ For each round N (starting at 1, max 5):
 
 1. **Write eval-request** — create `.dev-workflow/signals/eval-request.md` per the format in `eval-protocol.md` (Signal Files section).
 
-2. **Spawn evaluator in bottom tmux pane:**
+2. **Spawn evaluator in bottom tmux pane (B1/B2 — Context A):**
 
    ```bash
-   # Split current tmux window vertically (top=generator, bottom=evaluator)
-   tmux split-window -v -c "$(pwd)" "claude --dangerously-skip-permissions --rc"
+   # Split current tmux window vertically (top=generator, bottom=evaluator). The evaluator
+   # needs to read files and write eval-response, so it runs the INTERACTIVE executor:
+   #   claude → "claude --dangerously-skip-permissions"  (NO -p, NO --rc)
+   #   codex  → "codex --dangerously-bypass-approvals-and-sandbox"  (interactive TUI, NOT `codex exec`)
+   # $EXECUTOR is set by detect(); default to the claude interactive form if unset.
+   tmux split-window -v -c "$(pwd)" "${EXECUTOR:-claude --dangerously-skip-permissions}"
 
    # Return focus to the generator pane (top)
    tmux select-pane -t :.0
    ```
 
+   > **B3/B4:** skip the tmux split. Spawn the evaluator as a sibling subagent
+   > (Context B) or a workflow verify stage (Context C) bound to this worktree —
+   > see `aep-executor/references/backends.md` and `eval-protocol.md`.
+
 3. **Wait for evaluator to initialize, then send the bootstrap prompt** from `agent-contracts.md` (Evaluator Prompt — Code Quality template). Customize with the workspace paths:
 
    ```bash
    sleep 10
-   tmux send-keys -t :.1 "<evaluator prompt from agent-contracts.md, customized with:
+   # The evaluator prompt is multi-line, so send the literal text with -l, then a single Enter.
+   # (A bare `send-keys "<multi-line>" Enter` would submit it line-by-line before it's complete.)
+   EVAL_PROMPT="<evaluator prompt from agent-contracts.md, customized with:
      criteria_file=.dev-workflow/evaluator-criteria.md
      eval_request_file=.dev-workflow/signals/eval-request.md
      spec_directory=openspec/changes/<change-name>/
      contracts_file=.dev-workflow/contracts.md
      verification_file=.dev-workflow/feature-verification.json
      eval_response_file=.dev-workflow/signals/eval-response-<N>.md
-   >" Enter
+   >"
+   tmux send-keys -t :.1 -l -- "$EVAL_PROMPT"
+   tmux send-keys -t :.1 Enter
    ```
 
 4. **Poll for response:**

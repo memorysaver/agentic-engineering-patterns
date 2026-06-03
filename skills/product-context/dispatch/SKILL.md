@@ -21,6 +21,8 @@ Bridge between the product context (control plane) and the feature lifecycle (ex
 **Output:** OpenSpec change with pre-assembled context, story status updated, handoff to `/design` or `/launch`
 
 > **For autonomous orchestration:** Use `/autopilot` instead. Autopilot runs the full dispatch-launch-monitor-review-wrap-dispatch cycle as a tick-based state machine via `/loop`. Dispatch remains a single-pass interactive tool.
+>
+> **For hands-free batch under Claude Code:** dispatch a wave **"with workflow"** to build the whole wave as a single dynamic workflow (executor backend B4) instead of N monitorable sessions. See Step 5 → _Dynamic Workflow_ mode.
 
 ---
 
@@ -307,6 +309,39 @@ Dispatches all ready stories in Wave N (up to WIP limit)
 Creates N workspaces via /launch
 ```
 
+#### Dynamic Workflow (`--batch wave` + "…with workflow")
+
+When the user explicitly asks to dispatch a wave **"with workflow"** AND the host
+is Claude Code with the dynamic-workflow (Workflow) tool, route the batch through
+the **B4 backend** instead of creating N tmux sessions. The dispatch front-end is
+identical — sync, cascade, score, lock, assemble context — only the execution
+plane changes: instead of N `/launch` sessions, author one dynamic workflow that
+fans out `pipeline(stories, build, verify)` with per-agent worktree isolation.
+
+```
+Locks + creates OpenSpec changes for the ready stories in Wave N — up to the WIP limit (as usual)
+Then: one dynamic workflow, one agent per locked story (build → verify), per-agent worktree
+```
+
+**Respect the WIP limit.** B4 does not exempt the wave from the WIP cap below:
+each workflow agent still opens a PR, so the integration/merge bottleneck is the
+same as Wave Batch. Lock at most `available_slots` stories into the workflow
+(`available_slots = concurrency_limit − current in_progress`); the workflow's own
+per-agent concurrency cap is a separate, lower-level limit and does not replace
+this one.
+
+**Announce the backend (this path bypasses `/launch`).** Because dispatch authors
+the workflow directly instead of handing to `/launch`, dispatch owns the
+announcement that `/launch` normally makes: state "backend B4 (dynamic workflow)
+— autonomous, billed, background, **no live monitoring or mid-flight feedback**"
+before authoring the workflow.
+
+This is the hands-free batch path: autonomous, billed, background, **no mid-run
+human input**. Use it when you want a wave built autonomously and don't need to
+watch/feed individual sessions. Gating: requires Claude Code + Workflow tool (see
+`.claude/skills/aep-executor/references/backends.md`, backend B4). If the host
+can't support it, fall back to Wave Batch and say so.
+
 ### WIP Limits
 
 ```
@@ -455,6 +490,13 @@ git push origin main
 ---
 
 ## Step 7: Hand Off
+
+> **Backend is normally resolved at `/launch`, not here.** For the default path
+> dispatch stays executor-agnostic — it hands a well-specified change to
+> `/launch`, which detects the host and selects a backend (B1–B3) via
+> `aep-executor`. **The one exception is the _Dynamic Workflow_ opt-in (Step 5):**
+> that path runs B4 _from dispatch_, bypassing `/launch`, so dispatch itself owns
+> backend selection and the announcement for that case.
 
 Determine the handoff based on story completeness:
 

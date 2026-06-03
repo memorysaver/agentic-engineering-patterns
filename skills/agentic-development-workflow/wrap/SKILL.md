@@ -138,10 +138,19 @@ fi
 
 If the lessons file contains only the template header (no Solutions, Errors, Missing, or Summary entries), skip — don't archive empty ceremony.
 
-### 6. Remove the worktree
+### 6. Tear down the session + worktree (`executor.teardown()`)
+
+Kill the workspace's session **before** removing the worktree — otherwise a B1/B2
+`tmux` session keeps running detached on a deleted directory, and these orphans
+accumulate across an autopilot run. This is `executor.teardown()`; on a non-session
+backend (B3/B4) the `tmux kill-session` is simply a no-op.
 
 ```bash
-git worktree remove .feature-workspaces/<name>
+tmux kill-session -t <name> 2>/dev/null || true   # B1/B2: stop the detached session (no-op otherwise)
+
+git worktree remove .feature-workspaces/<name> \
+  || git worktree remove --force .feature-workspaces/<name>   # --force only if leftover files block removal
+git worktree prune
 git branch -d feat/<name>   # PR was merged → branch is reachable from main, safe to delete
 ```
 
