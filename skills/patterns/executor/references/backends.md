@@ -276,6 +276,67 @@ Priority: high
 EOF
 ```
 
+### `check(prompt, schema)` — cheap, context-isolated analysis
+
+Run a **read-only analysis** prompt in a throwaway, cheap-model agent and return
+its structured JSON. The point is **context isolation**: the verbose reading
+(state file + every workspace `signals/`, `gh pr view`, …) happens in the cheap
+agent's own context and is discarded — only the small JSON result crosses back,
+so a long-lived orchestrator session (e.g. `/autopilot` under `/loop`) doesn't
+accumulate per-tick tokens. The check **never reads workspace code** (signals
+only), so it does not cross the orchestrator boundary.
+
+The host's cheap model and isolation mechanism (model names drift — these are the
+current defaults, override as needed):
+
+**Claude Code — Haiku subagent (own context window; only its final message returns):**
+
+```
+Use the Agent/Task tool with:
+  model: haiku
+  tools: Read, Bash, Glob        # signals + jq + gh; no workspace-code reads
+  prompt: <the analysis prompt; instruct it to OUTPUT ONLY the JSON in `schema`>
+Capture the returned text as the JSON result.
+```
+
+> A subagent cannot spawn further subagents (one level). That's fine — the check
+> only reads and decides; it returns actions for the orchestrator to perform.
+
+**Codex — `codex exec` cheap one-shot (fresh context per call; only stdout returns):**
+
+```bash
+codex exec -m gpt-5.4-mini -c model_reasoning_effort=low \
+  -C "$PWD" --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox \
+  --output-schema /tmp/aep-check.schema.json \
+  -o /tmp/aep-check.out.json \
+  "<the analysis prompt>" < /dev/null      # < /dev/null: exec hangs on stdin otherwise
+jq . /tmp/aep-check.out.json               # read the structured result
+```
+
+`--output-schema` constrains the final message to your JSON Schema; `-o` writes
+just that message to a file. (Codex's _native_ subagents run inside the parent
+turn and do **not** isolate context — use `codex exec`, not a subagent.)
+
+**Result schema (the CHECK → ACT contract).** The check returns an action list the
+orchestrator executes; it may write its own state files (e.g. `autopilot-state.json`)
+but does not mutate workspaces:
+
+```json
+{
+  "summary": "string — one-line human-readable status",
+  "state_written": true,
+  "actions": [
+    {
+      "type": "nudge | wrap | launch | escalate | design",
+      "workspace": "string | null",
+      "story_id": "string | null",
+      "message": "string | null — exact text for a nudge",
+      "reason": "string | null — for escalate/design"
+    }
+  ]
+}
+```
+
 ### `present(ws)` — human review surface
 
 | Surface       | Recipe                                                                      |

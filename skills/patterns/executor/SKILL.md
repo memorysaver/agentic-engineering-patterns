@@ -39,13 +39,13 @@ for the full decision record.
 
 ## How Other Skills Use This
 
-| Skill            | What it uses                                             | Operations                    |
-| ---------------- | -------------------------------------------------------- | ----------------------------- |
-| `/launch`        | Start the implementation agent + expose it for review    | `detect`, `spawn`, `present`  |
-| `/build` Phase 5 | Spawn the evaluator in the right execution context       | `detect`, `spawn_evaluator`   |
-| `/autopilot`     | Steer running workspaces, check liveness                 | `detect`, `nudge`, `liveness` |
-| `/wrap`          | Tear down the session + worktree after merge             | `teardown`                    |
-| `/dispatch`      | Resolve the handoff backend; route "…with workflow" runs | `detect`                      |
+| Skill            | What it uses                                             | Operations                             |
+| ---------------- | -------------------------------------------------------- | -------------------------------------- |
+| `/launch`        | Start the implementation agent + expose it for review    | `detect`, `spawn`, `present`           |
+| `/build` Phase 5 | Spawn the evaluator in the right execution context       | `detect`, `spawn_evaluator`            |
+| `/autopilot`     | Run the periodic tick check cheaply; steer workspaces    | `detect`, `check`, `nudge`, `liveness` |
+| `/wrap`          | Tear down the session + worktree after merge             | `teardown`                             |
+| `/dispatch`      | Resolve the handoff backend; route "…with workflow" runs | `detect`                               |
 
 ### Cross-skill reference path
 
@@ -65,16 +65,17 @@ workspace agent.
 Every consumer speaks these verbs. `references/backends.md` supplies the recipe
 for each, per backend.
 
-| Op                          | Purpose                                                                          |
-| --------------------------- | -------------------------------------------------------------------------------- |
-| `detect()`                  | Resolve host + capabilities, select a backend                                    |
-| `spawn(ws, branch, prompt)` | Start an implementation agent bound to a worktree                                |
-| `spawn_evaluator(ws, role)` | Start an evaluator agent (worktree-bound) in the backend's eval context          |
-| `nudge(ws, msg)`            | Send a mid-flight instruction _(session backends only)_                          |
-| `liveness(ws)`              | Is the agent actively working? _(session backends; git-diff fallback otherwise)_ |
-| `monitor(ws)`               | Read `.dev-workflow/signals/status.json` — **host-independent, never changes**   |
-| `present(ws)`               | Human review surface (cmux tab → tmux attach → headless)                         |
-| `teardown(ws)`              | Worktree/session cleanup                                                         |
+| Op                          | Purpose                                                                                                                                                  |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `detect()`                  | Resolve host + capabilities, select a backend                                                                                                            |
+| `spawn(ws, branch, prompt)` | Start an implementation agent bound to a worktree                                                                                                        |
+| `spawn_evaluator(ws, role)` | Start an evaluator agent (worktree-bound) in the backend's eval context                                                                                  |
+| `nudge(ws, msg)`            | Send a mid-flight instruction _(session backends only)_                                                                                                  |
+| `liveness(ws)`              | Is the agent actively working? _(session backends; git-diff fallback otherwise)_                                                                         |
+| `check(prompt, schema)`     | Run a read-only analysis prompt in a **cheap, context-isolated** agent; return its JSON result — keeps a long-lived orchestrator session's context small |
+| `monitor(ws)`               | Read `.dev-workflow/signals/status.json` — **host-independent, never changes**                                                                           |
+| `present(ws)`               | Human review surface (cmux tab → tmux attach → headless)                                                                                                 |
+| `teardown(ws)`              | Worktree/session cleanup                                                                                                                                 |
 
 > **`monitor()` is already abstract.** Progress is reported through signal files
 > at phase boundaries regardless of the executor. Consumers read signals exactly

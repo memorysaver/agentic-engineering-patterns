@@ -19,6 +19,23 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 ## [Unreleased]
 
+### Added
+
+- `executor.check(prompt, schema)` — run a read-only analysis prompt in a
+  **cheap, context-isolated** agent (Claude Code Haiku subagent / Codex
+  `codex exec` cheap one-shot) and return only its compact JSON result.
+
+### Changed
+
+- `/autopilot` ticks now split into **CHECK → ACT**: the read-heavy analysis (state
+  - signals + PR status) and state write run in a cheap delegate via
+    `executor.check()` so the long-lived orchestrator session's context/token cost
+    stays low; the orchestrator only executes the few emitted actions (nudge / wrap /
+    launch / escalate). The default tick interval stays **5m**.
+- Periodic driver is now documented per host: Claude Code `/loop` (in-session);
+  Codex has no `/loop`, so schedule `codex exec "/autopilot tick"` via launchd / cron
+  / a sleep-loop (each tick already runs isolated + cheap).
+
 ## [1.2.0] - 2026-06-03
 
 Host-agnostic executor: the feature lifecycle now runs under Claude Code **or**
