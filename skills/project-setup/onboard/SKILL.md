@@ -57,7 +57,7 @@ Add the marketplace and install both plugin groups:
 
 ## Phase 2 — Verify Required Tools
 
-Each tool below earns its place in the agentic workflow — `git` provides version control and worktrees (one isolated working tree per parallel agent), `bun` runs the TypeScript monorepo, `openspec` powers spec-driven development, an **executor** (`claude` _or_ `codex`) runs the implementation agents, `tmux` hosts long-running monitorable sessions, and `gh` publishes PRs. You need all of these before Phase 4.
+Each tool below earns its place in the agentic workflow — `git` provides version control and worktrees (one isolated working tree per parallel agent), `bun` runs the TypeScript monorepo, `openspec` powers spec-driven development, an **executor** (`claude` _or_ `codex`) runs the implementation agents, and `gh` publishes PRs. `tmux` is **strongly recommended** (it hosts the monitorable session backends) but not strictly required — without it the executor falls back to a native subagent (B3).
 
 Run this check:
 
@@ -67,26 +67,31 @@ command -v claude >/dev/null 2>&1 || command -v codex >/dev/null 2>&1 \
   && echo "executor:      OK" || echo "executor:      MISSING (install claude or codex)"
 
 # Required: everything else
-for cmd in bun git gh openspec tmux; do
+for cmd in bun git gh openspec; do
   printf "%-15s" "$cmd:"
   which $cmd >/dev/null 2>&1 && echo "OK ($(which $cmd))" || echo "MISSING"
 done
+
+# Recommended (session backends): tmux
+printf "%-15s" "tmux:"
+which tmux >/dev/null 2>&1 && echo "OK ($(which tmux))" || echo "MISSING (recommended — B3 fallback used without it)"
 ```
 
 Install any missing tools:
 
-| Tool       | Purpose                         | Install                                          |
-| ---------- | ------------------------------- | ------------------------------------------------ |
-| `git`      | Version control + worktrees     | `xcode-select --install` (macOS)                 |
-| `bun`      | Package manager & runtime       | `curl -fsSL https://bun.sh/install \| bash`      |
-| `claude`   | Executor: Claude Code CLI       | `npm install -g @anthropic-ai/claude-code`       |
-| `codex`    | Executor: OpenAI Codex CLI      | `npm install -g @openai/codex` _(alt to claude)_ |
-| `gh`       | GitHub CLI for PRs              | `brew install gh`                                |
-| `openspec` | Spec-driven development         | `bun add -g openspec`                            |
-| `tmux`     | Terminal multiplexer (sessions) | `brew install tmux`                              |
+| Tool       | Purpose                            | Install                                          |
+| ---------- | ---------------------------------- | ------------------------------------------------ |
+| `git`      | Version control + worktrees        | `xcode-select --install` (macOS)                 |
+| `bun`      | Package manager & runtime          | `curl -fsSL https://bun.sh/install \| bash`      |
+| `claude`   | Executor: Claude Code CLI          | `npm install -g @anthropic-ai/claude-code`       |
+| `codex`    | Executor: OpenAI Codex CLI         | `npm install -g @openai/codex` _(alt to claude)_ |
+| `gh`       | GitHub CLI for PRs                 | `brew install gh`                                |
+| `openspec` | Spec-driven development            | `bun add -g openspec`                            |
+| `tmux`     | Terminal multiplexer (recommended) | `brew install tmux`                              |
 
-All required tools must show OK before proceeding. You need **at least one
-executor** (claude or codex) — not both.
+All **required** tools (executor + `bun`/`git`/`gh`/`openspec`) must show OK
+before proceeding. You need **at least one executor** (claude or codex) — not
+both. `tmux` may be MISSING on Desktop hosts; that's allowed (see below).
 
 > **Headless / Desktop hosts:** if `tmux` is unavailable (e.g. Claude Code
 > Desktop / Codex Desktop), the executor abstraction falls back to a native

@@ -319,15 +319,28 @@ plane changes: instead of N `/launch` sessions, author one dynamic workflow that
 fans out `pipeline(stories, build, verify)` with per-agent worktree isolation.
 
 ```
-Locks + creates OpenSpec changes for all ready stories in Wave N (as usual)
-Then: one dynamic workflow, one agent per story (build → verify), per-agent worktree
+Locks + creates OpenSpec changes for the ready stories in Wave N — up to the WIP limit (as usual)
+Then: one dynamic workflow, one agent per locked story (build → verify), per-agent worktree
 ```
 
-This is the hands-free batch path: deterministic, billed, background, **no
-mid-run human input**. Use it when you want a whole wave built autonomously and
-don't need to watch/feed individual sessions. Gating: requires Claude Code +
-Workflow tool (see `.claude/skills/aep-executor/references/backends.md`,
-backend B4). If the host can't support it, fall back to Wave Batch and say so.
+**Respect the WIP limit.** B4 does not exempt the wave from the WIP cap below:
+each workflow agent still opens a PR, so the integration/merge bottleneck is the
+same as Wave Batch. Lock at most `available_slots` stories into the workflow
+(`available_slots = concurrency_limit − current in_progress`); the workflow's own
+per-agent concurrency cap is a separate, lower-level limit and does not replace
+this one.
+
+**Announce the backend (this path bypasses `/launch`).** Because dispatch authors
+the workflow directly instead of handing to `/launch`, dispatch owns the
+announcement that `/launch` normally makes: state "backend B4 (dynamic workflow)
+— autonomous, billed, background, **no live monitoring or mid-flight feedback**"
+before authoring the workflow.
+
+This is the hands-free batch path: autonomous, billed, background, **no mid-run
+human input**. Use it when you want a wave built autonomously and don't need to
+watch/feed individual sessions. Gating: requires Claude Code + Workflow tool (see
+`.claude/skills/aep-executor/references/backends.md`, backend B4). If the host
+can't support it, fall back to Wave Batch and say so.
 
 ### WIP Limits
 
@@ -478,10 +491,12 @@ git push origin main
 
 ## Step 7: Hand Off
 
-> **Backend is resolved at `/launch`, not here.** Dispatch stays executor-agnostic
-> — it hands a well-specified change to `/launch`, which detects the host and
-> selects a backend (B1–B4) via `aep-executor`. The only dispatch-level backend
-> decision is the explicit _Dynamic Workflow_ opt-in in Step 5.
+> **Backend is normally resolved at `/launch`, not here.** For the default path
+> dispatch stays executor-agnostic — it hands a well-specified change to
+> `/launch`, which detects the host and selects a backend (B1–B3) via
+> `aep-executor`. **The one exception is the _Dynamic Workflow_ opt-in (Step 5):**
+> that path runs B4 _from dispatch_, bypassing `/launch`, so dispatch itself owns
+> backend selection and the announcement for that case.
 
 Determine the handoff based on story completeness:
 

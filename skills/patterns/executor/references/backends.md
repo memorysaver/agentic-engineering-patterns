@@ -215,6 +215,24 @@ await pipeline(
 Monitoring is via the `/workflows` view; the build agents still write signals.
 No mid-run human input — this is the hands-free batch path.
 
+### `spawn_evaluator(ws, role)` — evaluator, worktree-bound, per backend
+
+Spawn a **separate** evaluator agent (never the generator grading itself), always
+**bound to the workspace worktree** so it sees the build's files and git state.
+`/build` Phase 5 calls this; the request/response signal files and convergence
+rules are identical across backends — only the spawn mechanism differs:
+
+| Backend   | Evaluator spawn                                                                                    | eval-protocol context                                                                                                  |
+| --------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **B1/B2** | `tmux split-window -v -c .feature-workspaces/<ws> "$EXECUTOR"` (interactive, bottom pane)          | Context A                                                                                                              |
+| **B3**    | CC Task/Agent tool with `isolation: worktree`, **or** `$EXECUTOR_EXEC -C .feature-workspaces/<ws>` | Context B **mechanism** (Agent-tool/subagent) — but worktree-bound, **not** the main-session read-only `/validate` use |
+| **B4**    | the workflow's `verify` stage (already worktree-isolated, in-host)                                 | Context C **mechanism** (programmatic subagent) — in-host dynamic-workflow, not API/SDK CI                             |
+
+> The eval-protocol Context labels describe the _spawn mechanism_; under the
+> executor the evaluator is **always worktree-bound** (per the Worktree-Context
+> Constraint below), which is what keeps it consistent with the generator's build
+> and with autopilot's "never spawn a reviewer from main" boundary.
+
 ### `nudge(ws, msg)` — session backends (B1/B2) only
 
 ```bash
@@ -272,8 +290,11 @@ EOF
 ```bash
 # Stop the session if one exists (B1/B2)
 tmux kill-session -t <ws> 2>/dev/null || true
-# Remove the worktree (all backends; /wrap normally owns this)
-git worktree remove .feature-workspaces/<ws> 2>/dev/null || true
+# Remove the worktree (all backends; /wrap normally owns this).
+# Try a clean remove first; fall back to --force only if leftover files block it
+# (don't blanket-swallow the error — a silently-skipped removal leaves an orphan).
+git worktree remove .feature-workspaces/<ws> \
+  || git worktree remove --force .feature-workspaces/<ws>
 git worktree prune
 ```
 

@@ -39,12 +39,13 @@ for the full decision record.
 
 ## How Other Skills Use This
 
-| Skill            | What it uses                                             | Operations                                |
-| ---------------- | -------------------------------------------------------- | ----------------------------------------- |
-| `/launch`        | Start the implementation agent + expose it for review    | `detect`, `spawn`, `present`              |
-| `/build` Phase 5 | Spawn the evaluator in the right execution context       | `detect`, `spawn_evaluator`               |
-| `/autopilot`     | Steer running workspaces, check liveness                 | `detect`, `nudge`, `liveness`, `teardown` |
-| `/dispatch`      | Resolve the handoff backend; route "…with workflow" runs | `detect`                                  |
+| Skill            | What it uses                                             | Operations                    |
+| ---------------- | -------------------------------------------------------- | ----------------------------- |
+| `/launch`        | Start the implementation agent + expose it for review    | `detect`, `spawn`, `present`  |
+| `/build` Phase 5 | Spawn the evaluator in the right execution context       | `detect`, `spawn_evaluator`   |
+| `/autopilot`     | Steer running workspaces, check liveness                 | `detect`, `nudge`, `liveness` |
+| `/wrap`          | Tear down the session + worktree after merge             | `teardown`                    |
+| `/dispatch`      | Resolve the handoff backend; route "…with workflow" runs | `detect`                      |
 
 ### Cross-skill reference path
 
@@ -68,6 +69,7 @@ for each, per backend.
 | --------------------------- | -------------------------------------------------------------------------------- |
 | `detect()`                  | Resolve host + capabilities, select a backend                                    |
 | `spawn(ws, branch, prompt)` | Start an implementation agent bound to a worktree                                |
+| `spawn_evaluator(ws, role)` | Start an evaluator agent (worktree-bound) in the backend's eval context          |
 | `nudge(ws, msg)`            | Send a mid-flight instruction _(session backends only)_                          |
 | `liveness(ws)`              | Is the agent actively working? _(session backends; git-diff fallback otherwise)_ |
 | `monitor(ws)`               | Read `.dev-workflow/signals/status.json` — **host-independent, never changes**   |

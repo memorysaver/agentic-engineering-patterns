@@ -339,13 +339,19 @@ After implementation, verify the code before moving to testing. This phase uses 
 
 If `.dev-workflow/evaluator-criteria.md` exists (written during `/launch`), spawn an evaluator via `executor.spawn_evaluator()`. The generator orchestrates the entire evaluation loop — no manual intervention needed. The execution context tracks the active executor backend (read `.claude/skills/aep-executor/references/backends.md`):
 
-| Backend                  | Evaluator spawn                                  | eval-protocol context                    |
-| ------------------------ | ------------------------------------------------ | ---------------------------------------- |
-| **B1/B2** (session)      | `tmux split-window` — evaluator in a bottom pane | **Context A: Tmux Split Panes**          |
-| **B3** (native subagent) | sibling subagent bound to the worktree           | **Context B: Parallel Agent Tool Calls** |
-| **B4** (workflow)        | the workflow's verify stage                      | **Context C: Subagent Spawning**         |
+| Backend                  | Evaluator spawn (`executor.spawn_evaluator`)                    | eval-protocol mechanism                                                       |
+| ------------------------ | --------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **B1/B2** (session)      | `tmux split-window` — evaluator in a bottom pane                | **Context A** (tmux split)                                                    |
+| **B3** (native subagent) | Agent/Task tool (`isolation: worktree`) or `codex exec -C <ws>` | **Context B mechanism**, worktree-bound — _not_ its read-only `/validate` use |
+| **B4** (workflow)        | the workflow's `verify` stage (worktree-isolated)               | **Context C mechanism**, in-host — _not_ API/SDK CI                           |
 
-The B1/B2 recipe is shown below — it is the common case. For B3/B4, follow the matching context in `aep-gen-eval/references/eval-protocol.md`; the request/response signal files and convergence rules are identical across contexts.
+> **Always worktree-bound.** Whatever the backend, the evaluator runs against this
+> workspace's worktree (files + git state), per `executor.spawn_evaluator()`. The
+> Context labels name the spawn _mechanism_, not the read-only/CI _use cases_ those
+> contexts describe in eval-protocol — so B3 is **not** a main-session read-only
+> reviewer, and B4 is **not** an API/SDK CI job.
+
+The B1/B2 recipe is shown below — it is the common case. For B3/B4, see the `spawn_evaluator` recipe in `aep-executor/references/backends.md`; the request/response signal files and convergence rules are identical across backends.
 
 > **Why tmux splits, not cmux splits (B1/B2):** The generator runs inside tmux but was not spawned by cmux,
 > so it cannot use cmux socket commands. Use `tmux split-window` instead — under B1 the cmux surface attached
