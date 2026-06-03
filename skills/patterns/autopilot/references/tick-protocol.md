@@ -7,16 +7,12 @@ The 7-step state machine executed on each autopilot tick. Each tick is idempoten
 
 > **BOUNDARY REMINDER:** The autopilot is an orchestrator. Every action on a workspace is `executor.nudge()` / `executor.liveness()` — and autopilot runs only on **session backends (B1/B2)**, where those verbs are `tmux send-keys` / `tmux capture-pane` (the recipe shown throughout this file). Never spawn code reviewers from main, never read workspace source code, never call `gh pr merge`. See SKILL.md "STOP — Orchestrator Boundaries" and `aep-executor/references/backends.md`.
 
-> **EXECUTION MODEL — CHECK → ACT (see SKILL.md "Execution model"):** Steps ①②⑤ and
-> the read-only/scoring parts of ④⑥ plus the ⑦ state write are the **CHECK** — they run
-> in a cheap, context-isolated agent via `executor.check()` (Claude Code Haiku subagent /
-> Codex `codex exec`) and produce the **action list** — `{summary, state_written, actions[]}`,
-> where each action is `{type: nudge|wrap|launch|escalate|design, workspace, story_id,
-message, reason}` (schema in `aep-executor/references/backends.md`). The **orchestrator**
-> then performs the emitted actions — **ACT** (③ wrap, ④/⑤ nudges, ⑥ launch, escalations).
-> The step recipes
-> below are the _content of the CHECK prompt_ and the _templates the ACT executes_. The
-> CHECK reads signals only — never workspace code.
+**EXECUTION MODEL — CHECK → ACT** (see SKILL.md "Execution model"). A tick is two halves:
+
+- **CHECK** — steps ①②⑤, the read-only/scoring parts of ④⑥, and the ⑦ state write. These run in a cheap, context-isolated agent via `executor.check()` (Claude Code Haiku subagent / Codex `codex exec`) and produce an **action list**. The CHECK reads signals only — never workspace code.
+- **ACT** — the orchestrator performs the emitted actions: ③ wrap, ④/⑤ nudges, ⑥ launch, escalations.
+
+The action-list schema is `{summary, state_written, actions[]}`, each action `{type, workspace, story_id, message, reason}` (full schema in `aep-executor/references/backends.md`). The step recipes below are both the content of the CHECK prompt and the templates the ACT executes.
 
 ---
 
