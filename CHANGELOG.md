@@ -19,24 +19,9 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 ## [Unreleased]
 
-### Added
+_Nothing yet._
 
-- `executor.check(prompt, schema)` — run a read-only analysis prompt in a
-  **cheap, context-isolated** agent (Claude Code Haiku subagent / Codex
-  `codex exec` cheap one-shot) and return only its compact JSON result.
-
-### Changed
-
-- `/autopilot` ticks now split into **CHECK → ACT**: the read-heavy analysis
-  (state, workspace signals, PR status) and the state write run in a cheap delegate
-  via `executor.check()`, so the long-lived orchestrator session's context/token
-  cost stays low; the orchestrator only executes the few emitted actions (nudge,
-  wrap, launch, escalate). The default tick interval stays **5m**.
-- Periodic driver is now documented per host: Claude Code `/loop` (in-session);
-  Codex has no `/loop`, so schedule `codex exec "/autopilot tick"` via launchd / cron
-  / a sleep-loop (each tick already runs isolated + cheap).
-
-## [1.2.0] - 2026-06-03
+## [1.2.0] - 2026-06-04
 
 Host-agnostic executor: the feature lifecycle now runs under Claude Code **or**
 Codex, with or without tmux/cmux, and (on explicit opt-in) as a Claude Code
@@ -48,7 +33,11 @@ so existing installs are unaffected. Decision record:
 
 - New `aep-executor` utility skill (in the `patterns` group) with a uniform
   operation contract (`detect` / `spawn` / `spawn_evaluator` / `nudge` /
-  `liveness` / `monitor` / `present` / `teardown`) and a recipe per backend.
+  `liveness` / `check` / `monitor` / `present` / `teardown`) and a recipe per
+  backend.
+- `executor.check(prompt, schema)` — run a read-only analysis prompt in a
+  **cheap, context-isolated** agent (Claude Code Haiku subagent / Codex
+  `codex exec` cheap one-shot) and return only its compact JSON result.
 - Four execution backends, selected automatically from env markers
   (`$CLAUDECODE`, `$CODEX_*`, `$CMUX_SOCKET`, `$TMUX`) plus `command -v`:
   **B1** session in tmux + cmux tab, **B2** session in tmux (no cmux),
@@ -60,6 +49,14 @@ so existing installs are unaffected. Decision record:
 
 - `/launch`, `/build` (Phase 5 evaluator), `/autopilot`, `/dispatch`, `/onboard`,
   and `/wrap` now delegate spawning/steering/teardown to the executor abstraction.
+- `/autopilot` ticks now split into **CHECK → ACT**: the read-heavy analysis
+  (state, workspace signals, PR status) and the state write run in a cheap delegate
+  via `executor.check()`, so the long-lived orchestrator session's context/token
+  cost stays low; the orchestrator only executes the few emitted actions (nudge,
+  wrap, launch, escalate). The default tick interval stays **5m**.
+- Periodic driver is now documented per host: Claude Code `/loop` (in-session);
+  Codex has no `/loop`, so schedule `codex exec "/autopilot tick"` via launchd / cron
+  / a sleep-loop (each tick already runs isolated + cheap).
 - `cmux` is now optional (auto-detected) rather than a hard dependency; `tmux` is
   recommended but no longer an abort-on-missing requirement in `/onboard`.
 - `.claude-plugin/marketplace.json` version `1.1.0` → `1.2.0`.
@@ -120,7 +117,7 @@ First stable baseline after the Jujutsu → git migration. Decision record:
 
 - Jujutsu (one-shot migration, no dual-mode period) and the `/jj-ref` skill.
 
-[Unreleased]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.1.0...HEAD
-[1.2.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/memorysaver/agentic-engineering-patterns/releases/tag/v1.0.0
