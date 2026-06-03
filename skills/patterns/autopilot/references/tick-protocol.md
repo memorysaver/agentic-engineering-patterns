@@ -10,10 +10,11 @@ The 7-step state machine executed on each autopilot tick. Each tick is idempoten
 > **EXECUTION MODEL — CHECK → ACT (see SKILL.md "Execution model"):** Steps ①②⑤ and
 > the read-only/scoring parts of ④⑥ plus the ⑦ state write are the **CHECK** — they run
 > in a cheap, context-isolated agent via `executor.check()` (Claude Code Haiku subagent /
-> Codex `codex exec`) and produce the **action list** (`{summary, state_written,
-actions:[{type: nudge|wrap|launch|escalate|design, workspace, story_id, message, reason}]}`,
-> schema in `aep-executor/references/backends.md`). The **orchestrator** then performs the
-> emitted actions — **ACT** (③ wrap, ④/⑤ nudges, ⑥ launch, escalations). The step recipes
+> Codex `codex exec`) and produce the **action list** — `{summary, state_written, actions[]}`,
+> where each action is `{type: nudge|wrap|launch|escalate|design, workspace, story_id,
+message, reason}` (schema in `aep-executor/references/backends.md`). The **orchestrator**
+> then performs the emitted actions — **ACT** (③ wrap, ④/⑤ nudges, ⑥ launch, escalations).
+> The step recipes
 > below are the _content of the CHECK prompt_ and the _templates the ACT executes_. The
 > CHECK reads signals only — never workspace code.
 

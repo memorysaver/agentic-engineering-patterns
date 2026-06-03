@@ -27,11 +27,11 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 ### Changed
 
-- `/autopilot` ticks now split into **CHECK → ACT**: the read-heavy analysis (state
-  - signals + PR status) and state write run in a cheap delegate via
-    `executor.check()` so the long-lived orchestrator session's context/token cost
-    stays low; the orchestrator only executes the few emitted actions (nudge / wrap /
-    launch / escalate). The default tick interval stays **5m**.
+- `/autopilot` ticks now split into **CHECK → ACT**: the read-heavy analysis
+  (state, workspace signals, PR status) and the state write run in a cheap delegate
+  via `executor.check()`, so the long-lived orchestrator session's context/token
+  cost stays low; the orchestrator only executes the few emitted actions (nudge,
+  wrap, launch, escalate). The default tick interval stays **5m**.
 - Periodic driver is now documented per host: Claude Code `/loop` (in-session);
   Codex has no `/loop`, so schedule `codex exec "/autopilot tick"` via launchd / cron
   / a sleep-loop (each tick already runs isolated + cheap).
