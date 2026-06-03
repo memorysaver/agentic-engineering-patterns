@@ -105,17 +105,21 @@ below.
 mkdir -p .feature-workspaces
 git worktree add -b feat/<name> .feature-workspaces/<name> main
 
-# Start the implementation agent in a tmux session ($EXECUTOR resolved by detect():
-#   claude → "claude --dangerously-skip-permissions --rc"   |   codex → "codex exec")
+# Start the implementation agent in a tmux session. $EXECUTOR is the INTERACTIVE
+# session command from detect():
+#   claude → "claude --dangerously-skip-permissions"            (interactive; NO -p, NO --rc)
+#   codex  → "codex --dangerously-bypass-approvals-and-sandbox" (interactive TUI; NOT `codex exec`)
+[ -z "$EXECUTOR" ] && { echo "run detect() first — \$EXECUTOR unset (would launch a bare shell)"; exit 1; }
 tmux new-session -d -s <name> -c .feature-workspaces/<name> "$EXECUTOR"
 
-# cmux is OPTIONAL — only create a tab if cmux is the presentation surface
-if [ -n "$CMUX_SOCKET" ] || command -v cmux >/dev/null 2>&1; then
+# cmux is OPTIONAL — only create a tab if we are actually INSIDE a cmux surface.
+# (Merely having cmux installed does not let us spawn a sibling tab → would fail.)
+if [ -n "$CMUX_SOCKET" ]; then
   GEN_SURFACE=$(cmux new-surface --type terminal | grep -o 'surface:[0-9]*')   # B1
   cmux send --surface "$GEN_SURFACE" "tmux attach -t <name>\n"
   cmux rename-tab --surface "$GEN_SURFACE" "<name>"
 else
-  echo "No cmux — workspace runs in tmux session '<name>'. Watch it: tmux attach -t <name>"  # B2
+  echo "No cmux surface — workspace runs in tmux session '<name>'. Watch it: tmux attach -t <name>"  # B2
 fi
 ```
 
@@ -134,19 +138,25 @@ Replace `<name>` with a short feature name (e.g., `add-auth`). The branch will b
 
 ## Send Bootstrap Prompt
 
-**Session backends (B1/B2):** wait for the agent to fully initialize (the `❯`
-prompt for Claude Code, or the Codex ready indicator in the tmux pane), then send
-the bootstrap instruction. **For B3 (native subagent):** the bootstrap text _is_
-the subagent's initial prompt — pass it at `spawn()` time, there is no separate
-send step. **For B4 (workflow):** the bootstrap text goes into the build agent's
-prompt in the workflow script.
+**Session backends (B1/B2):** wait for the agent to fully initialize, then send
+the bootstrap instruction. The ready signal is executor-specific: Claude Code
+shows a `❯` prompt; the Codex TUI has no `❯`, so fall back to a short timed wait.
+**For B3 (native subagent):** the bootstrap text _is_ the subagent's initial
+prompt — pass it at `spawn()` time, there is no separate send step. **For B4
+(workflow):** the bootstrap text goes into the build agent's prompt in the
+workflow script.
 
 > **Skill prefix:** If your project syncs skills with a prefix (e.g., `aep-`), replace `/build` with the prefixed name (e.g., `/aep-build`). Check how the build skill is registered in your project's `.claude/skills/` directory.
 
 ```bash
-# Verify the session agent is ready before sending (look for the prompt indicator)
-sleep 5
-tmux capture-pane -t <name>:0 -p -S -5 | grep -q '❯' && echo "ready"
+# Wait for readiness. $READY_GREP comes from detect() ('❯' for claude, empty for codex).
+if [ -n "$READY_GREP" ]; then
+  for _ in $(seq 1 12); do
+    tmux capture-pane -t <name>:0 -p -S -5 | grep -q "$READY_GREP" && { echo "ready"; break; }; sleep 2
+  done
+else
+  sleep 8   # codex TUI has no ❯ glyph — give the composer time to come up
+fi
 ```
 
 ### Inject Prior Lessons (if available)
@@ -171,9 +181,12 @@ PROMPT="/build execute implementation for openspec change <change-name>. Read th
 "
 
 if [ -n "$GEN_SURFACE" ]; then
-  cmux send --surface "$GEN_SURFACE" "$PROMPT"        # B1
+  cmux send --surface "$GEN_SURFACE" "$PROMPT"        # B1 (cmux sends the whole string)
 else
-  tmux send-keys -t <name>:0.0 "$PROMPT" Enter        # B2
+  # B2: -l sends the literal multi-line text; a separate Enter submits it ONCE.
+  # (A bare `send-keys "$PROMPT" Enter` would let embedded newlines submit it line-by-line.)
+  tmux send-keys -t <name>:0.0 -l -- "$PROMPT"
+  tmux send-keys -t <name>:0.0 Enter
 fi
 # B3/B4: $PROMPT was passed as the agent's initial prompt at spawn() — nothing to send here.
 ```

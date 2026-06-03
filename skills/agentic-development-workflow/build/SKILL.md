@@ -360,10 +360,12 @@ For each round N (starting at 1, max 5):
 2. **Spawn evaluator in bottom tmux pane (B1/B2 — Context A):**
 
    ```bash
-   # Split current tmux window vertically (top=generator, bottom=evaluator).
-   # $EXECUTOR is resolved by the executor abstraction (claude → "claude --dangerously-skip-permissions --rc";
-   # codex → "codex exec"). If unset (running outside a launched session), default to the claude form.
-   tmux split-window -v -c "$(pwd)" "${EXECUTOR:-claude --dangerously-skip-permissions --rc}"
+   # Split current tmux window vertically (top=generator, bottom=evaluator). The evaluator
+   # needs to read files and write eval-response, so it runs the INTERACTIVE executor:
+   #   claude → "claude --dangerously-skip-permissions"  (NO -p, NO --rc)
+   #   codex  → "codex --dangerously-bypass-approvals-and-sandbox"  (interactive TUI, NOT `codex exec`)
+   # $EXECUTOR is set by detect(); default to the claude interactive form if unset.
+   tmux split-window -v -c "$(pwd)" "${EXECUTOR:-claude --dangerously-skip-permissions}"
 
    # Return focus to the generator pane (top)
    tmux select-pane -t :.0
@@ -377,14 +379,18 @@ For each round N (starting at 1, max 5):
 
    ```bash
    sleep 10
-   tmux send-keys -t :.1 "<evaluator prompt from agent-contracts.md, customized with:
+   # The evaluator prompt is multi-line, so send the literal text with -l, then a single Enter.
+   # (A bare `send-keys "<multi-line>" Enter` would submit it line-by-line before it's complete.)
+   EVAL_PROMPT="<evaluator prompt from agent-contracts.md, customized with:
      criteria_file=.dev-workflow/evaluator-criteria.md
      eval_request_file=.dev-workflow/signals/eval-request.md
      spec_directory=openspec/changes/<change-name>/
      contracts_file=.dev-workflow/contracts.md
      verification_file=.dev-workflow/feature-verification.json
      eval_response_file=.dev-workflow/signals/eval-response-<N>.md
-   >" Enter
+   >"
+   tmux send-keys -t :.1 -l -- "$EVAL_PROMPT"
+   tmux send-keys -t :.1 Enter
    ```
 
 4. **Poll for response:**

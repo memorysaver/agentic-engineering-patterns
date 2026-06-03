@@ -18,23 +18,40 @@ or steering any workspace agent.
 
 ## Detection
 
-`detect()` resolves three things from the environment — **host**, **presentation
-surface**, and **workflow capability** — using env markers plus `command -v`. No
-guessing, no hardcoded executor.
+`detect()` resolves the **host**, its two **executor commands** (interactive
+session vs headless one-shot — they are different invocations, see below), the
+**presentation surface**, and **workflow capability** — using env markers plus
+`command -v`. No guessing, no hardcoded executor.
 
 ```bash
-# --- HOST: which agent runtime is reading this skill, and what binary it spawns ---
+# --- HOST + executor commands ---
+# Two modes, because the session backends (B1/B2) need a LONG-LIVED, steerable
+# process while B3/evaluator/exec need a ONE-SHOT runner — and the two are
+# different invocations per CLI:
+#   $EXECUTOR       interactive session (stays alive, accepts tmux send-keys)
+#   $EXECUTOR_EXEC  headless one-shot   (runs the given prompt to completion, exits)
 if [ -n "$CLAUDECODE" ]; then
-  HOST=claude; EXECUTOR="claude --dangerously-skip-permissions --rc"
-elif [ -n "$CODEX_HOME" ] || env | grep -q '^CODEX_'; then
-  HOST=codex;  EXECUTOR="codex exec"
+  HOST=claude
+  EXECUTOR="claude --dangerously-skip-permissions"            # interactive is the default; NO -p
+  EXECUTOR_EXEC="claude -p --dangerously-skip-permissions"    # -p/--print = non-interactive
+  READY_GREP='❯'                                              # pane shows ❯ when ready
+elif command -v codex >/dev/null 2>&1 && { [ -n "$CODEX_HOME" ] || env | grep -q '^CODEX_'; }; then
+  HOST=codex
+  EXECUTOR="codex --dangerously-bypass-approvals-and-sandbox"           # bare `codex` = interactive TUI
+  EXECUTOR_EXEC="codex exec --dangerously-bypass-approvals-and-sandbox" # `codex exec` = non-interactive
+  READY_GREP=''                                                         # codex TUI has no ❯ — use a timed wait
 else
-  HOST=generic; EXECUTOR="${AEP_EXECUTOR:-}"   # ask the user if empty
+  HOST=generic
+  EXECUTOR="${AEP_EXECUTOR:-}"; EXECUTOR_EXEC="${AEP_EXECUTOR_EXEC:-$EXECUTOR}"; READY_GREP=''
 fi
+# Guard: never spawn an empty command (an unset executor would start a bare login shell).
+[ -z "$EXECUTOR" ] && { echo "executor unresolved — set \$AEP_EXECUTOR or run under Claude Code / Codex"; }
 
 # --- PRESENTATION: how a human watches a running session ---
-if [ -n "$CMUX_SOCKET" ] || command -v cmux >/dev/null 2>&1; then
-  PRESENT=cmux          # prefer $CMUX_SOCKET — proves we're INSIDE a cmux surface
+# Use cmux only when we are actually INSIDE a cmux surface ($CMUX_SOCKET) — being
+# merely installed (command -v) does NOT let us spawn a sibling tab.
+if [ -n "$CMUX_SOCKET" ]; then
+  PRESENT=cmux
 elif command -v tmux >/dev/null 2>&1; then
   PRESENT=tmux
 else
@@ -46,6 +63,20 @@ fi
 WORKFLOW_CAPABLE=$([ "$HOST" = claude ] && echo yes || echo no)
 ```
 
+> **Correct CLI invocations (verified against Claude Code 2.1.161 / Codex 0.130.0):**
+>
+> |            | interactive session (B1/B2) → `$EXECUTOR`          | headless one-shot (B3 / exec) → `$EXECUTOR_EXEC`        |
+> | ---------- | -------------------------------------------------- | ------------------------------------------------------- |
+> | **claude** | `claude --dangerously-skip-permissions`            | `claude -p --dangerously-skip-permissions`              |
+> | **codex**  | `codex --dangerously-bypass-approvals-and-sandbox` | `codex exec --dangerously-bypass-approvals-and-sandbox` |
+>
+> `--rc` is **not** a real Claude Code flag (it was a bug; removed). `codex exec`
+> is **non-interactive** — it cannot be steered with `tmux send-keys`, so the
+> session backends use bare `codex` (its interactive TUI). Codex's full-bypass
+> flag is `--dangerously-bypass-approvals-and-sandbox` (there is no `--yolo` /
+> `--full-auto`); pass `-C/--cd <worktree>` if you don't set the session cwd via
+> `tmux -c`.
+
 Notes:
 
 - `$CMUX_SOCKET` (and the other `CMUX_*` vars) are set when the session is hosted
@@ -56,8 +87,9 @@ Notes:
   available for finer decisions but are not required for backend selection.
 - **Host knows itself.** A skill is executed by whatever agent loaded it. If you
   are Claude Code, `$CLAUDECODE` is set and the Workflow tool is available to you.
-  If you are Codex, the `CODEX_*` markers are set and `codex exec` is your spawn
-  binary. Detection confirms what the executing agent already is.
+  If you are Codex, the `CODEX_*` markers are set and your session executor is the
+  interactive `codex` TUI (`codex exec` only for headless one-shots). Detection
+  confirms what the executing agent already is.
 
 ---
 
@@ -101,6 +133,11 @@ mkdir -p .feature-workspaces
 git worktree add -b feat/<ws> .feature-workspaces/<ws> main
 ```
 
+> `$EXECUTOR` is the **interactive** session command from `detect()` — bare
+> `claude` / bare `codex`, never `-p` / `codex exec`. Guard first:
+> `[ -z "$EXECUTOR" ] && { echo "run detect() — \$EXECUTOR unset"; exit 1; }`
+> so an unset executor aborts loudly instead of launching a bare login shell.
+
 **B1 — session in tmux + cmux tab:**
 
 ```bash
@@ -108,20 +145,33 @@ tmux new-session -d -s <ws> -c .feature-workspaces/<ws> "$EXECUTOR"
 GEN_SURFACE=$(cmux new-surface --type terminal | grep -o 'surface:[0-9]*')
 cmux send --surface "$GEN_SURFACE" "tmux attach -t <ws>\n"
 cmux rename-tab --surface "$GEN_SURFACE" "<ws>"
-# then send bootstrap_prompt via: cmux send --surface "$GEN_SURFACE" "<prompt>"
+# bootstrap is sent after readiness (below)
 ```
 
 **B2 — session in tmux, no cmux:**
 
 ```bash
 tmux new-session -d -s <ws> -c .feature-workspaces/<ws> "$EXECUTOR"
-# then send bootstrap_prompt via: tmux send-keys -t <ws>:0.0 "<prompt>" Enter
 echo "Workspace running in tmux session '<ws>'. Watch it live with: tmux attach -t <ws>"
 ```
 
-For both B1 and B2: wait for the agent to initialize before sending the prompt
-(`tmux capture-pane -t <ws>:0 -p -S -5 | grep -q '❯'`, or the Codex ready
-indicator).
+**Readiness + bootstrap send (B1/B2).** Wait for the agent to initialize, then
+send the prompt. The readiness signal is executor-specific (`$READY_GREP` from
+`detect()`); the send uses `-l` so a multi-line prompt is entered literally and a
+single trailing `Enter` submits it (a bare `send-keys "$PROMPT" Enter` would let
+embedded newlines submit the prompt line-by-line):
+
+```bash
+if [ -n "$READY_GREP" ]; then
+  for _ in $(seq 1 12); do
+    tmux capture-pane -t <ws>:0 -p -S -5 | grep -q "$READY_GREP" && break; sleep 2
+  done
+else
+  sleep 8           # codex TUI has no ❯ glyph — give the composer time to come up
+fi
+tmux send-keys -t <ws>:0.0 -l -- "$bootstrap_prompt"   # literal text (handles multi-line)
+tmux send-keys -t <ws>:0.0 Enter                       # one submit
+```
 
 **B3 — native subagent (no tmux):**
 
@@ -129,8 +179,10 @@ indicator).
   cwd set to `.feature-workspaces/<ws>/`), passing `bootstrap_prompt` as the
   agent prompt. The subagent runs `/build` to completion and returns its result.
   Prefer background mode so the main session can poll signals between turns.
-- **Codex host:** spawn a Codex subagent bound to the worktree directory with the
-  same prompt.
+- **Codex host:** run the headless one-shot bound to the worktree —
+  `$EXECUTOR_EXEC -C .feature-workspaces/<ws> "$bootstrap_prompt"` (i.e.
+  `codex exec --dangerously-bypass-approvals-and-sandbox -C <ws> "<prompt>"`).
+  `codex exec` reads the prompt as an argument (or stdin) and exits when done.
 - No `nudge()`/`liveness()` — the subagent runs to completion. `monitor()`
   degrades to reading any signals the subagent wrote, plus final git/PR state.
 
@@ -141,7 +193,13 @@ worktree isolation. One agent per story; the build stage runs `/build` for that
 story's OpenSpec change.
 
 ```js
-// sketch — the build agent gets the worktree via isolation:'worktree'
+// sketch — the build agent gets the worktree via isolation:'worktree'.
+// `stories` is the dispatched wave: each item = { change: "<openspec-change-id>", bootstrap: "<prompt tail>" }.
+const VERDICT = {
+  type: "object",
+  properties: { real: { type: "boolean" }, summary: { type: "string" } },
+  required: ["real"],
+};
 await pipeline(
   stories,
   (s) =>
@@ -160,7 +218,9 @@ No mid-run human input — this is the hands-free batch path.
 ### `nudge(ws, msg)` — session backends (B1/B2) only
 
 ```bash
-tmux send-keys -t <ws>:0.0 "<msg>" Enter
+# -l sends the message literally (handles multi-line nudges); a separate Enter submits once.
+tmux send-keys -t <ws>:0.0 -l -- "<msg>"
+tmux send-keys -t <ws>:0.0 Enter
 ```
 
 There is no `nudge` for B3 (subagent already returned or is non-interactive) or

@@ -54,6 +54,10 @@ every liveness probe is `executor.liveness(ws)`. The `tmux send-keys` /
 implementation** of those verbs (see `.claude/skills/aep-executor/references/backends.md`).
 
 - **B1/B2:** proceed normally — `nudge` = `tmux send-keys`, `liveness` = `tmux capture-pane` (+ `git diff --stat`).
+  - **Multi-line nudge form:** the nudge messages below are multi-line, so send each as
+    `tmux send-keys -t <ws>:0.0 -l -- "<msg>"` followed by `tmux send-keys -t <ws>:0.0 Enter`.
+    A bare `tmux send-keys "<msg>" Enter` lets embedded newlines submit the message
+    line-by-line — always use the `-l` + separate-`Enter` form (this is `executor.nudge()`).
 - **B3/B4 (no session to steer):** autopilot's tick/nudge model does not apply. If
   the user wants hands-free batch under Claude Code, that is the **dynamic-workflow
   path (B4)** reached via `/dispatch … with workflow`, which is its own

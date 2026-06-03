@@ -23,16 +23,19 @@ The gen/eval pattern can execute in three different contexts. The protocol is th
 Generator runs in the top tmux pane. Evaluator is spawned as a separate agent instance in the bottom pane.
 
 ```bash
-# Generator spawns evaluator in bottom pane ($EXECUTOR resolved by the executor abstraction;
-# defaults to the claude form when unset).
-tmux split-window -v -c "$(pwd)" "${EXECUTOR:-claude --dangerously-skip-permissions --rc}"
+# Generator spawns evaluator in bottom pane. $EXECUTOR is the INTERACTIVE session command
+# from detect() (claude → "claude --dangerously-skip-permissions";
+# codex → "codex --dangerously-bypass-approvals-and-sandbox"); defaults to the claude form when unset.
+tmux split-window -v -c "$(pwd)" "${EXECUTOR:-claude --dangerously-skip-permissions}"
 
 # Generator returns focus to top pane
 tmux select-pane -t :.0
 
-# Generator waits for evaluator to initialize, then sends bootstrap prompt
+# Generator waits for evaluator to initialize, then sends bootstrap prompt.
+# Use -l for the (multi-line) prompt, then a single Enter to submit once.
 sleep 10
-tmux send-keys -t :.1 "<evaluator prompt>" Enter
+tmux send-keys -t :.1 -l -- "<evaluator prompt>"
+tmux send-keys -t :.1 Enter
 
 # Generator polls for response file
 while [ ! -f .dev-workflow/signals/eval-response-<N>.md ]; do sleep 15; done

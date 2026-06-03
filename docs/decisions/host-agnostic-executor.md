@@ -79,14 +79,28 @@ when there is genuinely no tmux.
 ### Detection recipe (grounded in real env markers)
 
 ```
-HOST:      $CLAUDECODE set          → claude   (executor: claude)
-           $CODEX_* markers set     → codex    (executor: codex exec)
+HOST:      $CLAUDECODE set          → claude
+           $CODEX_* (+ codex on PATH) → codex
            else                     → generic CLI (executor: ask/$AEP_EXECUTOR)
-PRESENT:   $CMUX_SOCKET / `cmux`     → cmux tab          (B1)
+PRESENT:   $CMUX_SOCKET set          → cmux tab          (B1)
            else `command -v tmux`    → tmux session      (B2)
            else                      → native subagent   (B3)
 WORKFLOW:  host==claude AND user opted in ("…with workflow") → B4 (overrides above)
 ```
+
+Each host resolves **two** executor commands — interactive (for steerable B1/B2
+sessions) and headless one-shot (for B3 / the evaluator / exec). Verified against
+Claude Code 2.1.161 and Codex 0.130.0:
+
+|            | interactive session (`$EXECUTOR`)                  | headless one-shot (`$EXECUTOR_EXEC`)                    |
+| ---------- | -------------------------------------------------- | ------------------------------------------------------- |
+| **claude** | `claude --dangerously-skip-permissions`            | `claude -p --dangerously-skip-permissions`              |
+| **codex**  | `codex --dangerously-bypass-approvals-and-sandbox` | `codex exec --dangerously-bypass-approvals-and-sandbox` |
+
+`--rc` was a bug (not a real Claude Code flag) and is removed. `codex exec` is
+non-interactive, so the **session** backends use bare `codex` (its TUI); only the
+headless paths use `codex exec`. The codex full-bypass flag is
+`--dangerously-bypass-approvals-and-sandbox` (no `--yolo`/`--full-auto`).
 
 `$CMUX_*` env vars are present when the session is hosted _inside_ a cmux
 surface — a stronger signal than `command -v cmux` (which only proves it's
