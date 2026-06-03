@@ -1,5 +1,5 @@
 ---
-name: reflect
+name: aep-reflect
 description: Classify feedback and update product context after shipping features. Use after /wrap, after user testing, or when the user says "reflect", "what did we learn", "update the product context", "classify feedback", "replan". Closes the feedback loop by routing observations back to the right phase.
 ---
 

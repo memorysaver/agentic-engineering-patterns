@@ -55,3 +55,6 @@ tmp
 .dev-workflow/
 .feature-workspaces/
 dogfood-output/
+
+# Local agent/CLI installation artifacts
+.antigravitycli/

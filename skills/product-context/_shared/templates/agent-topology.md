@@ -13,10 +13,12 @@ The core rule: **agents communicate through structured artifacts, not free text.
 **Purpose**: [One sentence — what this agent does in the pipeline.]
 
 **Responsibility boundary**:
+
 - Does: [Specific responsibilities]
 - Does not: [Explicit exclusions — prevents role creep]
 
 **Input contract**:
+
 ```
 [Schema definition of the work object this agent receives. Use TypeScript types, JSON Schema, or equivalent. Be explicit about required fields.]
 
@@ -33,6 +35,7 @@ Example:
 ```
 
 **Output contract**:
+
 ```
 [Schema definition of what this agent produces.]
 
@@ -66,6 +69,7 @@ Example:
 4. Dependency artifacts (public API surface only, not internals)
 
 **Cost budget**:
+
 - Expected tokens: [range, e.g., 10k–50k input, 5k–20k output]
 - Expected duration: [range, e.g., 2–10 minutes]
 - Alert threshold: [e.g., > 100k total tokens or > 20 minutes]
@@ -79,15 +83,19 @@ Example:
 Most projects will need at least these roles. Add or remove based on project complexity.
 
 ### `implementer`
+
 Takes a story spec and produces code + tests + PR. The workhorse of the execution plane.
 
 ### `contract-verifier`
+
 Takes a PR and runs interface contract tests against the System Map. Catches integration incompatibilities before merge.
 
 ### `integration-tester`
+
 Runs end-to-end tests for layer gates. Operates on the combined codebase, not individual stories.
 
 ### `failure-analyst`
+
 Takes a failed story's trace and produces a structured failure log with root cause hypothesis and unexplored alternatives. Feeds into fresh-agent retries.
 
 ---
@@ -99,6 +107,7 @@ Takes a failed story's trace and produces a structured failure log with root cau
 **Trigger event**: [What causes this handoff — e.g., "implementer completes PR submission"]
 
 **Payload schema**:
+
 ```
 [Exact structure passed from source to target]
 ```
@@ -122,6 +131,7 @@ Takes a failed story's trace and produces a structured failure log with root cau
 **Queue model**: [FIFO within execution slice / priority-based / other]
 
 **Assignment**: When a story transitions to `ready` in the work graph, the orchestrator:
+
 1. Checks conflict detection (see below)
 2. Checks concurrency limit
 3. Assembles context package per the implementer role's context window composition

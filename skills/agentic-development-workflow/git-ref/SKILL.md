@@ -1,5 +1,5 @@
 ---
-name: git-ref
+name: aep-git-ref
 description: AEP-specific reference for git + git worktree workflows. Use when the user asks "how do I create a worktree?", "what's the AEP branch convention?", "how do I clean up a worktree?", "how does AEP use git?", "remind me of git commands for parallel agents", or needs to recover from a worktree mishap. Documents worktree lifecycle, branch naming, the one-commit-per-task pattern, recovery procedures, and PR conventions used by `/launch`, `/build`, and `/wrap`.
 ---
 

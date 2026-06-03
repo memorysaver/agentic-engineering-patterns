@@ -1,5 +1,5 @@
 ---
-name: wrap
+name: aep-wrap
 description: Post-merge archive and cleanup. Use after a PR has been merged, or when the user says "wrap up", "archive", "cleanup after merge", "post-merge". Runs OpenSpec archive, commits the archive, and removes the workspace. The final step in the feature lifecycle.
 ---
 

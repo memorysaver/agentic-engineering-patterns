@@ -1,5 +1,5 @@
 ---
-name: autopilot
+name: aep-autopilot
 description: |-
   Orchestrate the full dispatch-launch-monitor-review-wrap-dispatch cycle autonomously. One command to go hands-free. Use when the user says "autopilot", "run autonomously", "auto dispatch loop", "hands-free mode", "start building everything", "go auto", "run the pipeline", "let it run", "manage workspaces", or wants to dispatch and monitor multiple stories without manual intervention. Always trigger this over /dispatch when the user wants continuous autonomous operation rather than a single story dispatch. Runs from the main workspace only.
 ---

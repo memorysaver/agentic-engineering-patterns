@@ -1,0 +1,472 @@
+# Product Context Schema v1
+#
+# Single source of truth for the entire product.
+# Created by /envision and /map, updated by /dispatch, /build, /wrap, /reflect, /calibrate.
+# Committed to git — version history tracks how the product evolves.
+#
+# Sections are populated incrementally:
+#   /envision   → opportunity, product (incl. quality_dimensions), calibration.plan
+#   /map        → architecture, stories, topology, layer_gates, cost
+#   /calibrate  → calibration.history, inline updates to architecture/product sections
+#   /dispatch   → stories[].status, stories[].openspec_change (per story)
+#   /build      → .dev-workflow/signals/status.json (story_status, pr_url, cost_usd)
+#   /wrap       → stories[].status, stories[].completed_at, stories[].pr_url, stories[].cost_usd (read from signals)
+#   /reflect    → changelog, stories (new), architecture (amendments)
+
+schema: v1
+project: <project-name>
+version: "0.1.0" # semantic: major (opportunity shift), minor (architecture/map change), patch (dispatch/build/wrap)
+updated_at: <ISO 8601>
+dispatch_epoch: 0 # incremented on every /dispatch run — consistency marker for agents
+
+# ─── SPLIT MODE (v2) ────────────────────────────────────────
+# Products can operate in two modes:
+#
+# 1. Single-file (v1): All sections live in product-context.yaml.
+#    This is the default for simple projects.
+#
+# 2. Split-mode (v2): Stable product definition lives in
+#    product/index.yaml. Operational state lives in
+#    product-context.yaml. Skills check product/index.yaml first;
+#    if absent, fall back to product-context.yaml.
+#
+# In split mode, product-context.yaml omits `opportunity` and
+# `product` sections. The `product/index.yaml` file uses the
+# `personas` field (list) instead of `product.persona` (object).
+#
+# Discovery convention used by all skills:
+#   product_def = product/index.yaml if exists, else product-context.yaml
+#   operational = product-context.yaml
+
+# ─── CONCURRENCY PROTOCOL ────────────────────────────────────
+# Only the MAIN SESSION writes to this file. Workspace agents
+# report status through .dev-workflow/signals/. The main session
+# (via /wrap, /dispatch, /reflect) reads signals and updates the
+# YAML. This prevents git merge conflicts from concurrent writers.
+
+# ─── OPPORTUNITY (/envision Phase 0) ─────────────────────────
+# Validates whether the idea is worth building at all.
+# Kill early if the opportunity doesn't survive a 5-minute challenge.
+opportunity:
+  bet: "I believe [target user] has [problem], and I can build [solution] because [advantage]"
+  why_now: "What changed that makes this viable now?"
+  counter_arguments:
+    - "Strongest reason this might fail"
+  scale_of_impact: "What magnitude of change if this works?"
+  kill_criteria:
+    - "Condition that would invalidate the opportunity"
+  decision: proceed # proceed | kill | defer
+  decided_at: <ISO date>
+
+# ─── PRODUCT (/envision Phase 1) ─────────────────────────────
+# Precise product definition. Every statement must be convertible
+# into a verification condition. Vague statements are useless to agents.
+product:
+  problem: "Sharp problem statement — who, what, why inadequate"
+  persona:
+    description: "Concrete user description with context, skill level, tools, constraints"
+    jtbd: "When [situation], I want to [motivation], so I can [outcome]"
+  goals: # behavior-observable statements, verifiable by observing the running system
+    - "e.g., Poll the issue tracker on a fixed cadence and dispatch work with bounded concurrency"
+  non_goals: # things the product deliberately will NOT do, with reasoning
+    - statement: "e.g., Rich web UI"
+      reasoning: "This is a CLI-first tool. A web dashboard is a separate product."
+  mvp_boundary:
+    in_scope:
+      - "Specific capability (testable)"
+    out_of_scope:
+      - "What this does NOT do, even if users might expect it"
+    deferred:
+      - "Might add later, but agents should not build toward this"
+  constraints:
+    required_stack:
+      frontend: <framework>
+      backend: <framework>
+      database: <engine>
+      orm: <orm>
+    preferred_stack: {} # overridable with good reason
+    infrastructure: "Where this runs, deployment targets"
+    external_deps:
+      - name: <service>
+        provides: "What it does for us"
+        failure_mode: "Graceful degradation or hard fail?"
+  layers:
+    - layer: 0
+      name: "Walking Skeleton"
+      user_can: "End-to-end journey in concrete steps"
+      verification: "Test scenario that proves Layer 0 works"
+      outcome_contract: # optional — anchors the layer in product outcomes, not just feature completion
+        hypothesis: "If users can complete the basic flow, architecture is validated"
+        success_metric:
+          type: task_completion_rate # task_completion_rate | time_to_complete | error_rate | satisfaction_score
+          target: ">= 60%"
+        decision_rule:
+          keep_if: "metric >= target"
+          otherwise: "reflect_and_reslice" # /reflect evaluates and may re-slice
+    - layer: 1
+      name: <layer-name>
+      user_can: "Everything from Layer 0, plus..."
+      verification: "Test scenario for new capabilities"
+      outcome_contract: null # same structure as above, or null if not yet defined
+  # ── USER ACTIVITIES (Story Map Backbone) ──
+  # The horizontal axis of a Jeff Patton story map.
+  # Each activity is a discrete step in the user's journey, ordered left-to-right.
+  # Extracted during /envision BEFORE defining layers — backbone first, releases second.
+  # Stories reference activities by id. Infrastructure stories leave activity null.
+  activities:
+    - id: <activity-slug> # e.g., "upload-selfie", "generate-avatar"
+      name: "Human-readable name" # e.g., "Upload Selfie"
+      description: "What the user does" # User-centric verb phrase
+      order: 1 # Sequence in journey (backbone left-to-right)
+      layer_introduced: 0 # Which layer first enables this activity
+  # ── FAILURE MODEL ──
+  # Undocumented failure modes become undocumented bugs.
+  failure_model:
+    classes:
+      - name: "e.g., External Service Failures"
+        examples: "API timeout, non-200 status, malformed response"
+        detection: "HTTP status code checks, response schema validation"
+        recovery: "Retry with exponential backoff, skip dispatch for this tick"
+        escalation: "Log warning, continue service, alert operator after 3 consecutive failures"
+    degraded_operation: "What the system can still do when a dependency is down"
+  # ── SECURITY MODEL ──
+  # Trust boundaries must be explicit. Implicit trust assumptions cause the worst bugs.
+  security_model:
+    trust_boundaries: "What is trusted vs. what is not"
+    auth: "Authentication and authorization approach (or 'N/A for MVP')"
+    secret_handling: "Where secrets come from, how stored, how passed to components"
+  success_criteria:
+    functional:
+      - "Specific, testable condition"
+    non_functional:
+      - "Measurable threshold (e.g., API p95 < 200ms)"
+  open_questions:
+    - question: "Decision explicitly deferred"
+      default_assumption: "What agents should assume for now"
+      revisit_trigger: "When to revisit this"
+  decisions:
+    - decision: "What was decided"
+      reasoning: "Why"
+      alternatives:
+        - "What else was considered"
+  stress_test:
+    - challenge: "What was challenged"
+      angle: product_viability # product_viability | technical_feasibility | scope_control
+      resolution: "How it was resolved"
+  # ── QUALITY DIMENSIONS ──
+  # Dimensions where human judgment is needed that agents cannot provide.
+  # Declared during /envision, checked by /reflect, executed by /calibrate.
+  # Not every dimension needs calibration — only those where "correct but not right" is likely.
+  quality_dimensions:
+    - dimension: visual-design # visual-design | ux-flow | api-surface | data-model | scope-direction | copy-tone | performance-quality
+      criticality: high # high | medium | low
+      first_calibration_layer: 0.5
+      rationale: "Why this dimension needs human calibration"
+
+# ─── CALIBRATION (/envision + /calibrate) ────────────────────
+# Tracks which quality dimensions need human alignment checkpoints
+# and the history of calibration decisions.
+# Plan populated by /envision (refined by /map), history populated by /calibrate.
+# .5 layers are "human alignment layers" — the team pauses agent execution
+# to recalibrate intent across one or more quality dimensions.
+calibration:
+  plan:
+    - layer: 0.5
+      dimensions: ["visual-design"] # from product.quality_dimensions
+      trigger: "Condition that activates this calibration"
+  history:
+    - dimension: visual-design
+      calibrated_at: <ISO date>
+      calibrated_from_layer: 0.5
+      mode: establishment # establishment | extension
+      artifact_path: "calibration/visual-design.yaml" # null for inline (light) calibrations
+      sections_updated: [] # e.g., ["architecture.interfaces"] for inline calibrations
+      summary: "What was decided"
+
+# ─── ARCHITECTURE (/map Step 1) ──────────────────────────────
+# Module boundaries and interface contracts. A wrong boundary costs
+# more than any implementation bug. Human review required.
+architecture:
+  style: "e.g., modular monolith, microservices"
+  overview: "2-3 sentences on structure and why"
+  technical_spec: null # optional path to standalone technical specification document (e.g., "docs/technical-spec.md")
+  modules:
+    - name: <module-name>
+      responsibility: "What this module does"
+      does_not: "What this module does NOT do (defines the boundary)"
+      owns:
+        - "Data/state/resources this module is authority on"
+      depends_on:
+        - <other-module>
+      technology: null # null = default stack
+      key_concepts: # domain objects, patterns, abstractions implementers need
+        - "e.g., tokens, sessions, RBAC roles"
+  # ── DOMAIN MODEL ──
+  # Typed entity definitions for cross-cutting domain objects.
+  # Complements per-module key_concepts with precise schemas when entities span module boundaries.
+  domain_model:
+    - name: <entity-name>
+      purpose: "One sentence — what this entity represents"
+      fields:
+        - name: id
+          type: string
+          default: null
+          required: true
+          notes: "Stable identifier. Derived from [rule]."
+      normalization_rules:
+        - "e.g., Identifiers lowercased and slugified"
+      invariants:
+        - "e.g., A completed entity always has a non-null completed_at"
+  # ── PROTOCOL SEQUENCES ──
+  # Multi-step interaction contracts (handshakes, streaming, stateful exchanges).
+  # Only needed when interface contracts have ordering, state, or timing constraints.
+  protocol_sequences:
+    - name: <protocol-name>
+      participants: ["module-a", "module-b"]
+      trigger: "What initiates this protocol"
+      steps:
+        - sender: module-a
+          message_type: "init"
+          timeout_ms: 5000
+          payload_example: null # optional illustrative JSON payload (e.g., '{"type": "init", "params": {...}}')
+        - sender: module-b
+          message_type: "ack"
+          payload_example: null
+      error_behavior: "What happens if a step fails"
+      timeout_behavior: "What happens if a step takes too long"
+  interfaces:
+    - from: <module>
+      to: <module>
+      protocol: "HTTP REST | gRPC | function call | message queue"
+      endpoint: "Specific API path or function signature"
+      request: {} # exact data structure
+      response: {} # exact data structure
+      errors:
+        - code: <number>
+          meaning: "What this error means"
+      sla: null # expected latency, throughput
+  data_flows:
+    - journey: "User journey name"
+      path: "User → [Module] → action → [Module] → response"
+  third_party:
+    - name: <service>
+      provides: "Specific capability"
+      integration_point: "Which module, how"
+      failure_mode: "Behavior when down"
+  deployment:
+    environments: ["local", "staging", "production"]
+    module_runtime: {} # { "auth": "bun", "worker": "cloudflare-workers" }
+    persistence: {} # { "users": "postgres", "cache": "redis" }
+  amendment_log: # boundary/contract issues found during story decomposition
+    - proposed_by: <agent-or-module>
+      module_affected: <module>
+      proposed_change: "What should change"
+      reasoning: "Why"
+      status: pending # pending | accepted | rejected
+  adrs:
+    - id: ADR-001
+      title: "Architecture decision title"
+      context: "What prompted this"
+      decision: "What was decided"
+      reasoning: "Why"
+      consequences: "What this enables and constrains"
+
+# ─── STORIES (/map Steps 2-3) ────────────────────────────────
+# The atomic units of work. Each story is a self-contained spec
+# that an agent can implement without asking questions.
+#
+# State machine:
+#   pending → ready       (all dependencies completed)
+#   pending → blocked     (a dependency failed)
+#   ready → in_progress   (/dispatch assigns)
+#   in_progress → in_review  (PR submitted)
+#   in_review → completed    (verification passes)
+#   in_review → in_progress  (verification fails, retry)
+#   in_progress → failed     (retry limit exceeded)
+#   any → deferred           (user postpones)
+#
+# Recovery transitions (user-initiated):
+#   failed → pending     (user resets after spec fix)
+#   blocked → pending    (blocking dependency resolved)
+#   deferred → pending   (user un-defers)
+stories:
+  - id: <PROJECT>-001
+    title: "Short, descriptive"
+    layer: 0
+    module: <module-name>
+    activity: null # user activity from product.activities (null for infrastructure stories)
+    calibration_type: null # visual-design | ux-flow | api-surface | data-model | scope-direction | copy-tone | performance-quality (null for non-calibration stories)
+    slice: 1 # execution slice within layer (parallel batch)
+    status: pending
+    priority: critical # critical | high | medium | low
+    business_value: null # 1-10 numeric. If null, derived from priority: critical=10, high=7, medium=4, low=1
+    complexity: S # S | M | L
+    compile_mode: single_change # single_change | grouped_change | shared_enabler
+    change_group: null # group ID for grouped_change mode (max 3 stories per group)
+    dependencies: [] # story IDs that must complete first
+    description:
+      what_changes: "Observable difference when complete"
+      why: "Connection to Context Document / layer"
+    acceptance_criteria:
+      - "Specific, automatable test criterion"
+    interface_obligations:
+      implements: [] # interface contracts this story creates/modifies
+      consumes: [] # interface contracts this story calls
+      contract_tests_required: false
+    files_affected:
+      - "path/to/likely/file.ts" # for conflict detection
+    technical_notes: null # optional — known pitfalls, guidance to prevent mistakes
+    verification:
+      unit: ["What to unit test"]
+      integration: ["Cross-module tests"]
+      contract: ["Interface compliance tests"]
+    # ── Dispatch scoring (computed by /dispatch, not manually set) ──
+    readiness_score: null # 0.0-1.0 spec completeness (acceptance criteria + interfaces + files + verification + open questions)
+    dispatch_score: null # (business_value + unblock_potential + critical_path_urgency + reuse_leverage) / (complexity_cost + ambiguity_penalty + interface_risk)
+    on_critical_path: false
+    # ── Execution tracking (updated by /dispatch, /build, /wrap) ──
+    assigned_to: null # workspace session name
+    openspec_change: null # OpenSpec change name
+    dispatched_at_epoch: null # which dispatch_epoch assigned this story
+    attempt_count: 0
+    max_retries: 4 # override per story (default from topology.routing.retry)
+    cost_usd: null
+    started_at: null # ISO 8601
+    completed_at: null # ISO 8601
+    pr_url: null
+    failure_logs: # structured — not free text
+      - attempt: 1
+        error_class: test_failure # test_failure | timeout | context_overflow | merge_conflict
+        approach_summary: "What the agent tried"
+        failure_point: "Which step failed"
+        root_cause: "Best guess at why"
+        unexplored_alternatives: [] # critical for fresh-agent retries
+        timestamp: <ISO 8601>
+
+# ─── TOPOLOGY (/map Step 4) ──────────────────────────────────
+# Agent roles, contracts, and routing. Defined at planning time
+# because agents need clear boundaries before execution starts.
+topology:
+  roles:
+    - name: implementer
+      purpose: "Takes story spec, produces code + tests + PR"
+      does:
+        - "implement"
+        - "unit test"
+        - "contract test"
+        - "submit PR"
+      does_not:
+        - "decide scope"
+        - "modify architecture"
+        - "skip tests"
+      input_contract: # schema-defined — agents communicate through structured artifacts
+        story_spec: "Full story from stories section"
+        context_slice:
+          context_document: "Pruned to: problem, constraints, relevant layer"
+          system_map_module: "This story's module definition"
+          adjacent_interfaces: "Interface contracts where from/to matches module"
+          dependency_artifacts: "Public API surface from completed dependencies"
+      output_contract:
+        implementation:
+          branch_name: "string"
+          files_changed: "FileDiff[]"
+          pr_url: "string"
+        verification:
+          unit_tests: "TestResult[]"
+          contract_tests: "TestResult[]"
+          all_passing: "boolean"
+        status_report:
+          story_id: "string"
+          outcome: "success | failure"
+          error_summary: "string (if failure)"
+          what_was_not_tried: "string[] (critical for fresh-agent retries)"
+      context_composition:
+        - "Story spec (full)"
+        - "Context Document (pruned: problem, constraints, relevant layer)"
+        - "System Map (story's module + adjacent interfaces only)"
+        - "Dependency artifacts (public API surface only)"
+      cost_budget:
+        input_tokens_max: 50000
+        output_tokens_max: 20000
+        alert_threshold_total: 100000
+  routing:
+    dispatch: fifo_within_slice # dispatch policy
+    concurrency_limit: 5 # max parallel agents
+    conflict_detection: files_affected_overlap
+    retry: "2x same agent → failure analyst → fresh agent → human escalation"
+    autonomous: false # true = /autopilot can dispatch without human confirmation
+    auto_design: false # true = skip /design, go straight to /launch for ambiguous stories
+    skip_human_eval: none # none | backend | all — which stories skip human eval in /wrap
+  handoffs:
+    - from: implementer
+      to: evaluator
+      trigger: implementation_complete # Phase 4 done, Phase 5 starts — evaluator runs BEFORE PR creation
+      payload: "eval-request.md + code diff + contracts.md + feature-verification.json"
+      validation:
+        - "All tasks committed on the feature branch"
+        - "Dev server running and accessible"
+        - "eval-request.md created with round number and change summary"
+      on_validation_failure: "reject handoff, notify source agent"
+
+# ─── LAYER GATES ─────────────────────────────────────────────
+# Integration tests that verify a completed layer works as a whole.
+# Must pass before advancing to the next layer.
+layer_gates:
+  - layer: 0
+    status: not_started # not_started | running | passed | failed
+    test_definition: "End-to-end user journey from Layer 0 MVP contract"
+    results: # structured test results
+      tests_run: 0
+      tests_passed: 0
+      tests_failed: 0
+      failures: [] # [{ test: "...", error: "...", boundary: "module_a → module_b" }]
+    completed_at: null
+
+# ─── WAVES (/map Step 3) ─────────────────────────────────────
+# Groups stories by layer + wave for batch dispatch.
+# Computed by /map from the dependency DAG. Wave 1 has no in-layer
+# dependencies; Wave 2 depends on Wave 1 completing; etc.
+# User-facing term: "Wave". YAML field: stories[].slice.
+waves:
+  - layer: 0
+    wave: 1
+    stories: [] # story IDs in this wave
+    theme: "Walking skeleton foundation"
+  - layer: 0
+    wave: 2
+    stories: []
+    theme: "Walking skeleton integration"
+
+# ─── COST TRACKING ───────────────────────────────────────────
+# Accumulated cost data. Updated by /build after each story.
+# Reviewed by /reflect for optimization opportunities.
+cost:
+  total_usd: 0
+  by_layer: {} # { "0": 12.50, "1": 8.30 }
+  by_module: {} # { "auth": 5.20, "api": 7.30 }
+  by_story: {} # { "PROJ-001": 3.10 }
+  alerts: # structured anomaly records
+    - story_id: null
+      type: cost_exceeded # cost_exceeded | retry_concentration | timeout_pattern
+      detail: "Description of the anomaly"
+      threshold: null
+      actual: null
+      timestamp: null
+
+# ─── CHANGELOG ───────────────────────────────────────────────
+# Semantic history of how the product context evolved.
+# git log shows file diffs; changelog shows why things changed.
+# Appended by every skill that modifies this file.
+changelog:
+  - date: <ISO date>
+    type: initial # initial | envision_update | map_update | dispatch | reflection | outcome_evaluation | build | wrap | layer_gate_pass | layer_gate_fail | architecture_review
+    author: human # human | agent
+    summary: "What changed and why"
+    sections_changed:
+      - <section-name>
+    # Only for type: reflect
+    feedback:
+      bugs: []
+      refinements: []
+      discoveries: []
+      opportunity_shifts: []

@@ -1,5 +1,5 @@
 ---
-name: validate
+name: aep-validate
 description: |-
   Generator/evaluator validation for any AEP artifact — product context, architecture, stories, code, or documents. Use after any generation phase (/envision, /map, /design, /build) or when the user says "validate", "verify", "check the design", "dry-run", "evaluate", "gen/eval", "generator evaluator". Spawns parallel agents: a Generator (dry-run the artifact), an Evaluator (check against reality), and optionally a Protocol Checker (verify downstream compatibility). Modifies only the artifact being validated — never implements code.
 ---

@@ -1,5 +1,5 @@
 ---
-name: scaffold
+name: aep-scaffold
 description: Scaffold a new project or onboard an existing one with agentic development infrastructure. Use when creating a new project ("new project", "scaffold", "create app") OR setting up an existing project ("onboard project", "set up existing project", "initialize infrastructure", "add workflow to project"). For new projects, creates a full-stack monorepo via Better-T-Stack. For existing projects, audits and fills infrastructure gaps. Both modes set up OpenSpec, workspace hook, and e2e-test skill.
 ---
 

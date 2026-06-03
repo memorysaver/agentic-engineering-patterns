@@ -1,5 +1,5 @@
 ---
-name: testing-guide
+name: aep-testing-guide
 description: Reference guide for setting up project-level quality infrastructure. Use when creating a new project's test setup, adding test layers, or when the user asks "how do I add tests?", "set up e2e", "testing strategy", "quality gates". Covers workspace setup hook, e2e-test skill creation, and the testing pyramid mapped to /build phases.
 ---
 

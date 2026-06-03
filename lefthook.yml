@@ -10,3 +10,9 @@ pre-commit:
     - name: oxfmt
       run: bun oxfmt --write {staged_files}
       stage_fixed: true
+    # Keep each skill self-contained: materialize skills/product-context/_shared
+    # into the skills that reference it, then re-stage the regenerated copies.
+    - name: skills-build
+      glob: "skills/product-context/**"
+      run: bash scripts/build-skills.sh
+      stage_fixed: true

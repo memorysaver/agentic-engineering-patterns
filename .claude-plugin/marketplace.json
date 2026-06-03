@@ -5,28 +5,34 @@
     "email": "mho@looplia.run"
   },
   "metadata": {
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Skills for product planning, project scaffolding, and agentic development workflows."
   },
   "plugins": [
     {
       "name": "product-context",
-      "description": "Product-level planning and iteration: envision, map, reflect.",
+      "description": "Product-level planning and iteration: envision, map, dispatch, validate, calibrate, reflect.",
       "source": "./",
       "strict": false,
       "skills": [
         "./skills/product-context/envision",
         "./skills/product-context/map",
         "./skills/product-context/dispatch",
+        "./skills/product-context/validate",
+        "./skills/product-context/calibrate",
         "./skills/product-context/reflect"
       ]
     },
     {
       "name": "project-setup",
-      "description": "One-time project scaffolding and environment setup.",
+      "description": "One-time project scaffolding and environment setup: onboard, scaffold, testing-guide.",
       "source": "./",
       "strict": false,
-      "skills": ["./skills/project-setup/onboard", "./skills/project-setup/scaffold"]
+      "skills": [
+        "./skills/project-setup/onboard",
+        "./skills/project-setup/scaffold",
+        "./skills/project-setup/testing-guide"
+      ]
     },
     {
       "name": "agentic-development-workflow",
@@ -43,10 +49,14 @@
     },
     {
       "name": "patterns",
-      "description": "Reusable design patterns: gen/eval, autopilot orchestration.",
+      "description": "Reusable design patterns: gen/eval, autopilot orchestration, workflow-feedback.",
       "source": "./",
       "strict": false,
-      "skills": ["./skills/patterns/gen-eval", "./skills/patterns/autopilot"]
+      "skills": [
+        "./skills/patterns/gen-eval",
+        "./skills/patterns/autopilot",
+        "./skills/patterns/workflow-feedback"
+      ]
     }
   ]
 }

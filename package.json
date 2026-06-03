@@ -46,7 +46,9 @@
     "db:generate": "turbo -F @agentic-engineering-patterns/db db:generate",
     "deploy": "turbo -F @agentic-engineering-patterns/infra deploy",
     "destroy": "turbo -F @agentic-engineering-patterns/infra destroy",
-    "check": "oxlint && oxfmt --write"
+    "check": "oxlint && oxfmt --write",
+    "skills:build": "bash scripts/build-skills.sh",
+    "skills:check": "bash scripts/build-skills.sh --check"
   },
   "dependencies": {
     "@agentic-engineering-patterns/env": "workspace:*",

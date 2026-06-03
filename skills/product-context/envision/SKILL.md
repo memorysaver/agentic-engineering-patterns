@@ -1,5 +1,5 @@
 ---
-name: envision
+name: aep-envision
 description: Product-level opportunity and product framing. Use when starting a new product from scratch, revisiting product direction, or when the user says "new product idea", "validate this idea", "product framing", "what should we build", "revisit our assumptions". Walks through opportunity validation and produces a Context Document that feeds into /map and /design.
 ---
 

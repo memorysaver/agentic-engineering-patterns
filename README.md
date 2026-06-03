@@ -437,53 +437,100 @@ Generate a dimension-specific brief, explore or discuss, capture decisions for a
 - [Generalized Calibration Workflow](docs/decisions/generalized-calibration-workflow.md) — multi-dimension `/calibrate` and `.5` alignment layers
 - [v2 Improvement Roadmap](docs/aep-v2-improvement-guideline.md) — capability maps, technical specs, dispatch enhancements
 
-## Syncing Skills to Your Project
+## Installing Skills
 
-A sync script is included to copy AEP skills into any project's `.claude/skills/` directory with the `aep-` prefix.
+AEP skills follow the open [Agent Skills](https://agentskills.io/) format, so any project — under
+Claude Code, Codex, Cursor, OpenCode, and [70+ other agents](https://github.com/vercel-labs/skills#supported-agents) —
+can install them with the [`skills`](https://github.com/vercel-labs/skills) CLI. No clone, no copied scripts.
 
-### Setup
+### Quick start
 
-1. Copy `scripts/sync.sh` to your project's `scripts/` directory
-2. Set `AEP_REPO` to point to your local clone of this repo
-
-### Usage
-
-```bash
-# Sync all skills
-AEP_REPO=~/agentic-engineering-patterns bash scripts/sync.sh
-
-# Preview changes without modifying files
-bash scripts/sync.sh --dry-run
-
-# Sync only one group (workflow, product, setup, patterns)
-bash scripts/sync.sh workflow
-
-# Override target directory
-TARGET_DIR=./my-skills bash scripts/sync.sh
-```
-
-The script flattens the nested skill directories and prefixes each with `aep-` (e.g., `skills/product-context/envision/` becomes `.claude/skills/aep-envision/`). Run it whenever you want to pull the latest skill versions.
-
-### Push Mode (sync-downstream)
-
-Push skills from the AEP repo to all registered downstream projects at once.
+> **Always name your agent with `-a`.** The CLI's auto-detect (and `--all` / `--agent '*'`)
+> installs into the cross-agent `.agents/skills/` directory — which **Claude Code does not read**
+> (Claude Code only loads `.claude/skills/`). Passing `-a claude-code` is what makes the install
+> land where Claude Code will find it.
 
 ```bash
-# One-time setup: create the config
-bash scripts/sync-downstream.sh --init
-
-# Edit .aep/config.yaml with your project paths
-# Then push to all projects:
-bash scripts/sync-downstream.sh
-
-# Preview changes:
-bash scripts/sync-downstream.sh --dry-run
-
-# Push to one project (name match):
-bash scripts/sync-downstream.sh 91app
+# Claude Code — installs all AEP skills into ./.claude/skills/ at project level
+npx skills add memorysaver/agentic-engineering-patterns -a claude-code --skill '*'
 ```
 
-The config file (`.aep/config.yaml`) is gitignored — paths are machine-local. Each entry specifies the project path and optionally which skill groups to sync.
+Skills install with the `aep-` prefix (e.g. `aep-map`, `aep-build`) at **project level** — committed
+with your repo and shared with your team — and each skill is **self-contained**, so its shared
+templates and references travel with it.
+
+### Multiple runtimes (run once per agent)
+
+`-a` takes a single agent: a repeated `-a a -a b` keeps only the last, and a comma list
+(`-a a,b`) installs nothing. To cover several runtimes, run the command once per agent:
+
+```bash
+npx skills add memorysaver/agentic-engineering-patterns -a claude-code --skill '*'   # → ./.claude/skills/
+npx skills add memorysaver/agentic-engineering-patterns -a codex      --skill '*'    # → ./.agents/skills/
+```
+
+### Common commands
+
+```bash
+# List what's available before installing
+npx skills add memorysaver/agentic-engineering-patterns --list
+
+# Install specific skills (repeat --skill; use the aep- name)
+npx skills add memorysaver/agentic-engineering-patterns -a claude-code --skill aep-map --skill aep-build
+
+# Install globally (user-level, ~/.claude/skills) instead of project level
+npx skills add memorysaver/agentic-engineering-patterns -a claude-code -g --skill '*'
+
+# Copy files instead of symlinking (when symlinks aren't supported)
+npx skills add memorysaver/agentic-engineering-patterns -a claude-code --skill '*' --copy
+
+# Update / remove / list installed
+npx skills update
+npx skills remove aep-map
+npx skills list
+```
+
+### Skill groups → skill names
+
+The `skills` CLI selects by skill name (there's no "group" flag). The groups map to these `--skill` names:
+
+| Group                                       | `--skill` names                                                                           |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| **Workflow** (agentic-development-workflow) | `aep-design`, `aep-launch`, `aep-build`, `aep-wrap`, `aep-git-ref`                        |
+| **Product** (product-context)               | `aep-envision`, `aep-map`, `aep-dispatch`, `aep-validate`, `aep-calibrate`, `aep-reflect` |
+| **Setup** (project-setup)                   | `aep-onboard`, `aep-scaffold`, `aep-testing-guide`                                        |
+| **Patterns** (patterns)                     | `aep-gen-eval`, `aep-autopilot`, `aep-workflow-feedback`                                  |
+
+### Maintainer (legacy) workflow
+
+The bespoke scripts remain for the maintainer's own multi-project workflow — they predate the
+`skills` CLI and cover a few things it doesn't: **group-as-a-unit** installs, `--dry-run`,
+exact orphan `--prune`, and **batch push to many registered projects** at once.
+
+```bash
+# Pull into one project (group filter, dry-run, prune all supported)
+AEP_REPO=~/agentic-engineering-patterns bash scripts/sync.sh workflow --dry-run
+
+# Push to every project registered in .aep/config.yaml (gitignored, machine-local)
+bash scripts/sync-downstream.sh --init   # one-time: create the config
+bash scripts/sync-downstream.sh          # push to all
+bash scripts/sync-downstream.sh 91app    # push to one (name match)
+```
+
+For everyone else, `npx skills add` above is the supported path.
+
+### Contributing skills (shared resources)
+
+Skills are authored under `skills/<group>/<name>/SKILL.md` and must be **self-contained** so each
+installs cleanly on its own. Resources shared across the product-context skills live once in
+`skills/product-context/_shared/{references,templates}/`. A build step materializes them into each
+skill that references them (those copies are marked with a `.aep-generated` file — don't edit them
+by hand):
+
+```bash
+bun run skills:build    # edit _shared/, then regenerate the per-skill copies
+bun run skills:check    # verify the copies are in sync (also runs in CI + pre-commit)
+```
 
 ## Inspired By
 

@@ -1,5 +1,5 @@
 ---
-name: onboard
+name: aep-onboard
 description: Full environment onboarding and first-hour orientation for Agentic Engineering Patterns (AEP). Use when setting up a new machine, joining the project, installing the plugin, or when the user says "get started", "onboard", "setup environment", "install prerequisites", "what is this plugin", "help me understand AEP", "I'm new to agentic engineering", "introduce me to this workflow", or wants to prepare their dev environment AND learn the mental model. Always use this first when a user mentions AEP, agentic-engineering-patterns, or this plugin for the first time.
 ---
 

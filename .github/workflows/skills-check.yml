@@ -1,0 +1,44 @@
+name: skills-check
+
+# Verify the published skills stay self-contained and installable via the open
+# Agent Skills format (https://skills.sh). Runs on changes to the skills tree.
+on:
+  push:
+    paths:
+      - "skills/**"
+      - ".claude-plugin/marketplace.json"
+      - "scripts/build-skills.sh"
+      - ".github/workflows/skills-check.yml"
+  pull_request:
+    paths:
+      - "skills/**"
+      - ".claude-plugin/marketplace.json"
+      - "scripts/build-skills.sh"
+      - ".github/workflows/skills-check.yml"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Shared skill resources are in sync
+        run: bash scripts/build-skills.sh --check
+
+      - name: marketplace.json is valid and declared skills exist
+        run: |
+          node -e '
+            const fs = require("fs");
+            const m = require("./.claude-plugin/marketplace.json");
+            const paths = m.plugins.flatMap(p => p.skills);
+            let bad = 0;
+            for (const p of paths) {
+              const f = p.replace(/^\.\//, "") + "/SKILL.md";
+              if (!fs.existsSync(f)) { console.error("Missing:", f); bad++; }
+            }
+            if (bad) process.exit(1);
+            console.log(`marketplace.json v${m.metadata.version}: ${paths.length} skills OK`);
+          '
+
+      - name: Skills are discoverable by the skills CLI
+        run: npx -y skills@latest add ./ --list

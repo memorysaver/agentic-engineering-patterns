@@ -1,5 +1,5 @@
 ---
-name: dispatch
+name: aep-dispatch
 description: Pick the next story to work on and bridge it into the feature lifecycle. Use when ready to start building, or when the user says "what's next", "dispatch", "pick a story", "start next feature", "what should I work on". Reads product-context.yaml, syncs workspace signals, computes readiness score for routing, then scores stories by business value + unblock potential + critical path urgency + reuse leverage (penalized by ambiguity + interface risk), assembles context, and hands off to /design or /launch. Supports batch dispatch with WIP limits. For autonomous orchestration, use /autopilot instead.
 ---
 

@@ -1,5 +1,5 @@
 ---
-name: workflow-feedback
+name: aep-workflow-feedback
 description: |-
   Capture and route workflow learnings between downstream projects and AEP. Use after /wrap or /reflect when process observations need to be standardized, when reviewing what a build run taught about AEP workflows, or when pulling learnings from downstream projects back upstream. Triggers on "workflow feedback", "capture learnings", "what did we learn about process", "pull learnings from downstreams", "upstream lessons".
 ---

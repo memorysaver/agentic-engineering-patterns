@@ -1,5 +1,5 @@
 ---
-name: launch
+name: aep-launch
 description: Spawn an autonomous workspace session for feature implementation. Use after /design is complete, or when the user says "launch workspace", "start building", "spawn agent", "send it to build". Creates a git worktree on a feature branch, starts a Claude Code session in tmux/cmux, and optionally sets up a separate evaluator agent. Followed by /build (which runs autonomously in the workspace).
 ---
 

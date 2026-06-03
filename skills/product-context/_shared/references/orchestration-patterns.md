@@ -74,6 +74,7 @@ Each layer has an Integration Gate — tests that verify stories work together. 
 **Layer 0 gate** is the most important test in the pipeline. It executes the exact user journey from the Context Document's Layer 0 MVP Contract. If the walking skeleton doesn't work end-to-end, something is architecturally wrong.
 
 **Subsequent layer gates** test:
+
 1. All previous layer journeys still work (regression).
 2. New capabilities added in this layer work end-to-end.
 3. Interface contracts honored under realistic conditions (not just mocks).

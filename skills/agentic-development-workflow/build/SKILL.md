@@ -1,5 +1,5 @@
 ---
-name: build
+name: aep-build
 description: Autonomous feature implementation in a workspace session. Use when a workspace agent starts building, or when the user says "build", "implement", "execute implementation". Covers the full autonomous flow — initialize harness, implement linearly with one commit per task, review, test, create PR, handle review feedback, and merge. Runs in an isolated git worktree on a feature branch without user interaction.
 ---
 

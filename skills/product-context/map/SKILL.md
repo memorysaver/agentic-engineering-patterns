@@ -1,5 +1,5 @@
 ---
-name: map
+name: aep-map
 description: Decompose a product into system map, layered story graph, and agent topology. Use after /envision, or when the user says "decompose", "story map", "system architecture", "break this down", "plan the stories", "agent topology". Produces the complete execution plan that the feature workflow operates on.
 ---
 
