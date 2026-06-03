@@ -57,12 +57,17 @@ Add the marketplace and install both plugin groups:
 
 ## Phase 2 — Verify Required Tools
 
-Each tool below earns its place in the agentic workflow — `git` provides version control and worktrees (one isolated working tree per parallel agent), `bun` runs the TypeScript monorepo, `openspec` powers spec-driven development, `tmux`/`cmux` host long-running autonomous agents, and `gh` publishes PRs. You need all of them before Phase 4.
+Each tool below earns its place in the agentic workflow — `git` provides version control and worktrees (one isolated working tree per parallel agent), `bun` runs the TypeScript monorepo, `openspec` powers spec-driven development, an **executor** (`claude` _or_ `codex`) runs the implementation agents, `tmux` hosts long-running monitorable sessions, and `gh` publishes PRs. You need all of these before Phase 4.
 
 Run this check:
 
 ```bash
-for cmd in bun git gh claude openspec tmux cmux; do
+# Required: at least one executor (claude OR codex)
+command -v claude >/dev/null 2>&1 || command -v codex >/dev/null 2>&1 \
+  && echo "executor:      OK" || echo "executor:      MISSING (install claude or codex)"
+
+# Required: everything else
+for cmd in bun git gh openspec tmux; do
   printf "%-15s" "$cmd:"
   which $cmd >/dev/null 2>&1 && echo "OK ($(which $cmd))" || echo "MISSING"
 done
@@ -70,17 +75,24 @@ done
 
 Install any missing tools:
 
-| Tool       | Purpose                     | Install                                     |
-| ---------- | --------------------------- | ------------------------------------------- |
-| `git`      | Version control + worktrees | `xcode-select --install` (macOS)            |
-| `bun`      | Package manager & runtime   | `curl -fsSL https://bun.sh/install \| bash` |
-| `claude`   | Claude Code CLI             | `npm install -g @anthropic-ai/claude-code`  |
-| `gh`       | GitHub CLI for PRs          | `brew install gh`                           |
-| `openspec` | Spec-driven development     | `bun add -g openspec`                       |
-| `tmux`     | Terminal multiplexer        | `brew install tmux`                         |
-| `cmux`     | Claude Code tab multiplexer | `bun add -g cmux`                           |
+| Tool       | Purpose                         | Install                                          |
+| ---------- | ------------------------------- | ------------------------------------------------ |
+| `git`      | Version control + worktrees     | `xcode-select --install` (macOS)                 |
+| `bun`      | Package manager & runtime       | `curl -fsSL https://bun.sh/install \| bash`      |
+| `claude`   | Executor: Claude Code CLI       | `npm install -g @anthropic-ai/claude-code`       |
+| `codex`    | Executor: OpenAI Codex CLI      | `npm install -g @openai/codex` _(alt to claude)_ |
+| `gh`       | GitHub CLI for PRs              | `brew install gh`                                |
+| `openspec` | Spec-driven development         | `bun add -g openspec`                            |
+| `tmux`     | Terminal multiplexer (sessions) | `brew install tmux`                              |
 
-All tools must show OK before proceeding.
+All required tools must show OK before proceeding. You need **at least one
+executor** (claude or codex) — not both.
+
+> **Headless / Desktop hosts:** if `tmux` is unavailable (e.g. Claude Code
+> Desktop / Codex Desktop), the executor abstraction falls back to a native
+> subagent (backend B3) — the build runs, but without live monitoring or
+> mid-flight feedback. A terminal host with `tmux` is recommended for the full
+> monitorable-session workflow. See `aep-executor`.
 
 > **Note on parallelism:** Each parallel feature agent runs in its own `git worktree` at `.feature-workspaces/<name>/` on its own `feat/<name>` branch. Worktrees share the underlying `.git/objects` (no history duplication) but each adds one full working-tree copy on disk — budget accordingly when running many agents in parallel.
 
@@ -89,16 +101,23 @@ All tools must show OK before proceeding.
 ## Phase 3 — Verify Optional Tools
 
 ```bash
-for cmd in agent-browser portless; do
+for cmd in cmux agent-browser portless; do
   printf "%-15s" "$cmd:"
   which $cmd >/dev/null 2>&1 && echo "OK ($(which $cmd))" || echo "MISSING (optional)"
 done
 ```
 
-| Tool            | Purpose                      | Install                                           |
-| --------------- | ---------------------------- | ------------------------------------------------- |
-| `agent-browser` | Browser automation testing   | Claude Code plugin: `agent-browser@agent-browser` |
-| `portless`      | Port management (.localhost) | `bun add -g portless`                             |
+| Tool            | Purpose                                                                                                 | Install                                           |
+| --------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| `cmux`          | Clickable tab multiplexer for watching sessions (backend B1) — **optional**; tmux alone (B2) works fine | `bun add -g cmux`                                 |
+| `agent-browser` | Browser automation testing                                                                              | Claude Code plugin: `agent-browser@agent-browser` |
+| `portless`      | Port management (.localhost)                                                                            | `bun add -g portless`                             |
+
+> **cmux is a convenience, not a requirement.** It only adds clickable tabs for
+> watching running sessions. Without it, workspaces still run in tmux (backend
+> B2) with the full monitor + mid-flight-feedback loop — attach with
+> `tmux attach -t <name>`. Skills auto-detect cmux and never abort when it's
+> absent. See `aep-executor`.
 
 These are optional — the workflow works without them but is enhanced by them. On macOS, do not enable `agent-browser` until a one-command smoke test can launch a page without crashing Chrome:
 
@@ -208,13 +227,15 @@ Only add `agent-browser` after the Phase 3 smoke test succeeds. It launches a lo
 
 ```bash
 echo "=== Core Tools ==="
-for cmd in bun git gh claude openspec tmux cmux; do
+command -v claude >/dev/null 2>&1 || command -v codex >/dev/null 2>&1 \
+  && echo "executor:      OK" || echo "executor:      MISSING (claude or codex)"
+for cmd in bun git gh openspec tmux; do
   printf "%-15s" "$cmd:"
   which $cmd >/dev/null 2>&1 && echo "OK" || echo "MISSING"
 done
 echo ""
 echo "=== Optional Tools ==="
-for cmd in agent-browser portless; do
+for cmd in cmux agent-browser portless; do
   printf "%-15s" "$cmd:"
   which $cmd >/dev/null 2>&1 && echo "OK" || echo "MISSING (optional)"
 done

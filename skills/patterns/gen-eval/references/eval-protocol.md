@@ -16,15 +16,16 @@ The request→response→fix loop for running generator/evaluator cycles. Covers
 
 ## Execution Contexts
 
-The gen/eval pattern can execute in three different contexts. The protocol is the same; the mechanics differ.
+The gen/eval pattern can execute in three different contexts. The protocol is the same; the mechanics differ. When `/build` runs the loop, the context tracks the **executor backend** in play (see `aep-executor/references/backends.md`): session backends (B1/B2) → Context A; native subagent (B3) → Context B; dynamic workflow (B4) → Context C.
 
-### Context A: Tmux Split Panes (Workspace — used by /build)
+### Context A: Tmux Split Panes (Workspace — used by /build under B1/B2)
 
-Generator runs in the top tmux pane. Evaluator is spawned as a separate Claude Code instance in the bottom pane.
+Generator runs in the top tmux pane. Evaluator is spawned as a separate agent instance in the bottom pane.
 
 ```bash
-# Generator spawns evaluator in bottom pane
-tmux split-window -v -c "$(pwd)" "claude --dangerously-skip-permissions --rc"
+# Generator spawns evaluator in bottom pane ($EXECUTOR resolved by the executor abstraction;
+# defaults to the claude form when unset).
+tmux split-window -v -c "$(pwd)" "${EXECUTOR:-claude --dangerously-skip-permissions --rc}"
 
 # Generator returns focus to top pane
 tmux select-pane -t :.0

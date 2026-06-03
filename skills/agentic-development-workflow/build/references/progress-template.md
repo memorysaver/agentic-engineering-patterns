@@ -28,7 +28,7 @@
 ## Part C — Launch Workspace
 
 - [ ] Worktree created (`git worktree add -b feat/<name>`)
-- [ ] tmux/cmux session started
+- [ ] Workspace agent started via executor (session: tmux ± cmux / native subagent / workflow)
 - [ ] Bootstrap prompt sent
 - [ ] Evaluator agent launched (full mode only)
 

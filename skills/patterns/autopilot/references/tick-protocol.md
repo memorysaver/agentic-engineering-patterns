@@ -5,7 +5,7 @@ The 7-step state machine executed on each autopilot tick. Each tick is idempoten
 **Target duration:** <60 seconds per tick
 **Invocation:** `/loop 5m /autopilot tick` or manual `/autopilot tick`
 
-> **BOUNDARY REMINDER:** The autopilot is an orchestrator. Every action on a workspace happens via `tmux send-keys`. Never spawn Agent tools, never read workspace source code, never call `gh pr merge`. See SKILL.md "STOP — Orchestrator Boundaries" section.
+> **BOUNDARY REMINDER:** The autopilot is an orchestrator. Every action on a workspace is `executor.nudge()` / `executor.liveness()` — and autopilot runs only on **session backends (B1/B2)**, where those verbs are `tmux send-keys` / `tmux capture-pane` (the recipe shown throughout this file). Never spawn Agent tools from main, never read workspace source code, never call `gh pr merge`. See SKILL.md "STOP — Orchestrator Boundaries" and `aep-executor/references/backends.md`.
 
 ---
 

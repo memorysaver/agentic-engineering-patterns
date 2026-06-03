@@ -44,9 +44,25 @@ One command to go autonomous. Initializes state, runs the first tick, and starts
 
 You are an **ORCHESTRATOR**, not an **EXECUTOR**. All code operations happen inside workspace agents. The main session never reads, reviews, edits, or evaluates workspace code directly. The single most common autopilot failure is violating this boundary.
 
+### Executor backend (read once, applies throughout)
+
+Autopilot steers running workspace sessions, so it requires a **session backend
+(B1/B2)** from the executor abstraction — a workspace you can instruct mid-flight.
+Every "send to workspace" action in this skill is `executor.nudge(ws, msg)`, and
+every liveness probe is `executor.liveness(ws)`. The `tmux send-keys` /
+`tmux capture-pane` commands shown throughout the tick protocol are the **B1/B2
+implementation** of those verbs (see `.claude/skills/aep-executor/references/backends.md`).
+
+- **B1/B2:** proceed normally — `nudge` = `tmux send-keys`, `liveness` = `tmux capture-pane` (+ `git diff --stat`).
+- **B3/B4 (no session to steer):** autopilot's tick/nudge model does not apply. If
+  the user wants hands-free batch under Claude Code, that is the **dynamic-workflow
+  path (B4)** reached via `/dispatch … with workflow`, which is its own
+  orchestrator — not something autopilot drives. If detection yields B3/B4, report
+  that autopilot needs a session backend and stop.
+
 ### Never Do List
 
-- **NEVER use the Agent tool to spawn code reviewers** — the reviewer needs workspace-local context (files, git state, eval history) that only exists inside the tmux session. A reviewer spawned from main has no access to the implementation it's supposed to evaluate. Instead: `tmux send-keys` to trigger the workspace's own gen/eval loop.
+- **NEVER use the Agent tool to spawn code reviewers from the main session** — the reviewer needs workspace-local context (files, git state, eval history) that lives inside the workspace. A reviewer spawned from main has no access to the implementation it's supposed to evaluate. Instead: `executor.nudge()` (B1/B2 = `tmux send-keys`) to trigger the workspace's own gen/eval loop. (The executor's B3/B4 backends _do_ spawn agents, but always bound to the worktree — that is a different mechanism, and not one autopilot uses, since autopilot runs only on session backends.)
 - **NEVER call `gh pr merge`** — workspace agents run pre-merge checks (rebase, CI verification, comment resolution) as part of Phase 12. Merging from main bypasses these checks and has caused premature merges where incomplete test results were accepted. Instead: send a tmux nudge telling the workspace to complete Phase 12.
 - **NEVER read workspace source files** — only read signal files under `.dev-workflow/signals/`. The main session's job is to observe progress via signals, not to understand the code. If you need code reviewed, trigger the workspace's evaluator.
 - **NEVER use `Read`, `Grep`, or `Bash` to inspect workspace code** — even "just checking" pulls implementation details into main session context, which leads to the main session forming opinions about code quality and then acting on them (spawning reviewers, suggesting fixes). Stay out of workspace code entirely.

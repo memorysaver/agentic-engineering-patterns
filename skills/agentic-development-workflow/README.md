@@ -112,7 +112,7 @@ MAIN SESSION (interactive)              WORKSPACE SESSION (autonomous)
 
 /design ──────────────────┐
                           │
-/launch ──────────────────┼──cmux──►   /build
+/launch ──────────────────┼─executor►   /build
          │                │              Phase 0: init harness
          │  poll status.json◄────────        ▼
          │  send feedback.md────────►   Phase 4: implement

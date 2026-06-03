@@ -21,6 +21,8 @@ Bridge between the product context (control plane) and the feature lifecycle (ex
 **Output:** OpenSpec change with pre-assembled context, story status updated, handoff to `/design` or `/launch`
 
 > **For autonomous orchestration:** Use `/autopilot` instead. Autopilot runs the full dispatch-launch-monitor-review-wrap-dispatch cycle as a tick-based state machine via `/loop`. Dispatch remains a single-pass interactive tool.
+>
+> **For hands-free batch under Claude Code:** dispatch a wave **"with workflow"** to build the whole wave as a single dynamic workflow (executor backend B4) instead of N monitorable sessions. See Step 5 → _Dynamic Workflow_ mode.
 
 ---
 
@@ -307,6 +309,26 @@ Dispatches all ready stories in Wave N (up to WIP limit)
 Creates N workspaces via /launch
 ```
 
+#### Dynamic Workflow (`--batch wave` + "…with workflow")
+
+When the user explicitly asks to dispatch a wave **"with workflow"** AND the host
+is Claude Code with the dynamic-workflow (Workflow) tool, route the batch through
+the **B4 backend** instead of creating N tmux sessions. The dispatch front-end is
+identical — sync, cascade, score, lock, assemble context — only the execution
+plane changes: instead of N `/launch` sessions, author one dynamic workflow that
+fans out `pipeline(stories, build, verify)` with per-agent worktree isolation.
+
+```
+Locks + creates OpenSpec changes for all ready stories in Wave N (as usual)
+Then: one dynamic workflow, one agent per story (build → verify), per-agent worktree
+```
+
+This is the hands-free batch path: deterministic, billed, background, **no
+mid-run human input**. Use it when you want a whole wave built autonomously and
+don't need to watch/feed individual sessions. Gating: requires Claude Code +
+Workflow tool (see `.claude/skills/aep-executor/references/backends.md`,
+backend B4). If the host can't support it, fall back to Wave Batch and say so.
+
 ### WIP Limits
 
 ```
@@ -455,6 +477,11 @@ git push origin main
 ---
 
 ## Step 7: Hand Off
+
+> **Backend is resolved at `/launch`, not here.** Dispatch stays executor-agnostic
+> — it hands a well-specified change to `/launch`, which detects the host and
+> selects a backend (B1–B4) via `aep-executor`. The only dispatch-level backend
+> decision is the explicit _Dynamic Workflow_ opt-in in Step 5.
 
 Determine the handoff based on story completeness:
 
