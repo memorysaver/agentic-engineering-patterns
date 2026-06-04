@@ -21,6 +21,26 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 _Nothing yet._
 
+## [1.3.0] - 2026-06-04
+
+Adds an optional supplement and modernizes onboarding to the `npx skills` installer.
+
+### Added
+
+- Optional **supplement** pointer to [`memorysaver/skills`](https://github.com/memorysaver/skills)
+  in the README and `/onboard`: `project-behavior` (scaffold an `AGENTS.md` behavior pack),
+  `project-memory` (git-committable memory system), and `memory-forge` (distill lessons into
+  skills). The `/onboard` and README "Agent prompt" flows now **always ask** whether the user
+  wants the `AGENTS.md` behavior config and the memory system before installing either.
+
+### Changed
+
+- `/onboard` (aep-onboard) Phase 1 install modernized from the legacy
+  `/plugin marketplace add` and `/plugin install` commands to project-level
+  `npx skills add memorysaver/agentic-engineering-patterns@<latest-tag>` (pin to the latest
+  release, commit the installed files), matching the README install guide.
+- `.claude-plugin/marketplace.json` version `1.2.0` → `1.3.0`.
+
 ## [1.2.0] - 2026-06-04
 
 Host-agnostic executor: the feature lifecycle now runs under Claude Code **or**
@@ -117,7 +137,8 @@ First stable baseline after the Jujutsu → git migration. Decision record:
 
 - Jujutsu (one-shot migration, no dual-mode period) and the `/jj-ref` skill.
 
-[Unreleased]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/memorysaver/agentic-engineering-patterns/releases/tag/v1.0.0

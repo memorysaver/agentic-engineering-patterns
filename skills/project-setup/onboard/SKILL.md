@@ -31,27 +31,29 @@ Before installing tools, get the mental model. AEP is not a "command runner" —
 
 ## Phase 1 — Install the Plugin
 
-Add the marketplace and install both plugin groups:
+Install the AEP skills with the [`skills`](https://github.com/vercel-labs/skills) CLI at **project level**, once per agent your project uses. Pin to the latest release and commit the installed files so the version is frozen for your team:
 
 ```bash
-# Add the marketplace
-/plugin marketplace add memorysaver/agentic-engineering-patterns
-
-# Install plugin groups
-/plugin install product-context@agentic-engineering-patterns
-/plugin install project-setup@agentic-engineering-patterns
-/plugin install agentic-development-workflow@agentic-engineering-patterns
+# Claude Code (repeat with `-a codex` for Codex). Newest tag:
+# https://github.com/memorysaver/agentic-engineering-patterns/releases/latest
+npx skills add memorysaver/agentic-engineering-patterns@<latest-tag> -a claude-code --skill '*' -y
 ```
 
-### Plugin Groups
+This installs every AEP skill (the `aep-*` names) plus a `skills-lock.json` manifest — **commit both**. For the full pinning + formatter guidance, see [Installing Skills](../../../README.md#installing-skills).
 
-| Group                            | Skills                               | Purpose                                                                      |
-| -------------------------------- | ------------------------------------ | ---------------------------------------------------------------------------- |
-| **product-context**              | envision, map, dispatch, reflect     | Product-level planning and iteration                                         |
-| **project-setup**                | onboard, scaffold                    | Scaffold projects, configure spec-driven development, environment onboarding |
-| **agentic-development-workflow** | design, launch, build, wrap, git-ref | Full-lifecycle feature development with git worktrees                        |
+### Optional add-ons — always ask the user
 
-> **Note:** This installs the agentic-engineering-patterns plugin itself. Recommended third-party plugins are configured at the project level in Phase 4 via `.claude/settings.json`; browser automation is added only after its local smoke test passes.
+AEP pairs with two project-level skills from [`memorysaver/skills`](https://github.com/memorysaver/skills). **Ask the user whether they want each**, and install only what they choose (newest tag at <https://github.com/memorysaver/skills/releases/latest>, once per agent):
+
+- **Behavioral guidelines in `AGENTS.md`?** → install `project-behavior`, then run it to scaffold/extend `AGENTS.md`.
+- **A project memory system (committed lessons + recall)?** → install `project-memory` (and `memory-forge`), then run `project-memory` to bootstrap `project-memory/`.
+
+```bash
+npx skills add memorysaver/skills@<latest-tag> -a claude-code \
+  --skill project-behavior --skill project-memory --skill memory-forge -y
+```
+
+> **Note:** This installs the AEP skills themselves. Recommended third-party Claude Code plugins are configured at the project level in Phase 4 via `.claude/settings.json`; browser automation is added only after its local smoke test passes.
 
 ---
 
