@@ -138,12 +138,12 @@ for cmd in bun git gh openspec; do
 done
 ```
 
-| Tool       | Install command                             |
-| ---------- | ------------------------------------------- |
-| `bun`      | `curl -fsSL https://bun.sh/install \| bash` |
-| `git`      | `xcode-select --install` (macOS)            |
-| `gh`       | `brew install gh`                           |
-| `openspec` | `bun add -g openspec`                       |
+| Tool       | Install command                              |
+| ---------- | -------------------------------------------- |
+| `bun`      | `curl -fsSL https://bun.sh/install \| bash`  |
+| `git`      | `xcode-select --install` (macOS)             |
+| `gh`       | `brew install gh`                            |
+| `openspec` | `npm install -g @fission-ai/openspec@latest` |
 
 ---
 

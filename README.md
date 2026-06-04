@@ -32,8 +32,8 @@ can install them with the [`skills`](https://github.com/vercel-labs/skills) CLI.
 
 ### Agent prompt
 
-Prefer to delegate the install? Paste this to your coding agent — it covers the install, the
-formatter fix, and wiring AEP into your `AGENTS.md` / `CLAUDE.md`:
+Prefer to delegate the install? Paste this to your coding agent — it covers the AEP skills, the
+required OpenSpec CLI, the formatter fix, and wiring AEP into your `AGENTS.md` / `CLAUDE.md`:
 
 ```text
 Install the Agentic Engineering Patterns (AEP) skills into this project, pinned to the latest release.
@@ -62,7 +62,15 @@ Install the Agentic Engineering Patterns (AEP) skills into this project, pinned 
 
 5. Verify with `npx skills list`. Restore from the lockfile later with `npx skills experimental_install`.
 
-6. Then ALWAYS ASK the user which optional add-ons they want — both come from
+6. REQUIRED — install the OpenSpec CLI. AEP is a spec-driven workflow: its skills (/scaffold,
+   /dispatch, /design, /build, /wrap) shell out to `openspec`, so it must be on PATH. Install it
+   globally (needs Node >= 20.19), then verify:
+     npm install -g @fission-ai/openspec@latest
+     openspec --version
+   AEP creates the per-project openspec/ artifacts itself — /scaffold initializes them for a new
+   project, or run `openspec init` once in an existing repo.
+
+7. Then ALWAYS ASK the user which optional add-ons they want — both come from
    memorysaver/skills (newest tag at https://github.com/memorysaver/skills/releases/latest):
      a. "Set up behavioral guidelines (a coding-discipline preamble) in AGENTS.md?"
         If yes → install `project-behavior`, then run it to scaffold/extend AGENTS.md.

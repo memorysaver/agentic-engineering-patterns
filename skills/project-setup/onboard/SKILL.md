@@ -81,15 +81,15 @@ which tmux >/dev/null 2>&1 && echo "OK ($(which tmux))" || echo "MISSING (recomm
 
 Install any missing tools:
 
-| Tool       | Purpose                            | Install                                          |
-| ---------- | ---------------------------------- | ------------------------------------------------ |
-| `git`      | Version control + worktrees        | `xcode-select --install` (macOS)                 |
-| `bun`      | Package manager & runtime          | `curl -fsSL https://bun.sh/install \| bash`      |
-| `claude`   | Executor: Claude Code CLI          | `npm install -g @anthropic-ai/claude-code`       |
-| `codex`    | Executor: OpenAI Codex CLI         | `npm install -g @openai/codex` _(alt to claude)_ |
-| `gh`       | GitHub CLI for PRs                 | `brew install gh`                                |
-| `openspec` | Spec-driven development            | `bun add -g openspec`                            |
-| `tmux`     | Terminal multiplexer (recommended) | `brew install tmux`                              |
+| Tool       | Purpose                                 | Install                                          |
+| ---------- | --------------------------------------- | ------------------------------------------------ |
+| `git`      | Version control + worktrees             | `xcode-select --install` (macOS)                 |
+| `bun`      | Package manager & runtime               | `curl -fsSL https://bun.sh/install \| bash`      |
+| `claude`   | Executor: Claude Code CLI               | `npm install -g @anthropic-ai/claude-code`       |
+| `codex`    | Executor: OpenAI Codex CLI              | `npm install -g @openai/codex` _(alt to claude)_ |
+| `gh`       | GitHub CLI for PRs                      | `brew install gh`                                |
+| `openspec` | Spec-driven development (Node >= 20.19) | `npm install -g @fission-ai/openspec@latest`     |
+| `tmux`     | Terminal multiplexer (recommended)      | `brew install tmux`                              |
 
 All **required** tools (executor + `bun`/`git`/`gh`/`openspec`) must show OK
 before proceeding. You need **at least one executor** (claude or codex) — not
