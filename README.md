@@ -61,6 +61,16 @@ Install the Agentic Engineering Patterns (AEP) skills into this project, pinned 
      `npx skills add memorysaver/agentic-engineering-patterns@<newtag>` once per agent.
 
 5. Verify with `npx skills list`. Restore from the lockfile later with `npx skills experimental_install`.
+
+6. Then ALWAYS ASK the user which optional add-ons they want — both come from
+   memorysaver/skills (newest tag at https://github.com/memorysaver/skills/releases/latest):
+     a. "Set up behavioral guidelines (a coding-discipline preamble) in AGENTS.md?"
+        If yes → install `project-behavior`, then run it to scaffold/extend AGENTS.md.
+     b. "Set up a project memory system (committed lessons + recall)?"
+        If yes → install `project-memory` (and `memory-forge`), then run project-memory to
+        bootstrap project-memory/.
+   Install each chosen skill once per agent, then commit the installed files (the commit is the pin):
+     npx skills add memorysaver/skills@<latest-tag> -a claude-code --skill project-behavior -y
 ```
 
 ### Quick start
@@ -104,6 +114,27 @@ still equals the locked content. To truly freeze a release, **commit the install
 (under `.claude/skills/` and/or `.agents/skills/`) together with `skills-lock.json`. The committed
 bytes become the pin: teammates, CI, and Codex need no install step, and nothing drifts when
 upstream moves on. Upgrade deliberately by re-running `add@<newtag>` in its own PR.
+
+### Optional supplement: behavior + memory
+
+Two project-level capabilities AEP doesn't ship itself live in a separate repo,
+[`memorysaver/skills`](https://github.com/memorysaver/skills). Install them as an
+**optional supplement** — once per agent (`-a claude-code`, then `-a codex`):
+
+```bash
+npx skills add memorysaver/skills@<latest-tag> -a claude-code \
+  --skill project-behavior --skill project-memory --skill memory-forge
+```
+
+- **`project-behavior`** — scaffolds/extends your `AGENTS.md` with a behavioral preamble
+  (a Karpathy coding-discipline pack by default); run it after installing.
+- **`project-memory`** — bootstraps a git-committable `project-memory/` system for session
+  lessons, retrospectives, and qmd-backed recall; run it to set the system up.
+- **`memory-forge`** — later distills aged `project-memory/` lessons into reusable skills.
+
+These aren't part of AEP's versioned release — pin them the same way you pin AEP: install the
+latest [`memorysaver/skills`](https://github.com/memorysaver/skills/releases/latest) release
+tag, then **commit the installed files** to freeze it.
 
 ### Keep your formatter off the skills
 
