@@ -474,6 +474,62 @@ npx skills add memorysaver/agentic-engineering-patterns -a claude-code --skill '
 npx skills add memorysaver/agentic-engineering-patterns -a codex      --skill '*'    # → ./.agents/skills/
 ```
 
+### Pinning a version
+
+Append `@<git-ref>` (a release tag, branch, or commit) to lock what you install:
+
+```bash
+npx skills add memorysaver/agentic-engineering-patterns@v1.2.0 -a claude-code --skill '*'
+```
+
+One caveat worth knowing: `skills-lock.json` records each skill's **content hash**, not the git
+tag. The lockfile alone therefore does **not** durably pin the version — `npx skills experimental_install`
+restores from the source repo's **default branch**, which only matches the lock while that branch
+still equals the locked content. To truly freeze a release, **commit the installed skill files**
+(under `.claude/skills/` and/or `.agents/skills/`) together with `skills-lock.json`. The committed
+bytes become the pin: teammates, CI, and Codex need no install step, and nothing drifts when
+upstream moves on. Upgrade deliberately by re-running `add@<newtag>` in its own PR.
+
+### Keep your formatter off the skills
+
+Skill files are Markdown and JSON. If your repo auto-formats those on commit (Prettier, oxfmt,
+Biome, dprint, a lefthook / husky hook…), it will rewrite the installed skills and **break the
+content hashes in `skills-lock.json`**. Exclude the skill paths from your formatter —
+`.claude/skills/**`, `.agents/skills/**`, and `skills-lock.json` — and make the install commit
+with `--no-verify` so the pinned bytes stay byte-for-byte intact.
+
+### Agent prompt
+
+Prefer to delegate the install? Paste this to your coding agent — it covers the install, the
+formatter fix, and wiring AEP into your `AGENTS.md` / `CLAUDE.md`:
+
+```text
+Install the Agentic Engineering Patterns (AEP) skills into this project, pinned to v1.2.0.
+
+1. Install for each agent this repo uses (run the command once per agent):
+     npx skills add memorysaver/agentic-engineering-patterns@v1.2.0 -a claude-code --skill '*' -y
+     npx skills add memorysaver/agentic-engineering-patterns@v1.2.0 -a codex        --skill '*' -y
+   This writes the skills under .claude/skills/ and/or .agents/skills/ plus a skills-lock.json manifest.
+
+2. Commit the installed skill files together with skills-lock.json. The lockfile pins content
+   hashes, not the git tag, so the committed files are what durably lock v1.2.0 — after that,
+   teammates and CI need no install step.
+
+3. If this repo auto-formats Markdown/JSON on commit (Prettier, oxfmt, Biome, dprint, a
+   lefthook/husky hook): exclude .claude/skills/**, .agents/skills/**, and skills-lock.json from
+   the formatter, then make the install commit with --no-verify. Otherwise reformatting rewrites
+   the skill files and breaks the lockfile hashes.
+
+4. Add a short section to AGENTS.md (and/or CLAUDE.md) so the workflow is discoverable:
+     ## AEP Workflow
+     This project uses the Agentic Engineering Patterns (AEP) skills — a spec-driven, multi-agent
+     feature lifecycle in .claude/skills/ and/or .agents/skills/, pinned via skills-lock.json.
+     The skills are self-describing; start with `aep-onboard`. Upgrade by re-running
+     `npx skills add memorysaver/agentic-engineering-patterns@<newtag>` once per agent.
+
+5. Verify with `npx skills list`. Restore from the lockfile later with `npx skills experimental_install`.
+```
+
 ### Common commands
 
 ```bash
@@ -493,6 +549,9 @@ npx skills add memorysaver/agentic-engineering-patterns -a claude-code --skill '
 npx skills update
 npx skills remove aep-map
 npx skills list
+
+# Restore installed skills from skills-lock.json (e.g. after a fresh clone)
+npx skills experimental_install
 ```
 
 ### Skill groups → skill names
