@@ -36,15 +36,16 @@ Prefer to delegate the install? Paste this to your coding agent — it covers th
 formatter fix, and wiring AEP into your `AGENTS.md` / `CLAUDE.md`:
 
 ```text
-Install the Agentic Engineering Patterns (AEP) skills into this project, pinned to v1.2.0.
+Install the Agentic Engineering Patterns (AEP) skills into this project, pinned to the latest release.
 
-1. Install for each agent this repo uses (run the command once per agent):
-     npx skills add memorysaver/agentic-engineering-patterns@v1.2.0 -a claude-code --skill '*' -y
-     npx skills add memorysaver/agentic-engineering-patterns@v1.2.0 -a codex        --skill '*' -y
+1. Install the latest release for each agent this repo uses — find the newest tag at
+   https://github.com/memorysaver/agentic-engineering-patterns/releases/latest, then run once per agent:
+     npx skills add memorysaver/agentic-engineering-patterns@<latest-tag> -a claude-code --skill '*' -y
+     npx skills add memorysaver/agentic-engineering-patterns@<latest-tag> -a codex        --skill '*' -y
    This writes the skills under .claude/skills/ and/or .agents/skills/ plus a skills-lock.json manifest.
 
 2. Commit the installed skill files together with skills-lock.json. The lockfile pins content
-   hashes, not the git tag, so the committed files are what durably lock v1.2.0 — after that,
+   hashes, not the git tag, so the committed files are what durably lock that release — after that,
    teammates and CI need no install step.
 
 3. If this repo auto-formats Markdown/JSON on commit (Prettier, oxfmt, Biome, dprint, a
