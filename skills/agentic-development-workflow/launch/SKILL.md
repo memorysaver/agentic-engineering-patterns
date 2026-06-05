@@ -112,15 +112,9 @@ git worktree add -b feat/<name> .feature-workspaces/<name> main
 [ -z "$EXECUTOR" ] && { echo "run detect() first — \$EXECUTOR unset (would launch a bare shell)"; exit 1; }
 tmux new-session -d -s <name> -c .feature-workspaces/<name> "$EXECUTOR"
 
-# cmux is OPTIONAL — only create a tab if we are actually INSIDE a cmux surface.
-# (Merely having cmux installed does not let us spawn a sibling tab → would fail.)
-if [ -n "$CMUX_SOCKET" ]; then
-  GEN_SURFACE=$(cmux new-surface --type terminal | grep -o 'surface:[0-9]*')   # B1
-  cmux send --surface "$GEN_SURFACE" "tmux attach -t <name>\n"
-  cmux rename-tab --surface "$GEN_SURFACE" "<name>"
-else
-  echo "No cmux surface — workspace runs in tmux session '<name>'. Watch it: tmux attach -t <name>"  # B2
-fi
+# cmux is OPTIONAL and is attached LATER — after the bootstrap is sent. Attaching a
+# cmux surface focuses the tmux composer and blocks external send-keys, so the
+# prompt must land first. See "Attach the cmux Review Tab" after Send Bootstrap.
 ```
 
 > **No tmux at all (Desktop → B3) / dynamic workflow (B4):** do **not** use the
@@ -180,15 +174,43 @@ PROMPT="/build execute implementation for openspec change <change-name>. Read th
 <relevant lessons summary, if any — omit this section if no lessons exist>
 "
 
-if [ -n "$GEN_SURFACE" ]; then
-  cmux send --surface "$GEN_SURFACE" "$PROMPT"        # B1 (cmux sends the whole string)
-else
-  # B2: -l sends the literal multi-line text; a separate Enter submits it ONCE.
-  # (A bare `send-keys "$PROMPT" Enter` would let embedded newlines submit it line-by-line.)
-  tmux send-keys -t <name>:0.0 -l -- "$PROMPT"
-  tmux send-keys -t <name>:0.0 Enter
-fi
+# B1/B2: send the bootstrap over tmux BEFORE any cmux tab attaches (a cmux surface
+# focuses the composer and blocks external send-keys, so it must land first). -l
+# sends the literal multi-line text; a separate Enter submits it ONCE. (A bare
+# `send-keys "$PROMPT" Enter` would let embedded newlines submit it line-by-line.)
+# A very large paste can collapse to a "paste again to expand" prompt — if so, a
+# second Enter submits it.
+tmux send-keys -t <name>:0.0 -l -- "$PROMPT"
+tmux send-keys -t <name>:0.0 Enter
 # B3/B4: $PROMPT was passed as the agent's initial prompt at spawn() — nothing to send here.
+```
+
+---
+
+## Attach the cmux Review Tab (B1)
+
+**Only after the bootstrap has been sent.** On a cmux host (detection set
+`PRESENT=cmux`), open a review tab as a **sibling in the pane that holds the
+orchestrator's own tab** — not `cmux new-workspace` (which makes a separate
+top-level workspace) and not a bare `cmux new-surface` (which defaults to an unset
+`$CMUX_WORKSPACE_ID`). `cmux tree` marks the orchestrator's tab `◀ here`; fall back
+to the surface env vars when inside one. Skip this entire step under B2/B3/B4.
+
+```bash
+# $CMUX is the cmux CLI path resolved in detect().
+read -r WS PANE < <("$CMUX" tree 2>/dev/null | awk '
+  /workspace workspace:/ {for (i=1;i<=NF;i++) if ($i ~ /^workspace:/) ws=$i}
+  /pane pane:/           {for (i=1;i<=NF;i++) if ($i ~ /^pane:/)      pane=$i}
+  /◀ here/               {print ws, pane; exit}')
+: "${WS:=$CMUX_WORKSPACE_ID}" "${PANE:=$CMUX_PANE_ID}"
+if [ -n "$PANE" ]; then                                  # genuine B1 — a target pane exists
+  SREF=$("$CMUX" new-surface --type terminal --workspace "$WS" --pane "$PANE" --focus true \
+         | grep -oE 'surface:[0-9]+' | head -1)
+  "$CMUX" send --surface "$SREF" "tmux attach -t <name>"$'\n'   # trailing newline submits
+  "$CMUX" rename-tab --surface "$SREF" "<name>"
+else                                                     # reachable but no pane → headless B2
+  echo "cmux reachable but no target pane — workspace runs headless: tmux attach -t <name>"
+fi
 ```
 
 ---

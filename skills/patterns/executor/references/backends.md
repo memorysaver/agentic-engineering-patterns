@@ -48,9 +48,14 @@ fi
 [ -z "$EXECUTOR" ] && { echo "executor unresolved — set \$AEP_EXECUTOR or run under Claude Code / Codex"; }
 
 # --- PRESENTATION: how a human watches a running session ---
-# Use cmux only when we are actually INSIDE a cmux surface ($CMUX_SOCKET) — being
-# merely installed (command -v) does NOT let us spawn a sibling tab.
-if [ -n "$CMUX_SOCKET" ]; then
+# cmux can host a review tab whenever its CLI is reachable AND we can resolve a
+# target pane — it does NOT require $CMUX_SOCKET. The cmux CLI drives cmux over its
+# Unix socket even when $CMUX_SOCKET is unset (e.g. Claude Code inside a
+# cmux-managed tmux session does not inherit it). Resolve the binary robustly, then
+# confirm a target pane exists: `cmux tree` marks the orchestrator's own pane
+# "◀ here", or $CMUX_PANE_ID is set when we're already inside a surface.
+CMUX="$(command -v cmux || echo /Applications/cmux.app/Contents/Resources/bin/cmux)"
+if [ -x "$CMUX" ] && { "$CMUX" tree 2>/dev/null | grep -q '◀ here' || [ -n "$CMUX_PANE_ID" ]; }; then
   PRESENT=cmux
 elif command -v tmux >/dev/null 2>&1; then
   PRESENT=tmux
@@ -79,10 +84,12 @@ WORKFLOW_CAPABLE=$([ "$HOST" = claude ] && echo yes || echo no)
 
 Notes:
 
-- `$CMUX_SOCKET` (and the other `CMUX_*` vars) are set when the session is hosted
-  _inside_ a cmux surface — a stronger signal than `command -v cmux`, which only
-  proves cmux is installed somewhere. Prefer the env var when deciding whether
-  you can spawn a _sibling_ cmux tab.
+- **cmux does not require `$CMUX_SOCKET`.** The `cmux` CLI controls cmux over its
+  Unix socket even when `$CMUX_SOCKET` is unset (Claude Code running inside a
+  cmux-managed tmux session does not inherit it). What you actually need to open a
+  _sibling_ tab is a **target pane**: `cmux tree` marks the orchestrator's own pane
+  `◀ here`, and `$CMUX_PANE_ID` / `$CMUX_WORKSPACE_ID` are set when you're inside a
+  surface. Reachable CLI **and** a resolvable pane ⇒ B1; reachable but no pane ⇒ B2.
 - `$TMUX` (set when already inside a tmux session) and `$CLAUDE_CODE_*` are
   available for finer decisions but are not required for backend selection.
 - **Host knows itself.** A skill is executed by whatever agent loaded it. If you
@@ -138,14 +145,15 @@ git worktree add -b feat/<ws> .feature-workspaces/<ws> main
 > `[ -z "$EXECUTOR" ] && { echo "run detect() — \$EXECUTOR unset"; exit 1; }`
 > so an unset executor aborts loudly instead of launching a bare login shell.
 
-**B1 — session in tmux + cmux tab:**
+**B1 — session in tmux + cmux review tab:**
+
+Spawn the tmux session **only**. The cmux review tab is attached _after_ the
+bootstrap is sent (see "Attach the cmux review tab" below): attaching a surface
+focuses the tmux composer and blocks external `send-keys`, so the prompt must land
+first.
 
 ```bash
 tmux new-session -d -s <ws> -c .feature-workspaces/<ws> "$EXECUTOR"
-GEN_SURFACE=$(cmux new-surface --type terminal | grep -o 'surface:[0-9]*')
-cmux send --surface "$GEN_SURFACE" "tmux attach -t <ws>\n"
-cmux rename-tab --surface "$GEN_SURFACE" "<ws>"
-# bootstrap is sent after readiness (below)
 ```
 
 **B2 — session in tmux, no cmux:**
@@ -171,6 +179,30 @@ else
 fi
 tmux send-keys -t <ws>:0.0 -l -- "$bootstrap_prompt"   # literal text (handles multi-line)
 tmux send-keys -t <ws>:0.0 Enter                       # one submit
+```
+
+**Attach the cmux review tab (B1 only, AFTER the bootstrap).** Open the tab as a
+**sibling in the pane that holds the orchestrator's own tab** — never
+`cmux new-workspace` (that makes a separate top-level workspace) and never a bare
+`cmux new-surface` (it defaults to an unset `$CMUX_WORKSPACE_ID`). Resolve the pane
+from `cmux tree` (the orchestrator's tab is marked `◀ here`), falling back to the
+surface env vars when we're inside one:
+
+```bash
+# $CMUX is the CLI path resolved in detect(). Run this only when PRESENT == cmux.
+read -r WS PANE < <("$CMUX" tree 2>/dev/null | awk '
+  /workspace workspace:/ {for (i=1;i<=NF;i++) if ($i ~ /^workspace:/) ws=$i}
+  /pane pane:/           {for (i=1;i<=NF;i++) if ($i ~ /^pane:/)      pane=$i}
+  /◀ here/               {print ws, pane; exit}')
+: "${WS:=$CMUX_WORKSPACE_ID}" "${PANE:=$CMUX_PANE_ID}"
+if [ -n "$PANE" ]; then                                  # genuine B1 — a target pane exists
+  SREF=$("$CMUX" new-surface --type terminal --workspace "$WS" --pane "$PANE" --focus true \
+         | grep -oE 'surface:[0-9]+' | head -1)
+  "$CMUX" send --surface "$SREF" "tmux attach -t <ws>"$'\n'   # trailing newline submits
+  "$CMUX" rename-tab --surface "$SREF" "<ws>"
+else                                                     # reachable but no pane → degrade to B2
+  echo "cmux reachable but no target pane — headless B2: tmux attach -t <ws>"
+fi
 ```
 
 **B3 — native subagent (no tmux):**
@@ -339,12 +371,12 @@ but does not mutate workspaces:
 
 ### `present(ws)` — human review surface
 
-| Surface       | Recipe                                                                      |
-| ------------- | --------------------------------------------------------------------------- |
-| cmux (B1)     | the cmux tab created in `spawn()` already shows the live session            |
-| tmux (B2)     | tell the human: `tmux attach -t <ws>` (read-only: `tmux attach -t <ws> -r`) |
-| none (B3)     | headless — review via `monitor()` signals and the PR when it lands          |
-| workflow (B4) | the `/workflows` view; plus signals + PR                                    |
+| Surface       | Recipe                                                                              |
+| ------------- | ----------------------------------------------------------------------------------- |
+| cmux (B1)     | the cmux review tab attached at the end of `spawn()` already shows the live session |
+| tmux (B2)     | tell the human: `tmux attach -t <ws>` (read-only: `tmux attach -t <ws> -r`)         |
+| none (B3)     | headless — review via `monitor()` signals and the PR when it lands                  |
+| workflow (B4) | the `/workflows` view; plus signals + PR                                            |
 
 ### `teardown(ws)`
 
@@ -387,11 +419,14 @@ cmux is a **convenience, never a requirement**. Nothing functional depends on
 it; it is purely the human's clickable live-view tab.
 
 ```
-cmux present   → B1: clickable tab, live view
-tmux present   → B2: same session + monitor loop; `tmux attach` to watch
-no multiplexer → B3: headless autonomous subagent; review via signals + PR
+cmux tab attachable → B1: clickable review tab (sibling of the orchestrator's tab), live view
+tmux present        → B2: same session + monitor loop; `tmux attach` to watch
+no multiplexer      → B3: headless autonomous subagent; review via signals + PR
 ```
 
-Losing cmux costs only the tab UI. The file-based monitor loop and mid-flight
-feedback survive in B2 unchanged. Skills must therefore gate every cmux call on
-detection and never abort merely because cmux is absent.
+"cmux tab attachable" = the `cmux` CLI is reachable **and** a target pane resolves
+(`cmux tree` shows `◀ here`, or `$CMUX_PANE_ID` is set) — it does **not** require
+`$CMUX_SOCKET`. Reachable-but-no-pane degrades to B2; losing cmux costs only the
+tab UI. The file-based monitor loop and mid-flight feedback survive in B2
+unchanged. Skills must therefore gate every cmux call on detection and never abort
+merely because cmux is absent.

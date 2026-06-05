@@ -111,8 +111,8 @@ Invoked directly, this skill reports what would happen:
 
 1. Run the detection recipe from `references/backends.md`.
 2. Print: host (claude/codex/generic), executor binary, tmux present?, cmux
-   present? (env vs installed), workflow-capable?, and the **selected backend**
-   with the reason.
+   present? (CLI reachable + a `cmux tree` target pane resolves), workflow-capable?,
+   and the **selected backend** with the reason.
 3. If the user asked "why not workflow", explain the opt-in + host gate.
 
 This does not spawn anything — it is a dry-run of `detect()`.
@@ -129,9 +129,9 @@ This does not spawn anything — it is a dry-run of `detect()`.
 
 **Why backend selection is automatic (no flags/pins):**
 
-- Detection is reliable from env markers (`$CLAUDECODE`, `$CODEX_*`,
-  `$CMUX_SOCKET`, `$TMUX`) plus `command -v`. An override mechanism adds surface
-  area for little gain.
+- Detection is reliable from env markers (`$CLAUDECODE`, `$CODEX_*`, `$TMUX`) plus
+  `command -v` and a `cmux tree` pane probe (cmux is usable without `$CMUX_SOCKET`).
+  An override mechanism adds surface area for little gain.
 - The single manual lever is the dynamic-workflow opt-in, expressed in natural
   language ("…with workflow"), consistent with the Workflow tool's own opt-in.
 
