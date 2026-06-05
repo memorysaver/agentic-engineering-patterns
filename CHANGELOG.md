@@ -21,6 +21,30 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 _Nothing yet._
 
+## [1.3.1] - 2026-06-05
+
+Onboarding refinements: OpenSpec is now a required install step, and the optional
+memory supplement is wired as a thin layer over AEP's native lessons loop.
+
+### Changed
+
+- `/onboard` and the README "Agent prompt" now install the **OpenSpec CLI** as a
+  REQUIRED step (`npm install -g @fission-ai/openspec@latest`, Node >= 20.19). AEP's
+  skills shell out to `openspec`, but the delegated install never ensured it.
+- The optional **memory supplement** (`project-memory` + `memory-forge`) now layers onto
+  AEP's existing lessons loop instead of a parallel one. AGENTS.md gets a concise
+  `## Memory & Learning Loop` section mapping recall → `/dispatch`, persist → `/wrap`, and
+  distill → `/reflect` / pre-PR. AEP still captures via `/build` → `.dev-workflow/lessons.md`
+  → `/wrap` → `lessons-learned/`; the supplement adds qmd semantic recall plus
+  distillation-to-skills on top.
+- `.claude-plugin/marketplace.json` version `1.3.0` → `1.3.1`.
+
+### Fixed
+
+- Corrected the OpenSpec install command in the `/onboard` and `/scaffold` tool tables:
+  both listed `bun add -g openspec`, which installs the wrong npm package (OpenSpec's CLI
+  is published as `@fission-ai/openspec`).
+
 ## [1.3.0] - 2026-06-04
 
 Adds an optional supplement and modernizes onboarding to the `npx skills` installer.
@@ -137,7 +161,8 @@ First stable baseline after the Jujutsu → git migration. Decision record:
 
 - Jujutsu (one-shot migration, no dual-mode period) and the `/jj-ref` skill.
 
-[Unreleased]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.0.0...v1.1.0

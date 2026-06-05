@@ -46,7 +46,7 @@ This installs every AEP skill (the `aep-*` names) plus a `skills-lock.json` mani
 AEP pairs with two project-level skills from [`memorysaver/skills`](https://github.com/memorysaver/skills). **Ask the user whether they want each**, and install only what they choose (newest tag at <https://github.com/memorysaver/skills/releases/latest>, once per agent):
 
 - **Behavioral guidelines in `AGENTS.md`?** → install `project-behavior`, then run it to scaffold/extend `AGENTS.md`.
-- **A project memory system (committed lessons + recall)?** → install `project-memory` (and `memory-forge`), run `project-memory` to bootstrap `project-memory/`, then add a short `## Project Memory` section to `AGENTS.md` wiring it into the SDLC: recall prior lessons before starting, capture notable moments while working, wrap up at mission end, and run `memory-forge` before a PR (or once >=3 lessons >=7 days old accrue) to distill lessons into reusable skills.
+- **A project memory system (committed lessons + recall)?** → install `project-memory` (and `memory-forge`), run `project-memory` to bootstrap `project-memory/`, then add a concise `## Memory & Learning Loop` section to `AGENTS.md` that **layers** these onto AEP's native lessons loop instead of duplicating it. AEP already captures (`/build` → `.dev-workflow/lessons.md`), archives (`/wrap` → `lessons-learned/`), and recalls (`/launch`); the supplement adds: `project-memory` recall at `/dispatch` + persisting the archived lesson at `/wrap` (qmd semantic recall), and `memory-forge` distilling settled lessons (≥7 days, ≥3 accrued) into skills at `/reflect` / pre-PR.
 
 ```bash
 npx skills add memorysaver/skills@<latest-tag> -a claude-code \
