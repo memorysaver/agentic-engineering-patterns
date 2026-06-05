@@ -21,6 +21,28 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 _Nothing yet._
 
+## [1.3.2] - 2026-06-05
+
+Fixes how `/launch` and the executor attach a cmux review surface (reported and
+verified from a downstream session).
+
+### Fixed
+
+- **cmux detection no longer requires `$CMUX_SOCKET`.** A host where the `cmux` CLI
+  is reachable but `$CMUX_SOCKET` is unset (Claude Code inside a cmux-managed tmux
+  session) wrongly fell back to headless B2. Detection now keys on "cmux CLI
+  reachable **and** a target pane resolves" (`cmux tree` `◀ here` / `$CMUX_PANE_ID`).
+- **The review tab opens as a sibling of the orchestrator's own tab.** The old bare
+  `cmux new-surface` defaulted to an unset `$CMUX_WORKSPACE_ID`; `/launch` now
+  resolves the orchestrator's pane from `cmux tree` and opens the tab with
+  `new-surface --workspace <ws> --pane <pane> --focus true`. `cmux new-workspace`
+  (a separate top-level workspace) is kept out of the launch path.
+- **Bootstrap is sent before the cmux surface attaches.** An attached cmux surface
+  focuses the tmux composer and blocks external `send-keys`, so the bootstrap
+  couldn't land. Reordered to: spawn tmux → wait ready → send bootstrap via
+  `tmux send-keys` → then attach the cmux tab.
+- `.claude-plugin/marketplace.json` version `1.3.1` → `1.3.2`.
+
 ## [1.3.1] - 2026-06-05
 
 Onboarding refinements: OpenSpec is now a required install step, and the optional
@@ -161,7 +183,8 @@ First stable baseline after the Jujutsu → git migration. Decision record:
 
 - Jujutsu (one-shot migration, no dual-mode period) and the `/jj-ref` skill.
 
-[Unreleased]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.3.2...HEAD
+[1.3.2]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.1.0...v1.2.0
