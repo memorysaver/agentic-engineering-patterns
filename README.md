@@ -75,8 +75,14 @@ Install the Agentic Engineering Patterns (AEP) skills into this project, pinned 
      a. "Set up behavioral guidelines (a coding-discipline preamble) in AGENTS.md?"
         If yes → install `project-behavior`, then run it to scaffold/extend AGENTS.md.
      b. "Set up a project memory system (committed lessons + recall)?"
-        If yes → install `project-memory` (and `memory-forge`), then run project-memory to
-        bootstrap project-memory/.
+        If yes → install `project-memory` (and `memory-forge`), run project-memory to bootstrap
+        project-memory/, then add a short "## Project Memory" section to AGENTS.md that wires the
+        memory loop into the SDLC, so future agents actually use it:
+          - Before starting a feature/mission: recall prior lessons (query project-memory).
+          - While working: capture notable moments (steering, wins, mistakes, takeaways).
+          - At mission end: wrap up the session into a lesson.
+          - Before a PR — or once >=3 lessons >=7 days old have accrued — run memory-forge to
+            distill those lessons into reusable skills the next agent loads automatically.
    Install each chosen skill once per agent, then commit the installed files (the commit is the pin):
      npx skills add memorysaver/skills@<latest-tag> -a claude-code --skill project-behavior -y
 ```
@@ -137,8 +143,10 @@ npx skills add memorysaver/skills@<latest-tag> -a claude-code \
 - **`project-behavior`** — scaffolds/extends your `AGENTS.md` with a behavioral preamble
   (a Karpathy coding-discipline pack by default); run it after installing.
 - **`project-memory`** — bootstraps a git-committable `project-memory/` system for session
-  lessons, retrospectives, and qmd-backed recall; run it to set the system up.
-- **`memory-forge`** — later distills aged `project-memory/` lessons into reusable skills.
+  lessons, retrospectives, and qmd-backed recall; run it to set the system up, then add a
+  `## Project Memory` section to `AGENTS.md` wiring it into the SDLC (recall → capture → wrap up).
+- **`memory-forge`** — distills aged `project-memory/` lessons (>=7 days) into reusable skills,
+  typically before a PR or once >=3 have accrued since the last forge.
 
 These aren't part of AEP's versioned release — pin them the same way you pin AEP: install the
 latest [`memorysaver/skills`](https://github.com/memorysaver/skills/releases/latest) release
