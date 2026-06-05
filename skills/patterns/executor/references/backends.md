@@ -26,7 +26,7 @@ session vs headless one-shot — they are different invocations, see below), the
 ```bash
 # --- HOST + executor commands ---
 # Two modes, because the session backends (B1/B2) need a LONG-LIVED, steerable
-# process while B3/evaluator/exec need a ONE-SHOT runner — and the two are
+# process while evaluator/check execs may need a ONE-SHOT runner — and the two are
 # different invocations per CLI:
 #   $EXECUTOR       interactive session (stays alive, accepts tmux send-keys)
 #   $EXECUTOR_EXEC  headless one-shot   (runs the given prompt to completion, exits)
@@ -37,8 +37,8 @@ if [ -n "$CLAUDECODE" ]; then
   READY_GREP='❯'                                              # pane shows ❯ when ready
 elif command -v codex >/dev/null 2>&1 && { [ -n "$CODEX_HOME" ] || env | grep -q '^CODEX_'; }; then
   HOST=codex
-  EXECUTOR="codex --dangerously-bypass-approvals-and-sandbox"           # bare `codex` = interactive TUI
-  EXECUTOR_EXEC="codex exec --dangerously-bypass-approvals-and-sandbox" # `codex exec` = non-interactive
+  EXECUTOR="codex --dangerously-bypass-approvals-and-sandbox"           # session fallback only
+  EXECUTOR_EXEC="codex exec --dangerously-bypass-approvals-and-sandbox" # cheap/check one-shots, not coding launch
   READY_GREP=''                                                         # codex TUI has no ❯ — use a timed wait
 else
   HOST=generic
@@ -76,11 +76,11 @@ WORKFLOW_CAPABLE=$([ "$HOST" = claude ] && echo yes || echo no)
 > | **codex**  | `codex --dangerously-bypass-approvals-and-sandbox` | `codex exec --dangerously-bypass-approvals-and-sandbox` |
 >
 > `--rc` is **not** a real Claude Code flag (it was a bug; removed). `codex exec`
-> is **non-interactive** — it cannot be steered with `tmux send-keys`, so the
-> session backends use bare `codex` (its interactive TUI). Codex's full-bypass
-> flag is `--dangerously-bypass-approvals-and-sandbox` (there is no `--yolo` /
-> `--full-auto`); pass `-C/--cd <worktree>` if you don't set the session cwd via
-> `tmux -c`.
+> is **non-interactive** and reserved for cheap/read-only check-style one-shots;
+> Codex coding launches use the native subagent/worktree path (B3) first, even
+> when tmux is installed. Codex's full-bypass flag is
+> `--dangerously-bypass-approvals-and-sandbox` (there is no `--yolo` /
+> `--full-auto`).
 
 Notes:
 
@@ -94,35 +94,38 @@ Notes:
   available for finer decisions but are not required for backend selection.
 - **Host knows itself.** A skill is executed by whatever agent loaded it. If you
   are Claude Code, `$CLAUDECODE` is set and the Workflow tool is available to you.
-  If you are Codex, the `CODEX_*` markers are set and your session executor is the
-  interactive `codex` TUI (`codex exec` only for headless one-shots). Detection
-  confirms what the executing agent already is.
+  If you are Codex, the `CODEX_*` markers are set and `/launch` uses Codex native
+  subagents for coding work (`codex exec` only for cheap/check one-shots).
+  Detection confirms what the executing agent already is.
 
 ---
 
 ## Backend Selection
 
-Apply in order. The first match wins, except B4 which overrides on explicit
-opt-in.
+Apply in order. The first match wins. B4 is the only explicit opt-in path; Codex
+coding launches are subagent-first so they keep Codex-native execution while
+retaining AEP's git worktree isolation.
 
 ```
 B4  dynamic-workflow   IF user explicitly opted in ("…with workflow")
                        AND WORKFLOW_CAPABLE == yes        → select B4, stop
+B3  codex-subagent     ELIF HOST == codex                 → select B3, stop
 B1  session+cmux       ELIF PRESENT == cmux               → select B1
 B2  session+tmux       ELIF PRESENT == tmux               → select B2
 B3  native-subagent    ELSE (PRESENT == none)             → select B3
 ```
 
-| ID     | Backend                                         | Monitor                        | Mid-flight nudge | Notes                                                     |
-| ------ | ----------------------------------------------- | ------------------------------ | ---------------- | --------------------------------------------------------- |
-| **B1** | claude/codex session in tmux, cmux tab          | signals                        | yes              | Prior default. Zero behavior change.                      |
-| **B2** | claude/codex session in tmux, no cmux           | signals                        | yes              | Full loop; human runs `tmux attach` to watch live.        |
-| **B3** | native subagent (CC Task tool / Codex subagent) | returned result + git/PR state | no               | Desktop fallback only. Tell the user the limits up front. |
-| **B4** | dynamic-workflow fan-out, per-agent worktree    | `/workflows` view + signals    | no               | Opt-in, billed, background. Autonomous batch.             |
+| ID     | Backend                                         | Monitor                        | Mid-flight nudge | Notes                                                  |
+| ------ | ----------------------------------------------- | ------------------------------ | ---------------- | ------------------------------------------------------ |
+| **B1** | claude/generic session in tmux, cmux tab        | signals                        | yes              | Prior default for session-capable non-Codex hosts.     |
+| **B2** | claude/generic session in tmux, no cmux         | signals                        | yes              | Full loop; human runs `tmux attach` to watch live.     |
+| **B3** | native subagent (CC Task tool / Codex subagent) | returned result + git/PR state | no               | Codex default; non-Codex fallback when no tmux exists. |
+| **B4** | dynamic-workflow fan-out, per-agent worktree    | `/workflows` view + signals    | no               | Opt-in, billed, background. Autonomous batch.          |
 
 **Announce the selection.** Before spawning, state which backend and why — e.g.
-"No tmux in this host → native subagent (B3): I'll build the story end-to-end and
-report back, but there's no live monitor or mid-flight feedback in this mode."
+"Codex host → native subagent (B3): I'll create the AEP worktree first, then run
+the build in a Codex worker bound to that worktree. There is no live tmux monitor
+or mid-flight feedback in this mode."
 
 ---
 
@@ -140,8 +143,8 @@ mkdir -p .feature-workspaces
 git worktree add -b feat/<ws> .feature-workspaces/<ws> main
 ```
 
-> `$EXECUTOR` is the **interactive** session command from `detect()` — bare
-> `claude` / bare `codex`, never `-p` / `codex exec`. Guard first:
+> `$EXECUTOR` is the **interactive** session command from `detect()` for B1/B2 —
+> bare `claude` / generic session command, never `-p` / `codex exec`. Guard first:
 > `[ -z "$EXECUTOR" ] && { echo "run detect() — \$EXECUTOR unset"; exit 1; }`
 > so an unset executor aborts loudly instead of launching a bare login shell.
 
@@ -205,16 +208,23 @@ else                                                     # reachable but no pane
 fi
 ```
 
-**B3 — native subagent (no tmux):**
+**B3 — native subagent (Codex default; non-Codex fallback when no tmux):**
 
 - **Claude Code host:** use the Task/Agent tool with `isolation: worktree` (or
   cwd set to `.feature-workspaces/<ws>/`), passing `bootstrap_prompt` as the
   agent prompt. The subagent runs `/build` to completion and returns its result.
   Prefer background mode so the main session can poll signals between turns.
-- **Codex host:** run the headless one-shot bound to the worktree —
-  `$EXECUTOR_EXEC -C .feature-workspaces/<ws> "$bootstrap_prompt"` (i.e.
-  `codex exec --dangerously-bypass-approvals-and-sandbox -C <ws> "<prompt>"`).
-  `codex exec` reads the prompt as an argument (or stdin) and exits when done.
+- **Codex host:** spawn a Codex worker/subagent after the common worktree setup.
+  The worker prompt must include the absolute worktree path and this contract:
+  "Operate only in `<repo>/.feature-workspaces/<ws>` on branch `feat/<ws>`.
+  Run the bootstrap prompt from that directory. Do not edit the main checkout.
+  Report progress through `.dev-workflow/signals/` and finish with the usual
+  `/build` result/PR state." Use the native Codex subagent mechanism available in
+  the host; if the host exposes a separate Codex thread that can be started in an
+  existing directory, start it in `.feature-workspaces/<ws>/`.
+- **Do not use `codex exec` for coding launch.** Keep `codex exec` for
+  cheap/read-only checks and other bounded one-shot analysis, not long-running
+  implementation.
 - No `nudge()`/`liveness()` — the subagent runs to completion. `monitor()`
   degrades to reading any signals the subagent wrote, plus final git/PR state.
 
@@ -254,11 +264,11 @@ Spawn a **separate** evaluator agent (never the generator grading itself), alway
 `/build` Phase 5 calls this; the request/response signal files and convergence
 rules are identical across backends — only the spawn mechanism differs:
 
-| Backend   | Evaluator spawn                                                                                    | eval-protocol context                                                                                                  |
-| --------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **B1/B2** | `tmux split-window -v -c .feature-workspaces/<ws> "$EXECUTOR"` (interactive, bottom pane)          | Context A                                                                                                              |
-| **B3**    | CC Task/Agent tool with `isolation: worktree`, **or** `$EXECUTOR_EXEC -C .feature-workspaces/<ws>` | Context B **mechanism** (Agent-tool/subagent) — but worktree-bound, **not** the main-session read-only `/validate` use |
-| **B4**    | the workflow's `verify` stage (already worktree-isolated, in-host)                                 | Context C **mechanism** (programmatic subagent) — in-host dynamic-workflow, not API/SDK CI                             |
+| Backend   | Evaluator spawn                                                                           | eval-protocol context                                                                                                  |
+| --------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **B1/B2** | `tmux split-window -v -c .feature-workspaces/<ws> "$EXECUTOR"` (interactive, bottom pane) | Context A                                                                                                              |
+| **B3**    | sibling worktree-bound subagent/evaluator using the host's native agent mechanism         | Context B **mechanism** (Agent-tool/subagent) — but worktree-bound, **not** the main-session read-only `/validate` use |
+| **B4**    | the workflow's `verify` stage (already worktree-isolated, in-host)                        | Context C **mechanism** (programmatic subagent) — in-host dynamic-workflow, not API/SDK CI                             |
 
 > The eval-protocol Context labels describe the _spawn mechanism_; under the
 > executor the evaluator is **always worktree-bound** (per the Worktree-Context
@@ -346,8 +356,9 @@ jq . /tmp/aep-check.out.json               # read the structured result
 ```
 
 `--output-schema` constrains the final message to your JSON Schema; `-o` writes
-just that message to a file. (Codex's _native_ subagents run inside the parent
-turn and do **not** isolate context — use `codex exec`, not a subagent.)
+just that message to a file. For CHECK, prefer `codex exec` because it gives the
+orchestrator a fresh cheap context and structured stdout. This is different from
+coding launch, where Codex uses the worktree-bound native subagent path (B3).
 
 **Result schema (the CHECK → ACT contract).** The check returns an action list the
 orchestrator executes; it may write its own state files (e.g. `autopilot-state.json`)

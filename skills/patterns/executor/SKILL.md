@@ -10,7 +10,9 @@ A reusable abstraction for **running implementation work in an isolated
 workspace**, independent of which agent host (Claude Code, Codex) or which
 process/presentation tools (tmux, cmux, native subagents, dynamic workflows) are
 available. Lifecycle skills speak one vocabulary of operations; this skill maps
-each operation to a concrete recipe per backend.
+each operation to a concrete recipe per backend. Codex coding launches are
+subagent-first and still use AEP-created git worktrees; tmux remains the default
+session backend for Claude Code and generic executors.
 
 **This skill is both a utility library and a standalone skill:**
 
@@ -87,9 +89,9 @@ for each, per backend.
 
 | ID     | Backend                                         | Selected when                                 |
 | ------ | ----------------------------------------------- | --------------------------------------------- |
-| **B1** | claude/codex session in tmux + cmux tab         | terminal host, tmux + cmux present            |
-| **B2** | session in tmux, no cmux                        | tmux present, cmux absent                     |
-| **B3** | native subagent (CC Task tool / Codex subagent) | no tmux (Desktop)                             |
+| **B1** | claude/generic session in tmux + cmux tab       | non-Codex terminal host, tmux + cmux present  |
+| **B2** | claude/generic session in tmux, no cmux         | non-Codex terminal host, tmux present         |
+| **B3** | native subagent (CC Task tool / Codex subagent) | Codex host, or no tmux fallback               |
 | **B4** | dynamic-workflow fan-out, per-agent worktree    | explicit opt-in + Claude Code + Workflow tool |
 
 Read `references/backends.md` for the detection recipe, the full per-operation

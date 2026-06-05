@@ -494,9 +494,11 @@ git push origin main
 > **Backend is normally resolved at `/launch`, not here.** For the default path
 > dispatch stays executor-agnostic — it hands a well-specified change to
 > `/launch`, which detects the host and selects a backend (B1–B3) via
-> `aep-executor`. **The one exception is the _Dynamic Workflow_ opt-in (Step 5):**
-> that path runs B4 _from dispatch_, bypassing `/launch`, so dispatch itself owns
-> backend selection and the announcement for that case.
+> `aep-executor`. Under Codex, `/launch` may choose the worktree-bound native
+> subagent path even when tmux is installed; dispatch does not need to know. **The
+> one exception is the _Dynamic Workflow_ opt-in (Step 5):** that path runs B4
+> _from dispatch_, bypassing `/launch`, so dispatch itself owns backend selection
+> and the announcement for that case.
 
 Determine the handoff based on story completeness:
 

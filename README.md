@@ -614,23 +614,26 @@ Generate a dimension-specific brief, explore or discuss, capture decisions for a
 
 ## All Skills
 
-| Skill        | Plugin                       | Purpose                                                                          |
-| ------------ | ---------------------------- | -------------------------------------------------------------------------------- |
-| `/envision`  | product-context              | Opportunity brief + context document                                             |
-| `/map`       | product-context              | System map + story graph + agent topology                                        |
-| `/dispatch`  | product-context              | Pick next story + create OpenSpec change                                         |
-| `/calibrate` | product-context              | Human alignment checkpoint for any quality dimension                             |
-| `/reflect`   | product-context              | Classify feedback + update context                                               |
-| `/onboard`   | project-setup                | Verify tools + install plugins                                                   |
-| `/scaffold`  | project-setup                | Scaffold monorepo + initialize OpenSpec                                          |
-| `/design`    | agentic-development-workflow | Explore + propose + review a feature                                             |
-| `/launch`    | agentic-development-workflow | Spawn workspace (claude/codex; tmux/cmux/subagent/workflow) + optional evaluator |
-| `/build`     | agentic-development-workflow | Implement → test → PR → merge                                                    |
-| `/wrap`      | agentic-development-workflow | Archive + cleanup + suggest reflect                                              |
-| `/git-ref`   | agentic-development-workflow | AEP git + worktree conventions (on-demand)                                       |
-| `/gen-eval`  | patterns                     | Generator/evaluator separation for honest validation                             |
-| `/executor`  | patterns                     | Host-agnostic backend for spawning/steering workspace agents                     |
-| `/autopilot` | patterns                     | Autonomous dispatch-launch-monitor-wrap loop via `/loop`                         |
+| Skill        | Plugin                       | Purpose                                                                                     |
+| ------------ | ---------------------------- | ------------------------------------------------------------------------------------------- |
+| `/envision`  | product-context              | Opportunity brief + context document                                                        |
+| `/map`       | product-context              | System map + story graph + agent topology                                                   |
+| `/dispatch`  | product-context              | Pick next story + create OpenSpec change                                                    |
+| `/calibrate` | product-context              | Human alignment checkpoint for any quality dimension                                        |
+| `/reflect`   | product-context              | Classify feedback + update context                                                          |
+| `/onboard`   | project-setup                | Verify tools + install plugins                                                              |
+| `/scaffold`  | project-setup                | Scaffold monorepo + initialize OpenSpec                                                     |
+| `/design`    | agentic-development-workflow | Explore + propose + review a feature                                                        |
+| `/launch`    | agentic-development-workflow | Spawn workspace (Codex subagent; Claude/generic tmux; workflow opt-in) + optional evaluator |
+| `/build`     | agentic-development-workflow | Implement → test → PR → merge                                                               |
+| `/wrap`      | agentic-development-workflow | Archive + cleanup + suggest reflect                                                         |
+| `/git-ref`   | agentic-development-workflow | AEP git + worktree conventions (on-demand)                                                  |
+| `/gen-eval`  | patterns                     | Generator/evaluator separation for honest validation                                        |
+| `/executor`  | patterns                     | Host-agnostic backend for spawning/steering workspace agents                                |
+| `/autopilot` | patterns                     | Autonomous dispatch-launch-monitor-wrap loop via `/loop`                                    |
+
+Codex coding launches use worktree-bound subagents by default; tmux remains the
+default session backend for Claude/generic executors.
 
 ## Documentation
 

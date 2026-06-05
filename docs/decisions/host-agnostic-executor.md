@@ -5,7 +5,9 @@
 > path: a `claude --dangerously-skip-permissions` process, hosted in **tmux**,
 > presented through **cmux**. This record introduces an executor abstraction so
 > the same workflow runs under Claude Code or Codex, with or without tmux/cmux,
-> and (on explicit opt-in) as a Claude Code dynamic workflow.
+> and (on explicit opt-in) as a Claude Code dynamic workflow. As of v1.4.0,
+> Codex coding launches are subagent-first while still using AEP-created git
+> worktrees.
 
 ---
 
@@ -63,18 +65,19 @@ refactor tractable rather than a rewrite.
 
 ### The four backends
 
-| ID     | Backend                                                                           | Selected when                                        | Monitor                        | Mid-flight feedback          |
-| ------ | --------------------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------ | ---------------------------- |
-| **B1** | claude/codex session in tmux + cmux tab                                           | terminal host, tmux + cmux present _(prior default)_ | signals                        | yes (feedback.md + nudge)    |
-| **B2** | session in tmux, **no cmux**                                                      | tmux present, cmux absent                            | signals                        | yes (`tmux attach` to watch) |
-| **B3** | native subagent (CC Task tool / Codex subagent)                                   | **no tmux** (Desktop)                                | returned result + git/PR state | no (ephemeral)               |
-| **B4** | dynamic-workflow fan-out (`pipeline(stories, build, verify)`, per-agent worktree) | **explicit opt-in** + Claude Code + Workflow tool    | `/workflows` view + signals    | no (no mid-run input)        |
+| ID     | Backend                                                                           | Selected when                                     | Monitor                        | Mid-flight feedback          |
+| ------ | --------------------------------------------------------------------------------- | ------------------------------------------------- | ------------------------------ | ---------------------------- |
+| **B1** | claude/generic session in tmux + cmux tab                                         | non-Codex terminal host, tmux + cmux present      | signals                        | yes (feedback.md + nudge)    |
+| **B2** | claude/generic session in tmux, **no cmux**                                       | non-Codex terminal host, tmux present             | signals                        | yes (`tmux attach` to watch) |
+| **B3** | native subagent (CC Task tool / Codex subagent)                                   | Codex host, or **no tmux** fallback               | returned result + git/PR state | no (ephemeral)               |
+| **B4** | dynamic-workflow fan-out (`pipeline(stories, build, verify)`, per-agent worktree) | **explicit opt-in** + Claude Code + Workflow tool | `/workflows` view + signals    | no (no mid-run input)        |
 
-B1 is byte-for-byte the prior behavior, so existing tmux+cmux installs see no
-change. cmux is now purely the human's clickable live view — lose it and B2
-keeps the full file-based monitor + nudge loop (`tmux attach` for a live view).
-B3/B4 are the only backends that surrender mid-flight nudging, and B3 fires only
-when there is genuinely no tmux.
+B1 is byte-for-byte the prior behavior for non-Codex tmux+cmux installs, so
+Claude/generic session hosts see no change. cmux is now purely the human's
+clickable live view — lose it and B2 keeps the full file-based monitor + nudge
+loop (`tmux attach` for a live view). Codex intentionally chooses B3 first, even
+when tmux exists, so Codex coding uses native subagents while preserving AEP's
+worktree isolation.
 
 ### Detection recipe (grounded in real env markers)
 
@@ -88,8 +91,11 @@ PRESENT:   $CMUX_SOCKET set          → cmux tab          (B1)
 WORKFLOW:  host==claude AND user opted in ("…with workflow") → B4 (overrides above)
 ```
 
+Selection order: B4 on explicit Claude workflow opt-in; otherwise Codex host →
+B3; otherwise cmux → B1, tmux → B2, no multiplexer → B3.
+
 Each host resolves **two** executor commands — interactive (for steerable B1/B2
-sessions) and headless one-shot (for B3 / the evaluator / exec). Verified against
+sessions) and headless one-shot (for cheap/check execs). Verified against
 Claude Code 2.1.161 and Codex 0.130.0:
 
 |            | interactive session (`$EXECUTOR`)                  | headless one-shot (`$EXECUTOR_EXEC`)                    |
@@ -98,8 +104,8 @@ Claude Code 2.1.161 and Codex 0.130.0:
 | **codex**  | `codex --dangerously-bypass-approvals-and-sandbox` | `codex exec --dangerously-bypass-approvals-and-sandbox` |
 
 `--rc` was a bug (not a real Claude Code flag) and is removed. `codex exec` is
-non-interactive, so the **session** backends use bare `codex` (its TUI); only the
-headless paths use `codex exec`. The codex full-bypass flag is
+non-interactive and is reserved for cheap/read-only check-style one-shots, not
+coding launch. The codex full-bypass flag is
 `--dangerously-bypass-approvals-and-sandbox` (no `--yolo`/`--full-auto`).
 
 `$CMUX_*` env vars are present when the session is hosted _inside_ a cmux
@@ -127,15 +133,15 @@ installed). `$TMUX` indicates we're already inside a tmux session.
 
 ## 4. How — Per-Skill Changes
 
-| Skill                    | Change                                                                                                                                           | Untouched                                                                                      |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
-| **`aep-executor`** (new) | Owns detect/spawn/nudge/liveness/present/teardown + the 4 backends + detection recipe + the worktree-context constraint                          | —                                                                                              |
-| **launch**               | tmux/cmux/claude spawn + bootstrap → `executor.spawn()` + `executor.present()` (B1/B2 recipe shown inline, cmux conditional)                     | clean-worktree / push / calibration / orphan-cleanup guardrails; evaluator-criteria brainstorm |
-| **build**                | Phase 5 `tmux split-window … claude` → `executor.spawn_evaluator()`, picking eval-protocol Context A/B/C by backend                              | all 13 phases, signals, verification JSON                                                      |
-| **autopilot**            | `tmux send-keys`/`capture-pane` reframed as the **B1/B2 implementation** of `executor.nudge()`/`executor.liveness()`; requires a session backend | orchestrator boundary, tick protocol, escalation                                               |
-| **dispatch**             | handoff resolves a backend; detects "…with workflow" → routes the wave through B4                                                                | all scoring, the dispatch lock, context assembly                                               |
-| **gen-eval**             | note that the chosen execution Context tracks the executor backend                                                                               | scoring framework, contracts                                                                   |
-| **onboard**              | cmux moved out of the abort-on-missing gate → optional/recommended; `codex` recognized as an executor; tmux still recommended                    | rest of onboarding                                                                             |
+| Skill                    | Change                                                                                                                                            | Untouched                                                                                      |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| **`aep-executor`** (new) | Owns detect/spawn/nudge/liveness/present/teardown + the 4 backends + detection recipe + the worktree-context constraint                           | —                                                                                              |
+| **launch**               | tmux/cmux/claude spawn + bootstrap → `executor.spawn()` + `executor.present()`; Codex launch selects B3 subagent-first, B1/B2 recipe shown inline | clean-worktree / push / calibration / orphan-cleanup guardrails; evaluator-criteria brainstorm |
+| **build**                | Phase 5 `tmux split-window … claude` → `executor.spawn_evaluator()`, picking tmux split or sibling worktree-bound subagent by backend             | all 13 phases, signals, verification JSON                                                      |
+| **autopilot**            | `tmux send-keys`/`capture-pane` reframed as the **B1/B2 implementation** of `executor.nudge()`/`executor.liveness()`; requires a session backend  | orchestrator boundary, tick protocol, escalation                                               |
+| **dispatch**             | handoff resolves a backend; detects "…with workflow" → routes the wave through B4                                                                 | all scoring, the dispatch lock, context assembly                                               |
+| **gen-eval**             | note that the chosen execution Context tracks the executor backend                                                                                | scoring framework, contracts                                                                   |
+| **onboard**              | cmux moved out of the abort-on-missing gate → optional/recommended; `codex` recognized as an executor; tmux still recommended                     | rest of onboarding                                                                             |
 
 ### Constraint baked into the executor reference
 
@@ -147,17 +153,19 @@ boundary hold under every backend — only the spawn mechanism differs.
 
 ## 5. Versioning
 
-- `marketplace.json`: **1.1.0 → 1.2.0**. Additive and backward-compatible — B1
-  reproduces today's behavior exactly.
+- `marketplace.json`: **1.3.2 → 1.4.0**. Codex launch behavior changes visibly:
+  Codex coding uses worktree-bound subagents instead of tmux sessions by default.
 - New `aep-executor` skill joins the **`patterns`** plugin group.
 - README skill catalog + install table updated. npx-pinned downstream projects
   upgrade explicitly (`npx skills update`), which is the point of pinning.
 
 ## 6. Alternatives Considered
 
-- **Native subagent as the default executor.** Rejected: ephemeral subagents run
-  to completion with no monitor or mid-flight feedback — it would discard the
-  system's core loop. Kept as the B3 Desktop fallback only.
+- **Native subagent as the universal default executor.** Rejected: ephemeral
+  subagents run to completion with no monitor or mid-flight feedback — it would
+  discard the system's core loop for Claude/generic session hosts. Accepted for
+  Codex coding launches because Codex-native subagents are the intended execution
+  surface there; the AEP worktree remains the isolation boundary.
 - **Inline abstraction per skill.** Rejected: triplicates host-detection/spawn
   logic across launch/build/autopilot with guaranteed drift.
 - **Re-implement `/dispatch` as a workflow.** Rejected: dispatch is single-pass

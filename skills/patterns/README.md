@@ -5,7 +5,7 @@ Reusable design patterns extracted from the AEP workflow. These are utility skil
 | Pattern                         | What it does                                                                                                              | Used by                                                  |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
 | [gen-eval](gen-eval/SKILL.md)   | Generator/evaluator separation for honest artifact validation                                                             | `/build` Phase 5, `/launch` evaluator setup, `/validate` |
-| [executor](executor/SKILL.md)   | Host-agnostic backend for spawning/steering workspace agents (claude/codex; tmux/cmux, native subagent, dynamic workflow) | `/launch`, `/build` Phase 5, `/autopilot`, `/dispatch`   |
+| [executor](executor/SKILL.md)   | Host-agnostic backend for spawning/steering workspace agents (Codex subagent-first; Claude/generic tmux; workflow opt-in) | `/launch`, `/build` Phase 5, `/autopilot`, `/dispatch`   |
 | [autopilot](autopilot/SKILL.md) | Tick-based autonomous orchestration of dispatch-launch-monitor-review-wrap cycle                                          | `/loop`, orchestrates `/dispatch`, `/launch`, `/wrap`    |
 
 ## Why Patterns Exist

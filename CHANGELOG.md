@@ -21,6 +21,24 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 _Nothing yet._
 
+## [1.4.0] - 2026-06-05
+
+Codex `/launch` now uses Codex-native, worktree-bound subagents for coding
+launches by default, while Claude/generic executors keep the tmux session path.
+
+### Changed
+
+- `aep-executor` backend selection now chooses B3 for Codex hosts before checking
+  cmux/tmux, so Codex coding launches no longer create tmux sessions just because
+  tmux is installed.
+- The B3 spawn recipe still creates the standard AEP worktree first
+  (`.feature-workspaces/<name>` on `feat/<name>`), then starts the Codex
+  worker/subagent with an explicit "operate only in this worktree" contract.
+- `/launch`, `/dispatch`, `/build`, and `/autopilot` docs now distinguish Codex
+  subagent launches from steerable tmux sessions. Autopilot remains B1/B2-only
+  because it requires live `nudge()`/`liveness()`.
+- `.claude-plugin/marketplace.json` version `1.3.2` → `1.4.0`.
+
 ## [1.3.2] - 2026-06-05
 
 Fixes how `/launch` and the executor attach a cmux review surface (reported and

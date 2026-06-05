@@ -58,11 +58,13 @@ implementation** of those verbs (see `.claude/skills/aep-executor/references/bac
     `tmux send-keys -t <ws>:0.0 -l -- "<msg>"` followed by `tmux send-keys -t <ws>:0.0 Enter`.
     A bare `tmux send-keys "<msg>" Enter` lets embedded newlines submit the message
     line-by-line — always use the `-l` + separate-`Enter` form (this is `executor.nudge()`).
-- **B3/B4 (no session to steer):** autopilot's tick/nudge model does not apply. If
-  the user wants hands-free batch under Claude Code, that is the **dynamic-workflow
-  path (B4)** reached via `/dispatch … with workflow`, which is its own
-  orchestrator — not something autopilot drives. If detection yields B3/B4, report
-  that autopilot needs a session backend and stop.
+- **B3/B4 (no session to steer):** autopilot's tick/nudge model does not apply.
+  Codex `/launch` is subagent-first (B3) by design: it is manual/headless and
+  worktree-bound, but it is not an autopilot-steerable tmux session. If the user
+  wants hands-free batch under Claude Code, that is the **dynamic-workflow path
+  (B4)** reached via `/dispatch … with workflow`, which is its own orchestrator —
+  not something autopilot drives. If detection yields B3/B4, report that
+  autopilot needs a session backend and stop.
 
 ### The tick CHECK runs in a cheap delegate (token isolation)
 
