@@ -207,7 +207,7 @@ Set `last_action = "merge_nudged"`, `last_action_at = now`.
 
 ```bash
 tmux send-keys -t <workspace-name>:0.0 \
-  "Complete Phase 12 merge now: 1) git fetch origin && git rebase origin/\"$(git config --get aep.integration-branch 2>/dev/null || echo main)\" && git push --force-with-lease origin feat/<name> 2) Verify CI green 3) gh pr merge <number> --squash --delete-branch. Then update status.json with story_status completed." Enter
+  "Complete Phase 12 merge now: 1) git fetch origin && git rebase origin/\"$(git config --get aep.integration-branch 2>/dev/null || (git show-ref --verify --quiet refs/remotes/origin/develop && echo develop || echo main))\" && git push --force-with-lease origin feat/<name> 2) Verify CI green 3) gh pr merge <number> --squash --delete-branch. Then update status.json with story_status completed." Enter
 ```
 
 Set `last_action = "merge_stuck_nudged"`, `last_action_at = now`.

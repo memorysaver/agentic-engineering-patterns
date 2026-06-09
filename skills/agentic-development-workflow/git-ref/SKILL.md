@@ -51,7 +51,7 @@ Every git-touching skill resolves the integration branch at the top of its first
 
 ```bash
 # Resolve AEP integration branch ($BASE): override → auto-detect develop → main
-BASE=$(git config --get aep.integration-branch 2>/dev/null)
+BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
 if [ -z "$BASE" ]; then
   if git show-ref --verify --quiet refs/heads/develop \
      || git show-ref --verify --quiet refs/remotes/origin/develop; then
@@ -64,12 +64,17 @@ fi
 
 Resolution order:
 
-1. **Explicit override** — `git config --get aep.integration-branch`. Set this for a non-standard
-   integration branch name (e.g. `staging`, `integration`). `/onboard` and `/scaffold` persist the
-   detected branch here, so once setup has run, later skills can use the compact form
-   `BASE=$(git config --get aep.integration-branch 2>/dev/null || echo main)`.
+1. **Explicit override** — `git config --get aep.integration-branch`. This is an **override only**,
+   for a non-standard integration branch name (e.g. `staging`, `integration`). You do **not** set it
+   for the standard `main`/`develop` cases — those are auto-detected. `/onboard` reports the detected
+   mode and only writes this key when you use a non-standard name.
 2. **Auto-detect** — `develop` if it exists locally or on `origin`.
 3. **Default** — `main` (single-branch mode).
+
+Because the standard cases are auto-detected (not pinned), a project **grows from single- to
+two-branch mode with no reconfiguration**: create `develop` and every skill resolves `$BASE` to it
+on the next run. (If you had pinned `aep.integration-branch=main`, that override would win and
+suppress the upgrade — which is why setup does not pin the default.)
 
 `git config --get aep.integration-branch` is repo-local and shared across all worktrees via the
 common `.git/config`, so `$BASE` resolves identically in the main session and inside any
@@ -83,7 +88,7 @@ common `.git/config`, so `$BASE` resolves identically in the main session and in
 
 ```bash
 # Resolve $BASE — see "Integration Branch" above (override → develop → main)
-BASE=$(git config --get aep.integration-branch 2>/dev/null)
+BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
 [ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
   || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
 BASE=${BASE:-main}
@@ -233,7 +238,7 @@ We always squash-merge. The feature branch's per-task commits collapse into one 
 
 ```bash
 # Resolve $BASE — see "Integration Branch" above (override → develop → main)
-BASE=$(git config --get aep.integration-branch 2>/dev/null)
+BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
 [ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
   || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
 BASE=${BASE:-main}

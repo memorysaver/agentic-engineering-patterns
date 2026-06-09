@@ -178,7 +178,7 @@ If this fails, fix the YAML before committing. Common fixes: quote list items co
 
 ```bash
 # Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
-BASE=$(git config --get aep.integration-branch 2>/dev/null)
+BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
 [ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
   || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
 BASE=${BASE:-main}

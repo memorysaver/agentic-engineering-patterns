@@ -161,7 +161,7 @@ After design is complete, commit all artifacts to the integration branch (`$BASE
 
 ```bash
 # Resolve $BASE — see git-ref "Integration Branch" (override → develop → main)
-BASE=$(git config --get aep.integration-branch 2>/dev/null)
+BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
 [ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
   || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
 BASE=${BASE:-main}

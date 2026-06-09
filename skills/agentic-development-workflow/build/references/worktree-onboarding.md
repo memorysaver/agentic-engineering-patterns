@@ -111,7 +111,7 @@ If you are resuming an interrupted session (context reset, crash, manual restart
    cat .dev-workflow/signals/feedback.md 2>/dev/null
    ```
 
-4. **Continue from where you left off** — pick up at the first unchecked phase. Inspect prior commits via `git log --oneline "$(git config --get aep.integration-branch 2>/dev/null || echo main)"..HEAD` to see what's already implemented.
+4. **Continue from where you left off** — pick up at the first unchecked phase. Inspect prior commits via `git log --oneline "$(git config --get aep.integration-branch 2>/dev/null || (git show-ref --verify --quiet refs/remotes/origin/develop && echo develop || echo main))"..HEAD` to see what's already implemented.
 
 > Do NOT re-run the full bootstrap if `.dev-workflow/` already exists. Use init.sh for recovery.
 

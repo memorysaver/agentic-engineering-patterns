@@ -227,11 +227,12 @@ Key flags:
 
    ```bash
    git add -A && git commit -m "feat: scaffold monorepo via Better-T-Stack"
-
-   # Record the integration branch for AEP (single-branch mode for a fresh repo).
-   # Adopt two-branch mode later by creating `develop` and re-running /onboard Phase 5.
-   git config aep.integration-branch main
    ```
+
+   A fresh repo is single-branch mode — AEP auto-detects `main` as the integration branch, so
+   **do not pin `aep.integration-branch`**. The repo can adopt two-branch mode later just by
+   creating `develop` (auto-detected, no reconfiguration). Only set the config for a non-standard
+   integration branch name: `git config aep.integration-branch <name>`.
 
 ---
 
@@ -644,10 +645,8 @@ For each missing item, generate it. **Never overwrite existing files.**
 git init -b main
 git add -A
 git commit -m "chore: initial commit"
-
-# Record the integration branch for AEP (single-branch mode for a fresh repo).
-# Adopt two-branch mode later by creating `develop` and re-running /onboard Phase 5.
-git config aep.integration-branch main
+# Single-branch mode: AEP auto-detects `main` — do not pin aep.integration-branch.
+# Two-branch mode is adopted later just by creating `develop` (auto-detected).
 ```
 
 ### OpenSpec (if missing)

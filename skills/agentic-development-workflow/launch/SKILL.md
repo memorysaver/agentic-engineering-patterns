@@ -36,7 +36,7 @@ git status --porcelain
 
 ```bash
 # Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
-BASE=$(git config --get aep.integration-branch 2>/dev/null)
+BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
 [ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
   || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
 BASE=${BASE:-main}
@@ -67,7 +67,7 @@ Git worktree, unlike jj's `jj workspace forget`, does not auto-clean if a previo
 
 ```bash
 # Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
-BASE=$(git config --get aep.integration-branch 2>/dev/null)
+BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
 [ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
   || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
 BASE=${BASE:-main}
@@ -121,7 +121,7 @@ executor reference with an explicit contract to operate only inside
 
 ```bash
 # Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
-BASE=$(git config --get aep.integration-branch 2>/dev/null)
+BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
 [ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
   || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
 BASE=${BASE:-main}
@@ -362,7 +362,7 @@ Read these files:
 5. .dev-workflow/feature-verification.json (if exists)
 
 Then:
-1. Review code changes via `git diff "$(git config --get aep.integration-branch 2>/dev/null || echo main)"...HEAD`
+1. Review code changes via `git diff "$(git config --get aep.integration-branch 2>/dev/null || (git show-ref --verify --quiet refs/remotes/origin/develop && echo develop || echo main))"...HEAD`
 2. Test the running application if possible
 3. Score each dimension per your criteria
 4. Write structured feedback to .dev-workflow/signals/eval-response-<N>.md

@@ -163,7 +163,7 @@ Before any work begins, set up the tracking infrastructure and environment. The 
     # Current state
     echo "=== Branch & Commits ==="
     echo "Branch: $(git branch --show-current)"
-    git log --oneline "$(git config --get aep.integration-branch 2>/dev/null || echo main)"..HEAD 2>/dev/null || git log --oneline -10
+    git log --oneline "$(git config --get aep.integration-branch 2>/dev/null || (git show-ref --verify --quiet refs/remotes/origin/develop && echo develop || echo main))"..HEAD 2>/dev/null || git log --oneline -10
 
     echo "=== Progress ==="
     grep '\[x\]' .dev-workflow/progress-*.md 2>/dev/null | tail -10
@@ -500,7 +500,7 @@ Before publishing, write a final `## Summary for Next Agent` section in `.dev-wo
 ### 1. Review the commit history
 
 ```bash
-git log --oneline "$(git config --get aep.integration-branch 2>/dev/null || echo main)"..HEAD
+git log --oneline "$(git config --get aep.integration-branch 2>/dev/null || (git show-ref --verify --quiet refs/remotes/origin/develop && echo develop || echo main))"..HEAD
 ```
 
 The history should be a clean linear sequence: one commit per `tasks.md` task, optionally followed by review-fix commits. The PR will be squash-merged on merge, so per-commit hygiene matters for review readability, not the integration branch's history.
@@ -509,7 +509,7 @@ The history should be a clean linear sequence: one commit per `tasks.md` task, o
 
 ```bash
 # Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
-BASE=$(git config --get aep.integration-branch 2>/dev/null)
+BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
 [ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
   || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
 BASE=${BASE:-main}
@@ -536,7 +536,7 @@ The `-u` (`--set-upstream`) flag is needed only on the first push; subsequent pu
 
 ```bash
 # Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
-BASE=$(git config --get aep.integration-branch 2>/dev/null)
+BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
 [ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
   || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
 BASE=${BASE:-main}
@@ -545,6 +545,13 @@ REMOTE_URL=$(git remote get-url origin)
 case "$REMOTE_URL" in
   *github.com*) gh pr create --title "<title>" --body "<body>" --base "$BASE" ;;
   *gitlab*)     glab mr create --title "<title>" --description "<body>" --target-branch "$BASE" ;;
+  *)
+    # Self-hosted GitHub Enterprise / Bitbucket / other host — pattern not matched.
+    # Do NOT silently no-op: open the PR/MR manually with the correct tool, always
+    # passing the base explicitly (--base "$BASE" / --target-branch "$BASE").
+    echo "Unrecognized remote host: $REMOTE_URL — create the PR/MR manually with base \"$BASE\"." >&2
+    exit 1
+    ;;
 esac
 ```
 
@@ -635,7 +642,7 @@ After PR review fixes are resolved, the human tester evaluates the feature — t
 1. Up-to-date with the integration branch:
    ```bash
    # Resolve $BASE — see git-ref "Integration Branch" (override → develop → main)
-   BASE=$(git config --get aep.integration-branch 2>/dev/null)
+   BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
    [ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
      || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
    BASE=${BASE:-main}

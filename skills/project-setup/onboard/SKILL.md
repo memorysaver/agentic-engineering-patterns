@@ -256,27 +256,22 @@ If all core tools show OK, the environment is ready.
 
 ### Integration branch (single- vs two-branch mode)
 
-AEP integrates all feature work into one **integration branch** (referred to as `$BASE` across the skills). Detect it and record it in repo-local git config so `/design`, `/launch`, `/build`, `/wrap`, and the product-context skills all target the right branch:
+AEP integrates all feature work into one **integration branch** (`$BASE` across the skills). The standard cases are **auto-detected** — you do not configure anything. Report which mode this repo is in:
 
 ```bash
-# Auto-detect: develop → two-branch mode; otherwise single-branch (main)
+# Auto-detect (same logic every skill uses): develop → two-branch; otherwise single-branch
 if git show-ref --verify --quiet refs/heads/develop \
    || git show-ref --verify --quiet refs/remotes/origin/develop; then
-  DETECTED=develop
+  echo "Integration branch: develop  (two-branch mode — main is promote-only production)"
 else
-  DETECTED=main
+  echo "Integration branch: main  (single-branch mode)"
 fi
-
-git config aep.integration-branch "$DETECTED"   # change to e.g. 'staging' for a non-standard name
-[ "$DETECTED" = develop ] \
-  && echo "Integration branch: develop  (two-branch mode — main is promote-only production)" \
-  || echo "Integration branch: main  (single-branch mode)"
 ```
 
-- **single-branch mode** (no `develop`): AEP integrates into `main`. This is the default and matches a brand-new repo — **don't create `develop` just for AEP**.
+- **single-branch mode** (no `develop`): AEP integrates into `main`. The default; matches a brand-new repo — **don't create `develop` just for AEP**.
 - **two-branch mode** (`develop` exists): AEP integrates into `develop` (staging); production `main` is **promote-only** and AEP never touches it. Promotion `develop` → `main` is your CI/CD or PR step — exactly like deployment, which AEP leaves to you.
-- A project grows from single- to two-branch mode simply by creating `develop` and re-running this step.
-- The setting lives in `.git/config` (`aep.integration-branch`), so it is shared across all worktrees and resolves identically in the main session and inside `.feature-workspaces/<name>`. See [git-ref](../../agentic-development-workflow/git-ref/SKILL.md) → "Integration Branch".
+- **No pinning, no reconfiguration.** Because the standard cases are auto-detected, a project grows from single- to two-branch mode simply by creating `develop` — every skill picks it up automatically on the next run. Do **not** run `git config aep.integration-branch main`; pinning the default would suppress that upgrade.
+- **Non-standard name only:** if your integration branch is neither `main` nor `develop` (e.g. `staging`, `integration`), set the override once: `git config aep.integration-branch <name>`. It lives in `.git/config`, shared across all worktrees. See [git-ref](../../agentic-development-workflow/git-ref/SKILL.md) → "Integration Branch".
 
 ---
 
