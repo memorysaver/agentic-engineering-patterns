@@ -26,18 +26,80 @@ See [docs/decisions/migrate-from-jj-to-git.md](../../../docs/decisions/migrate-f
 
 ---
 
+## Integration Branch
+
+Every AEP git operation targets the **integration branch** — the branch feature worktrees are
+created from, rebased onto, PR'd into, merged into, and where control-plane commits (`/dispatch`,
+`/design`, the `/wrap` archive) land. Throughout this skill and the bash blocks in `/launch`,
+`/build`, `/wrap`, and the product-context skills, this branch is referred to as `$BASE`.
+
+AEP **auto-detects** one of two modes — no configuration required for the common cases:
+
+| Mode                        | Condition           | Integration (`$BASE`) | Production            |
+| --------------------------- | ------------------- | --------------------- | --------------------- |
+| **single-branch** (default) | no `develop` branch | `main`                | `main` (same branch)  |
+| **two-branch**              | `develop` exists    | `develop` (staging)   | `main` (promote-only) |
+
+A project grows from single- to two-branch mode simply by creating a `develop` branch — no
+reconfiguration. In two-branch mode AEP **never touches the production branch** (`main`): promotion
+from integration to production (`develop` → `main`) is the user's concern, exactly like deployment,
+which is already outside AEP's scope.
+
+### Resolving `$BASE`
+
+Every git-touching skill resolves the integration branch at the top of its first bash block:
+
+```bash
+# Resolve AEP integration branch ($BASE): override → auto-detect develop → main
+BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
+if [ -z "$BASE" ]; then
+  if git show-ref --verify --quiet refs/heads/develop \
+     || git show-ref --verify --quiet refs/remotes/origin/develop; then
+    BASE=develop
+  else
+    BASE=main
+  fi
+fi
+```
+
+Resolution order:
+
+1. **Explicit override** — `git config --get aep.integration-branch`. This is an **override only**,
+   for a non-standard integration branch name (e.g. `staging`, `integration`). You do **not** set it
+   for the standard `main`/`develop` cases — those are auto-detected. `/onboard` reports the detected
+   mode and only writes this key when you use a non-standard name.
+2. **Auto-detect** — `develop` if it exists locally or on `origin`.
+3. **Default** — `main` (single-branch mode).
+
+Because the standard cases are auto-detected (not pinned), a project **grows from single- to
+two-branch mode with no reconfiguration**: create `develop` and every skill resolves `$BASE` to it
+on the next run. (If you had pinned `aep.integration-branch=main`, that override would win and
+suppress the upgrade — which is why setup does not pin the default.)
+
+`git config --get aep.integration-branch` is repo-local and shared across all worktrees via the
+common `.git/config`, so `$BASE` resolves identically in the main session and inside any
+`.feature-workspaces/<name>` worktree.
+
+---
+
 ## Worktree Lifecycle
 
 ### Create
 
 ```bash
+# Resolve $BASE — see "Integration Branch" above (override → develop → main)
+BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
+[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
+  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
+BASE=${BASE:-main}
+
 mkdir -p .feature-workspaces
-git worktree add -b feat/<name> .feature-workspaces/<name> main
+git worktree add -b feat/<name> .feature-workspaces/<name> "$BASE"
 ```
 
 - Path is **always** under `.feature-workspaces/<name>` (kept gitignored).
 - Branch is **always** `feat/<name>` — corresponding to the OpenSpec change name or story id.
-- Base is **always** `main` — never another feature branch.
+- Base is **always** the integration branch `$BASE` — never another feature branch.
 
 The worktree shares `.git/objects` with the main repo, so creating it is fast and history is not duplicated. Only the working tree files are duplicated on disk.
 
@@ -46,7 +108,7 @@ The worktree shares `.git/objects` with the main repo, so creating it is fast an
 ```bash
 git worktree list                            # all worktrees, branches, paths
 git -C .feature-workspaces/<name> status     # status inside a specific worktree
-git -C .feature-workspaces/<name> log --oneline main..HEAD   # commits unique to the feature branch
+git -C .feature-workspaces/<name> log --oneline "$BASE"..HEAD   # commits unique to the feature branch
 ```
 
 ### Remove (`/wrap` step 6)
@@ -120,7 +182,7 @@ After each commit, record the short SHA in `.dev-workflow/feature-verification.j
 
 - The PR's commit list reads like a table of contents matching `tasks.md`.
 - Each commit is a self-contained unit that the evaluator (in Phase 5) and reviewers (in Phase 11) can `git show <sha>` independently.
-- We squash-merge at PR-merge time, so per-commit hygiene only matters for review readability — main history stays clean automatically.
+- We squash-merge at PR-merge time, so per-commit hygiene only matters for review readability — the integration branch's history stays clean automatically.
 - It removes any need to rewrite history mid-stream, which is where agents most often go off the rails.
 
 ### What to do when something goes wrong
@@ -130,7 +192,7 @@ After each commit, record the short SHA in `.dev-workflow/feature-verification.j
 | Forgot a file in the just-committed task                  | `git add <file> && git commit --amend --no-edit` (only safe **before** the next task's commit)                                                                    |
 | Realized the previous task is broken, several commits ago | Add a new commit: `fix(<scope>): correct <issue from task N>` — do not rebase                                                                                     |
 | Review feedback or eval-loop FAIL                         | Add a follow-up commit: `fix(<scope>): address review on <topic>`                                                                                                 |
-| Need to update against new origin/main                    | `git fetch origin && git rebase origin/main && git push --force-with-lease origin feat/<name>`                                                                    |
+| Need to update against new origin/`$BASE`                 | `git fetch origin && git rebase origin/"$BASE" && git push --force-with-lease origin feat/<name>`                                                                 |
 | Conflicts during rebase                                   | Resolve in working tree, `git add <files> && git rebase --continue`. If hopelessly tangled, `git rebase --abort` and surface to the orchestrator via signal file. |
 
 **Never** use `git push --force` (without `--force-with-lease`). The lease variant fails safely when someone else has pushed since your last fetch.
@@ -154,10 +216,11 @@ git push --force-with-lease origin feat/<name>
 ### Open the PR — always set base explicitly
 
 ```bash
-gh pr create --base main --title "<title>" --body "<body>"
+# $BASE is the integration branch — resolve it first (see "Integration Branch" above)
+gh pr create --base "$BASE" --title "<title>" --body "<body>"
 ```
 
-The `--base main` flag is **mandatory**. Without it, `gh` infers the base from local branch state and can target the wrong branch (especially when a dispatch commit looked like a recent base). PRs targeting the wrong base merge into a non-main branch, and the code never lands on `main` even after a successful merge.
+The `--base "$BASE"` flag is **mandatory**. Without it, `gh` infers the base from local branch state and can target the wrong branch (especially when a dispatch commit looked like a recent base). PRs targeting the wrong base merge into a non-integration branch, and the code never lands on the integration branch even after a successful merge. In two-branch mode this is doubly important — an inferred base could be production `main`, which AEP must never merge feature work into directly.
 
 ### Merge the PR
 
@@ -165,19 +228,25 @@ The `--base main` flag is **mandatory**. Without it, `gh` infers the base from l
 gh pr merge <number> --squash --delete-branch
 ```
 
-We always squash-merge. The feature branch's per-task commits collapse into one commit on `main`, which keeps `main`'s log readable while preserving the per-task review trail in the PR's "Commits" tab.
+We always squash-merge. The feature branch's per-task commits collapse into one commit on the integration branch (`$BASE`), which keeps its log readable while preserving the per-task review trail in the PR's "Commits" tab.
 
 ---
 
-## Control-Plane Commits (on `main`)
+## Control-Plane Commits (on the integration branch)
 
-`/dispatch`, `/envision`, `/map`, `/calibrate`, `/validate`, `/reflect`, and the `/wrap` archive step all commit directly to `main`. The pattern is identical:
+`/dispatch`, `/envision`, `/map`, `/calibrate`, `/validate`, `/reflect`, and the `/wrap` archive step all commit directly to the integration branch (`$BASE`). The pattern is identical:
 
 ```bash
-git pull --ff-only origin main          # fail-fast if main has diverged
-git add <specific-files>                # never -A on main; be explicit
+# Resolve $BASE — see "Integration Branch" above (override → develop → main)
+BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
+[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
+  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
+BASE=${BASE:-main}
+
+git pull --ff-only origin "$BASE"       # fail-fast if the integration branch has diverged
+git add <specific-files>                # never -A on the integration branch; be explicit
 git commit -m "<conventional message>"
-git push origin main
+git push origin "$BASE"
 ```
 
 The `--ff-only` is intentional — it refuses a non-fast-forward pull, which means concurrent pushes get caught instead of silently merged. If the pull fails because someone else pushed first, fetch, rebase your work, and try again.
@@ -238,12 +307,12 @@ If disk pressure hits before agents finish, prefer pausing new `/launch` invocat
 
 | You want to…                 | Run                                                                     |
 | ---------------------------- | ----------------------------------------------------------------------- |
-| Create a feature worktree    | `git worktree add -b feat/<n> .feature-workspaces/<n> main`             |
+| Create a feature worktree    | `git worktree add -b feat/<n> .feature-workspaces/<n> "$BASE"`          |
 | List all worktrees           | `git worktree list`                                                     |
-| See feature-branch commits   | `git log --oneline main..HEAD`                                          |
-| Sync against latest main     | `git fetch origin && git rebase origin/main`                            |
+| See feature-branch commits   | `git log --oneline "$BASE"..HEAD`                                       |
+| Sync against latest `$BASE`  | `git fetch origin && git rebase origin/"$BASE"`                         |
 | Push after rebase            | `git push --force-with-lease origin feat/<n>`                           |
-| Open PR                      | `gh pr create --base main`                                              |
+| Open PR                      | `gh pr create --base "$BASE"`                                           |
 | Merge PR                     | `gh pr merge <#> --squash --delete-branch`                              |
 | Remove worktree post-merge   | `git worktree remove .feature-workspaces/<n> && git branch -d feat/<n>` |
 | Recover deleted commit       | `git reflog` then `git cherry-pick <sha>`                               |

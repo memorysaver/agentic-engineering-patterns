@@ -21,7 +21,7 @@ Before installing tools, get the mental model. AEP is not a "command runner" —
 
 2. **The story map.** Your product is organized as a [Jeff Patton story map](https://www.jpattonassociates.com/user-story-mapping/) — a grid with activities (columns, user journey left→right), layers (rows, enrichment top→down), waves (parallel batches within a layer), and release lines (what's shippable). Layer 0 is the **walking skeleton** — the thinnest end-to-end path. See [README.md "The Story Map"](../../../README.md#the-story-map).
 
-3. **Two-session model.** The **main session** runs on your `main` branch where you + AI plan (`/envision`, `/map`, `/dispatch`, `/design`, `/wrap`, `/reflect`). The **workspace session** runs autonomously in an isolated git worktree on a `feat/<name>` branch where one agent implements a feature (`/build`). They communicate only through signal files in `.dev-workflow/signals/`. See [skills/product-context/README.md](../../product-context/README.md#single-source-of-truth-product-contextyaml).
+3. **Two-session model.** The **main session** runs on your **integration branch** (`main` in single-branch mode, or `develop` in two-branch mode — see Phase 5) where you + AI plan (`/envision`, `/map`, `/dispatch`, `/design`, `/wrap`, `/reflect`). The **workspace session** runs autonomously in an isolated git worktree on a `feat/<name>` branch where one agent implements a feature (`/build`). They communicate only through signal files in `.dev-workflow/signals/`. See [skills/product-context/README.md](../../product-context/README.md#single-source-of-truth-product-contextyaml).
 
 **v2 split-mode (good to know):** Some projects store product context in two files — `product/index.yaml` (stable intent: opportunity, personas, capabilities, constraints) + `product-context.yaml` (mutable state: architecture, stories, cost, changelog). All skills auto-detect which mode a project uses. If you see only `product-context.yaml`, that's v1 single-file mode and it works exactly the same way. See [docs/aep-v2-improvement-guideline.md](../../../docs/aep-v2-improvement-guideline.md).
 
@@ -254,6 +254,25 @@ git worktree list 2>/dev/null | head -5
 
 If all core tools show OK, the environment is ready.
 
+### Integration branch (single- vs two-branch mode)
+
+AEP integrates all feature work into one **integration branch** (`$BASE` across the skills). The standard cases are **auto-detected** — you do not configure anything. Report which mode this repo is in:
+
+```bash
+# Auto-detect (same logic every skill uses): develop → two-branch; otherwise single-branch
+if git show-ref --verify --quiet refs/heads/develop \
+   || git show-ref --verify --quiet refs/remotes/origin/develop; then
+  echo "Integration branch: develop  (two-branch mode — main is promote-only production)"
+else
+  echo "Integration branch: main  (single-branch mode)"
+fi
+```
+
+- **single-branch mode** (no `develop`): AEP integrates into `main`. The default; matches a brand-new repo — **don't create `develop` just for AEP**.
+- **two-branch mode** (`develop` exists): AEP integrates into `develop` (staging); production `main` is **promote-only** and AEP never touches it. Promotion `develop` → `main` is your CI/CD or PR step — exactly like deployment, which AEP leaves to you.
+- **No pinning, no reconfiguration.** Because the standard cases are auto-detected, a project grows from single- to two-branch mode simply by creating `develop` — every skill picks it up automatically on the next run. Do **not** run `git config aep.integration-branch main`; pinning the default would suppress that upgrade.
+- **Non-standard name only:** if your integration branch is neither `main` nor `develop` (e.g. `staging`, `integration`), set the override once: `git config aep.integration-branch <name>`. It lives in `.git/config`, shared across all worktrees. See [git-ref](../../agentic-development-workflow/git-ref/SKILL.md) → "Integration Branch".
+
 ---
 
 ## Next Steps — Pick Your Path
@@ -288,7 +307,7 @@ You just want to ship one feature with AEP workflows.
 /design  →  /launch  →  /build  →  /wrap
 ```
 
-`/design` produces an OpenSpec change on `main`. `/launch` spawns an isolated git worktree on a `feat/<name>` branch and boots the agent. `/build` implements, tests, reviews, and merges. `/wrap` archives and removes the worktree.
+`/design` produces an OpenSpec change on the integration branch (`$BASE`). `/launch` spawns an isolated git worktree on a `feat/<name>` branch and boots the agent. `/build` implements, tests, reviews, and merges. `/wrap` archives and removes the worktree.
 
 ### Path D — Hands-free autonomous mode
 

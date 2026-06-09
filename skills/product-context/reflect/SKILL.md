@@ -200,11 +200,18 @@ Based on the classified feedback, update the appropriate file:
    If this fails, fix the YAML before committing. Common fixes: quote list items containing colons, flatten nested sub-lists, escape embedded double quotes.
 
 6. **Commit updates:**
+
    ```bash
-   git pull --ff-only origin main
+   # Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
+   BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
+   [ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
+     || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
+   BASE=${BASE:-main}
+
+   git pull --ff-only origin "$BASE"
    git add product-context.yaml product/
    git commit -m "chore: reflect — classify feedback and update product context"
-   git push origin main
+   git push origin "$BASE"
    ```
 
 ---

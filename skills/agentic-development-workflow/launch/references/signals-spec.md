@@ -147,7 +147,7 @@ cat .feature-workspaces/<name>/.dev-workflow/signals/ready-for-review.flag
 
 ## Files changed
 
-[Output of git diff --stat main...HEAD]
+[Output of git diff --stat "$BASE"...HEAD (integration branch; see git-ref)]
 ```
 
 ### `eval-response-<N>.md` — Evaluation Response

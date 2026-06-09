@@ -207,7 +207,7 @@ See also: **Control Plane**, **Two-Session Model**
 
 ### Main Session
 
-The interactive Claude Code session where the human works. Runs on the main branch. Manages the **Control Plane** — dispatching stories, designing features, launching workspaces, wrapping completed work, and reflecting on feedback. Never reads workspace source code directly; observes workspace progress through **Signal Files** only.
+The interactive Claude Code session where the human works. Runs on the **Integration Branch** (`$BASE` — `main`, or `develop` in two-branch mode). Manages the **Control Plane** — dispatching stories, designing features, launching workspaces, wrapping completed work, and reflecting on feedback. Never reads workspace source code directly; observes workspace progress through **Signal Files** only.
 
 **Where it appears:** Every skill specifies its session context; `/dispatch`, `/design`, `/launch`, `/wrap`, `/reflect` run here.
 
@@ -398,7 +398,7 @@ See also: **Orchestrator**, **Two-Session Model**
 
 ### One-Commit-per-Task Pattern
 
-The Phase 4 implementation pattern: read `tasks.md`, then implement each task in order, committing once per task with a conventional-commit message. The resulting commit history mirrors `tasks.md` 1:1, which makes the PR's commit list a readable table of contents matching the spec. Squash-merge at PR-merge time keeps `main`'s history clean while preserving the per-task review trail in the PR's commits tab.
+The Phase 4 implementation pattern: read `tasks.md`, then implement each task in order, committing once per task with a conventional-commit message. The resulting commit history mirrors `tasks.md` 1:1, which makes the PR's commit list a readable table of contents matching the spec. Squash-merge at PR-merge time keeps the integration branch's history clean while preserving the per-task review trail in the PR's commits tab.
 
 **Where it appears:** `/build` Phase 4; `/git-ref` (documents the pattern).
 
@@ -613,17 +613,25 @@ See also: **tmux**, **Workspace Session**
 
 ### Feature Branch
 
-The git branch a workspace agent works on, named `feat/<name>` and created by `/launch` together with the worktree (`git worktree add -b feat/<name>`). One feature branch per **Story**. PRs target `main` and are squash-merged with `--delete-branch`, after which `/wrap` removes the corresponding worktree and the local branch.
+The git branch a workspace agent works on, named `feat/<name>` and created by `/launch` together with the worktree (`git worktree add -b feat/<name>`). One feature branch per **Story**. PRs target the **Integration Branch** (`$BASE`) and are squash-merged with `--delete-branch`, after which `/wrap` removes the corresponding worktree and the local branch.
 
 **Where it appears:** `/launch` (creates branch + worktree); `/build` (commits to it); `/wrap` (removes it).
 
-See also: **Git Worktree**, **One-Commit-per-Task Pattern**, **Workspace Session**
+See also: **Integration Branch**, **Git Worktree**, **One-Commit-per-Task Pattern**, **Workspace Session**
+
+### Integration Branch
+
+The branch AEP integrates feature work into — feature worktrees are created from it, rebased onto it, PR'd into it, merged into it, and all control-plane commits (`/dispatch`, `/design`, `/wrap` archive, story status) land on it. Referred to as `$BASE` across the skills. **Auto-detected:** in _single-branch mode_ (no `develop`) it is `main` (also the production branch); in _two-branch mode_ (`develop` exists) it is `develop` (staging) while `main` is the promote-only production branch that AEP never touches. Override the detected name with `git config aep.integration-branch <name>`. Distinct from the production branch: promotion (e.g. `develop` → `main`) is the user's CI/CD or PR step, like deployment, which is outside AEP's scope.
+
+**Where it appears:** `/onboard` Phase 5 (detect + persist); `/git-ref` → "Integration Branch" (resolver + config key); every git-touching skill resolves `$BASE` from it.
+
+See also: **Feature Branch**, **Git Worktree**, **Control Plane**
 
 ### Git Worktree
 
 A `git worktree` is a separate working tree backed by the same `.git/objects` store as the main checkout. AEP creates one per parallel agent at `.feature-workspaces/<name>/` — sharing history (no duplication) but with its own independent working tree and checked-out branch. Created by `/launch`, removed by `/wrap`. Replaces the previous jj-workspace abstraction.
 
-**Where it appears:** `/launch` (`git worktree add -b feat/<name> .feature-workspaces/<name> main`); `/wrap` (`git worktree remove`); `/git-ref` (full lifecycle reference).
+**Where it appears:** `/launch` (`git worktree add -b feat/<name> .feature-workspaces/<name> "$BASE"`); `/wrap` (`git worktree remove`); `/git-ref` (full lifecycle reference).
 
 See also: **Feature Branch**, **Workspace Session**, **/git-ref**
 

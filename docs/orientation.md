@@ -42,7 +42,7 @@ These three concepts are the backbone of every AEP skill. If you internalize the
 
 **The rule:** You work on the control plane. Agents work on the execution plane. They communicate only through structured artifacts — `product-context.yaml`, OpenSpec changes, and signal files — never by talking to each other.
 
-**Why it matters:** When you're deciding _what_ to build, you should be on `main` with fresh context. When an agent is _building_, it should be in an isolated workspace with fresh implementation context. Mixing the two wastes tokens and corrupts reasoning.
+**Why it matters:** When you're deciding _what_ to build, you should be on the integration branch (`main`, or `develop` in two-branch mode) with fresh context. When an agent is _building_, it should be in an isolated workspace with fresh implementation context. Mixing the two wastes tokens and corrupts reasoning.
 
 More: [README.md "The Mental Model"](../README.md#the-mental-model).
 
@@ -75,7 +75,7 @@ Full ASCII diagram: [README.md "The Story Map"](../README.md#the-story-map).
 
 ```
 MAIN SESSION                         WORKSPACE SESSION
-(you + AI, on main branch)           (one agent, in a git worktree on feat/<name>)
+(you + AI, on integration branch)    (one agent, in a git worktree on feat/<name>)
 ─────────────────────────────        ────────────────────────────────
 /envision → /map → /dispatch          /build
 /design (refine spec)                   init harness
@@ -156,7 +156,7 @@ You just want to ship one feature with AEP workflows but don't need the full pro
 /design  →  /launch  →  /build  →  /wrap
 ```
 
-- `/design` explores, proposes, and produces an OpenSpec change on `main`.
+- `/design` explores, proposes, and produces an OpenSpec change on the integration branch (`main`, or `develop` in two-branch mode).
 - `/launch` spawns an isolated workspace and boots the agent.
 - `/build` implements, tests, reviews, and merges.
 - `/wrap` archives and cleans up.

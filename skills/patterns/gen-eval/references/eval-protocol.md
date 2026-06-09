@@ -143,7 +143,7 @@ Used in multi-round mode (workspace context). Files live in `.dev-workflow/signa
 
 ## Files changed
 
-[output of git diff --stat main...HEAD]
+[output of git diff --stat "$BASE"...HEAD (integration branch; see git-ref)]
 ```
 
 ### eval-response-N.md (evaluator writes)

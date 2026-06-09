@@ -1,11 +1,11 @@
 ---
 name: aep-design
-description: Interactive feature design on main branch. Use when starting a new feature, or when the user says "design a feature", "let's design", "explore and propose". Runs OpenSpec explore, propose, and design review phases interactively with the user, then commits artifacts to main. The first step in the feature lifecycle — followed by /launch.
+description: Interactive feature design on the integration branch (main, or develop in two-branch mode). Use when starting a new feature, or when the user says "design a feature", "let's design", "explore and propose". Runs OpenSpec explore, propose, and design review phases interactively with the user, then commits artifacts to the integration branch. The first step in the feature lifecycle — followed by /launch.
 ---
 
 # Design
 
-Interactive feature design on the `main` branch. Explore the problem, propose a solution, review the design, and commit artifacts — all in conversation with the user.
+Interactive feature design on the **integration branch** (`$BASE` — `main` in single-branch mode, `develop` in two-branch mode; see [git-ref](../git-ref/SKILL.md) → "Integration Branch"). Explore the problem, propose a solution, review the design, and commit artifacts — all in conversation with the user.
 
 **Where this fits:**
 
@@ -16,7 +16,7 @@ Interactive feature design on the `main` branch. Explore the problem, propose a 
 
 **Session:** Main session, interactive with user
 **Input:** Feature idea or user request (optionally informed by product context)
-**Output:** OpenSpec change committed to main (proposal, design, specs, tasks)
+**Output:** OpenSpec change committed to the integration branch (proposal, design, specs, tasks)
 
 ---
 
@@ -155,18 +155,24 @@ If adjustments are needed, update the OpenSpec change files directly.
 
 ---
 
-## Commit to Main
+## Commit to the Integration Branch
 
-After design is complete, commit all artifacts to `main`:
+After design is complete, commit all artifacts to the integration branch (`$BASE`):
 
 ```bash
-git pull --ff-only origin main
+# Resolve $BASE — see git-ref "Integration Branch" (override → develop → main)
+BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
+[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
+  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
+BASE=${BASE:-main}
+
+git pull --ff-only origin "$BASE"
 git add openspec/changes/<change-name>/ docs/
 git commit -m "feat: add <change-name> architecture doc and OpenSpec change"
-git push origin main
+git push origin "$BASE"
 ```
 
-This ensures the workspace will have all artifacts when it's created from `main`. The `--ff-only` pull avoids overwriting concurrent pushes.
+This ensures the workspace will have all artifacts when it's created from `$BASE`. The `--ff-only` pull avoids overwriting concurrent pushes.
 
 ---
 
