@@ -5,7 +5,7 @@ description: Post-merge archive and cleanup. Use after a PR has been merged, or 
 
 # Wrap
 
-Post-merge archive and workspace cleanup. Run this on `main` after the PR merges to archive the OpenSpec change and clean up the workspace.
+Post-merge archive and workspace cleanup. Run this on the **integration branch** (`$BASE` — `main` in single-branch mode, `develop` in two-branch mode; see [git-ref](../git-ref/SKILL.md) → "Integration Branch") after the PR merges to archive the OpenSpec change and clean up the workspace.
 
 **Where this fits:**
 
@@ -20,20 +20,28 @@ Post-merge archive and workspace cleanup. Run this on `main` after the PR merges
 
 ---
 
-## Phase 13: Archive & Cleanup on Main
+## Phase 13: Archive & Cleanup on the Integration Branch
 
-> Run on `main` after the PR merges. Do not run from the workspace.
+> Run on the integration branch (`$BASE`) after the PR merges. Do not run from the workspace.
 
-### 1. Fetch merged state and fast-forward main
+### 1. Fetch merged state and fast-forward the integration branch
 
 ```bash
+# Resolve $BASE — see git-ref "Integration Branch" (override → develop → main)
+BASE=$(git config --get aep.integration-branch 2>/dev/null)
+[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
+  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
+BASE=${BASE:-main}
+
 git fetch origin
-git checkout main
-git pull --ff-only origin main
+git checkout "$BASE"
+git pull --ff-only origin "$BASE"
 git status
 ```
 
-> **Update local main** to include the merged workspace PR. `--ff-only` is intentional — if it fails because main has unpushed local commits, push or rebase those first.
+> **Update the local integration branch** to include the merged workspace PR. `--ff-only` is intentional — if it fails because `$BASE` has unpushed local commits, push or rebase those first.
+>
+> After this checkout you are on the integration branch; later steps recover its name with `BASE=$(git branch --show-current)` (HEAD persists across shells, so this is safe even in a fresh command).
 >
 > **Check for lost OpenSpec changes:** If the dispatch commit included OpenSpec changes that are now missing (common if the dispatch commit wasn't pushed before launching), recover them from the original dispatch commit:
 >
@@ -63,10 +71,11 @@ lsof -ti :$WEB_PORT | xargs kill 2>/dev/null
 ### 4. Commit and push the archive
 
 ```bash
+BASE=$(git branch --show-current)   # integration branch, checked out in step 1
 git add openspec/
 git commit -m "chore: archive <change-name>"
-git pull --ff-only origin main
-git push origin main
+git pull --ff-only origin "$BASE"
+git push origin "$BASE"
 ```
 
 ### 5. Sync story status from workspace signals (Product-Cycle Mode Only)
@@ -109,13 +118,14 @@ After updating the story, check if any `pending` stories should transition to `r
 # Validate YAML before committing (see product-context references/yaml-guardrails.md)
 npx js-yaml product-context.yaml > /dev/null && echo "YAML OK"
 
+BASE=$(git branch --show-current)   # integration branch, checked out in step 1
 git add product-context.yaml
 git commit -m "chore: update story <id> status to completed"
-git pull --ff-only origin main
-git push origin main
+git pull --ff-only origin "$BASE"
+git push origin "$BASE"
 ```
 
-> **Concurrency protocol:** This is the only place where story completion status enters `product-context.yaml`. Workspace agents write to signals; `/wrap` (running on main) reads signals and writes to YAML.
+> **Concurrency protocol:** This is the only place where story completion status enters `product-context.yaml`. Workspace agents write to signals; `/wrap` (running on the integration branch) reads signals and writes to YAML.
 
 ### 5.5. Archive lessons learned
 
@@ -127,10 +137,11 @@ if [ -f "$LESSONS" ] && [ "$(wc -l < "$LESSONS")" -gt 12 ]; then
   # File has content beyond the template header
   mkdir -p lessons-learned
   cp "$LESSONS" "lessons-learned/<change-name>.md"
+  BASE=$(git branch --show-current)   # integration branch, checked out in step 1
   git add lessons-learned/<change-name>.md
   git commit -m "docs: archive lessons from <change-name>"
-  git pull --ff-only origin main
-  git push origin main
+  git pull --ff-only origin "$BASE"
+  git push origin "$BASE"
 fi
 ```
 
@@ -151,7 +162,7 @@ tmux kill-session -t <name> 2>/dev/null || true   # B1/B2: stop the detached ses
 git worktree remove .feature-workspaces/<name> \
   || git worktree remove --force .feature-workspaces/<name>   # --force only if leftover files block removal
 git worktree prune
-git branch -d feat/<name>   # PR was merged → branch is reachable from main, safe to delete
+git branch -d feat/<name>   # PR was merged → branch is reachable from the integration branch, safe to delete
 ```
 
 If `git branch -d` warns the branch isn't fully merged (e.g., the PR was squash-merged so commit SHAs differ), force with `git branch -D feat/<name>` after confirming via `gh pr view <number> --json state` that the PR is `MERGED`.
@@ -160,7 +171,7 @@ If `git branch -d` warns the branch isn't fully merged (e.g., the PR was squash-
 
 ## Guardrails
 
-- **Never run `/opsx:archive` from a workspace** — it writes to `openspec/specs/` and causes conflicts when parallel workspaces are active. Archive always runs on `main`.
+- **Never run `/opsx:archive` from a workspace** — it writes to `openspec/specs/` and causes conflicts when parallel workspaces are active. Archive always runs on the integration branch (`$BASE`).
 - **Phase 13 clean-workspace check** — after `git fetch && git pull --ff-only`, run `git status` to verify no unexpected files are modified.
 - **Verify OpenSpec changes exist before archiving** — if `openspec/changes/<name>/` is missing, the dispatch commit may have been lost. Recover from the original dispatch commit using `git restore --source=<sha>` before running archive.
 - **Cross-check signals against PR state** — workspace signals can be stale (e.g., showing `in_review` after PR is merged). Always verify via `gh pr view` before updating `product-context.yaml`.

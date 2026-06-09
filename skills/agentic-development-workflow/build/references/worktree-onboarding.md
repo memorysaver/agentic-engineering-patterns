@@ -4,7 +4,7 @@ This document is the bootstrap guide for spawned agents running in a git worktre
 
 ## Context
 
-You are a Claude Code agent spawned in an isolated git worktree to implement a feature autonomously. The design phases (1-3) were completed on `main` by the user, and `/launch` created your worktree on a fresh `feat/<name>` branch. Your job is to execute Phases 0, 4-12.
+You are a Claude Code agent spawned in an isolated git worktree to implement a feature autonomously. The design phases (1-3) were completed on the integration branch by the user, and `/launch` created your worktree on a fresh `feat/<name>` branch. Your job is to execute Phases 0, 4-12.
 
 ## Bootstrap Sequence
 
@@ -111,7 +111,7 @@ If you are resuming an interrupted session (context reset, crash, manual restart
    cat .dev-workflow/signals/feedback.md 2>/dev/null
    ```
 
-4. **Continue from where you left off** — pick up at the first unchecked phase. Inspect prior commits via `git log --oneline main..HEAD` to see what's already implemented.
+4. **Continue from where you left off** — pick up at the first unchecked phase. Inspect prior commits via `git log --oneline "$(git config --get aep.integration-branch 2>/dev/null || echo main)"..HEAD` to see what's already implemented.
 
 > Do NOT re-run the full bootstrap if `.dev-workflow/` already exists. Use init.sh for recovery.
 

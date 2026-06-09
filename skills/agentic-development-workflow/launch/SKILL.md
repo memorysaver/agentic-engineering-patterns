@@ -35,13 +35,19 @@ git status --porcelain
 ### 2. Verify dispatch commit is pushed to remote
 
 ```bash
+# Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
+BASE=$(git config --get aep.integration-branch 2>/dev/null)
+[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
+  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
+BASE=${BASE:-main}
+
 git fetch origin
-git log --oneline origin/main..main
+git log --oneline origin/"$BASE".."$BASE"
 ```
 
-**If any unpushed commits appear — ABORT.** The dispatch commit (YAML updates + OpenSpec changes) must be on the remote before launching workspaces. Without this, workspace branches base off a `main` that doesn't include the dispatch commit, and the OpenSpec files won't be visible inside the worktree.
+**If any unpushed commits appear — ABORT.** The dispatch commit (YAML updates + OpenSpec changes) must be on the remote before launching workspaces. Without this, workspace branches base off a `$BASE` that doesn't include the dispatch commit, and the OpenSpec files won't be visible inside the worktree.
 
-Push if needed: `git push origin main`
+Push if needed: `git push origin "$BASE"`
 
 ### 3. Verify calibration context for `.5` layer stories
 
@@ -60,11 +66,17 @@ type="${calibration_type:-visual-design}"
 Git worktree, unlike jj's `jj workspace forget`, does not auto-clean if a previous `/launch` died mid-flight. Two failure modes can block re-launch — both are silent and confusing on first encounter. Run these idempotent checks before `git worktree add`:
 
 ```bash
+# Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
+BASE=$(git config --get aep.integration-branch 2>/dev/null)
+[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
+  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
+BASE=${BASE:-main}
+
 # Check 1: orphan branch with no unmerged work → safe to delete
 if git show-ref --verify --quiet refs/heads/feat/<name>; then
-  ahead=$(git rev-list --count main..feat/<name> 2>/dev/null || echo 0)
+  ahead=$(git rev-list --count "$BASE"..feat/<name> 2>/dev/null || echo 0)
   if [ "$ahead" = "0" ]; then
-    echo "Removing orphan branch feat/<name> (no commits ahead of main)"
+    echo "Removing orphan branch feat/<name> (no commits ahead of $BASE)"
     git branch -D feat/<name>
   else
     echo "ABORT: feat/<name> has $ahead unmerged commit(s). Investigate before re-launching."
@@ -108,9 +120,15 @@ executor reference with an explicit contract to operate only inside
 `nudge()`; progress is through signals plus the final result/PR state.
 
 ```bash
+# Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
+BASE=$(git config --get aep.integration-branch 2>/dev/null)
+[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
+  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
+BASE=${BASE:-main}
+
 # Create the git worktree on a fresh feature branch (outside .claude/ to avoid sensitive path protection)
 mkdir -p .feature-workspaces
-git worktree add -b feat/<name> .feature-workspaces/<name> main
+git worktree add -b feat/<name> .feature-workspaces/<name> "$BASE"
 
 # Start the implementation agent in a tmux session. $EXECUTOR is the INTERACTIVE
 # session command from detect() for B1/B2:
@@ -176,7 +194,7 @@ If relevant lessons exist (matching the story's `module` or `activity`), append 
 ```bash
 # Send the bootstrap prompt — same text, backend-aware delivery (executor.spawn finishes here).
 # NOTE: Replace /build with your project's build skill name (e.g., /aep-build)
-PROMPT="/build execute implementation for openspec change <change-name>. Read the worktree-onboarding reference in the build skill's references/worktree-onboarding.md for full setup instructions. Design phases are pre-completed on main.
+PROMPT="/build execute implementation for openspec change <change-name>. Read the worktree-onboarding reference in the build skill's references/worktree-onboarding.md for full setup instructions. Design phases are pre-completed on the integration branch.
 
 ## Prior Lessons
 <relevant lessons summary, if any — omit this section if no lessons exist>
@@ -344,7 +362,7 @@ Read these files:
 5. .dev-workflow/feature-verification.json (if exists)
 
 Then:
-1. Review code changes via `git diff main...HEAD`
+1. Review code changes via `git diff "$(git config --get aep.integration-branch 2>/dev/null || echo main)"...HEAD`
 2. Test the running application if possible
 3. Score each dimension per your criteria
 4. Write structured feedback to .dev-workflow/signals/eval-response-<N>.md
@@ -380,7 +398,7 @@ EOF
 
 ## Managing Parallel Sessions
 
-The main workspace stays on `main` and can:
+The main session stays on the integration branch (`$BASE`) and can:
 
 - Launch multiple workspace sessions (one per feature)
 - See all sessions as named cmux tabs **(B1)**, or list them with `tmux ls` and attach by name **(B2)**

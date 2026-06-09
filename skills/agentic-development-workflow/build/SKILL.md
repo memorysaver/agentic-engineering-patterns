@@ -163,7 +163,7 @@ Before any work begins, set up the tracking infrastructure and environment. The 
     # Current state
     echo "=== Branch & Commits ==="
     echo "Branch: $(git branch --show-current)"
-    git log --oneline main..HEAD 2>/dev/null || git log --oneline -10
+    git log --oneline "$(git config --get aep.integration-branch 2>/dev/null || echo main)"..HEAD 2>/dev/null || git log --oneline -10
 
     echo "=== Progress ==="
     grep '\[x\]' .dev-workflow/progress-*.md 2>/dev/null | tail -10
@@ -491,7 +491,7 @@ Generate a reusable E2E test script if the project has an E2E testing setup. The
 
 ## Phase 9: Cleanup & Publish
 
-> **Note:** Do NOT run `/opsx:archive` here. Archive runs on `main` after merge (via `/wrap`).
+> **Note:** Do NOT run `/opsx:archive` here. Archive runs on the integration branch after merge (via `/wrap`).
 
 ### 0. Write lesson summary
 
@@ -500,16 +500,22 @@ Before publishing, write a final `## Summary for Next Agent` section in `.dev-wo
 ### 1. Review the commit history
 
 ```bash
-git log --oneline main..HEAD
+git log --oneline "$(git config --get aep.integration-branch 2>/dev/null || echo main)"..HEAD
 ```
 
-The history should be a clean linear sequence: one commit per `tasks.md` task, optionally followed by review-fix commits. The PR will be squash-merged on merge, so per-commit hygiene matters for review readability, not main history.
+The history should be a clean linear sequence: one commit per `tasks.md` task, optionally followed by review-fix commits. The PR will be squash-merged on merge, so per-commit hygiene matters for review readability, not the integration branch's history.
 
-### 2. Rebase onto latest main
+### 2. Rebase onto the latest integration branch
 
 ```bash
+# Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
+BASE=$(git config --get aep.integration-branch 2>/dev/null)
+[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
+  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
+BASE=${BASE:-main}
+
 git fetch origin
-git rebase origin/main
+git rebase origin/"$BASE"
 ```
 
 If conflicts arise, resolve them in the working tree, then `git add <files>` and `git rebase --continue`. Abort with `git rebase --abort` if conflicts are too tangled — surface to the orchestrator via the signal file.
@@ -526,16 +532,23 @@ The `-u` (`--set-upstream`) flag is needed only on the first push; subsequent pu
 
 ## Phase 10: Create PR / MR
 
-**Auto-detect the platform:**
+**Auto-detect the platform and target the integration branch:**
 
 ```bash
+# Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
+BASE=$(git config --get aep.integration-branch 2>/dev/null)
+[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
+  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
+BASE=${BASE:-main}
+
 REMOTE_URL=$(git remote get-url origin)
+case "$REMOTE_URL" in
+  *github.com*) gh pr create --title "<title>" --body "<body>" --base "$BASE" ;;
+  *gitlab*)     glab mr create --title "<title>" --description "<body>" --target-branch "$BASE" ;;
+esac
 ```
 
-- `github.com` → `gh pr create --title "<title>" --body "<body>" --base main`
-- `gitlab` → `glab mr create --title "<title>" --description "<body>" --target-branch main`
-
-> **CRITICAL — always specify `--base main` (GitHub) or `--target-branch main` (GitLab).** Workspace sessions run from a worktree whose checked-out branch is `feat/<name>`, not `main`. Without an explicit base, `gh pr create` may infer the wrong base from the most recent merged branch — causing the PR to target a stale base and never land on main even after merge.
+> **CRITICAL — always specify `--base "$BASE"` (GitHub) or `--target-branch "$BASE"` (GitLab)**, resolving `$BASE` in the same block as above. Workspace sessions run from a worktree whose checked-out branch is `feat/<name>`, not the integration branch. Without an explicit base, `gh pr create` may infer the wrong base from the most recent merged branch — causing the PR to target a stale base and never land on the integration branch even after merge. In two-branch mode an inferred base could be production `main`, which AEP must never merge feature work into directly.
 
 Include in the PR/MR body:
 
@@ -566,7 +579,7 @@ Monitor for CI and review feedback.
    git add -A
    git commit -m "fix(<scope>): address review feedback on <topic>"
    ```
-   Squash-merge at PR-merge time keeps main history clean, so per-commit hygiene on the feature branch only matters for reviewer readability.
+   Squash-merge at PR-merge time keeps the integration branch's history clean, so per-commit hygiene on the feature branch only matters for reviewer readability.
 5. Re-run tests
 6. Re-push:
    ```bash
@@ -619,7 +632,15 @@ After PR review fixes are resolved, the human tester evaluates the feature — t
 
 ## Phase 12: Pre-merge Checks & Merge
 
-1. Up-to-date with main: `git fetch origin && git rebase origin/main && git push --force-with-lease origin feat/<name>`
+1. Up-to-date with the integration branch:
+   ```bash
+   # Resolve $BASE — see git-ref "Integration Branch" (override → develop → main)
+   BASE=$(git config --get aep.integration-branch 2>/dev/null)
+   [ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
+     || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
+   BASE=${BASE:-main}
+   git fetch origin && git rebase origin/"$BASE" && git push --force-with-lease origin feat/<name>
+   ```
 2. CI checks green
 3. No unresolved review comments
 4. E2E tests passed (if applicable)
@@ -645,7 +666,7 @@ REMOTE_URL=$(git remote get-url origin)
 ## Guardrails
 
 - **Never skip the tracking initialization** (Phase 0). Every workflow needs a progress file and contracts.
-- **Never run `/opsx:archive` from a workspace** — it writes to `openspec/specs/` and causes conflicts. Archive always runs on `main` via `/wrap`.
+- **Never run `/opsx:archive` from a workspace** — it writes to `openspec/specs/` and causes conflicts. Archive always runs on the integration branch via `/wrap`.
 - **Never write to `product-context.yaml` from a workspace** — only the main session writes to the YAML. Report all status through `.dev-workflow/signals/status.json`. This is the concurrency protocol.
 - **Always confirm with the user** before creating PRs, merging, or pushing to shared branches.
 - **The `.dev-workflow/` folder is ephemeral** — gitignored, local to each workspace.

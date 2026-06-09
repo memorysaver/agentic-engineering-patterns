@@ -224,8 +224,13 @@ Key flags:
    ```
 
 5. **Commit the scaffold:**
+
    ```bash
    git add -A && git commit -m "feat: scaffold monorepo via Better-T-Stack"
+
+   # Record the integration branch for AEP (single-branch mode for a fresh repo).
+   # Adopt two-branch mode later by creating `develop` and re-running /onboard Phase 5.
+   git config aep.integration-branch main
    ```
 
 ---
@@ -331,7 +336,7 @@ category: Workflow
 tags: [workflow, archive, cleanup]
 ---
 
-Archive a completed change after its PR/MR has been merged. Run this on the main branch only.
+Archive a completed change after its PR/MR has been merged. Run this on the integration branch only.
 
 Invoke the openspec-archive-change skill to begin.
 ```
@@ -639,6 +644,10 @@ For each missing item, generate it. **Never overwrite existing files.**
 git init -b main
 git add -A
 git commit -m "chore: initial commit"
+
+# Record the integration branch for AEP (single-branch mode for a fresh repo).
+# Adopt two-branch mode later by creating `develop` and re-running /onboard Phase 5.
+git config aep.integration-branch main
 ```
 
 ### OpenSpec (if missing)

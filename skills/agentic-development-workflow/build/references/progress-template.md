@@ -66,11 +66,11 @@
   - [ ] All results reviewed
   - [ ] No blocking issues
 - [ ] Phase 9: Cleanup & Publish
-  - [ ] Commit history reviewed (`git log --oneline main..HEAD`)
-  - [ ] Rebased onto latest origin/main
+  - [ ] Commit history reviewed (`git log --oneline "$BASE"..HEAD`)
+  - [ ] Rebased onto latest `origin/$BASE` (integration branch)
   - [ ] Pushed (`git push -u origin feat/<name>`)
 - [ ] Phase 10: Create PR
-  - [ ] PR created (`gh pr create --base main`)
+  - [ ] PR created (`gh pr create --base "$BASE"`)
   - [ ] PR URL: <!-- url -->
 - [ ] Phase 11: PR Review Loop
   - [ ] Round 1: <!-- status -->
@@ -88,10 +88,10 @@
   - [ ] User confirmed
   - [ ] Merged (`gh pr merge --squash --delete-branch`)
 
-## Part E — Post-Merge (on main)
+## Part E — Post-Merge (on the integration branch)
 
 - [ ] Phase 13: Archive & Cleanup
-  - [ ] Fetched merged state (`git fetch && git pull --ff-only origin main`)
+  - [ ] Fetched merged state (`git fetch && git pull --ff-only origin "$BASE"`)
   - [ ] Dev server stopped
   - [ ] `/opsx:archive` run
   - [ ] Archive committed + pushed

@@ -177,13 +177,19 @@ If this fails, fix the YAML before committing. Common fixes: quote list items co
 ### Commit
 
 ```bash
+# Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
+BASE=$(git config --get aep.integration-branch 2>/dev/null)
+[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
+  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
+BASE=${BASE:-main}
+
 # Split mode: Write product/index.yaml (opportunity + personas + capabilities + product)
 # Split mode: Write product-context.yaml (calibration + changelog, operational sections empty)
 # V1 mode: Write product-context.yaml (all sections)
-git pull --ff-only origin main
+git pull --ff-only origin "$BASE"
 git add product-context.yaml product/ docs/
 git commit -m "feat: add product context (opportunity brief + context document)"
-git push origin main
+git push origin "$BASE"
 ```
 
 ---

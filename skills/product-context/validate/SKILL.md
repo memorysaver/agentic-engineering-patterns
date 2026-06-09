@@ -142,7 +142,7 @@ Score using the story mapping dimensions from `.claude/skills/aep-gen-eval/refer
 | Generator | Review code against spec     | Does the code match what was specified? Missing features, incomplete flows |
 | Evaluator | Test the running application | Functional testing, edge cases, security, performance                      |
 
-> **Note:** For code validation in a workspace, prefer `/build` Phase 5 which has the full evaluator loop with tmux split panes. Use this skill for code review on main branch or for lighter validation.
+> **Note:** For code validation in a workspace, prefer `/build` Phase 5 which has the full evaluator loop with tmux split panes. Use this skill for code review on the integration branch or for lighter validation.
 
 ### Mode D: Document Validation
 
@@ -334,10 +334,16 @@ Apply all blocking and important fixes to the artifact. Minor fixes are optional
 ## Step 6: Commit
 
 ```bash
-git pull --ff-only origin main
+# Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
+BASE=$(git config --get aep.integration-branch 2>/dev/null)
+[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
+  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
+BASE=${BASE:-main}
+
+git pull --ff-only origin "$BASE"
 git add <validated-files>
 git commit -m "fix: validate {artifact-name} — {N} issues found and fixed"
-git push origin main
+git push origin "$BASE"
 ```
 
 ---

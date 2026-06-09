@@ -464,7 +464,7 @@ No additional context needed — decisions are already in the architecture secti
 
 ## Commit and Push Before Handoff
 
-> **CRITICAL:** Commit and push ALL dispatch artifacts (YAML updates, OpenSpec changes, changelog) to remote BEFORE handing off to `/launch`. If the dispatch commit stays local, it will be lost when workspace PRs merge to main and you rebase. The push ensures OpenSpec changes survive on the remote.
+> **CRITICAL:** Commit and push ALL dispatch artifacts (YAML updates, OpenSpec changes, changelog) to remote BEFORE handing off to `/launch`. If the dispatch commit stays local, it will be lost when workspace PRs merge to the integration branch and you rebase. The push ensures OpenSpec changes survive on the remote.
 
 Append to the `changelog` section:
 
@@ -479,10 +479,16 @@ Append to the `changelog` section:
 Commit and push:
 
 ```bash
-git pull --ff-only origin main
+# Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
+BASE=$(git config --get aep.integration-branch 2>/dev/null)
+[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
+  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
+BASE=${BASE:-main}
+
+git pull --ff-only origin "$BASE"
 git add product-context.yaml openspec/changes/
 git commit -m "feat: dispatch PROJ-003, PROJ-004 — Layer 0 Wave 1"
-git push origin main
+git push origin "$BASE"
 ```
 
 **Verify the push succeeded** before proceeding to handoff. If push fails (e.g., remote conflict), resolve before launching workspaces.

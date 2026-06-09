@@ -218,10 +218,16 @@ If this fails, fix the YAML before committing. Common fixes: quote list items co
 ### Commit
 
 ```bash
-git pull --ff-only origin main
+# Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
+BASE=$(git config --get aep.integration-branch 2>/dev/null)
+[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
+  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
+BASE=${BASE:-main}
+
+git pull --ff-only origin "$BASE"
 git add product-context.yaml product/
 git commit -m "feat: add system map, story graph, and agent topology"
-git push origin main
+git push origin "$BASE"
 ```
 
 **Sections written:**

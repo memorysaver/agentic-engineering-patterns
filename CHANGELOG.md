@@ -21,6 +21,39 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 _Nothing yet._
 
+## [1.5.0] - 2026-06-09
+
+Configurable **integration branch**: AEP no longer hardcodes `main`. The branch
+that feature work is based off, rebased onto, PR'd into, and where control-plane
+commits land is now resolved per-repo, with `main` as the default — so GitFlow
+repos (`develop` = integration/staging, `main` = production) work out of the box.
+
+### Added
+
+- **Integration-branch resolution (`$BASE`).** Every git-touching skill resolves
+  the integration branch in this order: explicit override
+  `git config aep.integration-branch <name>` → auto-detect `develop` if it exists
+  → `main`. `git config` is repo-local and shared across worktrees, so `$BASE`
+  resolves identically in the main session and inside `.feature-workspaces/`.
+- **Two modes, auto-detected.** _single-branch_ (no `develop`): integration =
+  production = `main` (unchanged default behavior). _two-branch_ (`develop`
+  exists): integration = `develop`; production `main` is promote-only and AEP
+  never touches it — promotion `develop` → `main` stays the user's CI/CD or PR
+  step, exactly like deployment.
+- `aep-git-ref` gains an "Integration Branch" section documenting `$BASE`, the
+  modes, the resolver, and the `aep.integration-branch` config key.
+- `/onboard` Phase 5 detects the mode and persists `aep.integration-branch`;
+  `/scaffold` sets it to `main` for fresh repos.
+
+### Changed
+
+- `/design`, `/launch`, `/build`, `/wrap`, `/dispatch`, `/reflect`, `/calibrate`,
+  `/autopilot` (+ tick-protocol), and the executor backend recipe now substitute
+  `$BASE`/`origin/$BASE` for the previously hardcoded `main`/`origin/main` in
+  worktree creation, rebases, PR base (`--base "$BASE"` / `--target-branch`),
+  and control-plane commits. Default-mode behavior is unchanged (`$BASE` = `main`).
+- `.claude-plugin/marketplace.json` version `1.4.0` → `1.5.0`.
+
 ## [1.4.0] - 2026-06-05
 
 Codex `/launch` now uses Codex-native, worktree-bound subagents for coding
