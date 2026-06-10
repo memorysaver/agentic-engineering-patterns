@@ -1,6 +1,6 @@
 # UX Flow — Capture Questions
 
-Ask these questions one at a time during `/calibrate capture` for ux-flow.
+Ask these questions one at a time during `/aep-calibrate capture` for ux-flow.
 
 ## Questions
 

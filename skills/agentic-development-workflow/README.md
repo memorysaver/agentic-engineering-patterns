@@ -5,16 +5,16 @@ A structured harness for autonomous feature development — from spec to merge.
 Four skills, one lifecycle:
 
 ```
-/design → /launch → /build → /wrap
+/aep-design → /aep-launch → /aep-build → /aep-wrap
 ```
 
-| Skill                        | What it does                         | Session               |
-| ---------------------------- | ------------------------------------ | --------------------- |
-| [/design](design/SKILL.md)   | Explore + propose + review           | Main, interactive     |
-| [/launch](launch/SKILL.md)   | Spawn worktree + evaluator           | Main, automated       |
-| [/build](build/SKILL.md)     | Init → implement → test → PR → merge | Workspace, autonomous |
-| [/wrap](wrap/SKILL.md)       | Archive + cleanup                    | Main, post-merge      |
-| [/git-ref](git-ref/SKILL.md) | git + worktree reference for AEP     | On-demand             |
+| Skill                            | What it does                         | Session               |
+| -------------------------------- | ------------------------------------ | --------------------- |
+| [/aep-design](design/SKILL.md)   | Explore + propose + review           | Main, interactive     |
+| [/aep-launch](launch/SKILL.md)   | Spawn worktree + evaluator           | Main, automated       |
+| [/aep-build](build/SKILL.md)     | Init → implement → test → PR → merge | Workspace, autonomous |
+| [/aep-wrap](wrap/SKILL.md)       | Archive + cleanup                    | Main, post-merge      |
+| [/aep-git-ref](git-ref/SKILL.md) | git + worktree reference for AEP     | On-demand             |
 
 ## Inspired By
 
@@ -110,9 +110,9 @@ This workflow supports:
 MAIN SESSION (interactive)              WORKSPACE SESSION (autonomous)
 ━━━━━━━━━━━━━━━━━━━━━━━━━              ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-/design ──────────────────┐
+/aep-design ──────────────────┐
                           │
-/launch ──────────────────┼─executor►   /build
+/aep-launch ──────────────────┼─executor►   /aep-build
          │                │              Phase 0: init harness
          │  poll status.json◄────────        ▼
          │  send feedback.md────────►   Phase 4: implement
@@ -121,7 +121,7 @@ MAIN SESSION (interactive)              WORKSPACE SESSION (autonomous)
          │                │                  ▼
          │                │            Phase 9-12: PR + merge
          │                │
-/wrap ◄───────────────────┘
+/aep-wrap ◄───────────────────┘
 ```
 
 ---

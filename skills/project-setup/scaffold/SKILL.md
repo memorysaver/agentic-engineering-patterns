@@ -373,7 +373,7 @@ git add -A && git commit -m "feat: initialize OpenSpec for spec-driven developme
 
 ## Phase 7: Generate Workspace Setup Hook
 
-Create the hook that `/build` Phase 0 calls for project-specific setup:
+Create the hook that `/aep-build` Phase 0 calls for project-specific setup:
 
 ```bash
 mkdir -p .claude/hooks
@@ -383,7 +383,7 @@ Generate `.claude/hooks/workspace-setup.sh` tailored to the stack from Phase 1. 
 
 1. **Install dependencies** — use the package manager from Phase 1 (default: `bun install`)
 2. **Scan for available ports** — start from 3000, increment by 10 to avoid parallel workspace collisions
-3. **Write `.dev-workflow/ports.env`** — the contract with `/build`:
+3. **Write `.dev-workflow/ports.env`** — the contract with `/aep-build`:
    ```
    WEB_PORT=<port>
    SERVER_PORT=<port>
@@ -394,7 +394,7 @@ Generate `.claude/hooks/workspace-setup.sh` tailored to the stack from Phase 1. 
 5. **Start the dev server** if not already running
 6. **Call seed script** if `.claude/skills/e2e-test/scripts/seed.sh` exists
 
-Use the template from `/testing-guide` Part 1, filling in project-specific values from the stack chosen in Phase 1.
+Use the template from `/aep-testing-guide` Part 1, filling in project-specific values from the stack chosen in Phase 1.
 
 ```bash
 chmod +x .claude/hooks/workspace-setup.sh
@@ -404,7 +404,7 @@ chmod +x .claude/hooks/workspace-setup.sh
 
 ## Phase 8: Generate E2E Test Skill Skeleton
 
-Create the project-level testing infrastructure that `/build` Phases 5-8 use:
+Create the project-level testing infrastructure that `/aep-build` Phases 5-8 use:
 
 ```bash
 mkdir -p .claude/skills/e2e-test/scripts
@@ -443,7 +443,7 @@ source .dev-workflow/ports.env
 ## Adding a New Test
 
 1. Create `.claude/skills/e2e-test/scripts/<feature>-e2e.sh`
-2. Follow the E2E script pattern (see `/testing-guide` Part 2)
+2. Follow the E2E script pattern (see `/aep-testing-guide` Part 2)
 3. Add the script to the table above
 4. Run it: `bash .claude/skills/e2e-test/scripts/<feature>-e2e.sh`
 ```
@@ -524,8 +524,8 @@ git commit -m "feat: add workspace hook and e2e-test skill skeleton"
 
 | Command         | What it does                                                        |
 | --------------- | ------------------------------------------------------------------- |
-| `/dispatch`     | Pick the next story and start building (if product context exists)  |
-| `/design`       | Start designing a feature directly (standalone, no product context) |
+| `/aep-dispatch` | Pick the next story and start building (if product context exists)  |
+| `/aep-design`   | Start designing a feature directly (standalone, no product context) |
 | `bun run dev`   | Start the dev server                                                |
 | `openspec list` | List active changes                                                 |
 
@@ -687,9 +687,9 @@ git commit -m "feat: initialize agentic development infrastructure"
 
 ## Phase 6E: Next Steps
 
-| Command          | What it does                                                |
-| ---------------- | ----------------------------------------------------------- |
-| `/design`        | Start designing a feature (standalone mode)                 |
-| `/dispatch`      | Pick the next story (if product context exists)             |
-| `/testing-guide` | Detailed guide for testing strategy and adding test scripts |
-| `/git-ref`       | AEP git + worktree reference (worktree lifecycle, naming)   |
+| Command              | What it does                                                |
+| -------------------- | ----------------------------------------------------------- |
+| `/aep-design`        | Start designing a feature (standalone mode)                 |
+| `/aep-dispatch`      | Pick the next story (if product context exists)             |
+| `/aep-testing-guide` | Detailed guide for testing strategy and adding test scripts |
+| `/aep-git-ref`       | AEP git + worktree reference (worktree lifecycle, naming)   |

@@ -1,6 +1,6 @@
 # Calibration Types
 
-Overview of the 7 calibration dimensions supported by `/calibrate`. Each dimension addresses a specific gap between "works correctly" and "feels right" that agents cannot judge.
+Overview of the 7 calibration dimensions supported by `/aep-calibrate`. Each dimension addresses a specific gap between "works correctly" and "feels right" that agents cannot judge.
 
 ---
 

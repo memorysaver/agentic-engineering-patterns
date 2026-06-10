@@ -20,7 +20,7 @@
 
 ## Observed Friction
 
-[from /reflect observation that triggered this calibration]
+[from /aep-reflect observation that triggered this calibration]
 
 - **Where in the journey:** [activity or transition]
 - **What feels wrong:** [description — confusing navigation, dead ends, wrong information density, etc.]
@@ -54,5 +54,5 @@
 | ----------------- | ---------------------------------------------------- |
 | Current journey   | `product.activities` (ordered by `order` field)      |
 | What was built    | `stories` where `status: completed` in recent layers |
-| Friction          | `/reflect` observation text                          |
+| Friction          | `/aep-reflect` observation text                      |
 | Technical context | File scan: `routes/` or `pages/` directory           |

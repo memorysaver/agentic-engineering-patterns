@@ -1,5 +1,11 @@
 # Host-Agnostic Executor Abstraction
 
+> **Superseded in part (2026-06-10)** by
+> [`native-first-executor.md`](native-first-executor.md): the B1–B4 ladder is
+> replaced by named launch modes (claude-team / claude-bg / codex-subagent /
+> codex-exec / legacy / workflow / headless), and tmux is no longer the Claude
+> Code default. The abstraction, vocabulary, and rationale below still stand.
+
 > Decision record (2026-06-03).
 > `/launch`, `/build`, and `/autopilot` were hardwired to a single execution
 > path: a `claude --dangerously-skip-permissions` process, hosted in **tmux**,

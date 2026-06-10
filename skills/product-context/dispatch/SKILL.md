@@ -1,28 +1,28 @@
 ---
 name: aep-dispatch
-description: Pick the next story to work on and bridge it into the feature lifecycle. Use when ready to start building, or when the user says "what's next", "dispatch", "pick a story", "start next feature", "what should I work on". Reads product-context.yaml, syncs workspace signals, computes readiness score for routing, then scores stories by business value + unblock potential + critical path urgency + reuse leverage (penalized by ambiguity + interface risk), assembles context, and hands off to /design or /launch. Supports batch dispatch with WIP limits. For autonomous orchestration, use /autopilot instead.
+description: Pick the next story to work on and bridge it into the feature lifecycle. Use when ready to start building, or when the user says "what's next", "dispatch", "pick a story", "start next feature", "what should I work on". Reads product-context.yaml, syncs workspace signals, computes readiness score for routing, then scores stories by business value + unblock potential + critical path urgency + reuse leverage (penalized by ambiguity + interface risk), assembles context, and hands off to /aep-design or /aep-launch. Supports batch dispatch with WIP limits. For autonomous orchestration, use /aep-autopilot instead.
 ---
 
 # Dispatch
 
-Bridge between the product context (control plane) and the feature lifecycle (execution plane). Syncs workspace state, scores stories, picks what to build next, assembles context, and routes into `/design` or `/launch`.
+Bridge between the product context (control plane) and the feature lifecycle (execution plane). Syncs workspace state, scores stories, picks what to build next, assembles context, and routes into `/aep-design` or `/aep-launch`.
 
 **Where this fits:**
 
 ```
-/envision → /map → /scaffold
-  → [ /dispatch → /design → /launch → /build → /wrap ]
+/aep-envision → /aep-map → /aep-scaffold
+  → [ /aep-dispatch → /aep-design → /aep-launch → /aep-build → /aep-wrap ]
        ▲ you are here
-  → /reflect → loop
+  → /aep-reflect → loop
 ```
 
 **Session:** Main, interactive
 **Input:** Product definition from `product/index.yaml` (split mode) or `product-context.yaml` (v1 mode); operational state from `product-context.yaml`
-**Output:** OpenSpec change with pre-assembled context, story status updated, handoff to `/design` or `/launch`
+**Output:** OpenSpec change with pre-assembled context, story status updated, handoff to `/aep-design` or `/aep-launch`
 
-> **For autonomous orchestration:** Use `/autopilot` instead. Autopilot runs the full dispatch-launch-monitor-review-wrap-dispatch cycle as a tick-based state machine via `/loop`. Dispatch remains a single-pass interactive tool.
+> **For autonomous orchestration:** Use `/aep-autopilot` instead. Autopilot runs the full dispatch-launch-monitor-review-wrap-dispatch cycle as a tick-based state machine via `/loop`. Dispatch remains a single-pass interactive tool.
 >
-> **For hands-free batch under Claude Code:** dispatch a wave **"with workflow"** to build the whole wave as a single dynamic workflow (executor backend B4) instead of N monitorable sessions. See Step 5 → _Dynamic Workflow_ mode.
+> **For hands-free batch under Claude Code:** dispatch a wave **"with workflow"** to build the whole wave as a single dynamic workflow (executor **workflow** mode) instead of N monitorable workers. See Step 5 → _Dynamic Workflow_ mode.
 
 ---
 
@@ -38,14 +38,14 @@ cat product-context.yaml
 - **Split mode** (`product/index.yaml` exists): Read product definition from `product/index.yaml` for context assembly. Read stories, topology, architecture, cost from `product-context.yaml`.
 - **V1 mode**: Read everything from `product-context.yaml`.
 
-If `product-context.yaml` doesn't exist, run `/envision` then `/map` first.
-If the `stories` section is empty, run `/map` to decompose the product.
+If `product-context.yaml` doesn't exist, run `/aep-envision` then `/aep-map` first.
+If the `stories` section is empty, run `/aep-map` to decompose the product.
 
 ---
 
 ## The Dispatch Protocol
 
-Every dispatch run follows the same 7-step protocol. Each step is idempotent — running `/dispatch` twice with no state changes produces the same result.
+Every dispatch run follows the same 7-step protocol. Each step is idempotent — running `/aep-dispatch` twice with no state changes produces the same result.
 
 ```
 ① SYNC signals    → bring YAML up to date with workspace reality
@@ -54,7 +54,7 @@ Every dispatch run follows the same 7-step protocol. Each step is idempotent —
 ④ PRESENT queue   → show user the scored dispatch queue
 ⑤ DISPATCH        → lock stories (status→in_progress), create OpenSpec changes
 ⑥ MONITOR         → agents work, main session watches signals
-⑦ COMPLETE        → /wrap updates YAML, atomic cascade, re-invoke dispatch
+⑦ COMPLETE        → /aep-wrap updates YAML, atomic cascade, re-invoke dispatch
 ```
 
 ---
@@ -266,16 +266,16 @@ Dispatch Queue (Layer 0 — 4 ready, 2 in_progress, WIP 3/5)
   1. ★ PROJ-003 "Setup auth middleware"           score: 14.5
      [high] S | Module: auth | Wave 1 | Critical path | Shared enabler
      Unblocks: PROJ-005, PROJ-007, PROJ-008
-     → Readiness: 0.9 — skip to /launch
+     → Readiness: 0.9 — skip to /aep-launch
 
   2.   PROJ-004 "Create user model"                score: 12.0
      [medium] S | Module: db | Wave 1 | 4h slack
      Unblocks: PROJ-006, PROJ-009
-     → Readiness: 0.8 — skip to /launch
+     → Readiness: 0.8 — skip to /aep-launch
 
   3.   PROJ-010 "Add settings page"                score: 0.43
      [low] L | Module: web | Wave 3 | Leaf
-     → Readiness: 0.3 — go through /design (ambiguous)
+     → Readiness: 0.3 — go through /aep-design (ambiguous)
 
   Conflicted (waiting):
   • PROJ-006 — files overlap with in_progress PROJ-002
@@ -306,16 +306,16 @@ Dispatch all ready stories in the current wave (execution slice) at once:
 
 ```
 Dispatches all ready stories in Wave N (up to WIP limit)
-Creates N workspaces via /launch
+Creates N workspaces via /aep-launch
 ```
 
 #### Dynamic Workflow (`--batch wave` + "…with workflow")
 
 When the user explicitly asks to dispatch a wave **"with workflow"** AND the host
 is Claude Code with the dynamic-workflow (Workflow) tool, route the batch through
-the **B4 backend** instead of creating N tmux sessions. The dispatch front-end is
+the **workflow mode** instead of creating N workers. The dispatch front-end is
 identical — sync, cascade, score, lock, assemble context — only the execution
-plane changes: instead of N `/launch` sessions, author one dynamic workflow that
+plane changes: instead of N `/aep-launch` sessions, author one dynamic workflow that
 fans out `pipeline(stories, build, verify)` with per-agent worktree isolation.
 
 ```
@@ -323,23 +323,23 @@ Locks + creates OpenSpec changes for the ready stories in Wave N — up to the W
 Then: one dynamic workflow, one agent per locked story (build → verify), per-agent worktree
 ```
 
-**Respect the WIP limit.** B4 does not exempt the wave from the WIP cap below:
+**Respect the WIP limit.** Workflow mode does not exempt the wave from the WIP cap below:
 each workflow agent still opens a PR, so the integration/merge bottleneck is the
 same as Wave Batch. Lock at most `available_slots` stories into the workflow
 (`available_slots = concurrency_limit − current in_progress`); the workflow's own
 per-agent concurrency cap is a separate, lower-level limit and does not replace
 this one.
 
-**Announce the backend (this path bypasses `/launch`).** Because dispatch authors
-the workflow directly instead of handing to `/launch`, dispatch owns the
-announcement that `/launch` normally makes: state "backend B4 (dynamic workflow)
-— autonomous, billed, background, **no live monitoring or mid-flight feedback**"
-before authoring the workflow.
+**Announce the mode (this path bypasses `/aep-launch`).** Because dispatch authors
+the workflow directly instead of handing to `/aep-launch`, dispatch owns the
+announcement that `/aep-launch` normally makes: state "workflow mode (dynamic
+workflow) — autonomous, billed, background, **no live monitoring or mid-flight
+feedback**" before authoring the workflow.
 
 This is the hands-free batch path: autonomous, billed, background, **no mid-run
 human input**. Use it when you want a wave built autonomously and don't need to
 watch/feed individual sessions. Gating: requires Claude Code + Workflow tool (see
-`.claude/skills/aep-executor/references/backends.md`, backend B4). If the host
+`.claude/skills/aep-executor/references/backends.md`, workflow mode). If the host
 can't support it, fall back to Wave Batch and say so.
 
 ### WIP Limits
@@ -371,7 +371,7 @@ For each selected story, dispatch atomically:
 5. THEN create OpenSpec change and workspace
 ```
 
-The commit happens BEFORE the workspace is created. Two consecutive `/dispatch` runs: Run 1 writes `in_progress` and commits. Run 2 reads `in_progress`, skips. No double dispatch.
+The commit happens BEFORE the workspace is created. Two consecutive `/aep-dispatch` runs: Run 1 writes `in_progress` and commits. Run 2 reads `in_progress`, skips. No double dispatch.
 
 ---
 
@@ -445,7 +445,7 @@ For stories with `calibration_type` set, or stories in `.5` alignment layers:
    not defined in the calibration artifact.
    ```
 
-If the required `calibration/<type>.yaml` does not exist, **do not dispatch** — instruct the user to run `/calibrate <type>` first.
+If the required `calibration/<type>.yaml` does not exist, **do not dispatch** — instruct the user to run `/aep-calibrate <type>` first.
 
 **Light calibrations** (api-surface, data-model, scope-direction, performance-quality):
 
@@ -464,7 +464,7 @@ No additional context needed — decisions are already in the architecture secti
 
 ## Commit and Push Before Handoff
 
-> **CRITICAL:** Commit and push ALL dispatch artifacts (YAML updates, OpenSpec changes, changelog) to remote BEFORE handing off to `/launch`. If the dispatch commit stays local, it will be lost when workspace PRs merge to the integration branch and you rebase. The push ensures OpenSpec changes survive on the remote.
+> **CRITICAL:** Commit and push ALL dispatch artifacts (YAML updates, OpenSpec changes, changelog) to remote BEFORE handing off to `/aep-launch`. If the dispatch commit stays local, it will be lost when workspace PRs merge to the integration branch and you rebase. The push ensures OpenSpec changes survive on the remote.
 
 Append to the `changelog` section:
 
@@ -497,14 +497,14 @@ git push origin "$BASE"
 
 ## Step 7: Hand Off
 
-> **Backend is normally resolved at `/launch`, not here.** For the default path
-> dispatch stays executor-agnostic — it hands a well-specified change to
-> `/launch`, which detects the host and selects a backend (B1–B3) via
-> `aep-executor`. Under Codex, `/launch` may choose the worktree-bound native
-> subagent path even when tmux is installed; dispatch does not need to know. **The
-> one exception is the _Dynamic Workflow_ opt-in (Step 5):** that path runs B4
-> _from dispatch_, bypassing `/launch`, so dispatch itself owns backend selection
-> and the announcement for that case.
+> **Launch mode is normally resolved at `/aep-launch`, not here.** For the default
+> path dispatch stays executor-agnostic — it hands a well-specified change to
+> `/aep-launch`, which detects the host and selects a mode (claude-team /
+> claude-bg / codex-subagent / codex-exec / legacy) via `aep-executor`. Native
+> modes outrank tmux on every host; dispatch does not need to know. **The one
+> exception is the _Dynamic Workflow_ opt-in (Step 5):** that path runs the
+> **workflow** mode _from dispatch_, bypassing `/aep-launch`, so dispatch itself
+> owns mode selection and the announcement for that case.
 
 Determine the handoff based on story completeness:
 
@@ -512,18 +512,18 @@ Determine the handoff based on story completeness:
 
 Use the `readiness_score` computed in Step 3:
 
-- **readiness_score >= 0.7** → skip to `/launch` (spec is dispatch-ready)
-- **readiness_score 0.5–0.7** → present to user for decision (`/launch` or `/design`)
-- **readiness_score < 0.5** → route to `/design` (spec needs refinement)
+- **readiness_score >= 0.7** → skip to `/aep-launch` (spec is dispatch-ready)
+- **readiness_score 0.5–0.7** → present to user for decision (`/aep-launch` or `/aep-design`)
+- **readiness_score < 0.5** → route to `/aep-design` (spec needs refinement)
 
-### Well-specified (readiness >= 0.7) → skip to /launch
+### Well-specified (readiness >= 0.7) → skip to /aep-launch
 
 - 3+ specific, testable acceptance criteria
 - Interface obligations defined
 - Verification strategy complete
 - Files affected identified
 
-### Ambiguous (readiness < 0.5) → go through /design
+### Ambiguous (readiness < 0.5) → go through /aep-design
 
 - Vague or fewer than 3 acceptance criteria
 - Missing interface details
@@ -536,30 +536,30 @@ OpenSpec change: openspec/changes/PROJ-003/
 Context package: openspec/changes/PROJ-003/.context/
 
 Recommendation: Readiness 0.9 — well-specified
-  → Skip to /launch
+  → Skip to /aep-launch
 
-  /launch    ← start building immediately
-  /design    ← refine the spec first
+  /aep-launch    ← start building immediately
+  /aep-design    ← refine the spec first
 ```
 
 ### Batch Handoff
 
-For batch dispatch, create all workspaces via `/launch`:
+For batch dispatch, create all workspaces via `/aep-launch`:
 
 ```
 Batch dispatched: PROJ-003 (score 23.0), PROJ-004 (score 12.0)
 
-  /launch PROJ-003  → tab: auth-middleware
-  /launch PROJ-004  → tab: user-model
+  /aep-launch PROJ-003  → tab: auth-middleware
+  /aep-launch PROJ-004  → tab: user-model
 ```
 
 ---
 
 ## Edge Cases
 
-- **No stories ready:** All pending stories have unmet dependencies. Check if any `in_progress` stories are stuck (high attempt_count, old started_at). Suggest checking workspace progress or running `/reflect`.
+- **No stories ready:** All pending stories have unmet dependencies. Check if any `in_progress` stories are stuck (high attempt_count, old started_at). Suggest checking workspace progress or running `/aep-reflect`.
 - **All stories completed in active layer:** Trigger layer gate test. If passed, advance to next layer and re-run dispatch.
-- **All stories completed in all layers:** Product is done. Suggest `/reflect` for final review.
+- **All stories completed in all layers:** Product is done. Suggest `/aep-reflect` for final review.
 - **Layer gate failed:** Do not advance. Create fix stories based on gate failure, add to current layer, re-dispatch.
 - **WIP limit reached:** No available slots. Show what's in progress and suggest waiting or reviewing PRs to unblock slots.
 

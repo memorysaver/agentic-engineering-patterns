@@ -15,6 +15,7 @@ Anthropic's harness design research uses file-based communication between agents
 ├── status.json              # Workspace agent writes — current phase and progress
 ├── feedback.md              # Main session writes — mid-flight feedback
 ├── ready-for-review.flag    # Workspace agent creates — signals human eval needed
+├── needs-human.md           # Workspace agent appends — human-gate record (decision needed)
 ├── eval-request.md          # Generator writes — requests evaluator review
 └── eval-response-<N>.md     # Evaluator writes — evaluation results per round
 ```
@@ -45,24 +46,25 @@ Anthropic's harness design research uses file-based communication between agents
 
 **Fields:**
 
-| Field            | Type     | Description                                                                                                                                     |
-| ---------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `phase`          | number   | Current phase number (0–13)                                                                                                                     |
-| `phase_name`     | string   | Human-readable phase name                                                                                                                       |
-| `task_current`   | string   | Current task being worked on (Phase 4 only)                                                                                                     |
-| `task_index`     | number   | 1-based index of current task                                                                                                                   |
-| `task_total`     | number   | Total number of tasks                                                                                                                           |
-| `started_at`     | string   | ISO 8601 timestamp of phase start                                                                                                               |
-| `blockers`       | string[] | List of blockers preventing progress                                                                                                            |
-| `completion_pct` | number   | Estimated completion percentage (0–100)                                                                                                         |
-| `last_updated`   | string   | ISO 8601 timestamp of last update                                                                                                               |
-| `story_status`   | string   | Story state for `/dispatch` sync: `"in_progress"`, `"in_review"`, `"completed"`, `"failed"`                                                     |
-| `pr_url`         | string   | PR URL once created (Phase 10+)                                                                                                                 |
-| `cost_usd`       | number   | Accumulated cost estimate for this story                                                                                                        |
-| `completed_at`   | string   | ISO 8601 timestamp when story completed (Phase 12)                                                                                              |
-| `failure_log`    | object   | Structured failure record (Phase 12 failure only) — `error_class`, `approach_summary`, `failure_point`, `root_cause`, `unexplored_alternatives` |
+| Field            | Type         | Description                                                                                                                                     |
+| ---------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `phase`          | number       | Current phase number (0–13)                                                                                                                     |
+| `phase_name`     | string       | Human-readable phase name                                                                                                                       |
+| `task_current`   | string       | Current task being worked on (Phase 4 only)                                                                                                     |
+| `task_index`     | number       | 1-based index of current task                                                                                                                   |
+| `task_total`     | number       | Total number of tasks                                                                                                                           |
+| `started_at`     | string       | ISO 8601 timestamp of phase start                                                                                                               |
+| `blockers`       | string[]     | List of blockers preventing progress                                                                                                            |
+| `completion_pct` | number       | Estimated completion percentage (0–100)                                                                                                         |
+| `last_updated`   | string       | ISO 8601 timestamp of last update                                                                                                               |
+| `story_status`   | string       | Story state for `/aep-dispatch` sync: `"in_progress"`, `"in_review"`, `"completed"`, `"failed"`                                                 |
+| `pr_url`         | string       | PR URL once created (Phase 10+)                                                                                                                 |
+| `cost_usd`       | number       | Accumulated cost estimate for this story                                                                                                        |
+| `completed_at`   | string       | ISO 8601 timestamp when story completed (Phase 12)                                                                                              |
+| `failure_log`    | object       | Structured failure record (Phase 12 failure only) — `error_class`, `approach_summary`, `failure_point`, `root_cause`, `unexplored_alternatives` |
+| `blocked_on`     | string\|null | `"human"` while the worker waits on a human decision (paired with a `needs-human.md` entry); null otherwise                                     |
 
-> **Concurrency protocol:** These story-tracking fields replace direct writes to `product-context.yaml`. The main session (via `/wrap` and `/dispatch` signal sync) reads these fields and updates the YAML. Workspace agents must never write to `product-context.yaml`.
+> **Concurrency protocol:** These story-tracking fields replace direct writes to `product-context.yaml`. The main session (via `/aep-wrap` and `/aep-dispatch` signal sync) reads these fields and updates the YAML. Workspace agents must never write to `product-context.yaml`.
 
 **Update points:**
 
@@ -118,6 +120,30 @@ The main session can watch for this file:
 # Main session polls (or uses filesystem watcher):
 cat .feature-workspaces/<name>/.dev-workflow/signals/ready-for-review.flag
 ```
+
+### `needs-human.md` — Human-Gate Record
+
+**Written by:** Workspace agent (append-only)
+**Read by:** Main session / autopilot (which surfaces it as an escalation)
+**Created:** Whenever the worker hits a decision only the human can make
+
+```markdown
+## 2026-06-10T14:30:00Z — Phase 5 (eval round 4)
+
+**Question:** Eval keeps failing Security on the token storage approach. Options: (a) httpOnly cookie, (b) encrypted localStorage. Spec is silent.
+**Context:** Both pass functional criteria; the choice affects the API contract.
+resolved: human chose (a) httpOnly cookie — 2026-06-10T15:02:00Z
+```
+
+**Rules:**
+
+- Pair every entry with `"blocked_on": "human"` in `status.json`; clear it and
+  append a `resolved:` line after acting on the answer.
+- The file is the host-agnostic record; how the question _reaches_ the human is
+  per launch mode (teammate message, `claude attach`, Codex thread, `codex exec
+resume`, `tmux attach`) — see the Human-Gate Protocol in
+  `aep-executor/references/backends.md`.
+- Orchestrators treat a gated workspace as **waiting, not stuck**.
 
 ### `eval-request.md` — Evaluation Request
 
@@ -210,4 +236,4 @@ If a signal file doesn't exist yet, skip it and continue — it will be checked 
 10. **On blockers:** Update `status.json` blockers immediately
 11. **On feedback:** Check `feedback.md` at start of each phase
 
-> **Main session reads these signals** via `/dispatch` (signal sync step) and `/wrap` (post-merge step) to update `product-context.yaml`. Workspace agents never write to the YAML directly.
+> **Main session reads these signals** via `/aep-dispatch` (signal sync step) and `/aep-wrap` (post-merge step) to update `product-context.yaml`. Workspace agents never write to the YAML directly.

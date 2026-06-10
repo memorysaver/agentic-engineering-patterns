@@ -1,7 +1,7 @@
 ---
 name: aep-workflow-feedback
 description: |-
-  Capture and route workflow learnings between downstream projects and AEP. Use after /wrap or /reflect when process observations need to be standardized, when reviewing what a build run taught about AEP workflows, or when pulling learnings from downstream projects back upstream. Triggers on "workflow feedback", "capture learnings", "what did we learn about process", "pull learnings from downstreams", "upstream lessons".
+  Capture and route workflow learnings between downstream projects and AEP. Use after /aep-wrap or /aep-reflect when process observations need to be standardized, when reviewing what a build run taught about AEP workflows, or when pulling learnings from downstream projects back upstream. Triggers on "workflow feedback", "capture learnings", "what did we learn about process", "pull learnings from downstreams", "upstream lessons".
 ---
 
 # Workflow Feedback
@@ -16,9 +16,9 @@ A reusable pattern for capturing workflow observations in downstream projects an
 ```
 DOWNSTREAM PROJECT                           AEP REPO
 ━━━━━━━━━━━━━━━━━━                           ━━━━━━━━
-/build → lessons.md                          /workflow-feedback review
-/wrap  → lessons-learned/                      ↓
-/workflow-feedback capture                   Read .aep/config.yaml
+/aep-build → lessons.md                          /aep-workflow-feedback review
+/aep-wrap  → lessons-learned/                      ↓
+/aep-workflow-feedback capture                   Read .aep/config.yaml
   ↓                                            ↓
 .dev-workflow/feedback.md  ──────────────→   Route to docs/
   (standardized + classified)                  ↓
@@ -28,7 +28,7 @@ DOWNSTREAM PROJECT                           AEP REPO
 ```
 
 **Session:** Main, interactive with user
-**Relates to:** `/reflect` (classifies product feedback), `/wrap` (archives workspace lessons), `/build` (captures lessons during execution)
+**Relates to:** `/aep-reflect` (classifies product feedback), `/aep-wrap` (archives workspace lessons), `/aep-build` (captures lessons during execution)
 
 ---
 
@@ -40,8 +40,8 @@ Run this in a **downstream project** after completing a layer, a batch of storie
 
 Collect observations from all available sources:
 
-1. **Archived lessons:** `lessons-learned/*.md` (written by `/wrap`)
-2. **Process lessons:** `lessons-learned/process/*.md` (from `/reflect`)
+1. **Archived lessons:** `lessons-learned/*.md` (written by `/aep-wrap`)
+2. **Process lessons:** `lessons-learned/process/*.md` (from `/aep-reflect`)
 3. **Unarchived workspace lessons:** `.feature-workspaces/*/dev-workflow/lessons.md` (if workspaces not yet wrapped)
 4. **User observations:** Ask the user what they noticed during the run that isn't captured above
 
@@ -73,7 +73,7 @@ Stories: <count>
 ### <title>
 
 - **Classification:** process | tech-stack | discovery | project-local
-- **Skill affected:** /calibrate, /build, /autopilot, etc. (if applicable)
+- **Skill affected:** /aep-calibrate, /aep-build, /aep-autopilot, etc. (if applicable)
 - **Technology:** Rust, Cloudflare, etc. (if tech-stack)
 - **Observation:** <what happened>
 - **Recommendation:** <proposed change>
@@ -88,7 +88,7 @@ Commit `.dev-workflow/feedback.md` to the downstream project. This makes it avai
 
 - **DO** include observations about AEP skill behavior, not just product bugs
 - **DO** mark `upstream_candidate: yes` only for items that would benefit other projects using AEP
-- **DO NOT** include product-specific bugs — those belong in `/reflect` → story creation
+- **DO NOT** include product-specific bugs — those belong in `/aep-reflect` → story creation
 - **DO NOT** edit AEP skills from a downstream project — always route upstream
 
 ---
@@ -131,7 +131,7 @@ Show the human a table of all upstream candidates with proposed routing:
 ```
 | # | Source | Classification | Title | Proposed destination |
 |---|--------|---------------|-------|---------------------|
-| 1 | looplia | process | /calibrate should modify real components | docs/lessons/... |
+| 1 | looplia | process | /aep-calibrate should modify real components | docs/lessons/... |
 | 2 | looplia | tech-stack | Rust keyring needs platform features | docs/tech-stack/... |
 ```
 
@@ -159,7 +159,7 @@ After writing, remind the human to run `bash scripts/sync-downstream.sh` to push
 | ------------------------------------------------------ | ------- |
 | Just finished a layer in a downstream project          | Capture |
 | Autopilot run completed, want to capture learnings     | Capture |
-| `/reflect` identified process observations             | Capture |
+| `/aep-reflect` identified process observations         | Capture |
 | Time to review what downstream projects have learned   | Review  |
 | Preparing an AEP release with accumulated improvements | Review  |
 
@@ -167,7 +167,7 @@ After writing, remind the human to run `bash scripts/sync-downstream.sh` to push
 
 ## Relationship to Other Skills
 
-- **`/reflect`** classifies product feedback (bugs, refinements, discoveries, polish). `/workflow-feedback` handles the process and tech-stack observations that `/reflect` identifies but doesn't route upstream.
-- **`/wrap`** archives workspace lessons to `lessons-learned/`. `/workflow-feedback` capture reads those archives and standardizes them.
-- **`/build`** writes raw observations to `.dev-workflow/lessons.md`. `/workflow-feedback` capture reads those if workspaces haven't been wrapped yet.
-- **`/autopilot`** `orchestration-learning.md` captures meta-patterns across workspaces. `/workflow-feedback` review can pull those patterns upstream.
+- **`/aep-reflect`** classifies product feedback (bugs, refinements, discoveries, polish). `/aep-workflow-feedback` handles the process and tech-stack observations that `/aep-reflect` identifies but doesn't route upstream.
+- **`/aep-wrap`** archives workspace lessons to `lessons-learned/`. `/aep-workflow-feedback` capture reads those archives and standardizes them.
+- **`/aep-build`** writes raw observations to `.dev-workflow/lessons.md`. `/aep-workflow-feedback` capture reads those if workspaces haven't been wrapped yet.
+- **`/aep-autopilot`** `orchestration-learning.md` captures meta-patterns across workspaces. `/aep-workflow-feedback` review can pull those patterns upstream.

@@ -1,6 +1,6 @@
 ---
 name: aep-design
-description: Interactive feature design on the integration branch (main, or develop in two-branch mode). Use when starting a new feature, or when the user says "design a feature", "let's design", "explore and propose". Runs OpenSpec explore, propose, and design review phases interactively with the user, then commits artifacts to the integration branch. The first step in the feature lifecycle — followed by /launch.
+description: Interactive feature design on the integration branch (main, or develop in two-branch mode). Use when starting a new feature, or when the user says "design a feature", "let's design", "explore and propose". Runs OpenSpec explore, propose, and design review phases interactively with the user, then commits artifacts to the integration branch. The first step in the feature lifecycle — followed by /aep-launch.
 ---
 
 # Design
@@ -10,7 +10,7 @@ Interactive feature design on the **integration branch** (`$BASE` — `main` in 
 **Where this fits:**
 
 ```
-/onboard → /scaffold → [ /design → /launch → /build → /wrap ]
+/aep-onboard → /aep-scaffold → [ /aep-design → /aep-launch → /aep-build → /aep-wrap ]
                           ▲ you are here
 ```
 
@@ -30,11 +30,11 @@ ls product-context.yaml 2>/dev/null
 
 **Standalone mode** _(no `product-context.yaml`)_ — Feature lifecycle runs independently. Proceed directly to prerequisites and design phases.
 
-**Product-cycle mode** _(has `product-context.yaml`)_ — Feature is part of a larger product lifecycle (`/envision` → `/map` → `/dispatch` → `/design`):
+**Product-cycle mode** _(has `product-context.yaml`)_ — Feature is part of a larger product lifecycle (`/aep-envision` → `/aep-map` → `/aep-dispatch` → `/aep-design`):
 
 - Read from `product-context.yaml` for project-wide context
 - If a story was dispatched (has `openspec_change` set in the YAML), load that story's acceptance criteria, interface obligations, and relevant architecture module
-- When dispatched from `/dispatch`, the OpenSpec change already exists — `/opsx:propose` refines it rather than starting from scratch
+- When dispatched from `/aep-dispatch`, the OpenSpec change already exists — `/opsx:propose` refines it rather than starting from scratch
 
 ---
 
@@ -56,7 +56,7 @@ printf "%-15s" "gh or glab:"
 (which gh >/dev/null 2>&1 || which glab >/dev/null 2>&1) && echo "OK" || echo "MISSING"
 ```
 
-If any required tool is missing, run `/onboard` first.
+If any required tool is missing, run `/aep-onboard` first.
 
 ### Required Skills
 
@@ -69,13 +69,13 @@ for skill in openspec-explore openspec-propose openspec-apply-change openspec-ar
 done
 ```
 
-If OpenSpec skills are missing, run `/scaffold` first.
+If OpenSpec skills are missing, run `/aep-scaffold` first.
 
 ---
 
 ## Workflow Mode Selection
 
-Before starting design, decide on the workflow mode. This choice carries through to `/launch` and `/build`.
+Before starting design, decide on the workflow mode. This choice carries through to `/aep-launch` and `/aep-build`.
 
 ### Full mode (default)
 
@@ -181,7 +181,7 @@ This ensures the workspace will have all artifacts when it's created from `$BASE
 Design is complete. Proceed to:
 
 ```
-/launch
+/aep-launch
 ```
 
 This spawns an autonomous workspace session to implement the feature.

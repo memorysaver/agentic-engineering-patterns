@@ -20,6 +20,8 @@ Machine-readable state file. Read and written by the autopilot tick.
   "workspaces": {
     "auth-middleware": {
       "story_id": "PROJ-003",
+      "backend": "claude-team",
+      "agent_id": "auth-middleware",
       "phase": 5,
       "phase_name": "code-review",
       "story_status": "in_progress",
@@ -35,7 +37,7 @@ Machine-readable state file. Read and written by the autopilot tick.
 
       "eval_rounds_completed": 0,
       "consecutive_stuck_ticks": 0,
-      "last_tmux_hash": null,
+      "last_liveness_hash": null,
       "blockers": []
     }
   },
@@ -47,7 +49,7 @@ Machine-readable state file. Read and written by the autopilot tick.
       "workspace": null,
       "reason": "Complexity L with 1 acceptance criterion, UI-heavy activity",
       "details": "Story 'Add settings page' needs UI/UX decisions: layout structure, form grouping, navigation pattern. The current spec has only 'settings page exists' as acceptance criteria.",
-      "expected_human_action": "Run /design PROJ-010 to refine the spec with concrete acceptance criteria, or add criteria directly to product-context.yaml. Then run /autopilot start to resume.",
+      "expected_human_action": "Run /aep-design PROJ-010 to refine the spec with concrete acceptance criteria, or add criteria directly to product-context.yaml. Then run /aep-autopilot start to resume.",
       "created_at": "2026-04-01T10:15:00Z",
       "acknowledged": false
     }
@@ -70,61 +72,65 @@ Machine-readable state file. Read and written by the autopilot tick.
 | ------------------ | ------------ | --------------------------------------------------------------------------- |
 | `version`          | number       | Schema version (currently 1)                                                |
 | `status`           | enum         | `"running"`, `"paused"`, `"stopped"`                                        |
-| `started_at`       | string       | ISO8601 timestamp of `/autopilot start`                                     |
+| `started_at`       | string       | ISO8601 timestamp of `/aep-autopilot start`                                 |
 | `last_tick_at`     | string\|null | ISO8601 timestamp of last completed tick                                    |
 | `tick_count`       | number       | Total ticks completed                                                       |
 | `tick_in_progress` | string\|null | ISO8601 of currently running tick (tick lock). Null when no tick is active. |
 
 #### Workspace Entry
 
-| Field                      | Type         | Description                                               |
-| -------------------------- | ------------ | --------------------------------------------------------- |
-| `story_id`                 | string       | Story ID from product-context.yaml                        |
-| `phase`                    | number       | Current build phase (0-12) from signal                    |
-| `phase_name`               | string       | Human-readable phase name from signal                     |
-| `story_status`             | string       | `"in_progress"`, `"in_review"`, `"completed"`, `"failed"` |
-| `completion_pct`           | number       | 0-100 from signal                                         |
-| `pr_url`                   | string\|null | PR URL once created                                       |
-| `cost_usd`                 | number\|null | Accumulated cost from signal                              |
-| `completed_at`             | string\|null | ISO8601 completion timestamp                              |
-| `failure_log`              | object\|null | Structured failure from signal                            |
-| `last_action`              | string       | Last autopilot action for this workspace                  |
-| `last_action_at`           | string       | ISO8601 of last action                                    |
-| `code_review_triggered`    | boolean      | Whether autopilot has triggered gen/eval                  |
-| `code_review_triggered_at` | string\|null | When gen/eval was triggered                               |
+| Field                      | Type         | Description                                                                                                              |
+| -------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `story_id`                 | string       | Story ID from product-context.yaml                                                                                       |
+| `backend`                  | string       | Executor mode this workspace was launched under: `claude-team`, `claude-bg`, `codex-subagent`, `codex-exec`, `legacy`    |
+| `agent_id`                 | string\|null | Handle for nudge/liveness/teardown: teammate name / bg session id / codex agent id / exec session id / tmux session name |
+| `phase`                    | number       | Current build phase (0-12) from signal                                                                                   |
+| `phase_name`               | string       | Human-readable phase name from signal                                                                                    |
+| `story_status`             | string       | `"in_progress"`, `"in_review"`, `"completed"`, `"failed"`                                                                |
+| `completion_pct`           | number       | 0-100 from signal                                                                                                        |
+| `pr_url`                   | string\|null | PR URL once created                                                                                                      |
+| `cost_usd`                 | number\|null | Accumulated cost from signal                                                                                             |
+| `completed_at`             | string\|null | ISO8601 completion timestamp                                                                                             |
+| `failure_log`              | object\|null | Structured failure from signal                                                                                           |
+| `last_action`              | string       | Last autopilot action for this workspace                                                                                 |
+| `last_action_at`           | string       | ISO8601 of last action                                                                                                   |
+| `code_review_triggered`    | boolean      | Whether autopilot has triggered gen/eval                                                                                 |
+| `code_review_triggered_at` | string\|null | When gen/eval was triggered                                                                                              |
 
 | `eval_rounds_completed` | number | How many eval rounds the workspace has completed |
 | `consecutive_stuck_ticks` | number | Ticks with no progress change |
-| `last_tmux_hash` | string\|null | Hash of tmux pane content at last tick. Used for liveness comparison. Null on first tick or after restart. |
+| `last_liveness_hash` | string\|null | Hash of the mode's liveness-probe output at last tick (TaskList entry / logs tail / list_agents / worker.log / tmux pane). Used for liveness comparison. Null on first tick or after restart. |
 | `blockers` | string[] | Current blockers from signal |
 
 #### `last_action` Values
 
-| Value                   | Meaning                                  |
-| ----------------------- | ---------------------------------------- |
-| `"launched"`            | Workspace just launched via /launch      |
-| `"review_triggered"`    | Gen/eval triggered via tmux              |
-| `"review_re_triggered"` | Gen/eval re-triggered after stuck        |
-| `"detected_merged"`     | PR detected as merged by workspace agent |
-| `"detected_closed"`     | PR detected as closed without merge      |
-| `"wrapping"`            | /wrap in progress                        |
-| `"merge_nudged"`        | Sent tmux nudge to proceed to Phase 12   |
-| `"merge_stuck_nudged"`  | Sent stronger nudge for stuck Phase 12   |
-| `"nudged"`              | Sent stuck nudge via tmux                |
-| `"escalated_stuck"`     | Escalated due to prolonged stuck         |
+| Value                   | Meaning                                               |
+| ----------------------- | ----------------------------------------------------- |
+| `"launched"`            | Workspace just launched via /aep-launch               |
+| `"readopted"`           | Orphaned worker re-spawned into the existing worktree |
+| `"review_triggered"`    | Gen/eval triggered via executor.nudge()               |
+| `"review_re_triggered"` | Gen/eval re-triggered after stuck                     |
+| `"detected_merged"`     | PR detected as merged by workspace agent              |
+| `"detected_closed"`     | PR detected as closed without merge                   |
+| `"wrapping"`            | /aep-wrap in progress                                 |
+| `"merge_nudged"`        | Sent nudge to proceed to Phase 12                     |
+| `"merge_stuck_nudged"`  | Sent stronger nudge for stuck Phase 12                |
+| `"nudged"`              | Sent stuck nudge via executor.nudge()                 |
+| `"escalated_stuck"`     | Escalated due to prolonged stuck                      |
+| `"human_gate"`          | Blocked on a human decision (needs-human.md)          |
 
 #### Escalation Entry
 
-| Field                   | Type         | Description                                                                              |
-| ----------------------- | ------------ | ---------------------------------------------------------------------------------------- |
-| `type`                  | enum         | `"design_needed"`, `"stuck"`, `"failed"`, `"layer_gate_failed"`, `"eval_not_converging"` |
-| `story_id`              | string       | Related story ID                                                                         |
-| `workspace`             | string\|null | Workspace name (null if not yet launched)                                                |
-| `reason`                | string       | One-line reason                                                                          |
-| `details`               | string       | Detailed explanation of why escalation triggered                                         |
-| `expected_human_action` | string       | What the human should do                                                                 |
-| `created_at`            | string       | ISO8601 timestamp                                                                        |
-| `acknowledged`          | boolean      | Whether human has seen this                                                              |
+| Field                   | Type         | Description                                                                                              |
+| ----------------------- | ------------ | -------------------------------------------------------------------------------------------------------- |
+| `type`                  | enum         | `"design_needed"`, `"stuck"`, `"failed"`, `"layer_gate_failed"`, `"eval_not_converging"`, `"human_gate"` |
+| `story_id`              | string       | Related story ID                                                                                         |
+| `workspace`             | string\|null | Workspace name (null if not yet launched)                                                                |
+| `reason`                | string       | One-line reason                                                                                          |
+| `details`               | string       | Detailed explanation of why escalation triggered                                                         |
+| `expected_human_action` | string       | What the human should do                                                                                 |
+| `created_at`            | string       | ISO8601 timestamp                                                                                        |
+| `acknowledged`          | boolean      | Whether human has seen this                                                                              |
 
 ---
 
@@ -165,7 +171,7 @@ Human-readable status file. Updated at the end of every tick.
 
 **Why:** Complexity L with 1 acceptance criterion, UI-heavy activity 'Settings'
 **What needs attention:** Story 'Add settings page' needs UI/UX decisions — layout structure, form grouping, navigation pattern
-**Expected action:** Run `/design PROJ-010` to refine the spec, then `/autopilot start`
+**Expected action:** Run `/aep-design PROJ-010` to refine the spec, then `/aep-autopilot start`
 
 ## Stats
 
@@ -200,9 +206,9 @@ does not meet the criteria for autonomous implementation:
 
 ### How to resume
 
-1. Run `/design PROJ-010` to work through the design interactively
+1. Run `/aep-design PROJ-010` to work through the design interactively
 2. Or add at least 3 specific acceptance criteria to product-context.yaml
-3. Then run `/autopilot start` to resume orchestration
+3. Then run `/aep-autopilot start` to resume orchestration
 
 ### Current state while paused
 

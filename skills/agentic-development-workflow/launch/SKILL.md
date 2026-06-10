@@ -1,23 +1,33 @@
 ---
 name: aep-launch
-description: Spawn an autonomous workspace agent for feature implementation. Use after /design is complete, or when the user says "launch workspace", "start building", "spawn agent", "send it to build". Creates a git worktree on a feature branch, starts the selected executor backend (Codex subagent-first, or Claude/generic tmux session), and optionally sets up a separate evaluator agent. Followed by /build (which runs autonomously in the workspace).
+description: Spawn an autonomous workspace agent for feature implementation. Use after /aep-design is complete, or when the user says "launch workspace", "start building", "spawn agent", "send it to build". Creates a git worktree on a feature branch, starts the selected executor mode (Claude Code agent teams or background sessions; Codex native subagents or exec workers; tmux only when pinned), and optionally sets up a separate evaluator agent. Followed by /aep-build (which runs autonomously in the workspace).
 ---
 
 # Launch
 
-Spawn an autonomous workspace agent to implement a feature. Creates a git worktree on a fresh feature branch, bootstraps an implementation agent through the **executor abstraction** (`aep-executor`) — which picks the right backend for the current host (Codex subagent-first; Claude/generic tmux/cmux session; native fallback; or dynamic workflow) — and optionally sets up a separate evaluator agent for quality assurance.
+Spawn an autonomous workspace agent to implement a feature. Creates a git
+worktree on a fresh feature branch, bootstraps an implementation agent through
+the **executor abstraction** (`aep-executor`) — which picks the right mode for
+the current host — and optionally sets up a separate evaluator agent for
+quality assurance.
 
-> **Host-agnostic:** This skill no longer hardwires `claude` + tmux + cmux. It delegates spawning and presentation to `aep-executor`, which detects the host and selects a backend (B1–B4). Read `.claude/skills/aep-executor/references/backends.md` before spawning. Codex coding launches select the worktree-bound native subagent path (B3) even when tmux exists. The recipes shown below are the **session backend (B1/B2)** path for Claude/generic hosts; the executor reference covers the Codex/native-subagent (B3) and dynamic-workflow (B4) paths.
+> **Native-first:** This skill does not hardwire `claude` + tmux + cmux. It
+> delegates spawning and presentation to `aep-executor`. Read
+> `.claude/skills/aep-executor/references/backends.md` before spawning. On
+> Claude Code the launch mode is **claude-team** (agent teams) or **claude-bg**
+> (native background sessions); on Codex it is **codex-subagent** or
+> **codex-exec**; **legacy** (tmux + optional cmux) runs only when explicitly
+> pinned or on generic hosts. Every mode uses the same AEP-created worktree.
 
 **Where this fits:**
 
 ```
-/onboard → /scaffold → [ /design → /launch → /build → /wrap ]
+/aep-onboard → /aep-scaffold → [ /aep-design → /aep-launch → /aep-build → /aep-wrap ]
                                     ▲ you are here
 ```
 
 **Session:** Main session, automated
-**Input:** OpenSpec change name (from `/design` or `/dispatch` for well-specified stories)
+**Input:** OpenSpec change name (from `/aep-design` or `/aep-dispatch` for well-specified stories)
 **Output:** Running workspace agent with bootstrapped build + optional evaluator
 
 ---
@@ -59,11 +69,11 @@ type="${calibration_type:-visual-design}"
 [ -f "calibration/${type}.yaml" ] || [ -f design-context.yaml ] && echo "calibration context exists" || echo "MISSING"
 ```
 
-**If the calibration artifact does not exist — ABORT.** The user must run `/calibrate <type>` first. Agents dispatched without calibration context will reproduce the same generic output that created the need for alignment in the first place.
+**If the calibration artifact does not exist — ABORT.** The user must run `/aep-calibrate <type>` first. Agents dispatched without calibration context will reproduce the same generic output that created the need for alignment in the first place.
 
 ### 4. Clean up orphan worktree/branch from prior failed launches
 
-Git worktree, unlike jj's `jj workspace forget`, does not auto-clean if a previous `/launch` died mid-flight. Two failure modes can block re-launch — both are silent and confusing on first encounter. Run these idempotent checks before `git worktree add`:
+Git worktree, unlike jj's `jj workspace forget`, does not auto-clean if a previous `/aep-launch` died mid-flight. Two failure modes can block re-launch — both are silent and confusing on first encounter. Run these idempotent checks before `git worktree add`:
 
 ```bash
 # Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
@@ -81,7 +91,7 @@ if git show-ref --verify --quiet refs/heads/feat/<name>; then
   else
     echo "ABORT: feat/<name> has $ahead unmerged commit(s). Investigate before re-launching."
     echo "  - If the work is salvageable: git checkout feat/<name> && finish manually"
-    echo "  - If the work is abandoned:   git branch -D feat/<name> && retry /launch"
+    echo "  - If the work is abandoned:   git branch -D feat/<name> && retry /aep-launch"
     exit 1
   fi
 fi
@@ -95,29 +105,36 @@ fi
 
 The branch deletion is gated on `ahead == 0` so live workspaces are never affected — if the orphan branch has unmerged commits, abort and let the user investigate. The worktree prune is gated on the working directory being missing, so it only fires after a manual `rm -rf` of the worktree dir.
 
+> **Orphan with a live worktree?** If `.feature-workspaces/<name>` exists with
+> committed/in-progress work but no live agent (state says active, agent list
+> says gone), do **not** delete anything — follow the **orphan re-adoption**
+> protocol in `aep-executor/references/backends.md`: re-spawn a worker into the
+> existing worktree with a recovery bootstrap.
+
 ---
 
-## Launch Workspace — `executor.spawn()`
-
-> **Important:** Workspaces must live **outside** `.claude/` — Claude Code treats everything under
-> `.claude/` as sensitive and blocks file writes with permission prompts, even with `--dangerously-skip-permissions`.
-
-### 1. Detect the backend
+## Step 1: Detect the Launch Mode
 
 Run the detection recipe from `.claude/skills/aep-executor/references/backends.md`
-and **announce the selection** (e.g. "Codex host → native subagent backend B3"
-or "tmux + cmux present → session backend B1").
-If the user said "…with workflow" and the host is Claude Code, select B4 and
-follow the dynamic-workflow recipe in the executor reference instead of the steps
-below.
+and **announce the selection**, e.g.:
 
-### 2. Spawn (session backend B1/B2 recipe)
+- "Claude Code + agent teams flag → **claude-team**: one teammate per story;
+  steer with SendMessage; watch via teammate panes."
+- "Claude Code, no teams flag → **claude-bg**: native background session;
+  watch with `claude attach <id>`."
+- "Codex main thread → **codex-subagent**: native worker (aep-builder role);
+  steer with send_input; threads visible in the app / `/agent`."
+- "Pinned tmux → **legacy**: tmux session (+ cmux tab if available)."
 
-Use this block only when detection selects B1/B2. If detection selects Codex B3,
-still create the same AEP worktree, then spawn the Codex worker/subagent from the
-executor reference with an explicit contract to operate only inside
-`.feature-workspaces/<name>/`. B3 has no live tmux monitor and no mid-flight
-`nudge()`; progress is through signals plus the final result/PR state.
+If the user said "…with workflow" and the host is Claude Code, select
+**workflow** and follow the dynamic-workflow recipe in the executor reference
+instead of the steps below.
+
+## Step 2: Create the Worktree (common to all modes)
+
+> **Important:** Workspaces must live **outside** `.claude/` — Claude Code
+> treats everything under `.claude/` as sensitive and blocks file writes with
+> permission prompts, even with `--dangerously-skip-permissions`.
 
 ```bash
 # Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
@@ -126,26 +143,10 @@ BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
   || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
 BASE=${BASE:-main}
 
-# Create the git worktree on a fresh feature branch (outside .claude/ to avoid sensitive path protection)
+# Create the git worktree on a fresh feature branch (outside .claude/)
 mkdir -p .feature-workspaces
 git worktree add -b feat/<name> .feature-workspaces/<name> "$BASE"
-
-# Start the implementation agent in a tmux session. $EXECUTOR is the INTERACTIVE
-# session command from detect() for B1/B2:
-#   claude  → "claude --dangerously-skip-permissions" (interactive; NO -p, NO --rc)
-#   generic → "$AEP_EXECUTOR"                         (interactive session command)
-[ -z "$EXECUTOR" ] && { echo "run detect() first — \$EXECUTOR unset (would launch a bare shell)"; exit 1; }
-tmux new-session -d -s <name> -c .feature-workspaces/<name> "$EXECUTOR"
-
-# cmux is OPTIONAL and is attached LATER — after the bootstrap is sent. Attaching a
-# cmux surface focuses the tmux composer and blocks external send-keys, so the
-# prompt must land first. See "Attach the cmux Review Tab" after Send Bootstrap.
 ```
-
-> **Codex host (B3) / no tmux fallback (B3) / dynamic workflow (B4):** do **not**
-> start a tmux session. Follow the B3/B4 `spawn()` recipe in the executor
-> reference. For B3, tell the user up front: the build runs to completion with no
-> live monitor or mid-flight feedback in this host.
 
 Replace `<name>` with a short feature name (e.g., `add-auth`). The branch will be `feat/add-auth`.
 
@@ -153,38 +154,17 @@ Replace `<name>` with a short feature name (e.g., `add-auth`). The branch will b
 
 > **Disk note:** Each worktree shares `.git/objects` with the main repo (no history duplication), but the working tree itself is duplicated. Budget ~working-tree-size per active workspace.
 
----
+## Step 3: Compose the Bootstrap Prompt
 
-## Send Bootstrap Prompt
+The bootstrap is the same text in every mode; only the delivery differs.
 
-**Session backends (B1/B2):** wait for the agent to fully initialize, then send
-the bootstrap instruction. The ready signal is executor-specific: Claude Code
-shows a `❯` prompt; generic executors may use a timed wait if no readiness glyph
-is configured.
-**For B3 (native subagent):** the bootstrap text _is_ the subagent's initial
-prompt — pass it at `spawn()` time, there is no separate send step. **For B4
-(workflow):** the bootstrap text goes into the build agent's prompt in the
-workflow script.
-
-> **Skill prefix:** If your project syncs skills with a prefix (e.g., `aep-`), replace `/build` with the prefixed name (e.g., `/aep-build`). Check how the build skill is registered in your project's `.claude/skills/` directory.
-
-```bash
-# Wait for readiness. $READY_GREP comes from detect() ('❯' for claude, empty for generic).
-if [ -n "$READY_GREP" ]; then
-  for _ in $(seq 1 12); do
-    tmux capture-pane -t <name>:0 -p -S -5 | grep -q "$READY_GREP" && { echo "ready"; break; }; sleep 2
-  done
-else
-  sleep 8   # no readiness glyph configured — give the composer time to come up
-fi
-```
+> **Skill naming:** AEP skills are canonically registered with the `aep-` prefix (`/aep-build`, `/aep-wrap`, …). If your project installed them under different names, check `.claude/skills/` and adjust the command in the bootstrap accordingly.
 
 ### Inject Prior Lessons (if available)
 
-Before sending the bootstrap prompt, check for relevant lessons from previous builds:
+Before composing the bootstrap, check for relevant lessons from previous builds:
 
 ```bash
-# Read lessons matching this story's module or activity
 ls lessons-learned/*.md 2>/dev/null
 ls lessons-learned/process/*.md 2>/dev/null
 ```
@@ -192,52 +172,64 @@ ls lessons-learned/process/*.md 2>/dev/null
 If relevant lessons exist (matching the story's `module` or `activity`), append a `## Prior Lessons` section to the bootstrap prompt with a summary of relevant entries. Cap at 2000 tokens to avoid context bloat. Also include any relevant process lessons from `lessons-learned/process/*.md` (these apply to all builds, not just module-specific ones).
 
 ```bash
-# Send the bootstrap prompt — same text, backend-aware delivery (executor.spawn finishes here).
-# NOTE: Replace /build with your project's build skill name (e.g., /aep-build)
-PROMPT="/build execute implementation for openspec change <change-name>. Read the worktree-onboarding reference in the build skill's references/worktree-onboarding.md for full setup instructions. Design phases are pre-completed on the integration branch.
+# NOTE: /aep-build is the canonical name; adjust if your project registered the build skill differently
+PROMPT="/aep-build execute implementation for openspec change <change-name>. Read the worktree-onboarding reference in the build skill's references/worktree-onboarding.md for full setup instructions. Design phases are pre-completed on the integration branch.
 
 ## Prior Lessons
 <relevant lessons summary, if any — omit this section if no lessons exist>
 "
-
-# B1/B2: send the bootstrap over tmux BEFORE any cmux tab attaches (a cmux surface
-# focuses the composer and blocks external send-keys, so it must land first). -l
-# sends the literal multi-line text; a separate Enter submits it ONCE. (A bare
-# `send-keys "$PROMPT" Enter` would let embedded newlines submit it line-by-line.)
-# A very large paste can collapse to a "paste again to expand" prompt — if so, a
-# second Enter submits it.
-tmux send-keys -t <name>:0.0 -l -- "$PROMPT"
-tmux send-keys -t <name>:0.0 Enter
-# B3/B4: $PROMPT was passed as the agent's initial prompt at spawn() — nothing to send here.
 ```
 
----
+## Step 4: Spawn — per mode
 
-## Attach the cmux Review Tab (B1)
+The bootstrap **is the spawn prompt** for every native mode; only `legacy`
+has a separate send step. Full recipes live in the executor reference files —
+this is the dispatch:
 
-**Only after the bootstrap has been sent.** On a cmux host (detection set
-`PRESENT=cmux`), open a review tab as a **sibling in the pane that holds the
-orchestrator's own tab** — not `cmux new-workspace` (which makes a separate
-top-level workspace) and not a bare `cmux new-surface` (which defaults to an unset
-`$CMUX_WORKSPACE_ID`). `cmux tree` marks the orchestrator's tab `◀ here`; fall back
-to the surface env vars when inside one. Skip this entire step under B2/B3/B4.
+### Mode: claude-team (`aep-executor/references/claude-native.md`)
+
+Ensure the standing team exists (`TeamCreate` once, team "aep" — see the
+standing-team pattern in the reference), then spawn one teammate named `<name>`
+with the Agent tool. The teammate prompt = worktree contract (absolute path +
+"operate exclusively there") + `$PROMPT` + the human-gate instructions.
+Record the teammate name as `agent_id`.
+
+### Mode: claude-bg (`aep-executor/references/claude-native.md`)
 
 ```bash
-# $CMUX is the cmux CLI path resolved in detect().
-read -r WS PANE < <("$CMUX" tree 2>/dev/null | awk '
-  /workspace workspace:/ {for (i=1;i<=NF;i++) if ($i ~ /^workspace:/) ws=$i}
-  /pane pane:/           {for (i=1;i<=NF;i++) if ($i ~ /^pane:/)      pane=$i}
-  /◀ here/               {print ws, pane; exit}')
-: "${WS:=$CMUX_WORKSPACE_ID}" "${PANE:=$CMUX_PANE_ID}"
-if [ -n "$PANE" ]; then                                  # genuine B1 — a target pane exists
-  SREF=$("$CMUX" new-surface --type terminal --workspace "$WS" --pane "$PANE" --focus true \
-         | grep -oE 'surface:[0-9]+' | head -1)
-  "$CMUX" send --surface "$SREF" "tmux attach -t <name>"$'\n'   # trailing newline submits
-  "$CMUX" rename-tab --surface "$SREF" "<name>"
-else                                                     # reachable but no pane → headless B2
-  echo "cmux reachable but no target pane — workspace runs headless: tmux attach -t <name>"
-fi
+cd .feature-workspaces/<name> && claude --bg --dangerously-skip-permissions "$PROMPT"
+cd - >/dev/null   # record the printed session id as agent_id
 ```
+
+### Mode: codex-subagent (`aep-executor/references/codex-native.md`)
+
+`spawn_agent(agent_type: "aep-builder", message: "<abs worktree path> (branch feat/<name>). $PROMPT")`.
+Record the agent id. Ensure `.codex/agents/aep-builder.toml` is committed in
+the repo (see the role TOML in the reference; `/aep-onboard` installs it).
+
+### Mode: codex-exec (`aep-executor/references/codex-native.md`)
+
+Background `codex exec --cd .feature-workspaces/<name> ... "$PROMPT"`; record
+the exec session id as `agent_id` (steerable later via `codex exec resume`).
+
+### Mode: legacy (`aep-executor/references/tmux-session.md`)
+
+`tmux new-session` in the worktree → readiness wait → `send-keys -l "$PROMPT"`
+
+- `Enter` → then (cmux hosts only) attach the review tab as a sibling pane —
+  the full recipe, ordering caveats included, is in the reference.
+
+## Step 5: Present
+
+Tell the user where to watch/steer, per mode:
+
+| Mode           | Watch                                              | Steer                                                |
+| -------------- | -------------------------------------------------- | ---------------------------------------------------- |
+| claude-team    | teammate pane (split) or `Shift+Down` (in-process) | type in the pane, or lead relays via SendMessage     |
+| claude-bg      | `claude attach <id>` / `claude logs <id>`          | attach; or `feedback.md`                             |
+| codex-subagent | app thread list / `/agent`                         | open the thread; or `send_input` via the main thread |
+| codex-exec     | signals + PR (headless)                            | `codex exec resume <id> "<msg>"`                     |
+| legacy         | cmux tab / `tmux attach -t <name>`                 | `tmux send-keys` or `feedback.md`                    |
 
 ---
 
@@ -279,7 +271,7 @@ Before the generator starts, brainstorm **project-specific** scoring criteria wi
 
 ```bash
 cat openspec/changes/<change-name>/proposal.md
-cat openspec/changes/<change-name>/design.md
+cat openspec/changes/<change-name>/aep-design.md
 ls openspec/changes/<change-name>/specs/
 cat openspec/changes/<change-name>/tasks.md
 ```
@@ -325,26 +317,21 @@ Write `.dev-workflow/evaluator-criteria.md` (per-workspace, not the default refe
 
 ### How the Evaluator Loop Works (Phase 5)
 
-The generator self-orchestrates the evaluation loop at Phase 5. **You do not need to spawn the evaluator manually.** On a session backend (B1/B2) the generator uses `tmux split-window` to create a bottom pane with a new evaluator instance (under B1 the cmux surface displays both panes automatically). Under B3/B4 the evaluator is a sibling subagent / verify stage instead — `/build` Phase 5 picks the matching eval-protocol execution context via `executor.spawn_evaluator()`:
+The generator self-orchestrates the evaluation loop at Phase 5. **You do not
+need to spawn the evaluator manually.** `/aep-build` Phase 5 picks the matching
+spawn via `executor.spawn_evaluator()`:
 
-```
-┌─────────────────────────────────────────────────────┐
-│                                                     │
-│   Generator (building/fixing)                       │
-│   Phase 0-4: full tab / Phase 5+: top half          │
-│                                                     │
-├─────────────────────────────────────────────────────┤
-│                                                     │
-│   Evaluator (spawned at Phase 5, bottom half)       │
-│                                                     │
-└─────────────────────────────────────────────────────┘
-```
+| Generator mode              | Evaluator spawn                                                                                                           |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| claude-team / claude-bg     | foreground Task subagent in the generator's session (inherits the worktree cwd; the evaluator prompt is the spawn prompt) |
+| codex-subagent / codex-exec | `codex exec --cd <abs worktree>` with the `aep-evaluator` role — enforced cwd, bounded one-shot                           |
+| legacy                      | `tmux split-window` bottom pane (under cmux the surface shows both panes)                                                 |
 
 The full loop is documented in the build skill's Phase 5. In summary:
 
-1. Generator writes `eval-request.md` → spawns evaluator in bottom pane
+1. Generator writes `eval-request.md` → spawns evaluator (worktree-bound)
 2. Evaluator evaluates → writes `eval-response-<N>.md`
-3. Generator reads response → fixes issues → closes evaluator pane
+3. Generator reads response → fixes issues
 4. Repeat until pass (max 5 rounds)
 
 ### Evaluator Bootstrap Prompt Template
@@ -382,10 +369,11 @@ The main session can check workspace progress without interrupting the agent:
 # Check current phase and progress
 cat .feature-workspaces/<name>/.dev-workflow/signals/status.json
 
-# Check if ready for human review
+# Check if ready for human review / blocked on a human decision
 ls .feature-workspaces/<name>/.dev-workflow/signals/ready-for-review.flag 2>/dev/null
+ls .feature-workspaces/<name>/.dev-workflow/signals/needs-human.md 2>/dev/null
 
-# Send mid-flight feedback
+# Send mid-flight feedback (every mode reads this at phase boundaries)
 cat >> .feature-workspaces/<name>/.dev-workflow/signals/feedback.md << 'EOF'
 
 ## <date> <time>
@@ -394,19 +382,26 @@ Priority: high
 EOF
 ```
 
+If `needs-human.md` appears (or `status.json` shows `"blocked_on": "human"`),
+the worker is waiting on a decision — answer it through the mode's transport
+(see the Human-Gate Protocol in `aep-executor/references/backends.md`).
+
 ---
 
 ## Managing Parallel Sessions
 
 The main session stays on the integration branch (`$BASE`) and can:
 
-- Launch multiple workspace sessions (one per feature)
-- See all sessions as named cmux tabs **(B1)**, or list them with `tmux ls` and attach by name **(B2)**
-- Switch between sessions by clicking tabs (B1) or `tmux attach -t <name>` (B2)
-- Handle `/wrap` after each PR merges
+- Launch multiple workspace workers (one per feature)
+- See them all: teammate panes (**claude-team**), `claude agents --json`
+  (**claude-bg**), the thread list / `list_agents` (**codex-subagent**),
+  `tmux ls` (**legacy**)
+- Switch into any worker: click its pane / `claude attach <id>` / open its
+  thread / `tmux attach -t <name>`
+- Handle `/aep-wrap` after each PR merges
 
-> Under B3/B4 there are no separate sessions to switch between — progress is read
-> from signals (B3) or the `/workflows` view (B4).
+> Under **codex-exec**, **workflow**, and **headless** there is no live surface —
+> progress is read from signals (+ the `/workflows` view for workflow mode).
 
 Each worktree gets its own working tree on its own `feat/<name>` branch. They share `.git/objects` so history isn't duplicated, but each working tree adds its own checkout-size to disk.
 
@@ -419,7 +414,5 @@ The workspace agent is now running autonomously. It follows the build skill to i
 When the PR merges, run the wrap skill:
 
 ```
-/wrap
+/aep-wrap
 ```
-
-> If using a prefix (e.g., `aep-`), run `/aep-wrap` instead.

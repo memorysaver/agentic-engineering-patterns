@@ -1,6 +1,6 @@
 # Vibe Design Tool Guide
 
-Tools for human-driven design exploration during `/calibrate` Phase 1 → Phase 2 interlude.
+Tools for human-driven design exploration during `/aep-calibrate` Phase 1 → Phase 2 interlude.
 
 ---
 
@@ -18,7 +18,7 @@ Tools for human-driven design exploration during `/calibrate` Phase 1 → Phase 
 
 - **What:** AI design tool that runs inside VS Code / Cursor
 - **Input:** Text prompts, Figma imports, manual canvas editing
-- **Output:** `.pen` JSON design files (stored in `/design` folder), pixel-perfect React/HTML/CSS code
+- **Output:** `.pen` JSON design files (stored in `/aep-design` folder), pixel-perfect React/HTML/CSS code
 - **Export:** React code, HTML/CSS, committed directly to Git
 - **Cost:** Free in early access (requires Claude Code subscription)
 - **Best for:** Design-to-code integration, Git-native design files, IDE workflow

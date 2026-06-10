@@ -15,7 +15,7 @@
 
 ## Language Mismatch
 
-[from /reflect observation or ambient detection]
+[from /aep-reflect observation or ambient detection]
 
 - **Code says:** [term] → **Team says:** [term]
 - **Entity [X]** has fields [a, b, c] → but the domain concept is really [...]

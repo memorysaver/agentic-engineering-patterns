@@ -1,6 +1,6 @@
 # Copy/Tone — Capture Questions
 
-Ask these questions one at a time during `/calibrate capture` for copy-tone.
+Ask these questions one at a time during `/aep-calibrate capture` for copy-tone.
 
 ## Questions
 

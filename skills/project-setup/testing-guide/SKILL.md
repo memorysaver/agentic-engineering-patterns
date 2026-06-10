@@ -1,26 +1,26 @@
 ---
 name: aep-testing-guide
-description: Reference guide for setting up project-level quality infrastructure. Use when creating a new project's test setup, adding test layers, or when the user asks "how do I add tests?", "set up e2e", "testing strategy", "quality gates". Covers workspace setup hook, e2e-test skill creation, and the testing pyramid mapped to /build phases.
+description: Reference guide for setting up project-level quality infrastructure. Use when creating a new project's test setup, adding test layers, or when the user asks "how do I add tests?", "set up e2e", "testing strategy", "quality gates". Covers workspace setup hook, e2e-test skill creation, and the testing pyramid mapped to /aep-build phases.
 ---
 
 # Testing Guide
 
-How to set up the project-level quality infrastructure that the workflow plugin (`/design` → `/launch` → `/build` → `/wrap`) relies on.
+How to set up the project-level quality infrastructure that the workflow plugin (`/aep-design` → `/aep-launch` → `/aep-build` → `/aep-wrap`) relies on.
 
 **Where this fits:**
 
 ```
-/onboard → /scaffold → /testing-guide → [ /design → /launch → /build → /wrap ]
+/aep-onboard → /aep-scaffold → /aep-testing-guide → [ /aep-design → /aep-launch → /aep-build → /aep-wrap ]
                         ▲ you are here
 ```
 
-`/scaffold` creates the project. This guide creates the quality infrastructure. `/build` uses it during feature development.
+`/aep-scaffold` creates the project. This guide creates the quality infrastructure. `/aep-build` uses it during feature development.
 
 ---
 
 ## Two Things to Set Up
 
-Every project needs two things before `/build` can run autonomously:
+Every project needs two things before `/aep-build` can run autonomously:
 
 1. **Workspace Setup Hook** — `.claude/hooks/workspace-setup.sh`
 2. **E2E Test Skill** — `.claude/skills/e2e-test/`
@@ -31,7 +31,7 @@ Every project needs two things before `/build` can run autonomously:
 
 ### What it is
 
-A convention-based script that `/build` calls during Phase 0 (workspace init) and session recovery (`init.sh`). The workflow plugin doesn't know your stack — this script does.
+A convention-based script that `/aep-build` calls during Phase 0 (workspace init) and session recovery (`init.sh`). The workflow plugin doesn't know your stack — this script does.
 
 ### Contract
 
@@ -61,7 +61,7 @@ The hook **MAY**:
 ```bash
 #!/usr/bin/env bash
 # Workspace Setup Hook
-# Called by /build Phase 0 and init.sh (session recovery)
+# Called by /aep-build Phase 0 and init.sh (session recovery)
 #
 # Contract: MUST write .dev-workflow/ports.env
 set -euo pipefail
@@ -130,7 +130,7 @@ Make executable: `chmod +x .claude/hooks/workspace-setup.sh`
 
 The hook will be called:
 
-- Once during `/build` Phase 0 (initial setup)
+- Once during `/aep-build` Phase 0 (initial setup)
 - Again on every `init.sh` run (session recovery after context reset)
 
 Design it to be safe to run multiple times — check if the dev server is already running before starting a new one, don't fail if dependencies are already installed.
@@ -150,7 +150,7 @@ A project-level skill that lives in `.claude/skills/e2e-test/`. It documents wha
 ├── SKILL.md              # Documents test infrastructure + how to add tests
 └── scripts/
     ├── seed.sh           # DB migrations + test account creation (idempotent)
-    └── <feature>-e2e.sh  # One script per feature (added during /build Phase 7)
+    └── <feature>-e2e.sh  # One script per feature (added during /aep-build Phase 7)
 ```
 
 ### SKILL.md template
@@ -305,9 +305,9 @@ Two categories of tests, owned by different parts of the system:
 
 ### Unit Tests (Phase 4 — project framework)
 
-Unit tests are owned by the project's test framework — vitest, jest, pytest, cargo test, go test. The monorepo setup from `/scaffold` (or the project's own config) already configures the test runner.
+Unit tests are owned by the project's test framework — vitest, jest, pytest, cargo test, go test. The monorepo setup from `/aep-scaffold` (or the project's own config) already configures the test runner.
 
-During `/build` Phase 4, the build agent runs the project's test command after implementing each task. No special setup from the e2e-test skill is needed.
+During `/aep-build` Phase 4, the build agent runs the project's test command after implementing each task. No special setup from the e2e-test skill is needed.
 
 > The plugin doesn't teach unit testing. Your framework's docs do that.
 
@@ -369,7 +369,7 @@ If Google Chrome crashes with `_RegisterApplication`, `TransformProcessType`, or
 
 ### The Incremental Pattern
 
-Features start with zero tests and build up through `/build` phases:
+Features start with zero tests and build up through `/aep-build` phases:
 
 ```
 Phase 4 (implement)  → run project's unit tests (framework-level)
@@ -426,7 +426,7 @@ The build agent follows the e2e-test SKILL.md to know where to put scripts and w
 
 ### Evaluator Integration
 
-In full mode (`/launch` with evaluator), the evaluator agent reads `.dev-workflow/feature-verification.json`. Verification steps should map to test assertions where possible:
+In full mode (`/aep-launch` with evaluator), the evaluator agent reads `.dev-workflow/feature-verification.json`. Verification steps should map to test assertions where possible:
 
 ```json
 {
@@ -474,4 +474,4 @@ Add them to your CI pipeline:
 | API contract tests   | `.claude/skills/e2e-test/scripts/<feature>-e2e.sh` | e2e-test skill (Phase 5)         |
 | E2E browser tests    | `.claude/skills/e2e-test/scripts/<feature>-e2e.sh` | e2e-test skill (Phase 6-7)       |
 | Unit tests           | Co-located with source                             | Project test framework (Phase 4) |
-| Feature verification | `.dev-workflow/feature-verification.json`          | `/build` plugin (Phase 5)        |
+| Feature verification | `.dev-workflow/feature-verification.json`          | `/aep-build` plugin (Phase 5)    |

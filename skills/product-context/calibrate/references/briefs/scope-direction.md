@@ -15,7 +15,7 @@
 
 ## The Gap
 
-[from /reflect observation or user's own assessment]
+[from /aep-reflect observation or user's own assessment]
 
 - **Built:** [what exists right now]
 - **Expected:** [what the PM/developer imagined]
@@ -46,7 +46,7 @@ Is this a **scope gap** (missing features within the right direction) or a **dir
 4. Should we adjust the next layer to close this gap, or revise the current layer?
 5. Are there completed stories that should be undone or significantly reworked?
 6. Looking at upcoming layers, what is the absolute minimum to ship a useful release? Should any stories move between layers?
-7. Has the persona or JTBD shifted since `/envision`?
+7. Has the persona or JTBD shifted since `/aep-envision`?
 
 ---
 

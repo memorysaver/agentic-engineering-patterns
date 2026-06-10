@@ -1,6 +1,6 @@
 # API Surface — Capture Questions
 
-Ask these questions one at a time during `/calibrate capture` for api-surface.
+Ask these questions one at a time during `/aep-calibrate capture` for api-surface.
 
 ## Questions
 

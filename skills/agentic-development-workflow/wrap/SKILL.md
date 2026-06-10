@@ -10,7 +10,7 @@ Post-merge archive and workspace cleanup. Run this on the **integration branch**
 **Where this fits:**
 
 ```
-/onboard → /scaffold → [ /design → /launch → /build → /wrap ]
+/aep-onboard → /aep-scaffold → [ /aep-design → /aep-launch → /aep-build → /aep-wrap ]
                                                         ▲ you are here
 ```
 
@@ -125,7 +125,7 @@ git pull --ff-only origin "$BASE"
 git push origin "$BASE"
 ```
 
-> **Concurrency protocol:** This is the only place where story completion status enters `product-context.yaml`. Workspace agents write to signals; `/wrap` (running on the integration branch) reads signals and writes to YAML.
+> **Concurrency protocol:** This is the only place where story completion status enters `product-context.yaml`. Workspace agents write to signals; `/aep-wrap` (running on the integration branch) reads signals and writes to YAML.
 
 ### 5.5. Archive lessons learned
 
@@ -149,15 +149,20 @@ fi
 
 If the lessons file contains only the template header (no Solutions, Errors, Missing, or Summary entries), skip — don't archive empty ceremony.
 
-### 6. Tear down the session + worktree (`executor.teardown()`)
+### 6. Tear down the worker + worktree (`executor.teardown()`)
 
-Kill the workspace's session **before** removing the worktree — otherwise a B1/B2
-`tmux` session keeps running detached on a deleted directory, and these orphans
-accumulate across an autopilot run. This is `executor.teardown()`; on a non-session
-backend (B3/B4) the `tmux kill-session` is simply a no-op.
+Stop the workspace's worker **before** removing the worktree — otherwise an
+OS-bound worker keeps running against a deleted directory, and these orphans
+accumulate across an autopilot run. The stop step is per launch mode (recorded
+as `backend`/`agent_id` in autopilot state, or evident from how you launched):
 
 ```bash
-tmux kill-session -t <name> 2>/dev/null || true   # B1/B2: stop the detached session (no-op otherwise)
+# Mode-specific worker stop (each is a no-op for the other modes):
+#   claude-team    → SendMessage shutdown_request to teammate <name> (team persists)
+#   claude-bg      → claude stop <agent_id>; claude rm <agent_id>
+#   codex-subagent → close_agent(<agent_id>) if still running
+#   codex-exec     → nothing to kill (the exec process exited with the build)
+#   legacy         → tmux kill-session -t <name> 2>/dev/null || true
 
 git worktree remove .feature-workspaces/<name> \
   || git worktree remove --force .feature-workspaces/<name>   # --force only if leftover files block removal
@@ -181,7 +186,7 @@ If `git branch -d` warns the branch isn't fully merged (e.g., the PR was squash-
 
 ## Reflect and Advance (Product-Cycle Mode)
 
-> **Standalone mode:** If `product-context.yaml` doesn't exist, skip the layer gate check. You can still run `/reflect` if you want to classify observations.
+> **Standalone mode:** If `product-context.yaml` doesn't exist, skip the layer gate check. You can still run `/aep-reflect` if you want to classify observations.
 
 After archiving, check the product context:
 
@@ -198,14 +203,14 @@ If all stories in the current layer are completed:
 
 - Suggest running the **layer gate integration test** (defined in `layer_gates` section of the YAML)
 - If the gate passes, update `layer_gates[layer].status: passed` and `completed_at`
-- The next `/dispatch` will advance to the next layer
+- The next `/aep-dispatch` will advance to the next layer
 
 ### Feedback Loop
 
-Consider running `/reflect` to classify observations from this feature and update the product context:
+Consider running `/aep-reflect` to classify observations from this feature and update the product context:
 
 ```
-/reflect
+/aep-reflect
 ```
 
 This closes the feedback loop — bugs, refinements, and discoveries get routed back to the right phase.
@@ -217,11 +222,11 @@ This closes the feedback loop — bugs, refinements, and discoveries get routed 
 Pick the next story from the dispatch queue:
 
 ```
-/dispatch
+/aep-dispatch
 ```
 
 Or classify feedback from the feature you just shipped:
 
 ```
-/reflect
+/aep-reflect
 ```

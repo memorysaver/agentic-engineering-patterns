@@ -3,9 +3,9 @@
 The 7-step state machine executed on each autopilot tick. Each tick is idempotent — running it twice with no external state change produces the same result and takes no duplicate actions.
 
 **Target duration:** <60 seconds per tick
-**Invocation:** `/loop 5m /autopilot tick` or manual `/autopilot tick`
+**Invocation:** `/loop 5m /aep-autopilot tick` or manual `/aep-autopilot tick`
 
-> **BOUNDARY REMINDER:** The autopilot is an orchestrator. Every action on a workspace is `executor.nudge()` / `executor.liveness()` — and autopilot runs only on **session backends (B1/B2)**, where those verbs are `tmux send-keys` / `tmux capture-pane` (the recipe shown throughout this file). Never spawn code reviewers from main, never read workspace source code, never call `gh pr merge`. See SKILL.md "STOP — Orchestrator Boundaries" and `aep-executor/references/backends.md`.
+> **BOUNDARY REMINDER:** The autopilot is an orchestrator. Every action on a workspace is `executor.nudge()` / `executor.liveness()` — autopilot runs only on **steerable, driver-compatible modes** (claude-team / claude-bg / codex-subagent / codex-exec / legacy; see the per-mode transport table in SKILL.md and `aep-executor/references/backends.md`). The nudge texts in this file are mode-independent — deliver each through the workspace's `backend` transport (`SendMessage` / `feedback.md` / `send_input` / `codex exec resume` / `tmux send-keys`). Never spawn code reviewers from main, never read workspace source code, never call `gh pr merge`. See SKILL.md "STOP — Orchestrator Boundaries".
 
 **EXECUTION MODEL — CHECK → ACT** (see SKILL.md "Execution model"). A tick is two halves:
 
@@ -68,6 +68,26 @@ For each workspace in `state.workspaces`:
 - Check `failure_log` for structured error info
 - Add escalation if `attempt_count` exceeds `max_retries` (default 3)
 
+**If `blocked_on == "human"` (or `needs-human.md` has an unresolved entry):**
+
+- The workspace is at a **human gate**, not stuck — exempt it from stuck
+  counting and emit an `escalate` action of type `human_gate` whose
+  `expected_human_action` names the mode-specific answer channel: teammate
+  pane / `claude attach <agent_id>` / open the Codex thread /
+  `codex exec resume <agent_id> "<answer>"` / `tmux attach -t <name>`.
+- Clear the escalation when the entry gains a `resolved:` line.
+
+**Orphan check (session-bound modes — claude-team, codex-subagent):**
+
+- If the workspace's `agent_id` no longer appears in TaskList / `list_agents`
+  (lead restarted, worker crashed) but the worktree exists with progress,
+  emit a `launch` action flagged `readopt: true` — the ACT re-spawns a worker
+  **into the existing worktree** with the recovery bootstrap ("Run
+  `bash .dev-workflow/init.sh` to recover state, read
+  `.dev-workflow/signals/feedback.md`, then continue the /aep-build flow"), then
+  updates `agent_id`. Do not mark the story failed; do not create a new
+  worktree.
+
 ---
 
 ## Step ③: Wrap Completed Workspaces
@@ -75,7 +95,7 @@ For each workspace in `state.workspaces`:
 For each workspace where `story_status == "completed"`:
 
 1. Verify the workspace hasn't already been wrapped (`last_action != "wrapping"` and `last_action != "wrapped"`)
-2. Run `/wrap` for this workspace:
+2. Run `/aep-wrap` for this workspace:
    - This runs on the integration branch (`$BASE`): `git fetch && git pull --ff-only origin "$BASE"`, archive OpenSpec change, sync story status to YAML, remove worktree
 3. Set `last_action = "wrapping"`
 4. After wrap completes:
@@ -91,7 +111,7 @@ After wrapping, **skip to step ⑦** (write state). The next tick will handle di
 
 ## Step ④: Guide Completion
 
-**This is the most important step. ALL actions here use `tmux send-keys`. NEVER spawn Agent tools. NEVER call `gh pr merge`. Workspace agents own code review and merging.**
+**This is the most important step. ALL actions here use `executor.nudge()` (delivered via the workspace's mode transport). NEVER spawn Agent tools for review. NEVER call `gh pr merge`. Workspace agents own code review and merging.**
 
 For each workspace, guide it through quality gates and toward merge completion. This step combines PR state detection, quality enforcement, and merge guidance.
 
@@ -103,11 +123,11 @@ For each workspace:
   ├─ YES → ④a: check PR state
   │   ├─ MERGED/CLOSED → update state, done with this workspace
   │   └─ OPEN → ④b: has eval-response with PASS?
-  │       ├─ NO  → trigger gen/eval via tmux (if not already triggered)
-  │       └─ YES → ④c: guide to merge via tmux (if not already nudged)
+  │       ├─ NO  → trigger gen/eval via nudge (if not already triggered)
+  │       └─ YES → ④c: guide to merge via nudge (if not already nudged)
   └─ NO, phase >= 5?
       ├─ YES → ④b: has eval-response with PASS?
-      │   ├─ NO  → trigger gen/eval via tmux (if not already triggered)
+      │   ├─ NO  → trigger gen/eval via nudge (if not already triggered)
       │   └─ YES → leave alone (workspace will create PR autonomously)
       └─ NO (phase < 5) → skip, still implementing
 ```
@@ -124,7 +144,7 @@ gh pr view <number> --json state --jq '.state'
 - **If state == `"CLOSED"`:** Update workspace `story_status` to `"failed"`, add `failure_log` noting PR was closed without merge, set `last_action = "detected_closed"`.
 - **If state == `"OPEN"`:** Proceed to sub-steps ④b and ④c.
 
-**Autopilot NEVER calls `gh pr merge`.** That is the workspace agent's job (Phase 12 of `/build`). This eliminates premature-merge bugs where autopilot merges before the workspace agent has finished its full flow.
+**Autopilot NEVER calls `gh pr merge`.** That is the workspace agent's job (Phase 12 of `/aep-build`). This eliminates premature-merge bugs where autopilot merges before the workspace agent has finished its full flow.
 
 ### Sub-step ④b: Quality Gate — Ensure Gen/Eval
 
@@ -153,37 +173,37 @@ Check detection conditions (see `references/review-trigger.md` for full logic):
 3. **Phase >= 10, eval older than latest PR commit:** Fresh review needed
 4. **Phase > 5, latest eval shows FAIL:** Send back to Phase 5
 
-**Trigger gen/eval via tmux (NEVER spawn an Agent tool):**
+**Trigger gen/eval via `executor.nudge()` (NEVER spawn an Agent tool):**
 
-```bash
+```
 # First trigger (gentle)
-tmux send-keys -t <workspace-name>:0.0 \
-  "Run Phase 5 code review now. Write eval-request.md, spawn evaluator via tmux split-window, and execute the gen/eval loop per the build skill Phase 5 protocol. Read .dev-workflow/signals/feedback.md for any additional context." Enter
+executor.nudge(<workspace-name>,
+  "Run Phase 5 code review now. Write eval-request.md, spawn the evaluator via executor.spawn_evaluator (your mode's recipe), and execute the gen/eval loop per the build skill Phase 5 protocol. Read .dev-workflow/signals/feedback.md for any additional context.")
 ```
 
 Set in state: `code_review_triggered = true`, `code_review_triggered_at = now`, `last_action = "review_triggered"`.
 
 **Re-trigger after 3 ticks (15 min) with no response:**
 
-```bash
-tmux send-keys -t <workspace-name>:0.0 \
-  "URGENT: Phase 5 code review has not started. If you had a context reset, read .dev-workflow/init.sh to recover state, then run Phase 5 immediately." Enter
+```
+executor.nudge(<workspace-name>,
+  "URGENT: Phase 5 code review has not started. If you had a context reset, read .dev-workflow/init.sh to recover state, then run Phase 5 immediately.")
 ```
 
 Set: `last_action = "review_re_triggered"`.
 
 **Send back (moved past Phase 5 without PASS):**
 
-```bash
-tmux send-keys -t <workspace-name>:0.0 \
-  "Your latest eval-response shows FAIL but you moved past Phase 5. Go back to Phase 5: fix the FAIL items identified in the eval-response, then re-run the gen/eval loop. Do not proceed to PR until eval passes." Enter
+```
+executor.nudge(<workspace-name>,
+  "Your latest eval-response shows FAIL but you moved past Phase 5. Go back to Phase 5: fix the FAIL items identified in the eval-response, then re-run the gen/eval loop. Do not proceed to PR until eval passes.")
 ```
 
 **Fresh review for PR (Phase 10+ with stale eval):**
 
-```bash
-tmux send-keys -t <workspace-name>:0.0 \
-  "Code has changed since your last evaluation. Re-run Phase 5 code review on the current state before proceeding with the PR. Write a new eval-request.md and spawn a fresh evaluator." Enter
+```
+executor.nudge(<workspace-name>,
+  "Code has changed since your last evaluation. Re-run Phase 5 code review on the current state before proceeding with the PR. Write a new eval-request.md and spawn a fresh evaluator.")
 ```
 
 **Escalation:** No eval-response after 6 ticks (30 min) post-trigger → add escalation with type `"eval_not_converging"`.
@@ -196,18 +216,18 @@ For workspaces where the quality gate is satisfied (eval PASS exists) AND PR is 
 
 **1. If `phase < 12` AND `last_action != "merge_nudged"` — workspace hasn't started merge yet:**
 
-```bash
-tmux send-keys -t <workspace-name>:0.0 \
-  "Your code review eval has PASSED. Proceed to Phase 12 now: run pre-merge checks (rebase on main, verify CI, check comments) then merge the PR. In autopilot mode you do not need user confirmation — merge when all Phase 12 checks pass." Enter
+```
+executor.nudge(<workspace-name>,
+  "Your code review eval has PASSED. Proceed to Phase 12 now: run pre-merge checks (rebase on main, verify CI, check comments) then merge the PR. In autopilot mode you do not need user confirmation — merge when all Phase 12 checks pass.")
 ```
 
 Set `last_action = "merge_nudged"`, `last_action_at = now`.
 
 **2. If `phase == 12` AND `consecutive_stuck_ticks >= 2` — workspace started merge but is stuck:**
 
-```bash
-tmux send-keys -t <workspace-name>:0.0 \
-  "Complete Phase 12 merge now: 1) git fetch origin && git rebase origin/\"$(git config --get aep.integration-branch 2>/dev/null || (git show-ref --verify --quiet refs/remotes/origin/develop && echo develop || echo main))\" && git push --force-with-lease origin feat/<name> 2) Verify CI green 3) gh pr merge <number> --squash --delete-branch. Then update status.json with story_status completed." Enter
+```
+executor.nudge(<workspace-name>,
+  "Complete Phase 12 merge now: 1) git fetch origin && git rebase origin/\"$(git config --get aep.integration-branch 2>/dev/null || (git show-ref --verify --quiet refs/remotes/origin/develop && echo develop || echo main))\" && git push --force-with-lease origin feat/<name> 2) Verify CI green 3) gh pr merge <number> --squash --delete-branch. Then update status.json with story_status completed.")
 ```
 
 Set `last_action = "merge_stuck_nudged"`, `last_action_at = now`.
@@ -243,20 +263,23 @@ For each workspace, compare current `(phase, completion_pct)` with the values fr
 
 ### Liveness Check
 
-When signals are stale (same phase and completion_pct as previous tick), check whether the workspace agent is still actively working before counting it as stuck:
+When signals are stale (same phase and completion_pct as previous tick), check whether the workspace agent is still actively working before counting it as stuck. **Exempt first:** if `blocked_on == "human"`, the workspace is gated, not stuck.
 
-**Step 1 — Check tmux pane activity:**
+**Step 1 — Check mode-specific activity** and compare against
+`last_liveness_hash` stored in the workspace state entry:
 
-```bash
-tmux capture-pane -t <workspace-name>:0.0 -p -S -20
-```
+| Mode           | Activity probe                                                          |
+| -------------- | ----------------------------------------------------------------------- |
+| claude-team    | TaskList/TaskGet for the teammate — task status / last message changed? |
+| claude-bg      | `claude agents --json` status + `claude logs <agent_id> \| tail -20`    |
+| codex-subagent | `list_agents` status for `<agent_id>`                                   |
+| codex-exec     | `tail -20 .feature-workspaces/<name>/.dev-workflow/worker.log`          |
+| legacy         | `tmux capture-pane -t <name>:0.0 -p -S -20`                             |
 
-Compare the captured output against `last_tmux_hash` stored in the workspace state entry.
-
-- **`last_tmux_hash` is null** (first tick after launch or restart) → Populate `last_tmux_hash` with hash of current output. Do NOT increment `consecutive_stuck_ticks`. The workspace gets benefit of the doubt on its first stale-signal tick.
-- **tmux session doesn't exist** (capture-pane fails) → First confirm this workspace is a **session backend** (B1/B2). Autopilot only runs on session backends (see SKILL.md "Executor backend"), so a missing session means a crashed/exited agent → treat as no activity and increment `consecutive_stuck_ticks`. (If a workspace was somehow launched under B3/B4, pane-liveness does not apply — fall through to the Step 2 git-diff check and the signals in `monitor()`, do **not** count it stuck on the missing pane alone.)
-- **Output hash differs from `last_tmux_hash`** → Agent is active, signals are lagging. Update `last_tmux_hash`. Do NOT increment `consecutive_stuck_ticks`.
-- **Output hash matches `last_tmux_hash`** → Proceed to Step 2.
+- **`last_liveness_hash` is null** (first tick after launch or restart) → Populate it with the hash of the current probe output. Do NOT increment `consecutive_stuck_ticks`. The workspace gets benefit of the doubt on its first stale-signal tick.
+- **The agent no longer exists** (teammate gone from TaskList, `list_agents` empty, `claude agents` shows exited, tmux session missing) → on a **session-bound mode** this is an **orphan**: emit the re-adoption `launch` action (see Step ②), do NOT count it stuck. On an **OS-bound mode** a missing process means a crashed/exited agent → increment `consecutive_stuck_ticks`.
+- **Probe output differs from `last_liveness_hash`** → Agent is active, signals are lagging. Update `last_liveness_hash`. Do NOT increment `consecutive_stuck_ticks`.
+- **Probe output matches `last_liveness_hash`** → Proceed to Step 2.
 
 **Step 2 — Check for uncommitted code changes:**
 
@@ -272,15 +295,19 @@ git -C .feature-workspaces/<workspace-name> diff --stat
 | Stuck ticks | Duration | Action                                                        |
 | ----------- | -------- | ------------------------------------------------------------- |
 | 3           | 15 min   | Check if workspace has blockers. If yes, log but don't nudge. |
-| 6           | 30 min   | Send tmux nudge (see below). Log warning.                     |
+| 6           | 30 min   | Send nudge via `executor.nudge()` (see below). Log warning.   |
 | 12          | 60 min   | Add escalation. Consider pausing if on critical path.         |
 
 ### Nudge Command (30 min stuck)
 
-```bash
-tmux send-keys -t <workspace-name>:0.0 \
-  "You appear stuck at Phase <N> (<phase_name>) for 30 minutes. Check for errors, read .dev-workflow/signals/feedback.md for any instructions, and continue. If you need help, update status.json with blockers." Enter
 ```
+executor.nudge(<workspace-name>,
+  "You appear stuck at Phase <N> (<phase_name>) for 30 minutes. Check for errors, read .dev-workflow/signals/feedback.md for any instructions, and continue. If you need help, update status.json with blockers.")
+```
+
+> **claude-bg:** 6 stuck ticks is the stop+respawn threshold — `claude stop
+<agent_id>`, then respawn in the worktree with the recovery bootstrap and
+> record the new `agent_id` (recipe in `aep-executor/references/claude-native.md`).
 
 ### Escalation (60 min stuck)
 
@@ -317,13 +344,13 @@ If `available_slots <= 0`: skip dispatch, log "WIP limit reached".
 
 ### Run Dispatch Scoring
 
-Reuse the dispatch scoring logic from `/dispatch` steps 1-3:
+Reuse the dispatch scoring logic from `/aep-dispatch` steps 1-3:
 
 1. **Determine active layer** — find the first layer with incomplete stories
 2. **Layer gate check** — if active layer > 0, verify previous layer gate passed
 3. **Wave ordering** — consult the `waves` section from `product-context.yaml`. Within the active layer, dispatch Wave 1 stories before Wave 2, etc. Only advance to the next wave when all stories in the current wave are completed or in_progress.
 4. **Filter ready queue** — stories with `status: ready` in active layer and current wave, excluding file-conflict stories
-5. **Compute readiness_score** per story (see `/dispatch` Step 3):
+5. **Compute readiness_score** per story (see `/aep-dispatch` Step 3):
    ```
    readiness_score = (min(3, acceptance_criteria_count) + interfaces_defined*2 + files_identified*1 + verification_defined*2 + no_open_questions*2) / 10
    ```
@@ -340,18 +367,18 @@ Before scoring individual stories, check for `compile_mode: grouped_change`:
 1. Identify stories sharing the same `change_group`
 2. Score the group as one unit: sum `business_value` and `unblock_potential` across the group; use max `critical_path_urgency` and max `reuse_leverage`; divide by sum of `complexity_cost` + max `ambiguity_penalty` + max `interface_risk`
 3. Use **min readiness_score** of any story in the group as the group's readiness gate
-4. Dispatch the entire group as one unit — one `/launch`, one workspace, one OpenSpec change containing all grouped stories
+4. Dispatch the entire group as one unit — one `/aep-launch`, one workspace, one OpenSpec change containing all grouped stories
 
 ### Check Routing
 
 For the top-scored story (or group), use `readiness_score` for routing:
 
-- **readiness_score >= 0.7** → dispatch to `/launch`
+- **readiness_score >= 0.7** → dispatch to `/aep-launch`
 - **readiness_score 0.5–0.7** → check `topology.routing.auto_design`:
-  - If `auto_design: true` → route through `/design` automatically (no pause), then `/launch`
+  - If `auto_design: true` → route through `/aep-design` automatically (no pause), then `/aep-launch`
   - If `auto_design: false` → **ESCALATE** (pause for human design input)
 - **readiness_score < 0.5** → check `topology.routing.auto_design`:
-  - If `auto_design: true` → route through `/design` automatically (no pause), then `/launch`
+  - If `auto_design: true` → route through `/aep-design` automatically (no pause), then `/aep-launch`
   - If `auto_design: false` → **ESCALATE** (pause for human design input)
 - **`attempt_count >= 2`** → always **ESCALATE** regardless of readiness (repeated failures need human attention)
 
@@ -361,9 +388,9 @@ If escalation triggers: follow the pause protocol from the main SKILL.md. Do not
 
 If no escalation:
 
-1. Run `/dispatch` for the top story or group (autopilot acts as the "user" selecting the story)
-2. If routed through `/design` (auto_design mode): run `/design` first, then `/launch`
-3. Run `/launch` for the dispatched story (or group)
+1. Run `/aep-dispatch` for the top story or group (autopilot acts as the "user" selecting the story)
+2. If routed through `/aep-design` (auto_design mode): run `/aep-design` first, then `/aep-launch`
+3. Run `/aep-launch` for the dispatched story (or group)
 4. Add workspace entry to state:
 
    ```json
@@ -375,6 +402,8 @@ If no escalation:
      "wave": 1,
      "readiness_score": 0.8,
      "routed_to": "launch",
+     "backend": "claude-team",
+     "agent_id": "<teammate name | bg session id | codex agent id | exec session id | tmux session name>",
      "phase": 0,
      "phase_name": "initializing",
      "story_status": "in_progress",
@@ -386,13 +415,14 @@ If no escalation:
      "code_review_triggered_at": null,
      "eval_rounds_completed": 0,
      "consecutive_stuck_ticks": 0,
+     "last_liveness_hash": null,
      "blockers": []
    }
    ```
 
    For grouped changes: `story_ids` contains all story IDs in the group, `compile_mode` is `"grouped_change"`, `change_group` is the group ID, and `story_id` is the first story in the group (used as the primary identifier).
 
-**Max ONE launch per tick.** Launching involves creating a git worktree, starting a tmux session, and sending a bootstrap prompt — too slow for multiple per tick.
+**Max ONE launch per tick.** Launching involves creating a git worktree, spawning a worker (teammate / bg session / subagent / exec / tmux), and delivering a bootstrap prompt — too slow for multiple per tick.
 
 ### Layer Completion
 
@@ -400,14 +430,14 @@ If all stories in the active layer are completed (after wraps):
 
 1. Suggest running the layer gate integration test
 2. If gate passes: update `layer_gates[layer].status: passed`
-3. **Outcome contract check:** If `product.layers[active_layer].outcome_contract` exists, add an escalation requesting the user to evaluate the outcome contract before advancing. Autopilot **pauses** — outcome evaluation requires human judgment (user testing, analytics, qualitative assessment). The user runs `/reflect` which evaluates outcome contracts in Step 2.75. After `/reflect` completes, resume autopilot.
+3. **Outcome contract check:** If `product.layers[active_layer].outcome_contract` exists, add an escalation requesting the user to evaluate the outcome contract before advancing. Autopilot **pauses** — outcome evaluation requires human judgment (user testing, analytics, qualitative assessment). The user runs `/aep-reflect` which evaluates outcome contracts in Step 2.75. After `/aep-reflect` completes, resume autopilot.
 4. If no outcome contract or outcome evaluation passes: advance to next layer
 5. If gate fails: add escalation, pause autopilot (layer gate failures require human judgment)
 6. If all layers complete: stop autopilot, notify human
 
 ### Orchestration Learning Checkpoint
 
-At natural checkpoints (layer complete, escalation, or autopilot stop), run the orchestration learning protocol from `references/orchestration-learning.md`. This produces `.dev-workflow/autopilot-learnings.md` with cross-workspace findings that feed into `/reflect`.
+At natural checkpoints (layer complete, escalation, or autopilot stop), run the orchestration learning protocol from `references/orchestration-learning.md`. This produces `.dev-workflow/autopilot-learnings.md` with cross-workspace findings that feed into `/aep-reflect`.
 
 ---
 

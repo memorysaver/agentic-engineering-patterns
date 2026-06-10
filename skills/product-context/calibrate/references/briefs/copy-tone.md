@@ -24,7 +24,7 @@
 
 ## Tone Mismatch
 
-[from /reflect observation or ambient detection]
+[from /aep-reflect observation or ambient detection]
 
 - **Current feel:** [how the product reads now]
 - **Expected feel:** [how it should read]

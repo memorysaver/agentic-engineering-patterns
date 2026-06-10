@@ -23,7 +23,7 @@
 
 ## Observed Behavior
 
-[from /reflect observation, error logs, cost data, or user complaints]
+[from /aep-reflect observation, error logs, cost data, or user complaints]
 
 - **Performance:** [what's slow, what's fast enough]
 - **Reliability:** [what fails, how often, what recovers]

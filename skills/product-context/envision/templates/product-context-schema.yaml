@@ -1,23 +1,23 @@
 # Product Context Schema v1
 #
 # Single source of truth for the entire product.
-# Created by /envision and /map, updated by /dispatch, /build, /wrap, /reflect, /calibrate.
+# Created by /aep-envision and /aep-map, updated by /aep-dispatch, /aep-build, /aep-wrap, /aep-reflect, /aep-calibrate.
 # Committed to git — version history tracks how the product evolves.
 #
 # Sections are populated incrementally:
-#   /envision   → opportunity, product (incl. quality_dimensions), calibration.plan
-#   /map        → architecture, stories, topology, layer_gates, cost
-#   /calibrate  → calibration.history, inline updates to architecture/product sections
-#   /dispatch   → stories[].status, stories[].openspec_change (per story)
-#   /build      → .dev-workflow/signals/status.json (story_status, pr_url, cost_usd)
-#   /wrap       → stories[].status, stories[].completed_at, stories[].pr_url, stories[].cost_usd (read from signals)
-#   /reflect    → changelog, stories (new), architecture (amendments)
+#   /aep-envision   → opportunity, product (incl. quality_dimensions), calibration.plan
+#   /aep-map        → architecture, stories, topology, layer_gates, cost
+#   /aep-calibrate  → calibration.history, inline updates to architecture/product sections
+#   /aep-dispatch   → stories[].status, stories[].openspec_change (per story)
+#   /aep-build      → .dev-workflow/signals/status.json (story_status, pr_url, cost_usd)
+#   /aep-wrap       → stories[].status, stories[].completed_at, stories[].pr_url, stories[].cost_usd (read from signals)
+#   /aep-reflect    → changelog, stories (new), architecture (amendments)
 
 schema: v1
 project: <project-name>
 version: "0.1.0" # semantic: major (opportunity shift), minor (architecture/map change), patch (dispatch/build/wrap)
 updated_at: <ISO 8601>
-dispatch_epoch: 0 # incremented on every /dispatch run — consistency marker for agents
+dispatch_epoch: 0 # incremented on every /aep-dispatch run — consistency marker for agents
 
 # ─── SPLIT MODE (v2) ────────────────────────────────────────
 # Products can operate in two modes:
@@ -41,10 +41,10 @@ dispatch_epoch: 0 # incremented on every /dispatch run — consistency marker fo
 # ─── CONCURRENCY PROTOCOL ────────────────────────────────────
 # Only the MAIN SESSION writes to this file. Workspace agents
 # report status through .dev-workflow/signals/. The main session
-# (via /wrap, /dispatch, /reflect) reads signals and updates the
+# (via /aep-wrap, /aep-dispatch, /aep-reflect) reads signals and updates the
 # YAML. This prevents git merge conflicts from concurrent writers.
 
-# ─── OPPORTUNITY (/envision Phase 0) ─────────────────────────
+# ─── OPPORTUNITY (/aep-envision Phase 0) ─────────────────────────
 # Validates whether the idea is worth building at all.
 # Kill early if the opportunity doesn't survive a 5-minute challenge.
 opportunity:
@@ -58,7 +58,7 @@ opportunity:
   decision: proceed # proceed | kill | defer
   decided_at: <ISO date>
 
-# ─── PRODUCT (/envision Phase 1) ─────────────────────────────
+# ─── PRODUCT (/aep-envision Phase 1) ─────────────────────────────
 # Precise product definition. Every statement must be convertible
 # into a verification condition. Vague statements are useless to agents.
 product:
@@ -102,7 +102,7 @@ product:
           target: ">= 60%"
         decision_rule:
           keep_if: "metric >= target"
-          otherwise: "reflect_and_reslice" # /reflect evaluates and may re-slice
+          otherwise: "reflect_and_reslice" # /aep-reflect evaluates and may re-slice
     - layer: 1
       name: <layer-name>
       user_can: "Everything from Layer 0, plus..."
@@ -111,7 +111,7 @@ product:
   # ── USER ACTIVITIES (Story Map Backbone) ──
   # The horizontal axis of a Jeff Patton story map.
   # Each activity is a discrete step in the user's journey, ordered left-to-right.
-  # Extracted during /envision BEFORE defining layers — backbone first, releases second.
+  # Extracted during /aep-envision BEFORE defining layers — backbone first, releases second.
   # Stories reference activities by id. Infrastructure stories leave activity null.
   activities:
     - id: <activity-slug> # e.g., "upload-selfie", "generate-avatar"
@@ -155,7 +155,7 @@ product:
       resolution: "How it was resolved"
   # ── QUALITY DIMENSIONS ──
   # Dimensions where human judgment is needed that agents cannot provide.
-  # Declared during /envision, checked by /reflect, executed by /calibrate.
+  # Declared during /aep-envision, checked by /aep-reflect, executed by /aep-calibrate.
   # Not every dimension needs calibration — only those where "correct but not right" is likely.
   quality_dimensions:
     - dimension: visual-design # visual-design | ux-flow | api-surface | data-model | scope-direction | copy-tone | performance-quality
@@ -163,10 +163,10 @@ product:
       first_calibration_layer: 0.5
       rationale: "Why this dimension needs human calibration"
 
-# ─── CALIBRATION (/envision + /calibrate) ────────────────────
+# ─── CALIBRATION (/aep-envision + /aep-calibrate) ────────────────────
 # Tracks which quality dimensions need human alignment checkpoints
 # and the history of calibration decisions.
-# Plan populated by /envision (refined by /map), history populated by /calibrate.
+# Plan populated by /aep-envision (refined by /aep-map), history populated by /aep-calibrate.
 # .5 layers are "human alignment layers" — the team pauses agent execution
 # to recalibrate intent across one or more quality dimensions.
 calibration:
@@ -183,7 +183,7 @@ calibration:
       sections_updated: [] # e.g., ["architecture.interfaces"] for inline calibrations
       summary: "What was decided"
 
-# ─── ARCHITECTURE (/map Step 1) ──────────────────────────────
+# ─── ARCHITECTURE (/aep-map Step 1) ──────────────────────────────
 # Module boundaries and interface contracts. A wrong boundary costs
 # more than any implementation bug. Human review required.
 architecture:
@@ -271,14 +271,14 @@ architecture:
       reasoning: "Why"
       consequences: "What this enables and constrains"
 
-# ─── STORIES (/map Steps 2-3) ────────────────────────────────
+# ─── STORIES (/aep-map Steps 2-3) ────────────────────────────────
 # The atomic units of work. Each story is a self-contained spec
 # that an agent can implement without asking questions.
 #
 # State machine:
 #   pending → ready       (all dependencies completed)
 #   pending → blocked     (a dependency failed)
-#   ready → in_progress   (/dispatch assigns)
+#   ready → in_progress   (/aep-dispatch assigns)
 #   in_progress → in_review  (PR submitted)
 #   in_review → completed    (verification passes)
 #   in_review → in_progress  (verification fails, retry)
@@ -320,11 +320,11 @@ stories:
       unit: ["What to unit test"]
       integration: ["Cross-module tests"]
       contract: ["Interface compliance tests"]
-    # ── Dispatch scoring (computed by /dispatch, not manually set) ──
+    # ── Dispatch scoring (computed by /aep-dispatch, not manually set) ──
     readiness_score: null # 0.0-1.0 spec completeness (acceptance criteria + interfaces + files + verification + open questions)
     dispatch_score: null # (business_value + unblock_potential + critical_path_urgency + reuse_leverage) / (complexity_cost + ambiguity_penalty + interface_risk)
     on_critical_path: false
-    # ── Execution tracking (updated by /dispatch, /build, /wrap) ──
+    # ── Execution tracking (updated by /aep-dispatch, /aep-build, /aep-wrap) ──
     assigned_to: null # workspace session name
     openspec_change: null # OpenSpec change name
     dispatched_at_epoch: null # which dispatch_epoch assigned this story
@@ -343,7 +343,7 @@ stories:
         unexplored_alternatives: [] # critical for fresh-agent retries
         timestamp: <ISO 8601>
 
-# ─── TOPOLOGY (/map Step 4) ──────────────────────────────────
+# ─── TOPOLOGY (/aep-map Step 4) ──────────────────────────────────
 # Agent roles, contracts, and routing. Defined at planning time
 # because agents need clear boundaries before execution starts.
 topology:
@@ -394,9 +394,9 @@ topology:
     concurrency_limit: 5 # max parallel agents
     conflict_detection: files_affected_overlap
     retry: "2x same agent → failure analyst → fresh agent → human escalation"
-    autonomous: false # true = /autopilot can dispatch without human confirmation
-    auto_design: false # true = skip /design, go straight to /launch for ambiguous stories
-    skip_human_eval: none # none | backend | all — which stories skip human eval in /wrap
+    autonomous: false # true = /aep-autopilot can dispatch without human confirmation
+    auto_design: false # true = skip /aep-design, go straight to /aep-launch for ambiguous stories
+    skip_human_eval: none # none | backend | all — which stories skip human eval in /aep-wrap
   handoffs:
     - from: implementer
       to: evaluator
@@ -422,9 +422,9 @@ layer_gates:
       failures: [] # [{ test: "...", error: "...", boundary: "module_a → module_b" }]
     completed_at: null
 
-# ─── WAVES (/map Step 3) ─────────────────────────────────────
+# ─── WAVES (/aep-map Step 3) ─────────────────────────────────────
 # Groups stories by layer + wave for batch dispatch.
-# Computed by /map from the dependency DAG. Wave 1 has no in-layer
+# Computed by /aep-map from the dependency DAG. Wave 1 has no in-layer
 # dependencies; Wave 2 depends on Wave 1 completing; etc.
 # User-facing term: "Wave". YAML field: stories[].slice.
 waves:
@@ -438,8 +438,8 @@ waves:
     theme: "Walking skeleton integration"
 
 # ─── COST TRACKING ───────────────────────────────────────────
-# Accumulated cost data. Updated by /build after each story.
-# Reviewed by /reflect for optimization opportunities.
+# Accumulated cost data. Updated by /aep-build after each story.
+# Reviewed by /aep-reflect for optimization opportunities.
 cost:
   total_usd: 0
   by_layer: {} # { "0": 12.50, "1": 8.30 }
