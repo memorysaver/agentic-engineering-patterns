@@ -75,18 +75,18 @@ Read `backends.md` first, then the recipe file for the selected mode.
 Every consumer speaks these verbs. The recipe files supply the implementation
 per mode.
 
-| Op                          | Purpose                                                                                                                                                  |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `detect()`                  | Resolve host + native capabilities + pin, select a mode                                                                                                  |
-| `spawn(ws, branch, prompt)` | Start an implementation agent bound to the AEP worktree                                                                                                  |
-| `spawn_evaluator(ws, role)` | Start an evaluator agent (worktree-bound) in the mode's eval context                                                                                     |
-| `nudge(ws, msg)`            | Send a mid-flight instruction _(steerable modes; pull-based under claude-bg)_                                                                            |
-| `liveness(ws)`              | Is the agent actively working? _(mode-specific signal + git-diff corroboration)_                                                                         |
-| `gate(ws)`                  | Surface a worker's human decision: `needs-human.md` + the mode's transport                                                                               |
-| `check(prompt, schema)`     | Run a read-only analysis prompt in a **cheap, context-isolated** agent; return its JSON result — keeps a long-lived orchestrator session's context small |
-| `monitor(ws)`               | Read `.dev-workflow/signals/status.json` — **host-independent, never changes**                                                                           |
-| `present(ws)`               | Human review surface (teammate pane / `claude attach` / Codex thread / cmux tab / signals)                                                               |
-| `teardown(ws)`              | Worker + worktree cleanup                                                                                                                                |
+| Op                          | Purpose                                                                                                                                                     |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `detect()`                  | Resolve host + native capabilities + pin, select a mode                                                                                                     |
+| `spawn(ws, branch, prompt)` | Start an implementation agent bound to the AEP worktree                                                                                                     |
+| `spawn_evaluator(ws, role)` | Start an evaluator agent (worktree-bound) in the mode's eval context                                                                                        |
+| `nudge(ws, msg)`            | Send a mid-flight instruction _(steerable modes; pull-based under claude-bg)_                                                                               |
+| `liveness(ws)`              | Is the agent actively working? _(mode-specific signal + git-diff corroboration)_                                                                            |
+| `gate(ws)`                  | Surface a worker's human decision: `needs-human.md` + the mode's transport, answered hub-and-spoke through the main agent (block-in-place or gate-and-park) |
+| `check(prompt, schema)`     | Run a read-only analysis prompt in a **cheap, context-isolated** agent; return its JSON result — keeps a long-lived orchestrator session's context small    |
+| `monitor(ws)`               | Read `.dev-workflow/signals/status.json` — **host-independent, never changes**                                                                              |
+| `present(ws)`               | Human review surface (teammate pane / `claude attach` / Codex thread / cmux tab / signals)                                                                  |
+| `teardown(ws)`              | Worker + worktree cleanup                                                                                                                                   |
 
 > **`monitor()` is already abstract.** Progress is reported through signal files
 > at phase boundaries regardless of the executor. Native push channels
@@ -175,11 +175,25 @@ This does not spawn anything — it is a dry-run of `detect()`.
   compatibility matrix in `backends.md` makes that explicit, and orphan
   re-adoption makes lead restarts non-fatal.
 
+**Why human gates are hub-and-spoke (main agent as the console):**
+
+- The human shouldn't have to chase worker surfaces. Every mode records the
+  gate in `needs-human.md`; the question flows to the **main agent**, which
+  asks the human and relays the answer. Steerable modes deliver the answer by
+  push (**block-in-place**); batch/pull modes (`workflow`, `headless`,
+  `codex-exec`, `claude-bg`) use **gate-and-park** — the worker commits WIP,
+  returns cleanly, and is resumed into the same worktree with the answer.
+  Parking is cheap because all worker state lives in the worktree +
+  `.dev-workflow/`, never only in agent context. Direct surfaces (teammate
+  pane, attach, threads) remain optional conveniences.
+
 **Why autopilot needs a steerable, driver-compatible mode:**
 
-- `nudge()`/`gate()` presuppose a worker you can reach. `workflow` and
-  `headless` collapse a build into one autonomous unit with no mid-flight
-  surface — autopilot refuses them. All other modes are steerable, with
+- `nudge()` presupposes a worker you can reach mid-flight. `workflow` and
+  `headless` collapse a build into one autonomous unit with no mid-stage
+  surface — autopilot does not drive them (the workflow is its own
+  orchestrator; gate-and-park still gives both a human-gate path through the
+  main agent that launched them). All other modes are steerable, with
   claude-bg degraded to pull-based nudging.
 
 ---

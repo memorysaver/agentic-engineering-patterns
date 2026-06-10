@@ -4,10 +4,10 @@ Per-operation recipes for the two Claude Code native modes. Both replace tmux
 with capabilities built into the Claude Code CLI; neither requires tmux, cmux,
 or any hook. Detection and selection live in `backends.md` — read that first.
 
-| Mode            | Mechanism                                  | Lifetime                                   | Steering                            | Human gate                          |
-| --------------- | ------------------------------------------ | ------------------------------------------ | ----------------------------------- | ----------------------------------- |
-| **claude-team** | agent teams (teammate per story)           | session-bound (dies with the lead session) | `SendMessage` (push)                | teammate→lead `HUMAN_GATE:` message |
-| **claude-bg**   | native background sessions (`claude --bg`) | OS-bound (survives the lead session)       | `feedback.md` (pull) + stop/respawn | `needs-human.md` + `claude attach`  |
+| Mode            | Mechanism                                  | Lifetime                                   | Steering                            | Human gate                                           |
+| --------------- | ------------------------------------------ | ------------------------------------------ | ----------------------------------- | ---------------------------------------------------- |
+| **claude-team** | agent teams (teammate per story)           | session-bound (dies with the lead session) | `SendMessage` (push)                | teammate→lead `HUMAN_GATE:` message                  |
+| **claude-bg**   | native background sessions (`claude --bg`) | OS-bound (survives the lead session)       | `feedback.md` (pull) + stop/respawn | gate-and-park → main agent relays via session resume |
 
 ---
 
@@ -105,7 +105,7 @@ Tell the human: the teammate is visible per `teammateMode` — split pane (click
 into it) or in-process (`Shift+Down` to cycle). The human can type into the
 teammate directly; this is the native replacement for the cmux review tab.
 
-### `gate(ws)` — human gate
+### `gate(ws)` — human gate (block-in-place, hub-and-spoke)
 
 1. Worker appends the question to `signals/needs-human.md` + sets
    `"blocked_on": "human"` in `status.json` (always — the file is the
@@ -203,13 +203,25 @@ git -C .feature-workspaces/<ws> diff --stat             # corroboration
 claude attach <id>     # interactive attach — the native replacement for tmux attach
 ```
 
-### `gate(ws)` — human gate
+### `gate(ws)` — human gate (gate-and-park)
 
-Worker appends to `needs-human.md` + `blocked_on: human` (same protocol). The
-orchestrator detects the file on its next tick and tells the human:
-"workspace `<ws>` needs a decision — run `claude attach <id>`, answer, detach."
-A blocking permission prompt in the worker holds the session the same way;
-`claude attach` surfaces it.
+There is no push channel into a running bg session, so the worker **parks**:
+append to `needs-human.md` + `blocked_on: human`, commit WIP, end the run
+cleanly. The orchestrator detects the gate on its next tick, asks the human in
+the **main session** (hub-and-spoke — the human does not need to attach), and
+relays the answer by resuming the worker:
+
+```bash
+# Resume the same session with the answer (preferred — context intact):
+claude -r <agent_id> --bg --dangerously-skip-permissions \
+  "The human decided: <answer>. Mark the needs-human entry resolved, clear blocked_on, and continue the /aep-build flow."
+# Fallback (session not resumable): respawn in the worktree with the recovery bootstrap + answer.
+# Record the (new) session id as agent_id.
+```
+
+Optional direct surface: while the worker is running, `claude attach <id>`
+also works (a blocking permission prompt holds the session and attach surfaces
+it) — a convenience, not the protocol.
 
 ### `spawn_evaluator(ws, role)`
 

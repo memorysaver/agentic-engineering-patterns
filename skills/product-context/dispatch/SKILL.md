@@ -315,12 +315,15 @@ When the user explicitly asks to dispatch a wave **"with workflow"** AND the hos
 is Claude Code with the dynamic-workflow (Workflow) tool, route the batch through
 the **workflow mode** instead of creating N workers. The dispatch front-end is
 identical — sync, cascade, score, lock, assemble context — only the execution
-plane changes: instead of N `/aep-launch` sessions, author one dynamic workflow that
-fans out `pipeline(stories, build, verify)` with per-agent worktree isolation.
+plane changes: instead of N `/aep-launch` workers, author one dynamic workflow that
+fans out `pipeline(stories, build, verify)` with one agent per story (recipe:
+`aep-executor/references/backends.md` → "Mode: workflow").
 
 ```
 Locks + creates OpenSpec changes for the ready stories in Wave N — up to the WIP limit (as usual)
-Then: one dynamic workflow, one agent per locked story (build → verify), per-agent worktree
+Creates the .feature-workspaces/<name> worktrees (launch guardrails apply)
+Then: one dynamic workflow, one agent per locked story (build → verify), each bound to its worktree
+After the run: collect `gated` results → ask the human → resume gated stories with the answers
 ```
 
 **Respect the WIP limit.** Workflow mode does not exempt the wave from the WIP cap below:
@@ -333,14 +336,18 @@ this one.
 **Announce the mode (this path bypasses `/aep-launch`).** Because dispatch authors
 the workflow directly instead of handing to `/aep-launch`, dispatch owns the
 announcement that `/aep-launch` normally makes: state "workflow mode (dynamic
-workflow) — autonomous, billed, background, **no live monitoring or mid-flight
-feedback**" before authoring the workflow.
+workflow) — autonomous, billed, background; **no mid-stage steering**; human
+gates **park and return here** for confirmation, then gated stories resume"
+before authoring the workflow.
 
-This is the hands-free batch path: autonomous, billed, background, **no mid-run
-human input**. Use it when you want a wave built autonomously and don't need to
-watch/feed individual sessions. Gating: requires Claude Code + Workflow tool (see
-`.claude/skills/aep-executor/references/backends.md`, workflow mode). If the host
-can't support it, fall back to Wave Batch and say so.
+This is the hands-free batch path: autonomous, billed, background. Steering is
+at stage boundaries only — but human decisions are NOT lost: a worker that hits
+one returns a `gated` result (gate-and-park), this session asks you, and the
+story resumes in its worktree with your answer. Use it when you want a wave
+built autonomously without watching individual workers. Requires Claude Code +
+Workflow tool (see `.claude/skills/aep-executor/references/backends.md`,
+"Mode: workflow"). If the host can't support it, fall back to Wave Batch and
+say so.
 
 ### WIP Limits
 

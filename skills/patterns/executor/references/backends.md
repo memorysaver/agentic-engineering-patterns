@@ -21,9 +21,10 @@ sibling files:
 4. [Driver × Backend Compatibility](#driver--backend-compatibility)
 5. [Common Recipes (all modes)](#common-recipes-all-modes)
 6. [The Human-Gate Protocol](#the-human-gate-protocol)
-7. [Orphan Re-adoption](#orphan-re-adoption)
-8. [The Worktree-Context Constraint](#the-worktree-context-constraint)
-9. [Legacy B1–B4 Mapping](#legacy-b1b4-mapping)
+7. [Mode: workflow (dynamic-workflow fan-out)](#mode-workflow-dynamic-workflow-fan-out)
+8. [Orphan Re-adoption](#orphan-re-adoption)
+9. [The Worktree-Context Constraint](#the-worktree-context-constraint)
+10. [Legacy B1–B4 Mapping](#legacy-b1b4-mapping)
 
 ---
 
@@ -34,15 +35,15 @@ Native modes come first; tmux is the explicit-pin / generic-host fallback.
 workers (teammates, Codex subagents) die with the orchestrator session;
 _OS-bound_ workers (bg sessions, exec processes, tmux sessions) survive it.
 
-| Mode               | Backend                         | Lifetime      | Spawn                                     | Nudge                                            | Human gate                                     | Present                            |
-| ------------------ | ------------------------------- | ------------- | ----------------------------------------- | ------------------------------------------------ | ---------------------------------------------- | ---------------------------------- |
-| **claude-team**    | agent teams, teammate per story | session-bound | Agent tool into standing team             | `SendMessage` (push)                             | teammate→lead `HUMAN_GATE:` + `needs-human.md` | teammate pane / `Shift+Down`       |
-| **claude-bg**      | native background sessions      | OS-bound      | `cd <worktree> && claude --bg`            | `feedback.md` (pull); stop/respawn if hard-stuck | `needs-human.md` + `claude attach <id>`        | `claude attach` / `claude logs`    |
-| **codex-subagent** | native multi_agent              | session-bound | `spawn_agent(role=aep-builder)`           | `send_input` (push)                              | approval overlay + `needs-human.md`            | `/agent` (CLI) / thread list (app) |
-| **codex-exec**     | headless exec workers           | OS-bound      | `codex exec --cd <worktree>` (bg process) | `codex exec resume <id>`                         | `needs-human.md` (escalation)                  | signals + PR                       |
-| **legacy**         | tmux session (+ cmux tab)       | OS-bound      | `tmux new-session`                        | `tmux send-keys`                                 | `needs-human.md` + `tmux attach`               | cmux tab / `tmux attach`           |
-| **workflow**       | CC dynamic workflow fan-out     | session-bound | Workflow tool pipeline                    | none                                             | none                                           | `/workflows`                       |
-| **headless**       | one-shot native subagent        | session-bound | Task/Agent tool, worktree-bound           | none                                             | none                                           | signals + PR                       |
+| Mode               | Backend                         | Lifetime      | Spawn                                     | Nudge                                            | Human gate                                                                | Present                            |
+| ------------------ | ------------------------------- | ------------- | ----------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------- | ---------------------------------- |
+| **claude-team**    | agent teams, teammate per story | session-bound | Agent tool into standing team             | `SendMessage` (push)                             | teammate→lead `HUMAN_GATE:` + `needs-human.md`                            | teammate pane / `Shift+Down`       |
+| **claude-bg**      | native background sessions      | OS-bound      | `cd <worktree> && claude --bg`            | `feedback.md` (pull); stop/respawn if hard-stuck | gate-and-park → main agent (resume w/ answer); `claude attach` optional   | `claude attach` / `claude logs`    |
+| **codex-subagent** | native multi_agent              | session-bound | `spawn_agent(role=aep-builder)`           | `send_input` (push)                              | approval overlay + `needs-human.md`                                       | `/agent` (CLI) / thread list (app) |
+| **codex-exec**     | headless exec workers           | OS-bound      | `codex exec --cd <worktree>` (bg process) | `codex exec resume <id>`                         | gate-and-park → main agent (`exec resume` w/ answer)                      | signals + PR                       |
+| **legacy**         | tmux session (+ cmux tab)       | OS-bound      | `tmux new-session`                        | `tmux send-keys`                                 | `needs-human.md` + `tmux attach`                                          | cmux tab / `tmux attach`           |
+| **workflow**       | CC dynamic workflow fan-out     | session-bound | Workflow tool pipeline                    | none mid-stage (steer at stage boundaries)       | gate-and-park → main agent (structured `gated` result + `needs-human.md`) | `/workflows` + signals             |
+| **headless**       | one-shot native subagent        | session-bound | Task/Agent tool, worktree-bound           | none                                             | gate-and-park → main agent (re-spawn w/ answer)                           | signals + PR                       |
 
 **Announce the selection.** Before spawning, state which mode and why — e.g.
 "Claude Code + agent teams flag → `claude-team`: one teammate per story in the
@@ -252,7 +253,12 @@ jq . /tmp/aep-check.out.json
 
 A worker mid-build can hit a decision only the human can make (design
 ambiguity, eval non-convergence, Phase 11.5 manual QA). The record is
-host-agnostic; the transport is per-mode.
+host-agnostic; the transport is per-mode — but the **canonical human console
+is the main agent** (hub-and-spoke): the worker's question flows back to the
+orchestrator, the orchestrator asks the human (AskUserQuestion / plain text in
+the main session), and relays the answer to the worker. The human never _has_
+to visit a worker's surface; per-mode direct interaction (teammate pane,
+`claude attach`, Codex thread, `tmux attach`) is an optional convenience.
 
 **The record (always, every mode):** the worker appends to
 `.dev-workflow/signals/needs-human.md` and sets `"blocked_on": "human"` in
@@ -265,21 +271,106 @@ host-agnostic; the transport is per-mode.
 **Context:** <why the worker can't decide autonomously>
 ```
 
+**Two gate styles.** The worker's behavior after recording the gate depends on
+whether its mode has a push channel back into it:
+
+- **Block-in-place** (steerable modes — claude-team, codex-subagent, legacy):
+  the worker raises the gate, keeps doing whatever doesn't depend on the
+  answer, and waits. The answer arrives on the mode's push transport.
+- **Gate-and-park** (batch/pull modes — workflow, headless, codex-exec, and
+  claude-bg): there is no push channel into a running worker, so the worker
+  **parks**: commit WIP (or leave the tree clean), update `status.json`
+  (`blocked_on: "human"`, current phase), then **end its run cleanly**. The
+  orchestrator detects the gate, gets the human's answer, and **resumes a
+  worker into the same worktree** — the same recipe as orphan re-adoption,
+  with the answer prepended: "The human decided: <answer>. Run
+  `bash .dev-workflow/init.sh` to recover state, mark the needs-human entry
+  resolved, then continue the /aep-build flow." Parking is cheap because all
+  state lives in the worktree + `.dev-workflow/`, not in the agent's context.
+
 **The transport (per mode):**
 
-| Mode           | Worker raises it via                                                    | Human answers via                                                                     |
-| -------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| claude-team    | `SendMessage` to the lead, prefixed `HUMAN_GATE:`                       | lead asks the human and relays via `SendMessage`; or human types in the teammate pane |
-| claude-bg      | the file (orchestrator detects on next tick)                            | `claude attach <id>`, answer, detach                                                  |
-| codex-subagent | native approval overlay (approvals) / ask the parent thread (decisions) | open the source thread (`o` / app click-through) or parent relays via `send_input`    |
-| codex-exec     | the file (orchestrator detects on next tick)                            | `codex exec resume <id> "<answer>"`                                                   |
-| legacy         | the file                                                                | `tmux attach -t <ws>` or `feedback.md`                                                |
+| Mode           | Style          | Worker raises it via                                                    | Main agent relays the human's answer via                                                             | Optional direct surface            |
+| -------------- | -------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| claude-team    | block-in-place | `SendMessage` to the lead, prefixed `HUMAN_GATE:`                       | `SendMessage(to: <ws>, ...)`                                                                         | type in the teammate pane          |
+| claude-bg      | gate-and-park  | the file (orchestrator detects on next tick)                            | resume the session with the answer (`claude -r <id> ...`), or respawn w/ recovery bootstrap + answer | `claude attach <id>` while it runs |
+| codex-subagent | block-in-place | native approval overlay (approvals) / ask the parent thread (decisions) | `send_input(<id>, "<answer>")`                                                                       | open the thread (`o` / app click)  |
+| codex-exec     | gate-and-park  | the file (orchestrator detects on next tick)                            | `codex exec resume <id> "<answer>"`                                                                  | — (headless)                       |
+| workflow       | gate-and-park  | stage returns a structured `gated` result + the file                    | continuation run for gated stories with the answer in the prompt (see Mode: workflow)                | — (batch)                          |
+| headless       | gate-and-park  | the file; the one-shot subagent returns with a gated result             | re-spawn a one-shot into the same worktree with recovery bootstrap + answer                          | — (one-shot)                       |
+| legacy         | block-in-place | the file                                                                | `executor.nudge()` (`tmux send-keys`) or `feedback.md`                                               | `tmux attach -t <ws>`              |
 
 **Resolution:** after acting on the answer, the worker appends
 `resolved: <summary>` under its entry and clears `blocked_on`. The autopilot
 escalation queue consumes the same file — an unresolved `needs-human.md` entry
-becomes an escalation whose `expected_human_action` includes the
-mode-specific answer recipe above.
+becomes an escalation whose `expected_human_action` is "answer in the main
+session" plus the mode-specific relay recipe above. A parked workspace counts
+as **waiting, not stuck and not failed**.
+
+---
+
+## Mode: workflow (dynamic-workflow fan-out)
+
+Claude Code's Workflow tool builds a whole dispatched wave as one deterministic
+fan-out: one build agent per locked story, each with per-agent worktree
+isolation, with `/aep-dispatch` authoring the script (the "…with workflow"
+path bypasses `/aep-launch`). With hub-and-spoke gating this is a complete
+backend, not just a fire-and-forget batch: gates park and return to the main
+agent for confirmation, then gated stories resume.
+
+```js
+// sketch — one agent per story; gates surface in the structured result.
+// `stories` is the dispatched wave: { change, worktree, bootstrap } per item.
+const BUILD_RESULT = {
+  type: "object",
+  properties: {
+    status: { enum: ["completed", "gated", "failed"] },
+    question: { type: "string" }, // set when status == "gated" (mirror of needs-human.md)
+    summary: { type: "string" },
+  },
+  required: ["status"],
+};
+const results = await pipeline(
+  stories,
+  (s) =>
+    agent(
+      `You operate EXCLUSIVELY in ${s.worktree}. Run /aep-build for OpenSpec change ${s.change}. ${s.bootstrap}
+       If you hit a decision only the human can make: append it to .dev-workflow/signals/needs-human.md,
+       set blocked_on:"human" in status.json, commit WIP, and RETURN status "gated" with the question —
+       do not guess and do not wait.`,
+      { phase: "Build", schema: BUILD_RESULT },
+    ),
+  (built, s) =>
+    built.status === "completed"
+      ? agent(`Adversarially verify the build for ${s.change} in ${s.worktree}.`, {
+          phase: "Verify",
+          schema: BUILD_RESULT,
+        })
+      : built,
+);
+return results;
+```
+
+**Gate handling (main agent, after the workflow returns):** collect
+`status: "gated"` items, ask the human each `question` (AskUserQuestion), then
+resume each gated story into its **existing** worktree — either a continuation
+workflow over the gated subset or individual re-launches — with the recovery
+bootstrap + the answer ("The human decided: <answer>…"). `Workflow
+resumeFromRunId` makes the continuation cheap (completed agents return from
+cache). Mid-stage there is still no push nudge — steering happens at stage
+boundaries and through gates.
+
+`monitor()` is unchanged (the build agents still write signals); progress is
+also visible in the `/workflows` view. Autopilot does not drive this mode —
+the workflow is its own orchestrator; its gates surface to the main agent that
+authored it.
+
+> AEP-created worktrees vs `isolation: 'worktree'`: prefer creating the
+> `.feature-workspaces/<ws>` worktrees first (launch guardrails apply) and
+> passing the path in the prompt, so `monitor()`/wrap paths stay standard. The
+> Workflow tool's own `isolation: 'worktree'` puts agents in host-managed
+> paths — acceptable for ad-hoc batches, but then signals live outside
+> `.feature-workspaces/` and `/aep-wrap` does not apply.
 
 ---
 

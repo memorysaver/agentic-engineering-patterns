@@ -139,11 +139,16 @@ resolved: human chose (a) httpOnly cookie — 2026-06-10T15:02:00Z
 
 - Pair every entry with `"blocked_on": "human"` in `status.json`; clear it and
   append a `resolved:` line after acting on the answer.
-- The file is the host-agnostic record; how the question _reaches_ the human is
-  per launch mode (teammate message, `claude attach`, Codex thread, `codex exec
-resume`, `tmux attach`) — see the Human-Gate Protocol in
-  `aep-executor/references/backends.md`.
-- Orchestrators treat a gated workspace as **waiting, not stuck**.
+- The file is the host-agnostic record; the question is answered
+  **hub-and-spoke in the main session** and relayed per launch mode (teammate
+  `SendMessage`, session resume, `send_input`, `codex exec resume`, nudge) —
+  see the Human-Gate Protocol in `aep-executor/references/backends.md`.
+- **Gate-and-park** (workflow / headless / codex-exec / claude-bg): after
+  recording the gate the worker commits WIP and **ends its run cleanly**; the
+  orchestrator later resumes a worker into the same worktree with the answer.
+  A parked worker's exited process is expected — not a crash.
+- Orchestrators treat a gated workspace as **waiting, not stuck and not
+  failed**.
 
 ### `eval-request.md` — Evaluation Request
 

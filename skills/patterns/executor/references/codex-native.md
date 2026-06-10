@@ -5,10 +5,10 @@ Per-operation recipes for the two Codex modes. Both apply to the Codex CLI
 `multi_agent` is stable and on by default from runtime 0.130.0 (no app-side
 toggle). Detection and selection live in `backends.md` — read that first.
 
-| Mode               | Mechanism                          | Lifetime                                    | Steering                 | Human gate                                     |
-| ------------------ | ---------------------------------- | ------------------------------------------- | ------------------------ | ---------------------------------------------- |
-| **codex-subagent** | native multi_agent (`spawn_agent`) | session-bound (dies with the parent thread) | `send_input` (push)      | native approval overlay + `needs-human.md`     |
-| **codex-exec**     | headless `codex exec --cd` workers | OS-bound (independent processes)            | `codex exec resume <id>` | `needs-human.md` (escalation via orchestrator) |
+| Mode               | Mechanism                          | Lifetime                                    | Steering                 | Human gate                                          |
+| ------------------ | ---------------------------------- | ------------------------------------------- | ------------------------ | --------------------------------------------------- |
+| **codex-subagent** | native multi_agent (`spawn_agent`) | session-bound (dies with the parent thread) | `send_input` (push)      | native approval overlay + `needs-human.md`          |
+| **codex-exec**     | headless `codex exec --cd` workers | OS-bound (independent processes)            | `codex exec resume <id>` | gate-and-park → main agent relays via `exec resume` |
 
 ---
 
@@ -113,16 +113,19 @@ git -C .feature-workspaces/<ws> diff --stat      # corroboration
   composer and each subagent has a stable identicon. The human clicks into the
   thread to watch or steer.
 
-### `gate(ws)` — human gate
+### `gate(ws)` — human gate (block-in-place, hub-and-spoke)
 
-Two native channels, plus the file:
+Two native channels, plus the file. In both, the **parent thread (main agent)
+is the human's console** — the human answers there; opening the worker thread
+directly is optional:
 
 - **Approvals** (sandbox/permission requests): surface natively in the active
   thread labeled with the source thread — CLI: press `o` to open that thread
   and approve; app: contextual permission prompt, click into the owning thread.
 - **Non-approval decisions** (design ambiguity, eval non-convergence): worker
   appends to `needs-human.md` + `blocked_on: human` and asks the parent thread;
-  the parent relays the human's answer via `send_input`.
+  the parent asks the human in the main conversation and relays the answer via
+  `send_input(<id>, "<answer>")`.
 
 ### `spawn_evaluator(ws, role)`
 
@@ -185,11 +188,16 @@ git -C .feature-workspaces/<ws> diff --stat                      # corroboration
 tail -5 .feature-workspaces/<ws>/.dev-workflow/worker.log        # process output
 ```
 
-### `present(ws)` / `gate(ws)`
+### `present(ws)` / `gate(ws)` — gate-and-park
 
-Headless — review via signals + the PR. Human gates use `needs-human.md` +
-`blocked_on: human` only; the orchestrator surfaces them as escalations with
-the answer recipe: "reply with `codex exec resume <id> \"<answer>\"`".
+Headless — review via signals + the PR. For a gate the worker **parks**: write
+`needs-human.md` + `blocked_on: human`, commit WIP, finish the run. The
+orchestrator asks the human in the main session and relays the answer:
+
+```bash
+codex exec resume <session-id> --dangerously-bypass-approvals-and-sandbox \
+  "The human decided: <answer>. Mark the needs-human entry resolved, clear blocked_on, and continue the /aep-build flow." < /dev/null
+```
 
 ### `spawn_evaluator(ws, role)`
 

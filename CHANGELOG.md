@@ -46,11 +46,24 @@ file-based signals protocol as the source of truth. Decision record:
 - **`codex-exec` mode** — headless `codex exec --cd <worktree>` workers,
   steerable across sessions via `codex exec resume <id>`; the Codex mode for
   cron-driven autopilot and hard cwd isolation.
-- **Human-gate protocol** — `.dev-workflow/signals/needs-human.md` +
-  `status.json` `blocked_on: "human"`: host-agnostic record of decisions only
-  the human can make, surfaced per-mode (teammate message / `claude attach` /
-  Codex thread / `exec resume` / `tmux attach`). Gated workspaces count as
-  waiting, not stuck.
+- **Human-gate protocol (hub-and-spoke)** — `.dev-workflow/signals/needs-human.md`
+  - `status.json` `blocked_on: "human"`: host-agnostic record of decisions only
+    the human can make. The **main agent is the canonical human console**: the
+    question flows back to the orchestrator, the human answers there, and the
+    answer is relayed per mode — by push on steerable modes
+    (**block-in-place**), or by resuming a parked worker into its worktree on
+    batch/pull modes (**gate-and-park**: the worker commits WIP, records the
+    gate, and ends its run cleanly). Direct worker surfaces (teammate pane,
+    `claude attach`, Codex thread, `tmux attach`) are optional conveniences.
+    Gated workspaces count as waiting, not stuck.
+- **Workflow mode is now a complete backend** — gate-and-park gives the
+  dynamic-workflow fan-out a human-gate path: build agents return a structured
+  `gated` result instead of guessing or stalling; the main agent collects
+  gated stories after the run, asks the human, and resumes them into their
+  existing worktrees (continuation via `resumeFromRunId` or re-launch). New
+  "Mode: workflow" recipe in `backends.md`; the `/aep-dispatch … with
+workflow` path now creates the `.feature-workspaces/<ws>` worktrees and
+  announces gate behavior instead of "no mid-flight feedback".
 - **Orphan re-adoption** — lead restarts no longer strand session-bound
   workers: autopilot re-spawns into the existing worktree with the recovery
   bootstrap instead of failing the story.

@@ -99,14 +99,39 @@ modes (claude-bg, codex-exec, legacy). The same logic gives Codex two
 autopilot shapes: in-thread ticks → codex-subagent; scheduled `codex exec`
 ticks → codex-exec.
 
-### Host-agnostic human gate, per-mode transport
+### Host-agnostic human gate: hub-and-spoke, two styles
 
 New signal: `.dev-workflow/signals/needs-human.md` + `"blocked_on": "human"`
-in `status.json` — the durable record on every mode. The transport varies:
-teammate `HUMAN_GATE:` message; `claude attach <id>`; Codex approval overlay /
-parent-thread relay via `send_input`; `codex exec resume <id> "<answer>"`;
-`tmux attach`. Gated workspaces are _waiting_, not stuck; autopilot surfaces
-them as `human_gate` escalations with the answer recipe.
+in `status.json` — the durable record on every mode. The **main agent is the
+canonical human console** (hub-and-spoke): the worker's question flows back to
+the orchestrator, which asks the human in the main session and relays the
+answer; visiting a worker's surface (teammate pane, `claude attach`, Codex
+thread, `tmux attach`) is an optional convenience, never required. Two styles:
+
+- **Block-in-place** (steerable modes — claude-team, codex-subagent, legacy):
+  the worker waits; the answer arrives by push (`SendMessage` / `send_input` /
+  nudge).
+- **Gate-and-park** (batch/pull modes — workflow, headless, codex-exec,
+  claude-bg): no push channel reaches a running worker, so the worker commits
+  WIP, records the gate, and **ends its run cleanly**; the orchestrator resumes
+  a worker into the same worktree with the answer (the orphan re-adoption
+  recipe, with the answer prepended). Parking is cheap because all worker state
+  lives in the worktree + `.dev-workflow/`.
+
+Gated workspaces are _waiting_, not stuck and not failed; autopilot surfaces
+them as `human_gate` escalations answered in the main session.
+
+### Dynamic workflow as a complete backend
+
+Gate-and-park is what elevates **workflow mode** (the Claude Code
+dynamic-workflow fan-out) from fire-and-forget batch to a complete backend:
+each build agent is prompted to return a structured `gated` result (mirroring
+`needs-human.md`) instead of guessing or stalling; the main agent collects
+gated stories after the run, asks the human, and resumes them into their
+existing worktrees (continuation workflow via `resumeFromRunId`, or individual
+re-launches). Mid-stage push steering still doesn't exist — steering happens
+at stage boundaries and through gates — and autopilot still doesn't drive
+workflow mode (it is its own orchestrator).
 
 ### Orphan re-adoption
 

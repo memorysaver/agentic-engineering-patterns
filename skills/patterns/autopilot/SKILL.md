@@ -76,11 +76,13 @@ are mode-independent; deliver them through your mode's transport.
   it), it is an **orphan, not a failure** — re-spawn a worker into the
   existing worktree with the recovery bootstrap (protocol in
   `aep-executor/references/backends.md`).
-- **workflow / headless (no mid-flight surface):** autopilot's tick/nudge
+- **workflow / headless (no mid-stage surface):** autopilot's tick/nudge
   model does not apply. Hands-free batch under Claude Code is the
   **workflow** path reached via `/aep-dispatch … with workflow`, which is its own
-  orchestrator — not something autopilot drives. If detection yields only
-  workflow/headless, report that autopilot needs a steerable mode and stop.
+  orchestrator — not something autopilot drives (its human gates park and
+  return to the main agent that authored the workflow, not to autopilot). If
+  detection yields only workflow/headless, report that autopilot needs a
+  steerable mode and stop.
 - **tmux nudge form (legacy only):** multi-line nudges are
   `tmux send-keys -t <ws>:0.0 -l -- "<msg>"` then `tmux send-keys -t <ws>:0.0 Enter` —
   a bare `send-keys "<msg>" Enter` would submit line-by-line.

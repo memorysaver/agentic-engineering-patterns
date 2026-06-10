@@ -11,17 +11,20 @@ You are an agent spawned in an isolated git worktree to implement a feature auto
 How you were started determines how you reach the human and how the
 orchestrator reaches you (full table: `aep-executor/references/backends.md`):
 
-| You are…                                                                         | Mode           | You raise human gates via…                           |
-| -------------------------------------------------------------------------------- | -------------- | ---------------------------------------------------- |
-| a Claude Code **teammate** (spawned into a team, you can `SendMessage` the lead) | claude-team    | `HUMAN_GATE:` message to the lead + `needs-human.md` |
-| a Claude Code session whose cwd **is** the worktree (background session)         | claude-bg      | `needs-human.md` (human will `claude attach`)        |
-| a Codex **subagent** (aep-builder role, parent thread exists)                    | codex-subagent | ask the parent thread + `needs-human.md`             |
-| a headless `codex exec` run                                                      | codex-exec     | `needs-human.md` only                                |
-| inside a tmux pane                                                               | legacy         | `needs-human.md` (human will `tmux attach`)          |
+| You are…                                                                         | Mode           | You raise human gates via…                                           |
+| -------------------------------------------------------------------------------- | -------------- | -------------------------------------------------------------------- |
+| a Claude Code **teammate** (spawned into a team, you can `SendMessage` the lead) | claude-team    | `HUMAN_GATE:` message to the lead + `needs-human.md`; wait in place  |
+| a Claude Code session whose cwd **is** the worktree (background session)         | claude-bg      | `needs-human.md`, then **park** (commit WIP, end run cleanly)        |
+| a Codex **subagent** (aep-builder role, parent thread exists)                    | codex-subagent | ask the parent thread + `needs-human.md`; wait in place              |
+| a headless `codex exec` run                                                      | codex-exec     | `needs-human.md`, then **park**                                      |
+| a dynamic-workflow build agent                                                   | workflow       | `needs-human.md` + return a structured `gated` result, then **park** |
+| inside a tmux pane                                                               | legacy         | `needs-human.md`; wait in place (answer arrives via nudge)           |
 
 Whatever the mode: your prompt names your worktree path — operate exclusively
-inside it, and report everything through `.dev-workflow/signals/`. The
-human-gate steps are in `/aep-build` SKILL.md ("The Human-Gate Protocol").
+inside it, and report everything through `.dev-workflow/signals/`. The answer
+always comes back via the **main agent** (hub-and-spoke); parked workers are
+resumed into this worktree with the answer. The human-gate steps are in
+`/aep-build` SKILL.md ("The Human-Gate Protocol").
 
 ## Bootstrap Sequence
 

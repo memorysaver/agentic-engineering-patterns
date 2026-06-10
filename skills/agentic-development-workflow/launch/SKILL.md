@@ -402,6 +402,9 @@ The main session stays on the integration branch (`$BASE`) and can:
 
 > Under **codex-exec**, **workflow**, and **headless** there is no live surface —
 > progress is read from signals (+ the `/workflows` view for workflow mode).
+> Human decisions are still covered: workers **gate-and-park** (record
+> `needs-human.md`, end cleanly), you answer here in the main session, and the
+> story resumes in its worktree with the answer.
 
 Each worktree gets its own working tree on its own `feat/<name>` branch. They share `.git/objects` so history isn't duplicated, but each working tree adds its own checkout-size to disk.
 

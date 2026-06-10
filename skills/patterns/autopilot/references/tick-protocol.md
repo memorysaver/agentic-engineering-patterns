@@ -71,10 +71,16 @@ For each workspace in `state.workspaces`:
 **If `blocked_on == "human"` (or `needs-human.md` has an unresolved entry):**
 
 - The workspace is at a **human gate**, not stuck — exempt it from stuck
-  counting and emit an `escalate` action of type `human_gate` whose
-  `expected_human_action` names the mode-specific answer channel: teammate
-  pane / `claude attach <agent_id>` / open the Codex thread /
-  `codex exec resume <agent_id> "<answer>"` / `tmux attach -t <name>`.
+  counting and emit an `escalate` action of type `human_gate`. The
+  `expected_human_action` is hub-and-spoke: **the human answers in the main
+  session**; the orchestrator relays it on the mode's channel —
+  `SendMessage` (claude-team) / resume the session with the answer
+  (claude-bg, parked) / `send_input` (codex-subagent) /
+  `codex exec resume <agent_id> "<answer>"` (codex-exec, parked) /
+  `executor.nudge()` (legacy). A **parked** worker (gate-and-park: its run
+  ended cleanly after recording the gate) is resumed into the same worktree
+  with the answer + recovery bootstrap — do not treat the exited process as
+  crashed or stuck.
 - Clear the escalation when the entry gains a `resolved:` line.
 
 **Orphan check (session-bound modes — claude-team, codex-subagent):**

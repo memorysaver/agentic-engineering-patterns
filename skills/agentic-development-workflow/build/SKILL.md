@@ -463,17 +463,27 @@ do not guess and do not silently stall. Raise a gate:
    and set `"blocked_on": "human"` in `status.json`.
 
 2. **Raise it on your mode's transport** (how you were launched tells you the
-   mode — see the Human-Gate Protocol in `aep-executor/references/backends.md`):
+   mode — see the Human-Gate Protocol in `aep-executor/references/backends.md`).
+   The answer always comes back through the **main agent** (hub-and-spoke) —
+   you never need the human to visit your surface:
    - **claude-team:** `SendMessage` the team lead, message prefixed `HUMAN_GATE:`
    - **codex-subagent:** ask the parent thread (approvals surface natively)
-   - **claude-bg / codex-exec / legacy:** the file is the transport — the
-     orchestrator detects it on its next tick and routes the human to you
+   - **legacy:** the file is the transport — the orchestrator detects it and
+     relays the answer via nudge
+   - **claude-bg / codex-exec / workflow / headless:** **gate-and-park** — no
+     push channel reaches you, so after recording the gate: commit WIP (or
+     leave the tree clean), update `status.json`, and **end your run cleanly**
+     (workflow agents: return a structured `gated` result carrying the
+     question). The orchestrator will resume a worker into this same worktree
+     with the human's answer — your state is in the worktree +
+     `.dev-workflow/`, so nothing is lost.
 
-3. **Continue what you can** that doesn't depend on the answer; otherwise wait,
-   re-checking `feedback.md`.
+3. **Block-in-place modes only:** continue what you can that doesn't depend on
+   the answer; otherwise wait, re-checking `feedback.md`.
 
-4. **On answer:** append `resolved: <summary>` under your entry, clear
-   `blocked_on`, and proceed.
+4. **On answer** (delivered by push, or in your resume prompt after a park):
+   append `resolved: <summary>` under your entry, clear `blocked_on`, and
+   proceed.
 
 ---
 
