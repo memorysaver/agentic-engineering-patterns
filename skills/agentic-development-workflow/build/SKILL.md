@@ -7,24 +7,24 @@ description: Autonomous feature implementation in a workspace session. Use when 
 
 Autonomous feature implementation inside an isolated git worktree on a fresh `feat/<name>` branch. Initialize the harness, implement tasks linearly (one commit per `tasks.md` row), review, test, create a PR, handle feedback, and merge — all without user interaction.
 
-> **Phase numbering note:** Phases 1-3 (explore, propose, review) were completed on main via `/design`. This skill begins at Phase 0 (workspace init) and continues from Phase 4 (implementation).
+> **Phase numbering note:** Phases 1-3 (explore, propose, review) were completed on main via `/aep-design`. This skill begins at Phase 0 (workspace init) and continues from Phase 4 (implementation).
 
 **Where this fits:**
 
 ```
-/onboard → /scaffold → [ /design → /launch → /build → /wrap ]
+/aep-onboard → /aep-scaffold → [ /aep-design → /aep-launch → /aep-build → /aep-wrap ]
                                               ▲ you are here
 ```
 
 **Session:** Workspace session, autonomous
-**Input:** OpenSpec artifacts on disk (committed to main by `/design`)
+**Input:** OpenSpec artifacts on disk (committed to main by `/aep-design`)
 **Output:** Merged PR
 
 ---
 
 ## Phase 0: Initialize Tracking
 
-Before any work begins, set up the tracking infrastructure and environment. The branch is already created by `/launch` (`feat/<name>`); you do not pre-create commits — implement linearly in Phase 4.
+Before any work begins, set up the tracking infrastructure and environment. The branch is already created by `/aep-launch` (`feat/<name>`); you do not pre-create commits — implement linearly in Phase 4.
 
 1. **Read the worktree-onboarding guide** at `skills/agentic-development-workflow/build/references/worktree-onboarding.md`.
 
@@ -52,7 +52,7 @@ Before any work begins, set up the tracking infrastructure and environment. The 
    ```
 
    Fill in feature name, base commit SHA, date, and OpenSpec change name.
-   **Mark design phases as pre-completed** (they were done on main via `/design`).
+   **Mark design phases as pre-completed** (they were done on main via `/aep-design`).
 
 6. **Read tasks.md** to understand the task list:
 
@@ -197,7 +197,8 @@ Before any work begins, set up the tracking infrastructure and environment. The 
       "pr_url": null,
       "cost_usd": null,
       "completed_at": null,
-      "failure_log": null
+      "failure_log": null,
+      "blocked_on": null
     }
     ```
 
@@ -266,7 +267,7 @@ Also check `dispatched_at_epoch` vs current `dispatch_epoch`. If the epoch advan
 
 ### Status Updates via Signals
 
-> **CONCURRENCY PROTOCOL:** Only the main session writes to `product-context.yaml`. Workspace agents report status through `.dev-workflow/signals/status.json`. The main session (via `/wrap`, `/dispatch`) reads signals and updates the YAML.
+> **CONCURRENCY PROTOCOL:** Only the main session writes to `product-context.yaml`. Workspace agents report status through `.dev-workflow/signals/status.json`. The main session (via `/aep-wrap`, `/aep-dispatch`) reads signals and updates the YAML.
 
 All story status updates flow through the signal file, NOT direct YAML writes:
 
@@ -275,7 +276,7 @@ All story status updates flow through the signal file, NOT direct YAML writes:
 - **Phase 12 merge:** Update `status.json` with `story_status: "completed"`, `completed_at`, `pr_url`, `cost_usd`
 - **On failure (escalation):** Update `status.json` with `story_status: "failed"` and `failure_log` (structured record: error_class, approach_summary, unexplored_alternatives)
 
-`/wrap` (running on main) reads these signal fields and writes the final status to `product-context.yaml`.
+`/aep-wrap` (running on main) reads these signal fields and writes the final status to `product-context.yaml`.
 
 If `product-context.yaml` doesn't exist, skip this tracking (standalone feature mode).
 
@@ -337,26 +338,30 @@ After implementation, verify the code before moving to testing. This phase uses 
 
 **With separate evaluator (full mode):**
 
-If `.dev-workflow/evaluator-criteria.md` exists (written during `/launch`), spawn an evaluator via `executor.spawn_evaluator()`. The generator orchestrates the entire evaluation loop — no manual intervention needed. The execution context tracks the active executor backend (read `.claude/skills/aep-executor/references/backends.md`):
+If `.dev-workflow/evaluator-criteria.md` exists (written during `/aep-launch`), spawn an evaluator via `executor.spawn_evaluator()`. The generator orchestrates the entire evaluation loop — no manual intervention needed. The spawn mechanism tracks the active executor mode (read `.claude/skills/aep-executor/references/backends.md`):
 
-| Backend                  | Evaluator spawn (`executor.spawn_evaluator`)      | eval-protocol mechanism                                                       |
-| ------------------------ | ------------------------------------------------- | ----------------------------------------------------------------------------- |
-| **B1/B2** (session)      | `tmux split-window` — evaluator in a bottom pane  | **Context A** (tmux split)                                                    |
-| **B3** (native subagent) | sibling worktree-bound subagent/evaluator         | **Context B mechanism**, worktree-bound — _not_ its read-only `/validate` use |
-| **B4** (workflow)        | the workflow's `verify` stage (worktree-isolated) | **Context C mechanism**, in-host — _not_ API/SDK CI                           |
+| Generator mode                  | Evaluator spawn (`executor.spawn_evaluator`)                                                                                        | eval-protocol mechanism                                                           |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| **claude-team / claude-bg**     | **foreground Task subagent** in the generator's own session — inherits the worktree cwd; the evaluator prompt _is_ the spawn prompt | **Context B mechanism**, worktree-bound — _not_ its read-only `/aep-validate` use |
+| **codex-subagent / codex-exec** | `codex exec --cd <abs worktree>` with the `aep-evaluator` role — enforced cwd, bounded one-shot                                     | **Context C mechanism**, in-host headless — _not_ API/SDK CI                      |
+| **legacy** (tmux)               | `tmux split-window` — evaluator in a bottom pane                                                                                    | **Context A** (tmux split)                                                        |
+| **workflow**                    | the workflow's `verify` stage (worktree-isolated)                                                                                   | **Context C mechanism**, in-host — _not_ API/SDK CI                               |
 
-> **Always worktree-bound.** Whatever the backend, the evaluator runs against this
-> workspace's worktree (files + git state), per `executor.spawn_evaluator()`. If
-> the generator was launched through Codex B3, spawn the evaluator as a sibling
-> Codex subagent bound to the same worktree, not as a tmux split and not via
-> `codex exec`. The Context labels name the spawn _mechanism_, not the
-> read-only/CI _use cases_ those contexts describe in eval-protocol — so B3 is
-> **not** a main-session read-only reviewer, and B4 is **not** an API/SDK CI job.
+> **Always worktree-bound.** Whatever the mode, the evaluator runs against this
+> workspace's worktree (files + git state), per `executor.spawn_evaluator()`.
+> The Context labels name the spawn _mechanism_, not the read-only/CI _use
+> cases_ those contexts describe in eval-protocol — a Task-subagent evaluator
+> is **not** a main-session read-only reviewer, and a `codex exec` evaluator is
+> **not** an API/SDK CI job. It is worktree-bound review.
 
-The B1/B2 recipe is shown below — it is the common case. For B3/B4, see the `spawn_evaluator` recipe in `aep-executor/references/backends.md`; the request/response signal files and convergence rules are identical across backends.
+For the native modes the evaluator prompt is delivered **at spawn time** — there
+is no readiness wait, no separate send step, and no pane to kill; the agent/exec
+returns when `eval-response-<N>.md` is written. The legacy tmux recipe is shown
+below for pinned-tmux workspaces; the request/response signal files and
+convergence rules are identical across modes.
 
-> **Why tmux splits, not cmux splits (B1/B2):** The generator runs inside tmux but was not spawned by cmux,
-> so it cannot use cmux socket commands. Use `tmux split-window` instead — under B1 the cmux surface attached
+> **Why tmux splits, not cmux splits (legacy):** The generator runs inside tmux but was not spawned by cmux,
+> so it cannot use cmux socket commands. Use `tmux split-window` instead — under cmux the surface attached
 > to the tmux session will display both panes automatically.
 
 #### Evaluation round
@@ -365,58 +370,61 @@ For each round N (starting at 1, max 5):
 
 1. **Write eval-request** — create `.dev-workflow/signals/eval-request.md` per the format in `eval-protocol.md` (Signal Files section).
 
-2. **Spawn evaluator in bottom tmux pane (B1/B2 — Context A):**
+2. **Compose the evaluator prompt** from `agent-contracts.md` (Evaluator Prompt — Code Quality template). Customize with the workspace paths:
 
-   ```bash
-   # Split current tmux window vertically (top=generator, bottom=evaluator). The evaluator
-   # needs to read files and write eval-response, so it runs the INTERACTIVE executor:
-   #   claude → "claude --dangerously-skip-permissions"  (NO -p, NO --rc)
-   #   codex  → "codex --dangerously-bypass-approvals-and-sandbox"  (interactive TUI, NOT `codex exec`)
-   # $EXECUTOR is set by detect(); default to the claude interactive form if unset.
-   tmux split-window -v -c "$(pwd)" "${EXECUTOR:-claude --dangerously-skip-permissions}"
-
-   # Return focus to the generator pane (top)
-   tmux select-pane -t :.0
    ```
-
-   > **B3/B4:** skip the tmux split. Spawn the evaluator as a sibling subagent
-   > (Context B) or a workflow verify stage (Context C) bound to this worktree —
-   > see `aep-executor/references/backends.md` and `eval-protocol.md`.
-
-3. **Wait for evaluator to initialize, then send the bootstrap prompt** from `agent-contracts.md` (Evaluator Prompt — Code Quality template). Customize with the workspace paths:
-
-   ```bash
-   sleep 10
-   # The evaluator prompt is multi-line, so send the literal text with -l, then a single Enter.
-   # (A bare `send-keys "<multi-line>" Enter` would submit it line-by-line before it's complete.)
-   EVAL_PROMPT="<evaluator prompt from agent-contracts.md, customized with:
+   EVAL_PROMPT = <evaluator prompt from agent-contracts.md, customized with:
      criteria_file=.dev-workflow/evaluator-criteria.md
      eval_request_file=.dev-workflow/signals/eval-request.md
      spec_directory=openspec/changes/<change-name>/
      contracts_file=.dev-workflow/contracts.md
      verification_file=.dev-workflow/feature-verification.json
      eval_response_file=.dev-workflow/signals/eval-response-<N>.md
-   >"
-   tmux send-keys -t :.1 -l -- "$EVAL_PROMPT"
-   tmux send-keys -t :.1 Enter
+   >
    ```
 
-4. **Poll for response:**
+3. **Spawn the evaluator (mode-dispatched, prompt = spawn prompt):**
+   - **claude-team / claude-bg:** spawn a **foreground Task subagent** with
+     `EVAL_PROMPT`. It inherits the worktree cwd and returns when done — no
+     sleep, no send step, no teardown.
+   - **codex-subagent / codex-exec:**
+
+     ```bash
+     codex exec --cd "$(pwd)" --dangerously-bypass-approvals-and-sandbox \
+       "$EVAL_PROMPT" < /dev/null
+     ```
+
+     (With the `aep-evaluator` role committed in `.codex/agents/`, prefer
+     `spawn_agent(agent_type: "aep-evaluator", ...)` from a living thread.)
+
+   - **legacy (pinned tmux):**
+
+     ```bash
+     # Split current tmux window vertically (top=generator, bottom=evaluator). The evaluator
+     # needs to read files and write eval-response, so it runs the INTERACTIVE executor.
+     tmux split-window -v -c "$(pwd)" "${EXECUTOR:-claude --dangerously-skip-permissions}"
+     tmux select-pane -t :.0       # return focus to the generator pane
+
+     sleep 10
+     # Multi-line prompt: send literally with -l, then a single Enter.
+     tmux send-keys -t :.1 -l -- "$EVAL_PROMPT"
+     tmux send-keys -t :.1 Enter
+     ```
+
+4. **Confirm the response exists** (the native spawns return on completion; the
+   legacy pane needs a poll):
 
    ```bash
    while [ ! -f .dev-workflow/signals/eval-response-<N>.md ]; do sleep 15; done
    ```
 
-5. **Read response and close evaluator pane:**
-
-   ```bash
-   # Kill the evaluator pane (bottom)
-   tmux kill-pane -t :.1
-   ```
+5. **Read the response.** Legacy only: close the evaluator pane
+   (`tmux kill-pane -t :.1`). Native evaluators have already exited.
 
 6. **Fix FAIL items** — add follow-up commits addressing each FAIL item, then loop back to step 1 with round N+1. Do not rewrite history; the PR review should see the fix as new commits on top.
 
-7. **Max 5 rounds** — if not converging, escalate to human (see convergence rules in `eval-protocol.md`).
+7. **Max 5 rounds** — if not converging, escalate to human via the **human-gate
+   protocol** (see below) and the convergence rules in `eval-protocol.md`.
 
 The evaluator also updates `.dev-workflow/feature-verification.json` with pass/fail results per the field ownership rules in `eval-protocol.md`.
 
@@ -436,6 +444,46 @@ Document findings in `.dev-workflow/code-review-<feature>.md`. Fix any issues fo
 Update the Phase 5 checkbox in the progress file when complete.
 
 > **Signal update:** Update `.dev-workflow/signals/status.json` with `"phase": 5, "phase_name": "code-review"`.
+
+### The Human-Gate Protocol (any phase)
+
+When you hit a decision **only the human can make** — design ambiguity the spec
+doesn't resolve, eval non-convergence after max rounds, a product judgment call —
+do not guess and do not silently stall. Raise a gate:
+
+1. **Record it (always):** append to `.dev-workflow/signals/needs-human.md`:
+
+   ```markdown
+   ## <ISO8601> — Phase <N>
+
+   **Question:** <the decision needed, with the options you considered>
+   **Context:** <why you can't decide autonomously>
+   ```
+
+   and set `"blocked_on": "human"` in `status.json`.
+
+2. **Raise it on your mode's transport** (how you were launched tells you the
+   mode — see the Human-Gate Protocol in `aep-executor/references/backends.md`).
+   The answer always comes back through the **main agent** (hub-and-spoke) —
+   you never need the human to visit your surface:
+   - **claude-team:** `SendMessage` the team lead, message prefixed `HUMAN_GATE:`
+   - **codex-subagent:** ask the parent thread (approvals surface natively)
+   - **legacy:** the file is the transport — the orchestrator detects it and
+     relays the answer via nudge
+   - **claude-bg / codex-exec / workflow / headless:** **gate-and-park** — no
+     push channel reaches you, so after recording the gate: commit WIP (or
+     leave the tree clean), update `status.json`, and **end your run cleanly**
+     (workflow agents: return a structured `gated` result carrying the
+     question). The orchestrator will resume a worker into this same worktree
+     with the human's answer — your state is in the worktree +
+     `.dev-workflow/`, so nothing is lost.
+
+3. **Block-in-place modes only:** continue what you can that doesn't depend on
+   the answer; otherwise wait, re-checking `feedback.md`.
+
+4. **On answer** (delivered by push, or in your resume prompt after a park):
+   append `resolved: <summary>` under your entry, clear `blocked_on`, and
+   proceed.
 
 ---
 
@@ -491,7 +539,7 @@ Generate a reusable E2E test script if the project has an E2E testing setup. The
 
 ## Phase 9: Cleanup & Publish
 
-> **Note:** Do NOT run `/opsx:archive` here. Archive runs on the integration branch after merge (via `/wrap`).
+> **Note:** Do NOT run `/opsx:archive` here. Archive runs on the integration branch after merge (via `/aep-wrap`).
 
 ### 0. Write lesson summary
 
@@ -633,7 +681,7 @@ After PR review fixes are resolved, the human tester evaluates the feature — t
 
 6. **Repeat** — If the human tester finds more issues, start a new round.
 
-> **Signal update:** Create `.dev-workflow/signals/ready-for-review.flag` when ready for human evaluation. Update `status.json` with `"phase": 11.5, "phase_name": "human-evaluation"`.
+> **Signal update:** Create `.dev-workflow/signals/ready-for-review.flag` when ready for human evaluation. Update `status.json` with `"phase": 11.5, "phase_name": "human-evaluation"`. This is a human gate — also follow the Human-Gate Protocol (needs-human.md + `blocked_on: "human"` + your mode's transport) so the orchestrator surfaces it instead of counting you as stuck.
 
 ---
 
@@ -654,7 +702,7 @@ After PR review fixes are resolved, the human tester evaluates the feature — t
 5. Present final status summary
 6. **Merge decision:**
    - **Interactive mode** (user present in session): Ask user for confirmation before merging
-   - **Autopilot mode** (launched via `/launch` into `.feature-workspaces/`): Merge immediately when all pre-merge checks pass — do not wait for user confirmation. The autopilot orchestrator monitors via signals, not interactive prompts.
+   - **Autopilot mode** (launched via `/aep-launch` into `.feature-workspaces/`): Merge immediately when all pre-merge checks pass — do not wait for user confirmation. The autopilot orchestrator monitors via signals, not interactive prompts.
    - **Detection:** If your working directory is inside `.feature-workspaces/`, you are in autopilot mode.
 
 Merge:
@@ -673,7 +721,7 @@ REMOTE_URL=$(git remote get-url origin)
 ## Guardrails
 
 - **Never skip the tracking initialization** (Phase 0). Every workflow needs a progress file and contracts.
-- **Never run `/opsx:archive` from a workspace** — it writes to `openspec/specs/` and causes conflicts. Archive always runs on the integration branch via `/wrap`.
+- **Never run `/opsx:archive` from a workspace** — it writes to `openspec/specs/` and causes conflicts. Archive always runs on the integration branch via `/aep-wrap`.
 - **Never write to `product-context.yaml` from a workspace** — only the main session writes to the YAML. Report all status through `.dev-workflow/signals/status.json`. This is the concurrency protocol.
 - **Always confirm with the user** before creating PRs, merging, or pushing to shared branches.
 - **The `.dev-workflow/` folder is ephemeral** — gitignored, local to each workspace.
@@ -685,6 +733,7 @@ REMOTE_URL=$(git remote get-url origin)
 - **Signal updates are required** — update `.dev-workflow/signals/status.json` at the start and end of every phase. Check `.dev-workflow/signals/feedback.md` for main session feedback at phase boundaries.
 - **Generator must not modify verification data** — never modify `verification_steps` or `passes` in `feature-verification.json`. Only `commit_sha` is generator-writable. The evaluator or human updates `passes` / `evaluated_by` / `round`.
 - **Evaluator loop max 5 rounds** — if the generator-evaluator loop hasn't converged after 5 rounds, escalate to human.
+- **Raise human gates, don't guess** — decisions only the human can make go through the Human-Gate Protocol (`needs-human.md` + `blocked_on: "human"` + your mode's transport). Silent stalls read as stuck; unrecorded guesses read as scope drift.
 
 ---
 
@@ -693,5 +742,5 @@ REMOTE_URL=$(git remote get-url origin)
 After merge, signal the main session to run:
 
 ```
-/wrap
+/aep-wrap
 ```

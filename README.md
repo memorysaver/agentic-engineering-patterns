@@ -22,7 +22,7 @@ Agentic:        invest heavily in spec precision → parallel execution → ship
                 (optimizes for agent execution quality)
 ```
 
-Every skill in this plugin serves that logic. The time you spend in `/envision` and `/map` pays back exponentially when agents build in parallel without asking questions.
+Every skill in this plugin serves that logic. The time you spend in `/aep-envision` and `/aep-map` pays back exponentially when agents build in parallel without asking questions.
 
 ## Installing Skills
 
@@ -62,12 +62,12 @@ Install the Agentic Engineering Patterns (AEP) skills into this project, pinned 
 
 5. Verify with `npx skills list`. Restore from the lockfile later with `npx skills experimental_install`.
 
-6. REQUIRED — install the OpenSpec CLI. AEP is a spec-driven workflow: its skills (/scaffold,
-   /dispatch, /design, /build, /wrap) shell out to `openspec`, so it must be on PATH. Install it
+6. REQUIRED — install the OpenSpec CLI. AEP is a spec-driven workflow: its skills (/aep-scaffold,
+   /aep-dispatch, /aep-design, /aep-build, /aep-wrap) shell out to `openspec`, so it must be on PATH. Install it
    globally (needs Node >= 20.19), then verify:
      npm install -g @fission-ai/openspec@latest
      openspec --version
-   AEP creates the per-project openspec/ artifacts itself — /scaffold initializes them for a new
+   AEP creates the per-project openspec/ artifacts itself — /aep-scaffold initializes them for a new
    project, or run `openspec init` once in an existing repo.
 
 7. Then ALWAYS ASK the user which optional add-ons they want — both come from
@@ -78,11 +78,11 @@ Install the Agentic Engineering Patterns (AEP) skills into this project, pinned 
         If yes → install `project-memory` (and `memory-forge`), run project-memory to bootstrap
         project-memory/, then add a concise "## Memory & Learning Loop" section to AGENTS.md that
         LAYERS these onto AEP's native lessons loop — don't duplicate it. (AEP already captures
-        via /build -> .dev-workflow/lessons.md, archives via /wrap -> lessons-learned/, and
-        recalls via /launch.) Keep it to a few lines; the skills are self-describing:
-          - project-memory — recall at /dispatch, and at /wrap persist the just-archived lesson
+        via /aep-build -> .dev-workflow/lessons.md, archives via /aep-wrap -> lessons-learned/, and
+        recalls via /aep-launch.) Keep it to a few lines; the skills are self-describing:
+          - project-memory — recall at /aep-dispatch, and at /aep-wrap persist the just-archived lesson
             into project-memory/ for qmd-backed semantic recall.
-          - memory-forge — at /reflect or before a PR, distill settled lessons (>=7 days, once
+          - memory-forge — at /aep-reflect or before a PR, distill settled lessons (>=7 days, once
             >=3 have accrued) into reusable skills the next agent auto-loads.
    Install each chosen skill once per agent, then commit the installed files (the commit is the pin):
      npx skills add memorysaver/skills@<latest-tag> -a claude-code --skill project-behavior -y
@@ -145,10 +145,10 @@ npx skills add memorysaver/skills@<latest-tag> -a claude-code \
   (a Karpathy coding-discipline pack by default); run it after installing.
 - **`project-memory`** — a git-committable `project-memory/` store with qmd-backed semantic recall;
   run it to set up, then add a concise `## Memory & Learning Loop` section to `AGENTS.md` that
-  **layers** it onto AEP's native lessons loop (recall at `/dispatch`, persist at `/wrap`) rather
+  **layers** it onto AEP's native lessons loop (recall at `/aep-dispatch`, persist at `/aep-wrap`) rather
   than running a parallel one.
 - **`memory-forge`** — distills settled `project-memory/` lessons (>=7 days) into reusable skills at
-  `/reflect` or before a PR — the distillation step AEP's native loop doesn't have.
+  `/aep-reflect` or before a PR — the distillation step AEP's native loop doesn't have.
 
 These aren't part of AEP's versioned release — pin them the same way you pin AEP: install the
 latest [`memorysaver/skills`](https://github.com/memorysaver/skills/releases/latest) release
@@ -243,7 +243,7 @@ The workflow separates **thinking** from **doing**:
 │   goals, decomposition, architecture, priorities, feedback      │
 │                                                                 │
 │   ┌──────────┐    ┌──────────┐    ┌──────────┐                 │
-│   │ /envision │───►│  /map    │───►│ /reflect │──┐              │
+│   │ /aep-envision │───►│  /aep-map    │───►│ /aep-reflect │──┐              │
 │   │          │    │          │    │          │  │              │
 │   │ what to  │    │ how to   │    │ what we  │  │              │
 │   │ build    │    │ break it │    │ learned  │  │              │
@@ -254,7 +254,7 @@ The workflow separates **thinking** from **doing**:
 │                         │  feedback loop         │              │
 │                         ▼                        │              │
 │                  ┌────────────┐                   │              │
-│                  │ /dispatch  │  picks stories    │              │
+│                  │ /aep-dispatch  │  picks stories    │              │
 │                  │            │  from the map,    │              │
 │                  │ what to    │  creates OpenSpec │              │
 │                  │ work on    │  changes          │              │
@@ -274,7 +274,7 @@ The workflow separates **thinking** from **doing**:
 │   produce PRs. They don't decide what to build.                 │
 │                                                                 │
 │   ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌─────────┐  │
-│   │ /design  │───►│ /launch  │───►│  /build  │───►│  /wrap  │  │
+│   │ /aep-design  │───►│ /aep-launch  │───►│  /aep-build  │───►│  /aep-wrap  │  │
 │   │          │    │          │    │          │    │         │  │
 │   │ refine   │    │ spawn    │    │ implement│    │ archive │  │
 │   │ the spec │    │ agent    │    │ + test   │    │ + update│  │
@@ -293,7 +293,7 @@ The workflow separates **thinking** from **doing**:
 AEP organizes all work as a [Jeff Patton story map](https://www.jpattonassociates.com/user-story-mapping/). Read left-to-right for the user journey, top-to-bottom for enrichment. Every AEP term maps to a position on this structure:
 
 ```
-                            ACTIVITY BACKBONE (extracted by /envision)
+                            ACTIVITY BACKBONE (extracted by /aep-envision)
     ─────────────────────────────────────────────────────────────────────────────►
     "The user authenticates, then configures, then monitors, then reviews"
 
@@ -383,11 +383,11 @@ LEGEND
   Quality Dim = what to calibrate     S/M/L  complexity
 
   SKILLS                              READING ORDER
-  /envision  → activities + layers    left → right  = user journey
-  /map       → stories + waves        top → down    = enrichment
-  /calibrate → alignment decisions    ═══           = layer boundary
-  /dispatch  → scores + launches      ─ ─           = gate / release line
-  /reflect   → feedback → right phase
+  /aep-envision  → activities + layers    left → right  = user journey
+  /aep-map       → stories + waves        top → down    = enrichment
+  /aep-calibrate → alignment decisions    ═══           = layer boundary
+  /aep-dispatch  → scores + launches      ─ ─           = gate / release line
+  /aep-reflect   → feedback → right phase
 ```
 
 ## The Plugins
@@ -399,7 +399,7 @@ Each plugin implements one layer of the mental model.
 Captures the "what and why" of the entire product in a single `product-context.yaml` — committed to git, versioned, and machine-parseable.
 
 ```
-/envision                        /map                            /reflect
+/aep-envision                        /aep-map                            /aep-reflect
     │                               │                               │
     ▼                               ▼                               ▼
 Opportunity Brief               System Map                      Classify feedback:
@@ -417,16 +417,16 @@ Context Document                Story Graph                     shift → re-env
     └───────────────┬───────────────┘                               │
                     │                                               │
                     ▼                                               │
-               /dispatch                                            │
+               /aep-dispatch                                            │
                "pick next story,          ◄─────────────────────────┘
                 create OpenSpec change,     (new stories feed back
-                route to /design"            into the dispatch queue)
+                route to /aep-design"            into the dispatch queue)
                     │
-                    ├─── integer layer ──► /design → /launch → /build → /wrap
+                    ├─── integer layer ──► /aep-design → /aep-launch → /aep-build → /aep-wrap
                     │
-                    └─── .5 alignment layer ──► /calibrate → human aligns
-                                                  → /calibrate capture
-                                                  → /dispatch → /launch → /build → /wrap
+                    └─── .5 alignment layer ──► /aep-calibrate → human aligns
+                                                  → /aep-calibrate capture
+                                                  → /aep-dispatch → /aep-launch → /aep-build → /aep-wrap
 ```
 
 All sections live in one `product-context.yaml` file — opportunity, product, architecture, stories (with state machine), topology, layer gates, cost tracking, and a semantic changelog.
@@ -435,49 +435,104 @@ All sections live in one `product-context.yaml` file — opportunity, product, a
 
 ### 2. Feature Lifecycle — the execution cycle
 
-Takes one story from the map and turns it into a merged PR. `/dispatch` picks the story; the two-session model executes it:
+Takes one story from the map and turns it into a merged PR. `/aep-dispatch` picks the story; the two-session model executes it:
 
 ```
 MAIN SESSION (you + AI)                WORKSPACE SESSION (agent alone)
 ━━━━━━━━━━━━━━━━━━━━━━                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-/dispatch
+/aep-dispatch
   pick story from YAML
   create OpenSpec change
          │
-/design
+/aep-design
   refine the spec
-  (or skip if well-specified) ────►   /build
+  (or skip if well-specified) ────►   /aep-build
          │                              init tracking, read tasks.md
-/launch                                 implement each task linearly
+/aep-launch                                 implement each task linearly
   create git worktree                   (one git commit per task)
   on feat/<name> branch                 code review (+ evaluator loop)
   bootstrap agent             ◄────     create PR, handle review
   optional: spawn evaluator             merge (squash + delete branch)
          │                                     │
-/wrap    ◄─────────────────────────────────────┘
+/aep-wrap    ◄─────────────────────────────────────┘
   archive OpenSpec change
   update story status in YAML
   remove worktree + branch
   check layer gate
-  suggest /reflect
+  suggest /aep-reflect
 ```
 
 **Why two sessions:** Design needs human judgment — you decide direction, scope, tradeoffs. Implementation is mechanical — the agent follows the spec, implements, tests, publishes. Separating them lets the agent work autonomously for hours while you do other things.
 
 **Why git + worktree:** `git worktree add -b feat/<name>` gives each agent an isolated working tree on its own branch, sharing `.git/objects` so history isn't duplicated. Linear commits (one per `tasks.md` row) make the PR's commit list a readable table of contents. Squash-merge keeps `main`'s history clean. AEP previously used Jujutsu (jj); see [docs/decisions/migrate-from-jj-to-git.md](docs/decisions/migrate-from-jj-to-git.md) for why we switched.
 
+#### Launch modes — native-first executor backends
+
+`/aep-launch` doesn't hardwire one runtime. It detects the host through the
+**executor abstraction** (`aep-executor`) and spawns the workspace agent with
+the host's _native_ parallel-agent machinery — tmux+cmux survives only as an
+explicitly-pinned legacy mode. Every mode satisfies the same invariants: one
+story = one context window + one AEP-created worktree at
+`.feature-workspaces/<name>` + one `.dev-workflow/` plan dir, with file-based
+signals as the source of truth.
+
+| Mode               | Host / mechanism                                                | Lifetime      | Mid-flight steering                 | Watch it via                    |
+| ------------------ | --------------------------------------------------------------- | ------------- | ----------------------------------- | ------------------------------- |
+| **claude-team**    | Claude Code agent teams — one teammate per story, standing team | session-bound | `SendMessage` (push)                | teammate pane / `Shift+Down`    |
+| **claude-bg**      | Claude Code native background sessions (`claude --bg`)          | OS-bound      | `feedback.md` (pull) + stop/respawn | `claude attach` / `claude logs` |
+| **codex-subagent** | Codex multi_agent (desktop app + CLI), `aep-builder` role       | session-bound | `send_input` (push)                 | thread list / `/agent`          |
+| **codex-exec**     | headless `codex exec --cd <worktree>` workers                   | OS-bound      | `codex exec resume <id>`            | signals + PR                    |
+| **workflow**       | Claude Code dynamic-workflow fan-out (one agent per story)      | session-bound | stage boundaries + gates only       | `/workflows` view + signals     |
+| **legacy**         | tmux session (+ optional cmux tab) — pin or generic-host only   | OS-bound      | `tmux send-keys`                    | cmux tab / `tmux attach`        |
+
+Selection is automatic and native-first (teams flag → `claude-team`; otherwise
+`claude-bg`; Codex main thread → `codex-subagent`; cron-driven → `codex-exec`).
+The two manual levers: `git config aep.executor-backend tmux` pins legacy, and
+"…with workflow" opts into the batch fan-out. **Lifetime matters for
+orchestration:** session-bound workers die with the orchestrator session, so
+`/aep-autopilot` under a long-lived `/loop` can use any mode, while cron-driven
+ticks need the OS-bound ones. Full detection/selection/recipes:
+[`skills/patterns/executor/references/backends.md`](skills/patterns/executor/references/backends.md).
+
+#### Human gates — hub-and-spoke, two styles
+
+A workspace agent that hits a decision only the human can make (design
+ambiguity, eval non-convergence, manual QA) never guesses and never silently
+stalls — it raises a **human gate**: append the question to
+`.dev-workflow/signals/needs-human.md` and set `blocked_on: "human"` in
+`status.json`. The **main agent is the canonical human console**
+(hub-and-spoke): the question flows back to the orchestrator, you answer it
+there, and the answer is relayed to the worker. You never _have_ to visit a
+worker's surface — the per-mode panes/threads/attach are optional conveniences.
+How the answer travels depends on the mode:
+
+- **Block-in-place** (claude-team / codex-subagent / legacy): the worker waits
+  in place; the answer arrives on the mode's push channel (`SendMessage` /
+  `send_input` / tmux nudge).
+- **Gate-and-park** (workflow / headless / codex-exec / claude-bg): no push
+  channel reaches a running worker, so the worker **parks** — commits WIP,
+  records the gate, and ends its run cleanly. The orchestrator collects the
+  question, asks you, and **resumes a worker into the same worktree** with
+  your answer. Parking is cheap because all worker state lives in the worktree
+  - `.dev-workflow/`, never only in agent context.
+
+Gate-and-park is what makes the **workflow** mode a complete backend rather
+than fire-and-forget batch: each build agent returns a structured `gated`
+result, the main agent asks you after the run, and gated stories resume in
+their worktrees. Gated workspaces count as _waiting_ — not stuck, not failed.
+
 ### 3. Project Setup — the one-time foundation
 
 Gets your machine and project ready. Run once.
 
 ```
-/onboard                             /scaffold
+/aep-onboard                             /aep-scaffold
     │                                    │
     ▼                                    ▼
 Verify tools                         Scaffold monorepo
 (bun, git, gh, claude,               (Better-T-Stack: frontend,
- openspec, tmux, cmux)                backend, database, auth,
+ openspec; tmux optional)             backend, database, auth,
                                       API layer, addons)
     │                                    │
     ▼                                    ▼
@@ -488,31 +543,31 @@ Install plugins                      Initialize OpenSpec
 
 ## The Feedback Loop
 
-The workflow is a loop, not a line. After shipping features, `/reflect` classifies what you learned:
+The workflow is a loop, not a line. After shipping features, `/aep-reflect` classifies what you learned:
 
 ```
                     ┌──────────────────────────────────┐
                     │                                  │
      ┌──────────── │ ◄── opportunity shift             │
-     │              │      (back to /envision)          │
+     │              │      (back to /aep-envision)          │
      │              │                                  │
      │  ┌───────── │ ◄── discovery                     │
-     │  │           │      (update /envision or /map)   │
+     │  │           │      (update /aep-envision or /aep-map)   │
      │  │           │                                  │
      │  │  ┌────── │ ◄── refinement                    │
      │  │  │        │      (new story in next layer)    │
      │  │  │        │                                  │
      │  │  │  ┌─── │ ◄── polish                        │
-     │  │  │  │     │      (.5 layer → /calibrate)      │
+     │  │  │  │     │      (.5 layer → /aep-calibrate)      │
      │  │  │  │     │                                  │
      │  │  │  │  ┌─ │ ◄── bug                           │
-     │  │  │  │  │  │      (fix story, back to /design) │
+     │  │  │  │  │  │      (fix story, back to /aep-design) │
      │  │  │  │  │  │                                  │
      │  │  │  │  │  │ ◄── process                       │
      │  │  │  │  │  │      (workflow improvement)       │
      │  │  │  │  │  │                                  │
      │  │  │  │  │  └──────────────────────────────────┘
-     │  │  │  │  │           /reflect
+     │  │  │  │  │           /aep-reflect
      ▼  ▼  ▼  ▼  ▼
   Each feedback type routes to the right phase.
   "Polish" is now "Calibration" — covers visual design,
@@ -527,30 +582,30 @@ Agents build to spec, but specs are lossy compressions of human intent. After ea
 
 ```
 Layer 0 (walking skeleton)
-  → /calibrate visual-design → human explores with design tools → capture
+  → /aep-calibrate visual-design → human explores with design tools → capture
   → Layer 0.5 (alignment: implement with calibrated design context)
 Layer 1 (core features)
-  → /calibrate api-surface   → 30-min conversation → updates product-context.yaml
-  → /calibrate copy-tone     → establish brand voice → calibration/copy-tone.yaml
+  → /aep-calibrate api-surface   → 30-min conversation → updates product-context.yaml
+  → /aep-calibrate copy-tone     → establish brand voice → calibration/copy-tone.yaml
   → Layer 1.5 (alignment: extend design system + apply voice)
 ```
 
-The `/calibrate` skill supports 7 dimensions — **visual-design**, **ux-flow**, **api-surface**, **data-model**, **scope-direction**, **copy-tone**, **performance-quality** — split into two classes:
+The `/aep-calibrate` skill supports 7 dimensions — **visual-design**, **ux-flow**, **api-surface**, **data-model**, **scope-direction**, **copy-tone**, **performance-quality** — split into two classes:
 
 - **Heavy** (visual-design, ux-flow, copy-tone): external exploration, standalone YAML artifacts in `calibration/`
 - **Light** (api-surface, data-model, scope-direction, performance-quality): 30-60 min conversation, updates `product-context.yaml` directly
 
-Quality dimensions are declared during `/envision` and checked by `/reflect` after each layer.
+Quality dimensions are declared during `/aep-envision` and checked by `/aep-reflect` after each layer.
 
 ### Institutional Memory
 
-Workspace agents capture what they learn during builds — solutions discovered, errors encountered, missing docs — in `.dev-workflow/lessons.md`. When `/wrap` archives the workspace, substantive lessons are persisted to `lessons-learned/` at the repo root. `/launch` injects relevant prior lessons into bootstrap prompts, so the next agent building in the same module doesn't start from zero.
+Workspace agents capture what they learn during builds — solutions discovered, errors encountered, missing docs — in `.dev-workflow/lessons.md`. When `/aep-wrap` archives the workspace, substantive lessons are persisted to `lessons-learned/` at the repo root. `/aep-launch` injects relevant prior lessons into bootstrap prompts, so the next agent building in the same module doesn't start from zero.
 
 ## Design Principles
 
 These aren't rules we invented — they're patterns extracted from Anthropic's engineering research on long-running agent harnesses:
 
-**Spec precision over implementation speed.** Time invested in unambiguous specs pays back exponentially across parallel agents. A 10-minute conversation in `/envision` saves hours of agent confusion.
+**Spec precision over implementation speed.** Time invested in unambiguous specs pays back exponentially across parallel agents. A 10-minute conversation in `/aep-envision` saves hours of agent confusion.
 
 **Walking skeleton first.** Build the thinnest end-to-end path (Layer 0) before going deep into any module. Validate the architecture at minimum cost. Going deep before proving the skeleton works is the most expensive mistake.
 
@@ -560,12 +615,12 @@ These aren't rules we invented — they're patterns extracted from Anthropic's e
 
 ## Getting Started
 
-**Brand new to AEP?** Start with the [Orientation Guide](docs/orientation.md) for a 10-minute tour of the mental models, the 16 skills, and the four paths — then run `/onboard`.
+**Brand new to AEP?** Start with the [Orientation Guide](docs/orientation.md) for a 10-minute tour of the mental models, the 16 skills, and the four paths — then run `/aep-onboard`.
 
 **New to this plugin?**
 
 ```
-/onboard
+/aep-onboard
 ```
 
 Installs prerequisites, verifies tools, configures recommended plugins, and walks you through the 5-minute mental-model orientation in Phase 0.
@@ -573,7 +628,7 @@ Installs prerequisites, verifies tools, configures recommended plugins, and walk
 **Have a product idea?**
 
 ```
-/envision  →  /map  →  /scaffold
+/aep-envision  →  /aep-map  →  /aep-scaffold
 ```
 
 Validate the opportunity, decompose into stories, scaffold the project.
@@ -581,7 +636,7 @@ Validate the opportunity, decompose into stories, scaffold the project.
 **Ready to build a feature?**
 
 ```
-/dispatch  →  /design  →  /launch  →  /build  →  /wrap
+/aep-dispatch  →  /aep-design  →  /aep-launch  →  /aep-build  →  /aep-wrap
 ```
 
 Pick a story from the map, spec it, spawn the agent, let it build, archive when merged.
@@ -589,7 +644,7 @@ Pick a story from the map, spec it, spawn the agent, let it build, archive when 
 **Want hands-free autonomous mode?**
 
 ```
-/autopilot
+/aep-autopilot
 ```
 
 One command. Autopilot dispatches, launches, monitors, reviews, merges, and wraps — pausing only when human design input is needed.
@@ -597,7 +652,7 @@ One command. Autopilot dispatches, launches, monitors, reviews, merges, and wrap
 **Shipped something? Close the loop:**
 
 ```
-/reflect
+/aep-reflect
 ```
 
 Classify feedback, update the product context, plan the next iteration.
@@ -605,46 +660,49 @@ Classify feedback, update the product context, plan the next iteration.
 **Something feels off? Calibrate:**
 
 ```
-/calibrate visual-design    → design brief → external tools → /calibrate capture
-/calibrate api-surface      → conversation → updates product-context.yaml
-/calibrate scope-direction  → conversation → updates product-context.yaml
+/aep-calibrate visual-design    → design brief → external tools → /aep-calibrate capture
+/aep-calibrate api-surface      → conversation → updates product-context.yaml
+/aep-calibrate scope-direction  → conversation → updates product-context.yaml
 ```
 
 Generate a dimension-specific brief, explore or discuss, capture decisions for agents to follow.
 
 ## All Skills
 
-| Skill        | Plugin                       | Purpose                                                                                     |
-| ------------ | ---------------------------- | ------------------------------------------------------------------------------------------- |
-| `/envision`  | product-context              | Opportunity brief + context document                                                        |
-| `/map`       | product-context              | System map + story graph + agent topology                                                   |
-| `/dispatch`  | product-context              | Pick next story + create OpenSpec change                                                    |
-| `/calibrate` | product-context              | Human alignment checkpoint for any quality dimension                                        |
-| `/reflect`   | product-context              | Classify feedback + update context                                                          |
-| `/onboard`   | project-setup                | Verify tools + install plugins                                                              |
-| `/scaffold`  | project-setup                | Scaffold monorepo + initialize OpenSpec                                                     |
-| `/design`    | agentic-development-workflow | Explore + propose + review a feature                                                        |
-| `/launch`    | agentic-development-workflow | Spawn workspace (Codex subagent; Claude/generic tmux; workflow opt-in) + optional evaluator |
-| `/build`     | agentic-development-workflow | Implement → test → PR → merge                                                               |
-| `/wrap`      | agentic-development-workflow | Archive + cleanup + suggest reflect                                                         |
-| `/git-ref`   | agentic-development-workflow | AEP git + worktree conventions (on-demand)                                                  |
-| `/gen-eval`  | patterns                     | Generator/evaluator separation for honest validation                                        |
-| `/executor`  | patterns                     | Host-agnostic backend for spawning/steering workspace agents                                |
-| `/autopilot` | patterns                     | Autonomous dispatch-launch-monitor-wrap loop via `/loop`                                    |
+| Skill            | Plugin                       | Purpose                                                                                                 |
+| ---------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `/aep-envision`  | product-context              | Opportunity brief + context document                                                                    |
+| `/aep-map`       | product-context              | System map + story graph + agent topology                                                               |
+| `/aep-dispatch`  | product-context              | Pick next story + create OpenSpec change                                                                |
+| `/aep-calibrate` | product-context              | Human alignment checkpoint for any quality dimension                                                    |
+| `/aep-reflect`   | product-context              | Classify feedback + update context                                                                      |
+| `/aep-onboard`   | project-setup                | Verify tools + install plugins                                                                          |
+| `/aep-scaffold`  | project-setup                | Scaffold monorepo + initialize OpenSpec                                                                 |
+| `/aep-design`    | agentic-development-workflow | Explore + propose + review a feature                                                                    |
+| `/aep-launch`    | agentic-development-workflow | Spawn workspace (Claude teams/bg sessions; Codex subagents/exec; tmux when pinned) + optional evaluator |
+| `/aep-build`     | agentic-development-workflow | Implement → test → PR → merge                                                                           |
+| `/aep-wrap`      | agentic-development-workflow | Archive + cleanup + suggest reflect                                                                     |
+| `/aep-git-ref`   | agentic-development-workflow | AEP git + worktree conventions (on-demand)                                                              |
+| `/aep-gen-eval`  | patterns                     | Generator/evaluator separation for honest validation                                                    |
+| `/aep-executor`  | patterns                     | Host-agnostic backend for spawning/steering workspace agents                                            |
+| `/aep-autopilot` | patterns                     | Autonomous dispatch-launch-monitor-wrap loop via `/loop`                                                |
 
-Codex coding launches use worktree-bound subagents by default; tmux remains the
-default session backend for Claude/generic executors.
+Launches are **native-first** with **hub-and-spoke human gates** — see
+[Launch modes](#launch-modes--native-first-executor-backends) and
+[Human gates](#human-gates--hub-and-spoke-two-styles) in the Feature
+Lifecycle section above for the full mode table and the
+block-in-place / gate-and-park strategy.
 
 ## Documentation
 
 - [Orientation Guide](docs/orientation.md) — 10-minute first-hour tour of mental models, skills, and the four paths (start here if you're new)
 - [Glossary — Ubiquitous Language](docs/glossary.md) — precise definitions for every AEP term
 - [Skills Quick Reference](docs/skills-quick-reference.md) — when to use which skill, decision trees, common sequences
-- [Autonomous Loop](docs/autonomous-loop.md) — how `/autopilot` orchestrates the full cycle
+- [Autonomous Loop](docs/autonomous-loop.md) — how `/aep-autopilot` orchestrates the full cycle
 - [Generator/Evaluator Data Flow](docs/gen-eval-data-flow.md) — the three tracking systems and signal protocol
 - [Release Line Adjustments](docs/release-line-adjustments.md) — when and how to re-slice layers
-- [Design Calibration Workflow](docs/decisions/design-calibration-workflow.md) — the original visual-design `/calibrate` skill
-- [Generalized Calibration Workflow](docs/decisions/generalized-calibration-workflow.md) — multi-dimension `/calibrate` and `.5` alignment layers
+- [Design Calibration Workflow](docs/decisions/design-calibration-workflow.md) — the original visual-design `/aep-calibrate` skill
+- [Generalized Calibration Workflow](docs/decisions/generalized-calibration-workflow.md) — multi-dimension `/aep-calibrate` and `.5` alignment layers
 - [v2 Improvement Roadmap](docs/aep-v2-improvement-guideline.md) — capability maps, technical specs, dispatch enhancements
 
 ## Version History

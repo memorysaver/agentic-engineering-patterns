@@ -1,6 +1,6 @@
 ---
 name: aep-reflect
-description: Classify feedback and update product context after shipping features. Use after /wrap, after user testing, or when the user says "reflect", "what did we learn", "update the product context", "classify feedback", "replan". Closes the feedback loop by routing observations back to the right phase.
+description: Classify feedback and update product context after shipping features. Use after /aep-wrap, after user testing, or when the user says "reflect", "what did we learn", "update the product context", "classify feedback", "replan". Closes the feedback loop by routing observations back to the right phase.
 ---
 
 # Reflect
@@ -10,7 +10,7 @@ Close the feedback loop. Transform real-world observations into actionable chang
 **Where this fits:**
 
 ```
-/envision → /map → /scaffold → [ /design → /launch → /build → /wrap ] → /reflect
+/aep-envision → /aep-map → /aep-scaffold → [ /aep-design → /aep-launch → /aep-build → /aep-wrap ] → /aep-reflect
                                                                           ▲ you are here
 ```
 
@@ -32,7 +32,7 @@ cat product-context.yaml
 - **Split mode** (`product/index.yaml` exists): Read product definition from `product/index.yaml` (what was intended). Read operational state from `product-context.yaml` (what happened).
 - **V1 mode**: Read everything from `product-context.yaml`.
 
-If `product-context.yaml` does not exist, there is nothing to reflect on — run `/envision` and `/map` first.
+If `product-context.yaml` does not exist, there is nothing to reflect on — run `/aep-envision` and `/aep-map` first.
 
 ---
 
@@ -58,7 +58,7 @@ Every piece of feedback becomes one of:
 
 Specified behavior that does not work.
 
-- **Action:** Create a new story in `product-context.yaml` with `priority: high` and `status: pending` in the current layer, route to `/dispatch`
+- **Action:** Create a new story in `product-context.yaml` with `priority: high` and `status: pending` in the current layer, route to `/aep-dispatch`
 - **Update:** Add the story directly to the `stories` section of the YAML
 
 ### Refinement
@@ -77,24 +77,24 @@ Classification questions for calibration observations:
 3. Does the result feel right? (No → calibration need)
 4. What dimension feels off? (visual-design / ux-flow / api-surface / data-model / scope-direction / copy-tone / performance-quality)
 
-For **heavy** dimensions (visual-design, ux-flow, copy-tone): create stories in the next `.5` alignment layer with `calibration_type: <dimension>`. Run `/calibrate <dimension>` before dispatching.
+For **heavy** dimensions (visual-design, ux-flow, copy-tone): create stories in the next `.5` alignment layer with `calibration_type: <dimension>`. Run `/aep-calibrate <dimension>` before dispatching.
 
-For **light** dimensions (api-surface, data-model, scope-direction, performance-quality): route to `/calibrate <dimension>` directly — may create stories in next integer layer or update product context inline. No `.5` layer needed.
+For **light** dimensions (api-surface, data-model, scope-direction, performance-quality): route to `/aep-calibrate <dimension>` directly — may create stories in next integer layer or update product context inline. No `.5` layer needed.
 
 ### Discovery
 
 New requirement or invalidated assumption.
 
 - **Action:** Revisit product context
-  - If it's a product assumption → update `product` section via `/envision`
-  - If it's an architecture issue → update `architecture` section via `/map`
+  - If it's a product assumption → update `product` section via `/aep-envision`
+  - If it's an architecture issue → update `architecture` section via `/aep-map`
 - **Update:** Mark the affected assumption in the `product` section as revised
 
 ### Opportunity Shift
 
 Fundamentally changes the bet — the original opportunity hypothesis is wrong or has shifted.
 
-- **Action:** Back to `/envision` Phase 0
+- **Action:** Back to `/aep-envision` Phase 0
 - **This is rare** but critical to recognize. Signs: the problem you're solving isn't the problem users actually have, or a market shift made the opportunity moot.
 
 ### Process
@@ -103,7 +103,7 @@ Observations about the workflow itself, not the product. Examples: permission st
 
 - **Action:** Document the pattern in `lessons-learned/process/<observation>.md`. Add a `process_learnings` entry to the `topology.routing` section of `product-context.yaml`.
 - **Important:** If the pattern warrants a skill file change, record it as a proposed amendment in the changelog — **do not auto-edit skill files**. Skill changes are reviewed and applied by a human.
-- **For systematic capture and upstream routing** of process and tech-stack observations — especially when reviewing multiple downstream project runs — use `/workflow-feedback` which provides a standardized format and downstream→AEP routing.
+- **For systematic capture and upstream routing** of process and tech-stack observations — especially when reviewing multiple downstream project runs — use `/aep-workflow-feedback` which provides a standardized format and downstream→AEP routing.
 
 Present the classification to the user for each observation. Let them override — they know their product better than any framework.
 
@@ -120,7 +120,7 @@ For each layer that has not yet been built:
 3. **Add new stories** from classified Refinements to the appropriate layer and activity.
 4. **Update `product-context.yaml`** — change `layer` assignments in the `stories` section.
 
-**Key rule:** Re-slicing does NOT require going back to `/envision`. You only route there when the backbone (user activities) or product framing changes — not when layer assignments shift. See `docs/decisions/release-line-adjustments.md` for the full decision framework.
+**Key rule:** Re-slicing does NOT require going back to `/aep-envision`. You only route there when the backbone (user activities) or product framing changes — not when layer assignments shift. See `docs/decisions/release-line-adjustments.md` for the full decision framework.
 
 ---
 
@@ -220,16 +220,16 @@ Based on the classified feedback, update the appropriate file:
 
 Based on the reflection, recommend the next step:
 
-| Feedback type            | Next action                                                             |
-| ------------------------ | ----------------------------------------------------------------------- |
-| Only bugs                | Fix stories added to YAML → `/dispatch` → `/design` → `/build`          |
-| Refinements              | Next layer stories added to YAML → `/dispatch` → `/design` → `/build`   |
-| Discovery (product)      | `/envision` to update assumptions                                       |
-| Discovery (architecture) | `/map` to update system map                                             |
-| Opportunity shift        | `/envision` Phase 0 (re-validate)                                       |
-| Calibration (heavy)      | `.5` alignment stories created → `/calibrate <dimension>` → `/dispatch` |
-| Calibration (light)      | `/calibrate <dimension>` (inline) → stories may update → `/dispatch`    |
-| All clear                | Next layer or ship to production                                        |
+| Feedback type            | Next action                                                                       |
+| ------------------------ | --------------------------------------------------------------------------------- |
+| Only bugs                | Fix stories added to YAML → `/aep-dispatch` → `/aep-design` → `/aep-build`        |
+| Refinements              | Next layer stories added to YAML → `/aep-dispatch` → `/aep-design` → `/aep-build` |
+| Discovery (product)      | `/aep-envision` to update assumptions                                             |
+| Discovery (architecture) | `/aep-map` to update system map                                                   |
+| Opportunity shift        | `/aep-envision` Phase 0 (re-validate)                                             |
+| Calibration (heavy)      | `.5` alignment stories created → `/aep-calibrate <dimension>` → `/aep-dispatch`   |
+| Calibration (light)      | `/aep-calibrate <dimension>` (inline) → stories may update → `/aep-dispatch`      |
+| All clear                | Next layer or ship to production                                                  |
 
 ---
 
@@ -280,8 +280,8 @@ Review any observations classified as **Process** in Step 2. For each:
 
 Based on the reflection outcome, proceed to one of:
 
-- `/dispatch` — pick and execute new stories (bugs or refinements enter the dispatch queue)
-- `/envision` — update product assumptions
-- `/map` — update system architecture
-- `/calibrate` — recalibrate a specific quality dimension (visual design, UX flow, API surface, etc.)
+- `/aep-dispatch` — pick and execute new stories (bugs or refinements enter the dispatch queue)
+- `/aep-envision` — update product assumptions
+- `/aep-map` — update system architecture
+- `/aep-calibrate` — recalibrate a specific quality dimension (visual design, UX flow, API surface, etc.)
 - Next layer execution cycle

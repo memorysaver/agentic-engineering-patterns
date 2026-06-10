@@ -1,6 +1,6 @@
 # Visual Design — Capture Questions
 
-Ask these questions one at a time during `/calibrate capture` for visual-design.
+Ask these questions one at a time during `/aep-calibrate capture` for visual-design.
 
 ## Questions
 

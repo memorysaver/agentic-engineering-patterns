@@ -1,6 +1,6 @@
 # Performance/Quality — Capture Questions
 
-Ask these questions one at a time during `/calibrate capture` for performance-quality.
+Ask these questions one at a time during `/aep-calibrate capture` for performance-quality.
 
 ## Questions
 

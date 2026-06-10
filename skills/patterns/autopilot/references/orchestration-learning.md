@@ -6,13 +6,13 @@ How the autopilot uses the gen/eval pattern to evaluate its own orchestration qu
 
 ## Principle: Meta-Evaluation, Not Code Review
 
-| Workspace gen/eval                            | Orchestration gen/eval                          |
-| --------------------------------------------- | ----------------------------------------------- |
-| "Is this code correct?"                       | "Is our process working?"                       |
-| Evaluates one story's implementation          | Evaluates patterns across all stories           |
-| Runs inside workspace (tmux session)          | Runs in main session (Agent tool, Context B)    |
-| Triggered by autopilot, executed by workspace | Triggered and executed by autopilot             |
-| Feeds into: fix code → re-eval                | Feeds into: `/reflect` → update product context |
+| Workspace gen/eval                            | Orchestration gen/eval                              |
+| --------------------------------------------- | --------------------------------------------------- |
+| "Is this code correct?"                       | "Is our process working?"                           |
+| Evaluates one story's implementation          | Evaluates patterns across all stories               |
+| Runs inside the workspace worker              | Runs in main session (Agent tool, Context B)        |
+| Triggered by autopilot, executed by workspace | Triggered and executed by autopilot                 |
+| Feeds into: fix code → re-eval                | Feeds into: `/aep-reflect` → update product context |
 
 ---
 
@@ -72,7 +72,7 @@ When an escalation is created. Examine: could this have been predicted? Should d
 
 ### 3. On Autopilot Stop
 
-When `/autopilot stop` is called or all layers complete. Summary of the entire run.
+When `/aep-autopilot stop` is called or all layers complete. Summary of the entire run.
 
 ---
 
@@ -146,7 +146,7 @@ Write findings to .dev-workflow/autopilot-learnings.md using this structure:
 L stories had 40% failure rate vs S at 20%. PROJ-007 and PROJ-012 both failed on
 first attempt.
 **Recommendation:** Consider splitting L stories into 2-3 M stories before dispatch.
-Update /map guidance to discourage L complexity.
+Update /aep-map guidance to discourage L complexity.
 **Severity:** important
 
 ### Finding: Auth module stories consistently fail on Security dimension
@@ -165,18 +165,18 @@ for auth stories.
 **Evidence:** Stories with ≥5 criteria averaged 1.1 hours. Stories with exactly 3
 criteria averaged 1.6 hours. Hypothesis: more criteria = less ambiguity = fewer
 false starts.
-**Recommendation:** During /map, aim for 5+ criteria per story. Flag stories with
+**Recommendation:** During /aep-map, aim for 5+ criteria per story. Flag stories with
 exactly 3 criteria for potential spec refinement.
 **Severity:** info
 ```
 
 ---
 
-## Integration with `/reflect`
+## Integration with `/aep-reflect`
 
-The learnings file is consumed by `/reflect` during its feedback classification step:
+The learnings file is consumed by `/aep-reflect` during its feedback classification step:
 
-1. `/reflect` reads `.dev-workflow/autopilot-learnings.md`
+1. `/aep-reflect` reads `.dev-workflow/autopilot-learnings.md`
 2. Each finding is classified: Bug, Refinement, Discovery, or Opportunity Shift
 3. Findings become updates to `product-context.yaml`:
    - Estimate accuracy → update complexity ratings
@@ -188,7 +188,7 @@ The learnings file is consumed by `/reflect` during its feedback classification 
 This closes the meta-learning loop:
 
 ```
-/autopilot runs → workspaces build → autopilot observes →
-learnings → /reflect → product-context updated →
-next /autopilot run benefits from improved context
+/aep-autopilot runs → workspaces build → autopilot observes →
+learnings → /aep-reflect → product-context updated →
+next /aep-autopilot run benefits from improved context
 ```

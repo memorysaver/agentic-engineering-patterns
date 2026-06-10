@@ -12,7 +12,7 @@ Terms are grouped by domain and alphabetized within each group. **Bold terms** i
 
 A discrete step in the user's journey, representing a user-facing verb (e.g., "Upload Selfie", "Generate Avatar"). Activities form the horizontal axis of a Jeff Patton story map. Each activity has an `id`, `name`, `description`, `order` (left-to-right sequence), and `layer_introduced` (which **Layer** first enables it).
 
-**Where it appears:** `product-context.yaml` → `product.activities`; `/envision` extracts them; `/map` maps **Stories** to them.
+**Where it appears:** `product-context.yaml` → `product.activities`; `/aep-envision` extracts them; `/aep-map` maps **Stories** to them.
 
 > "The horizontal axis of a Jeff Patton story map. Each activity is a discrete step in the user's journey, ordered left-to-right."
 > — product-context-schema.yaml
@@ -21,28 +21,28 @@ See also: **Activity Backbone**, **Story**, **Layer**
 
 ### Activity Backbone
 
-The ordered sequence of **Activities** representing the core user journey, read left-to-right. Extracted during `/envision` before defining **Layers** — backbone first, releases second. Infrastructure **Stories** that don't map to any activity leave their `activity` field as `null`.
+The ordered sequence of **Activities** representing the core user journey, read left-to-right. Extracted during `/aep-envision` before defining **Layers** — backbone first, releases second. Infrastructure **Stories** that don't map to any activity leave their `activity` field as `null`.
 
-**Where it appears:** `/envision` Phase 1; `/map` Step 2 (activity mapping).
+**Where it appears:** `/aep-envision` Phase 1; `/aep-map` Step 2 (activity mapping).
 
 See also: **Activity**, **Walking Skeleton**
 
 ### Context Document
 
-The precise product definition produced by `/envision` Phase 1. Contains the problem statement, persona with JTBD (Jobs to Be Done), MVP boundary (in-scope, out-of-scope, deferred), stack constraints, **Layer** definitions, success criteria, open questions, decisions, and stress-test results. Every statement must be convertible into a verification condition.
+The precise product definition produced by `/aep-envision` Phase 1. Contains the problem statement, persona with JTBD (Jobs to Be Done), MVP boundary (in-scope, out-of-scope, deferred), stack constraints, **Layer** definitions, success criteria, open questions, decisions, and stress-test results. Every statement must be convertible into a verification condition.
 
 **Where it appears:** `product-context.yaml` → `product` section.
 
 > "Every assumption left implicit will be resolved by a downstream agent through guesswork. This phase makes every assumption explicit."
-> — /envision SKILL.md
+> — /aep-envision SKILL.md
 
 See also: **Opportunity Brief**, **product-context.yaml**
 
 ### Execution Slice (Wave)
 
-A batch of **Stories** within a **Layer** that have no mutual dependencies and can run fully in parallel. Also called a **Wave** — the user-facing term used in autopilot reporting (e.g., "Wave 1 launched: auth-setup, db-schema, api-scaffold"). Waves are numbered sequentially — Wave 1 runs first, then Wave 2 after Wave 1 completes. `/dispatch` can batch-dispatch all ready stories in a wave at once.
+A batch of **Stories** within a **Layer** that have no mutual dependencies and can run fully in parallel. Also called a **Wave** — the user-facing term used in autopilot reporting (e.g., "Wave 1 launched: auth-setup, db-schema, api-scaffold"). Waves are numbered sequentially — Wave 1 runs first, then Wave 2 after Wave 1 completes. `/aep-dispatch` can batch-dispatch all ready stories in a wave at once.
 
-**Where it appears:** `product-context.yaml` → `stories[].slice`; `/map` Step 3 computes them; `/dispatch` uses them for batch dispatch. Presented as "Wave N" in user-facing output.
+**Where it appears:** `product-context.yaml` → `stories[].slice`; `/aep-map` Step 3 computes them; `/aep-dispatch` uses them for batch dispatch. Presented as "Wave N" in user-facing output.
 
 See also: **Story**, **Layer**, **Dispatch**
 
@@ -50,10 +50,10 @@ See also: **Story**, **Layer**, **Dispatch**
 
 The exact API surface between two **Modules** — endpoints, request/response data structures, error codes, and SLA expectations. These are not documentation; they are executable specifications enforced by contract tests. An amendment log tracks when boundaries need to change.
 
-**Where it appears:** `product-context.yaml` → `architecture.interfaces`; `/map` Step 1 defines them.
+**Where it appears:** `product-context.yaml` → `architecture.interfaces`; `/aep-map` Step 1 defines them.
 
 > "For every module-to-module connection, define the exact API surface — endpoints, data shapes, error contracts."
-> — /map SKILL.md
+> — /aep-map SKILL.md
 
 See also: **Module**, **System Map**
 
@@ -61,7 +61,7 @@ See also: **Module**, **System Map**
 
 A horizontal slice of enrichment across the **Activity Backbone**. Layer 0 is the **Walking Skeleton** — the thinnest end-to-end path. Integer layers (1, 2, ...) add capabilities. `.5` layers (0.5, 1.5, 2.5) are **Alignment Layers** — human checkpoints where the team pauses agent execution to **Calibrate** one or more **Quality Dimensions**. All stories within a layer are built before advancing to the next. Advancement is gated by a **Layer Gate**.
 
-**Where it appears:** `product-context.yaml` → `product.layers` and `stories[].layer`; `/envision` defines them; `/map` assigns stories to them.
+**Where it appears:** `product-context.yaml` → `product.layers` and `stories[].layer`; `/aep-envision` defines them; `/aep-map` assigns stories to them.
 
 See also: **Walking Skeleton**, **Layer Gate**, **Release Line**, **Alignment Layer**
 
@@ -69,10 +69,10 @@ See also: **Walking Skeleton**, **Layer Gate**, **Release Line**, **Alignment La
 
 The first and most important **Layer**. A horizontal slice across the **Activity Backbone** — the thinnest story from each user activity, strung together so a user can complete the crudest possible end-to-end journey. Validates the architecture at minimum cost before going deep into any module.
 
-**Where it appears:** `/envision` Phase 1 (defines the Layer 0 MVP contract); `/map` Step 2 (ensures every activity has at least one Layer 0 story).
+**Where it appears:** `/aep-envision` Phase 1 (defines the Layer 0 MVP contract); `/aep-map` Step 2 (ensures every activity has at least one Layer 0 story).
 
 > "Build a skeleton that can walk before building a perfect leg."
-> — /map SKILL.md
+> — /aep-map SKILL.md
 
 See also: **Layer**, **Layer Gate**, **Activity Backbone**
 
@@ -80,7 +80,7 @@ See also: **Layer**, **Layer Gate**, **Activity Backbone**
 
 An integration test that verifies a completed **Layer** works as a whole — testing emergent behavior at integration boundaries, not the sum of individual story tests. Layer 0's gate tests the exact MVP user journey end-to-end. Must pass before advancing to the next layer.
 
-**Where it appears:** `product-context.yaml` → `layer_gates[]`; `/dispatch` checks gate status before advancing; `/autopilot` pauses on gate failure.
+**Where it appears:** `product-context.yaml` → `layer_gates[]`; `/aep-dispatch` checks gate status before advancing; `/aep-autopilot` pauses on gate failure.
 
 See also: **Layer**, **Walking Skeleton**
 
@@ -88,13 +88,13 @@ See also: **Layer**, **Walking Skeleton**
 
 A major component with a clear responsibility boundary. Each module defines what it does, what it does NOT do (boundary definition), what state/resources it owns, what it depends on, and its technology stack. Wrong module boundaries cost more than any implementation bug.
 
-**Where it appears:** `product-context.yaml` → `architecture.modules`; `/map` Step 1 defines them.
+**Where it appears:** `product-context.yaml` → `architecture.modules`; `/aep-map` Step 1 defines them.
 
 See also: **Interface Contract**, **System Map**
 
 ### Opportunity Brief
 
-A deliberately short (one-page) document produced by `/envision` Phase 0 that captures the core bet: "I believe [target user] has [problem], and I can build [solution] because [advantage]." Includes counter-arguments, kill criteria, and an explicit proceed/kill/defer decision.
+A deliberately short (one-page) document produced by `/aep-envision` Phase 0 that captures the core bet: "I believe [target user] has [problem], and I can build [solution] because [advantage]." Includes counter-arguments, kill criteria, and an explicit proceed/kill/defer decision.
 
 **Where it appears:** `product-context.yaml` → `opportunity` section.
 
@@ -102,9 +102,9 @@ See also: **Context Document**, **Kill Point**
 
 ### Release Line
 
-A horizontal boundary separating **Layers** in the story map. Conceptually, cutting a release line means "everything above this line is shippable." Layer assignments are pencil marks — `/reflect` can promote or demote stories between layers (re-slicing) without requiring an architecture review, unless **Interface Contracts** changed.
+A horizontal boundary separating **Layers** in the story map. Conceptually, cutting a release line means "everything above this line is shippable." Layer assignments are pencil marks — `/aep-reflect` can promote or demote stories between layers (re-slicing) without requiring an architecture review, unless **Interface Contracts** changed.
 
-**Where it appears:** `docs/release-line-adjustments.md`; `/reflect` Step 2.5 (re-slice the map).
+**Where it appears:** `docs/release-line-adjustments.md`; `/aep-reflect` Step 2.5 (re-slice the map).
 
 See also: **Layer**, **Feedback Classification**
 
@@ -112,21 +112,21 @@ See also: **Layer**, **Feedback Classification**
 
 The atomic unit of work in AEP. A self-contained spec that a single agent can implement without asking questions. Each story includes: what changes (observable behavior), acceptance criteria (automatable as tests), layer, module, activity, slice, dependencies, interface obligations, files affected, and verification strategy. Stories follow a state machine: `pending → ready → in_progress → in_review → completed` (or `blocked` / `failed` / `deferred`).
 
-**Where it appears:** `product-context.yaml` → `stories[]`; `/map` creates them; `/dispatch` scores and assigns them; `/build` implements them.
+**Where it appears:** `product-context.yaml` → `stories[]`; `/aep-map` creates them; `/aep-dispatch` scores and assigns them; `/aep-build` implements them.
 
 See also: **Execution Slice (Wave)**, **Dispatch Score**, **Story Graph**
 
 ### Story Graph
 
-A directed acyclic graph (DAG) of **Stories** organized by **Layer**, showing dependencies and parallelism opportunities. Produced by `/map` Step 3. The graph determines the **Critical Path**, **Execution Slices**, and **Dispatch Scores**.
+A directed acyclic graph (DAG) of **Stories** organized by **Layer**, showing dependencies and parallelism opportunities. Produced by `/aep-map` Step 3. The graph determines the **Critical Path**, **Execution Slices**, and **Dispatch Scores**.
 
-**Where it appears:** `/map` Step 3 produces it; `/dispatch` Step 3 computes scores from it.
+**Where it appears:** `/aep-map` Step 3 produces it; `/aep-dispatch` Step 3 computes scores from it.
 
 See also: **Story**, **Execution Slice**, **Critical Path**
 
 ### System Map
 
-The architectural blueprint produced by `/map` Step 1. Contains **Modules** with responsibility boundaries, **Interface Contracts**, data flows for each user journey, third-party integration points with failure modes, and architecture decision records (ADRs). Requires human review and approval before proceeding to story decomposition.
+The architectural blueprint produced by `/aep-map` Step 1. Contains **Modules** with responsibility boundaries, **Interface Contracts**, data flows for each user journey, third-party integration points with failure modes, and architecture decision records (ADRs). Requires human review and approval before proceeding to story decomposition.
 
 **Where it appears:** `product-context.yaml` → `architecture` section.
 
@@ -146,9 +146,9 @@ See also: **Activity Backbone**, **Layer**, **Execution Slice (Wave)**, **Story*
 
 ### Control Plane
 
-The "thinking" half of the AEP workflow — where humans and AI collaborate on high-leverage decisions: goals, decomposition, architecture, priorities, and feedback. Produces `product-context.yaml` as its primary artifact. Skills: `/envision`, `/map`, `/validate`, `/dispatch`, `/reflect`.
+The "thinking" half of the AEP workflow — where humans and AI collaborate on high-leverage decisions: goals, decomposition, architecture, priorities, and feedback. Produces `product-context.yaml` as its primary artifact. Skills: `/aep-envision`, `/aep-map`, `/aep-validate`, `/aep-dispatch`, `/aep-reflect`.
 
-**Where it appears:** README mental model; `/dispatch` bridges Control Plane to **Execution Plane**.
+**Where it appears:** README mental model; `/aep-dispatch` bridges Control Plane to **Execution Plane**.
 
 > "You + AI collaborate on high-leverage decisions: goals, decomposition, architecture, priorities, feedback."
 > — README.md
@@ -159,23 +159,23 @@ See also: **Execution Plane**, **Two-Session Model**
 
 The longest dependency chain through the **Story Graph** within the active **Layer**. A critical-path story delayed by one hour delays the entire layer by one hour. Stories on the critical path receive maximum urgency in the **Dispatch Score** formula.
 
-**Where it appears:** `/dispatch` Step 3 (critical_path_urgency scoring dimension).
+**Where it appears:** `/aep-dispatch` Step 3 (critical_path_urgency scoring dimension).
 
 See also: **Dispatch Score**, **Story Graph**
 
 ### Dispatch
 
-The act of selecting a **Story** from the ready queue, locking it (`status → in_progress`), creating an **OpenSpec Change** with a **Context Package**, and handing off to `/design` or `/launch`. Follows a 7-step protocol: sync signals → cascade states → score stories → present queue → dispatch lock → create OpenSpec change → hand off.
+The act of selecting a **Story** from the ready queue, locking it (`status → in_progress`), creating an **OpenSpec Change** with a **Context Package**, and handing off to `/aep-design` or `/aep-launch`. Follows a 7-step protocol: sync signals → cascade states → score stories → present queue → dispatch lock → create OpenSpec change → hand off.
 
-**Where it appears:** `/dispatch` skill; `/autopilot` Step 6.
+**Where it appears:** `/aep-dispatch` skill; `/aep-autopilot` Step 6.
 
 See also: **Dispatch Score**, **Dispatch Lock**
 
 ### Dispatch Lock
 
-The mechanism that prevents double-dispatch. When a story is selected, its status is updated to `in_progress` and the YAML is committed to git _before_ the workspace is created. A second `/dispatch` run reads `in_progress` from the committed YAML and skips the story.
+The mechanism that prevents double-dispatch. When a story is selected, its status is updated to `in_progress` and the YAML is committed to git _before_ the workspace is created. A second `/aep-dispatch` run reads `in_progress` from the committed YAML and skips the story.
 
-**Where it appears:** `/dispatch` Step 5.
+**Where it appears:** `/aep-dispatch` Step 5.
 
 ### Dispatch Score
 
@@ -193,13 +193,13 @@ dispatch_score = (business_value + unblock_potential + critical_path_urgency + r
 - **Ambiguity penalty** (0–5): +2 if <3 acceptance criteria, +1 each for missing interfaces/files/open questions
 - **Interface risk** (0–3): +1 per interface contract touched
 
-**Where it appears:** `/dispatch` Step 3; `/autopilot` Step 6; `product-context.yaml` → `stories[].dispatch_score`.
+**Where it appears:** `/aep-dispatch` Step 3; `/aep-autopilot` Step 6; `product-context.yaml` → `stories[].dispatch_score`.
 
 See also: **Critical Path**, **Dispatch**
 
 ### Execution Plane
 
-The "doing" half of the AEP workflow — where agents receive precise specs and build autonomously. Agents work in isolation, communicate through structured artifacts and **Signal Files**, and produce merged PRs. Skills: `/design`, `/launch`, `/build`, `/wrap`.
+The "doing" half of the AEP workflow — where agents receive precise specs and build autonomously. Agents work in isolation, communicate through structured artifacts and **Signal Files**, and produce merged PRs. Skills: `/aep-design`, `/aep-launch`, `/aep-build`, `/aep-wrap`.
 
 **Where it appears:** README mental model.
 
@@ -209,31 +209,31 @@ See also: **Control Plane**, **Two-Session Model**
 
 The interactive Claude Code session where the human works. Runs on the **Integration Branch** (`$BASE` — `main`, or `develop` in two-branch mode). Manages the **Control Plane** — dispatching stories, designing features, launching workspaces, wrapping completed work, and reflecting on feedback. Never reads workspace source code directly; observes workspace progress through **Signal Files** only.
 
-**Where it appears:** Every skill specifies its session context; `/dispatch`, `/design`, `/launch`, `/wrap`, `/reflect` run here.
+**Where it appears:** Every skill specifies its session context; `/aep-dispatch`, `/aep-design`, `/aep-launch`, `/aep-wrap`, `/aep-reflect` run here.
 
 See also: **Workspace Session**, **Two-Session Model**, **Orchestrator Boundaries**
 
 ### Phase
 
-A numbered stage in the feature lifecycle. Phases 1–3 (explore, propose, review) happen on main via `/design`. Phase 0 (workspace init) and Phases 4–12 happen in the **Workspace Session** via `/build`:
+A numbered stage in the feature lifecycle. Phases 1–3 (explore, propose, review) happen on main via `/aep-design`. Phase 0 (workspace init) and Phases 4–12 happen in the **Workspace Session** via `/aep-build`:
 
-| Phase | Name                                     | Session          |
-| ----- | ---------------------------------------- | ---------------- |
-| 0     | Initialize tracking                      | Workspace        |
-| 1–3   | Explore, propose, review                 | Main (`/design`) |
-| 4     | Implement linearly (one commit per task) | Workspace        |
-| 5     | Code review (gen/eval loop)              | Workspace        |
-| 6     | Browser testing (dogfood)                | Workspace        |
-| 7     | E2E test script generation               | Workspace        |
-| 8     | Review results                           | Workspace        |
-| 9     | Cleanup & publish                        | Workspace        |
-| 10    | Create PR                                | Workspace        |
-| 11    | PR review feedback loop                  | Workspace        |
-| 11.5  | Human evaluation (optional)              | Workspace        |
-| 12    | Pre-merge checks & merge                 | Workspace        |
-| 13    | Archive & cleanup                        | Main (`/wrap`)   |
+| Phase | Name                                     | Session              |
+| ----- | ---------------------------------------- | -------------------- |
+| 0     | Initialize tracking                      | Workspace            |
+| 1–3   | Explore, propose, review                 | Main (`/aep-design`) |
+| 4     | Implement linearly (one commit per task) | Workspace            |
+| 5     | Code review (gen/eval loop)              | Workspace            |
+| 6     | Browser testing (dogfood)                | Workspace            |
+| 7     | E2E test script generation               | Workspace            |
+| 8     | Review results                           | Workspace            |
+| 9     | Cleanup & publish                        | Workspace            |
+| 10    | Create PR                                | Workspace            |
+| 11    | PR review feedback loop                  | Workspace            |
+| 11.5  | Human evaluation (optional)              | Workspace            |
+| 12    | Pre-merge checks & merge                 | Workspace            |
+| 13    | Archive & cleanup                        | Main (`/aep-wrap`)   |
 
-**Where it appears:** `/design` (1–3); `/build` (0, 4–12); `/wrap` (13).
+**Where it appears:** `/aep-design` (1–3); `/aep-build` (0, 4–12); `/aep-wrap` (13).
 
 See also: **Two-Session Model**
 
@@ -249,7 +249,7 @@ File-based communication between the **Main Session** and **Workspace Sessions**
 | `eval-response-<N>.md`  | Evaluator    | Generator    | Scoring dimensions, PASS/FAIL                   |
 | `ready-for-review.flag` | Generator    | Main session | Signal human review ready                       |
 
-**Where it appears:** `/build` Phase 0 (creates them); `/dispatch` Step 1 (syncs them); `/autopilot` Step 2 (syncs them); `/wrap` (reads them).
+**Where it appears:** `/aep-build` Phase 0 (creates them); `/aep-dispatch` Step 1 (syncs them); `/aep-autopilot` Step 2 (syncs them); `/aep-wrap` (reads them).
 
 See also: **Concurrency Protocol**, **Generator**, **Evaluator**
 
@@ -257,7 +257,7 @@ See also: **Concurrency Protocol**, **Generator**, **Evaluator**
 
 One iteration of the **Autopilot** orchestration loop (default interval: 5 minutes). Each tick is idempotent and targets < 60 seconds of execution. Follows a 7-step protocol: read state → sync signals → wrap completed → guide completion → detect stuck → dispatch new → write state.
 
-**Where it appears:** `/autopilot` skill; `references/tick-protocol.md`.
+**Where it appears:** `/aep-autopilot` skill; `references/tick-protocol.md`.
 
 See also: **Autopilot**, **Tick Lock**
 
@@ -273,7 +273,7 @@ See also: **Tick**
 
 The architectural separation between the **Main Session** (human + AI on main branch) and the **Workspace Session** (autonomous agent in an isolated git worktree on a `feat/<name>` branch). Design happens on main (human judgment). Implementation happens in workspace (autonomous execution). Separation eliminates context reset between planning and building.
 
-**Where it appears:** README; `/launch` creates the workspace session; `/build` runs in it; `/wrap` cleans it up.
+**Where it appears:** README; `/aep-launch` creates the workspace session; `/aep-build` runs in it; `/aep-wrap` cleans it up.
 
 See also: **Main Session**, **Workspace Session**, **Control Plane**, **Execution Plane**
 
@@ -281,15 +281,15 @@ See also: **Main Session**, **Workspace Session**, **Control Plane**, **Executio
 
 The maximum number of parallel **Workspace Sessions** (default: 5, from `topology.routing.concurrency_limit`). Based on Little's Law: `Lead Time = WIP / Throughput`. Exceeding WIP limits creates traffic jams, not speed — the bottleneck is usually human PR review, not agent velocity.
 
-**Where it appears:** `/dispatch` Step 5; `/autopilot` Step 6.
+**Where it appears:** `/aep-dispatch` Step 5; `/aep-autopilot` Step 6.
 
 See also: **Dispatch**, **Workspace Session**
 
 ### Workspace Session
 
-An autonomous Claude Code session running in a tmux window inside an isolated **Git Worktree** on a fresh `feat/<name>` branch. Created by `/launch`, executes `/build` phases 0–12 without user interaction. Communicates progress via **Signal Files**. One worktree per **Story**.
+An autonomous agent worker bound to an isolated **Git Worktree** on a fresh `feat/<name>` branch — a Claude Code teammate or background session, a Codex subagent or exec worker, or (legacy/pinned) a tmux-hosted session, per the executor launch mode. Created by `/aep-launch`, executes `/aep-build` phases 0–12 without user interaction. Communicates progress via **Signal Files**. One worktree per **Story**.
 
-**Where it appears:** `.feature-workspaces/<name>/`; `/launch` creates it; `/build` runs in it; `/wrap` removes it.
+**Where it appears:** `.feature-workspaces/<name>/`; `/aep-launch` creates it; `/aep-build` runs in it; `/aep-wrap` removes it.
 
 See also: **Main Session**, **Two-Session Model**, **Signal Files**
 
@@ -299,9 +299,9 @@ See also: **Main Session**, **Two-Session Model**, **Signal Files**
 
 ### Autopilot
 
-The fully autonomous orchestration mode. A tick-based state machine that runs the dispatch → launch → monitor → review → wrap → dispatch cycle on a configurable interval (default 5 minutes). Invoked via `/autopilot`. Pauses only for **Design Escalation** or **Layer Gate** failures.
+The fully autonomous orchestration mode. A tick-based state machine that runs the dispatch → launch → monitor → review → wrap → dispatch cycle on a configurable interval (default 5 minutes). Invoked via `/aep-autopilot`. Pauses only for **Design Escalation** or **Layer Gate** failures.
 
-**Where it appears:** `/autopilot` skill; `references/tick-protocol.md`.
+**Where it appears:** `/aep-autopilot` skill; `references/tick-protocol.md`.
 
 See also: **Tick**, **Orchestrator Boundaries**, **Design Escalation**
 
@@ -309,23 +309,23 @@ See also: **Tick**, **Orchestrator Boundaries**, **Design Escalation**
 
 The process of constructing the exact context each agent needs for a **Story**. Consists of three parts: **Stable Prefix** (shared product/architecture context, ~10K tokens, cacheable), story-specific payload (full spec + module + adjacent interfaces + dependency outputs, ~20K tokens), and retrieval instructions (~500 tokens). Measured against the role's token budget to prevent overflow.
 
-**Where it appears:** `/dispatch` Step 6; `product-context.yaml` → `topology.roles[].context_composition`.
+**Where it appears:** `/aep-dispatch` Step 6; `product-context.yaml` → `topology.roles[].context_composition`.
 
 See also: **Stable Prefix**, **Context Package**
 
 ### Context Package
 
-The pre-assembled directory of context files created by `/dispatch` for each dispatched **Story**. Located at `openspec/changes/<story-id>/.context/` with three files: `stable-prefix.md`, `dependencies.md`, and `retrieval.md`.
+The pre-assembled directory of context files created by `/aep-dispatch` for each dispatched **Story**. Located at `openspec/changes/<story-id>/.context/` with three files: `stable-prefix.md`, `dependencies.md`, and `retrieval.md`.
 
-**Where it appears:** `/dispatch` Step 6; `/build` Phase 0 reads it.
+**Where it appears:** `/aep-dispatch` Step 6; `/aep-build` Phase 0 reads it.
 
 See also: **Context Assembly**, **Stable Prefix**, **OpenSpec Change**
 
 ### Evaluator
 
-The separate agent that reviews a **Generator**'s work. Calibrated toward skepticism because agents praise their own work. Scores across dimensions (e.g., Completeness, Correctness, UX Quality, Security, Code Quality) on a 1–5 scale with hard failure thresholds. Spawned at **Phase** 5 via tmux split, not at launch.
+The separate agent that reviews a **Generator**'s work. Calibrated toward skepticism because agents praise their own work. Scores across dimensions (e.g., Completeness, Correctness, UX Quality, Security, Code Quality) on a 1–5 scale with hard failure thresholds. Spawned at **Phase** 5 by the generator via `executor.spawn_evaluator()` (foreground Task subagent, `codex exec --cd`, or tmux split per launch mode), not at launch.
 
-**Where it appears:** `/build` Phase 5; `/gen-eval` skill; `/launch` (brainstorms criteria).
+**Where it appears:** `/aep-build` Phase 5; `/aep-gen-eval` skill; `/aep-launch` (brainstorms criteria).
 
 > "When asked to evaluate work they've produced, agents tend to respond by confidently praising the work — even when, to a human observer, the quality is obviously mediocre."
 > — Anthropic, "Harness Design for Long-Running Application Development"
@@ -336,7 +336,7 @@ See also: **Generator**, **Generator/Evaluator Separation**
 
 A structured JSON file (`.dev-workflow/feature-verification.json`) listing all verification checks for a feature — each acceptance criterion mapped to a testable condition. Only the **Evaluator** or a human modifies this file; the **Generator** cannot mark its own work as verified.
 
-**Where it appears:** `/build` Phase 0 (created); Phase 5 (**Evaluator** checks against it).
+**Where it appears:** `/aep-build` Phase 0 (created); Phase 5 (**Evaluator** checks against it).
 
 See also: **Evaluator**, **Sprint Contract**
 
@@ -344,7 +344,7 @@ See also: **Evaluator**, **Sprint Contract**
 
 The agent that creates artifacts — implements code, writes designs, produces proposals. In the **Two-Session Model**, the workspace agent acts as generator. Cannot honestly evaluate its own work, which is why the **Evaluator** exists as a separate agent.
 
-**Where it appears:** `/build` (workspace agent); `/gen-eval` skill.
+**Where it appears:** `/aep-build` (workspace agent); `/aep-gen-eval` skill.
 
 See also: **Evaluator**, **Generator/Evaluator Separation**
 
@@ -352,7 +352,7 @@ See also: **Evaluator**, **Generator/Evaluator Separation**
 
 The single most durable pattern from Anthropic's research on agent harnesses. The agent that creates work (generator) and the agent that evaluates it (evaluator) must be separate. Self-evaluation produces inflated scores and rationalized problems. The cost of a second agent is trivial compared to shipping broken work.
 
-**Where it appears:** `/gen-eval` skill (defines the pattern); `/build` Phase 5 (applies it); `/validate` (uses it).
+**Where it appears:** `/aep-gen-eval` skill (defines the pattern); `/aep-build` Phase 5 (applies it); `/aep-validate` (uses it).
 
 See also: **Generator**, **Evaluator**
 
@@ -360,7 +360,7 @@ See also: **Generator**, **Evaluator**
 
 The infrastructure surrounding an agent to help it succeed — tracking files, signal protocols, recovery scripts, evaluation criteria, verification checklists. Each harness component exists because of a specific failure mode observed in Anthropic's research. Components should be stress-tested as models improve and removed when no longer needed.
 
-**Where it appears:** `/build` Phase 0 (sets up the harness); `.dev-workflow/` directory contains harness artifacts.
+**Where it appears:** `/aep-build` Phase 0 (sets up the harness); `.dev-workflow/` directory contains harness artifacts.
 
 | Problem                         | Harness artifact          | Solution                        |
 | ------------------------------- | ------------------------- | ------------------------------- |
@@ -377,7 +377,7 @@ See also: **Generator/Evaluator Separation**, **Sprint Contract**, **Feature Ver
 
 The main session agent (or **Autopilot**) that coordinates work across **Workspace Sessions**. Decides what to build, dispatches stories, monitors progress, and triggers wraps. Operates strictly within **Orchestrator Boundaries**.
 
-**Where it appears:** `/dispatch`; `/autopilot`; `/wrap`.
+**Where it appears:** `/aep-dispatch`; `/aep-autopilot`; `/aep-wrap`.
 
 See also: **Orchestrator Boundaries**, **Autopilot**
 
@@ -386,13 +386,13 @@ See also: **Orchestrator Boundaries**, **Autopilot**
 The strict separation rules the **Orchestrator** must follow:
 
 1. **Never read workspace source code** — only read **Signal Files**
-2. **Never spawn Agent tools for code review** — use `tmux send-keys` instead
+2. **Never spawn Agent tools for code review** — use `executor.nudge()` instead
 3. **Never call `gh pr merge`** — workspace agents own **Phase** 12
 4. **Never write eval-response files** — that is the **Evaluator**'s job
 
 These boundaries prevent the orchestrator from becoming an executor and eliminate cross-cutting concerns.
 
-**Where it appears:** `/autopilot` SKILL.md (STOP section); `references/tick-protocol.md`.
+**Where it appears:** `/aep-autopilot` SKILL.md (STOP section); `references/tick-protocol.md`.
 
 See also: **Orchestrator**, **Two-Session Model**
 
@@ -400,7 +400,7 @@ See also: **Orchestrator**, **Two-Session Model**
 
 The Phase 4 implementation pattern: read `tasks.md`, then implement each task in order, committing once per task with a conventional-commit message. The resulting commit history mirrors `tasks.md` 1:1, which makes the PR's commit list a readable table of contents matching the spec. Squash-merge at PR-merge time keeps the integration branch's history clean while preserving the per-task review trail in the PR's commits tab.
 
-**Where it appears:** `/build` Phase 4; `/git-ref` (documents the pattern).
+**Where it appears:** `/aep-build` Phase 4; `/aep-git-ref` (documents the pattern).
 
 See also: **Feature Branch**, **Git Worktree**
 
@@ -408,7 +408,7 @@ See also: **Feature Branch**, **Git Worktree**
 
 A file (`.dev-workflow/contracts.md`) that explicitly states what success looks like for the current feature — the definition of done, key behaviors, integration requirements. Exists because without explicit success criteria, agents build the wrong thing.
 
-**Where it appears:** `/build` Phase 0 (generated from OpenSpec artifacts).
+**Where it appears:** `/aep-build` Phase 0 (generated from OpenSpec artifacts).
 
 See also: **Feature Verification**, **Harness**
 
@@ -416,7 +416,7 @@ See also: **Feature Verification**, **Harness**
 
 The shared portion of **Context Assembly** (~10K tokens) that is identical across all agents working in the same **Layer**. Contains: problem statement, constraints, active layer MVP contract, and architecture overview. Cacheable — when dispatching multiple stories, write it once.
 
-**Where it appears:** `/dispatch` Step 6 → `openspec/changes/<id>/.context/stable-prefix.md`.
+**Where it appears:** `/aep-dispatch` Step 6 → `openspec/changes/<id>/.context/stable-prefix.md`.
 
 See also: **Context Assembly**, **Context Package**
 
@@ -428,7 +428,7 @@ See also: **Context Assembly**, **Context Package**
 
 A `.5` **Layer** (0.5, 1.5, 2.5) where the team pauses agent execution to recalibrate human intent across one or more **Quality Dimensions**. Formerly called "UI polish layers" — the concept was generalized because the gap between "works correctly" and "is what we actually want" exists across many dimensions, not just visual design.
 
-**Where it appears:** `product-context.yaml` → `stories[].layer` (fractional values); `/map` Step 3 plans them; `/reflect` Step 2 identifies the need; `/calibrate` executes them.
+**Where it appears:** `product-context.yaml` → `stories[].layer` (fractional values); `/aep-map` Step 3 plans them; `/aep-reflect` Step 2 identifies the need; `/aep-calibrate` executes them.
 
 See also: **Layer**, **Calibration**, **Quality Dimension**
 
@@ -443,7 +443,7 @@ Calibrations split into two classes:
 | **Heavy** | visual-design, ux-flow, copy-tone                             | External tools or deep exploration | Standalone YAML in `calibration/` directory |
 | **Light** | api-surface, data-model, scope-direction, performance-quality | Conversation + code review         | Inline updates to `product-context.yaml`    |
 
-**Where it appears:** `/calibrate` skill (executes); `/envision` (declares quality dimensions); `/reflect` (identifies needs); `product-context.yaml` → `calibration.history`.
+**Where it appears:** `/aep-calibrate` skill (executes); `/aep-envision` (declares quality dimensions); `/aep-reflect` (identifies needs); `product-context.yaml` → `calibration.history`.
 
 See also: **Quality Dimension**, **Alignment Layer**, **Calibration Artifact**
 
@@ -451,7 +451,7 @@ See also: **Quality Dimension**, **Alignment Layer**, **Calibration Artifact**
 
 The machine-readable output of a **Calibration** capture. Heavy calibrations produce standalone YAML files in `calibration/` (e.g., `calibration/visual-design.yaml`, `calibration/ux-flow.yaml`, `calibration/copy-tone.yaml`). Light calibrations update existing sections of `product-context.yaml` directly (e.g., `architecture.interfaces`, `architecture.domain_model`, `product.success_criteria`). Agents query these artifacts for specific values (`palette.dark.primary`, `voice.personality`, `components.border_radius`).
 
-**Where it appears:** `calibration/` directory (heavy types); `product-context.yaml` sections (light types); `/dispatch` Step 6 includes them in **Context Packages** for calibrated stories.
+**Where it appears:** `calibration/` directory (heavy types); `product-context.yaml` sections (light types); `/aep-dispatch` Step 6 includes them in **Context Packages** for calibrated stories.
 
 See also: **Calibration**, **Context Assembly**
 
@@ -463,53 +463,53 @@ A semantic history of how `product-context.yaml` evolved. Unlike git diffs (whic
 
 ### Concurrency Protocol
 
-The rule that only the **Main Session** writes to `product-context.yaml`. **Workspace Sessions** report status through **Signal Files** only. The main session (via `/wrap`, `/dispatch`, `/reflect`) reads signals and updates the YAML. This prevents git merge conflicts from concurrent writers.
+The rule that only the **Main Session** writes to `product-context.yaml`. **Workspace Sessions** report status through **Signal Files** only. The main session (via `/aep-wrap`, `/aep-dispatch`, `/aep-reflect`) reads signals and updates the YAML. This prevents git merge conflicts from concurrent writers.
 
-**Where it appears:** `product-context.yaml` header comment; `/build` (workspace agent respects it); `/wrap` (reads signals, writes YAML).
+**Where it appears:** `product-context.yaml` header comment; `/aep-build` (workspace agent respects it); `/aep-wrap` (reads signals, writes YAML).
 
 See also: **Signal Files**, **Main Session**, **Workspace Session**
 
 ### Cost Tracking
 
-Accumulated execution cost data in `product-context.yaml` → `cost` section. Tracks total USD, cost by layer, by module, and by story. Alerts flag anomalies: cost overruns, retry concentration, and timeout patterns. Reviewed by `/reflect` for optimization opportunities.
+Accumulated execution cost data in `product-context.yaml` → `cost` section. Tracks total USD, cost by layer, by module, and by story. Alerts flag anomalies: cost overruns, retry concentration, and timeout patterns. Reviewed by `/aep-reflect` for optimization opportunities.
 
-**Where it appears:** `product-context.yaml` → `cost`; `/build` reports cost via signals; `/wrap` syncs to YAML; `/reflect` reviews.
+**Where it appears:** `product-context.yaml` → `cost`; `/aep-build` reports cost via signals; `/aep-wrap` syncs to YAML; `/aep-reflect` reviews.
 
 ### Design Escalation
 
-A condition that causes **Autopilot** to pause and request human input via `/design`. Triggers:
+A condition that causes **Autopilot** to pause and request human input via `/aep-design`. Triggers:
 
 - Complexity L with fewer than 3 acceptance criteria
 - UI-heavy activity with complexity M or L
 - `attempt_count >= 2` (repeated failures)
 - Fewer than 3 acceptance criteria with missing interface details
 
-**Where it appears:** `/autopilot` Step 6; `/dispatch` Step 7 (routes ambiguous stories to `/design`).
+**Where it appears:** `/aep-autopilot` Step 6; `/aep-dispatch` Step 7 (routes ambiguous stories to `/aep-design`).
 
 See also: **Autopilot**, **Dispatch**
 
 ### Feedback Classification
 
-The categories used by `/reflect` to route real-world observations back to the right phase:
+The categories used by `/aep-reflect` to route real-world observations back to the right phase:
 
-| Type                         | Definition                                | Action                                                                                           |
-| ---------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| **Bug**                      | Specified behavior that doesn't work      | New high-priority fix story in current layer                                                     |
-| **Refinement**               | Working behavior that needs improvement   | New story in next layer (or promote earlier)                                                     |
-| **Refinement → Calibration** | Works as specified but doesn't feel right | `/calibrate <dimension>` — heavy types create `.5` layer stories, light types update YAML inline |
-| **Discovery**                | New requirement or invalidated assumption | Update product/architecture via `/envision` or `/map`                                            |
-| **Opportunity Shift**        | Fundamental bet is wrong                  | Back to `/envision` Phase 0                                                                      |
-| **Process**                  | Workflow/tooling observation, not product | Document in `lessons-learned/`, propose skill amendments                                         |
+| Type                         | Definition                                | Action                                                                                               |
+| ---------------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Bug**                      | Specified behavior that doesn't work      | New high-priority fix story in current layer                                                         |
+| **Refinement**               | Working behavior that needs improvement   | New story in next layer (or promote earlier)                                                         |
+| **Refinement → Calibration** | Works as specified but doesn't feel right | `/aep-calibrate <dimension>` — heavy types create `.5` layer stories, light types update YAML inline |
+| **Discovery**                | New requirement or invalidated assumption | Update product/architecture via `/aep-envision` or `/aep-map`                                        |
+| **Opportunity Shift**        | Fundamental bet is wrong                  | Back to `/aep-envision` Phase 0                                                                      |
+| **Process**                  | Workflow/tooling observation, not product | Document in `lessons-learned/`, propose skill amendments                                             |
 
-**Where it appears:** `/reflect` Step 2.
+**Where it appears:** `/aep-reflect` Step 2.
 
 See also: **Release Line**, **Calibration**, **Quality Dimension**
 
 ### Kill Point
 
-The explicit decision point at the end of `/envision` Phase 0 where the **Opportunity Brief** is challenged. If the opportunity does not survive an honest five-minute challenge, it should not consume further resources. Options: proceed, kill, or defer with a revisit condition.
+The explicit decision point at the end of `/aep-envision` Phase 0 where the **Opportunity Brief** is challenged. If the opportunity does not survive an honest five-minute challenge, it should not consume further resources. Options: proceed, kill, or defer with a revisit condition.
 
-**Where it appears:** `/envision` Phase 0.
+**Where it appears:** `/aep-envision` Phase 0.
 
 See also: **Opportunity Brief**
 
@@ -517,13 +517,13 @@ See also: **Opportunity Brief**
 
 A spec-driven development CLI tool that manages feature specifications as structured artifact bundles. Provides commands: `explore` (research), `propose` (generate specs), `apply` (implement), `archive` (preserve). AEP uses OpenSpec to manage the lifecycle of each dispatched **Story**.
 
-**Where it appears:** `/scaffold` Phase 5 (initializes OpenSpec); `/design` (runs explore/propose); `/wrap` (runs archive).
+**Where it appears:** `/aep-scaffold` Phase 5 (initializes OpenSpec); `/aep-design` (runs explore/propose); `/aep-wrap` (runs archive).
 
 See also: **OpenSpec Change**
 
 ### OpenSpec Change
 
-A specification artifact bundle created by `/dispatch` for each dispatched **Story**. Located at `openspec/changes/<story-id>/` containing:
+A specification artifact bundle created by `/aep-dispatch` for each dispatched **Story**. Located at `openspec/changes/<story-id>/` containing:
 
 ```
 proposal.md          — story description + business value
@@ -533,13 +533,13 @@ tasks.md             — implementation tasks
 .context/            — pre-assembled Context Package
 ```
 
-**Where it appears:** `/dispatch` Step 6 (creates); `/design` (refines); `/build` Phase 0 (reads); `/wrap` (archives).
+**Where it appears:** `/aep-dispatch` Step 6 (creates); `/aep-design` (refines); `/aep-build` Phase 0 (reads); `/aep-wrap` (archives).
 
 See also: **OpenSpec**, **Context Package**
 
 ### Quality Dimension
 
-An aspect of a product where human judgment is needed that agents cannot provide — where "correct" and "right" diverge. Declared during `/envision` Phase 1. Seven standard dimensions:
+An aspect of a product where human judgment is needed that agents cannot provide — where "correct" and "right" diverge. Declared during `/aep-envision` Phase 1. Seven standard dimensions:
 
 | Dimension               | The gap agents can't judge                                        |
 | ----------------------- | ----------------------------------------------------------------- |
@@ -551,7 +551,7 @@ An aspect of a product where human judgment is needed that agents cannot provide
 | **copy-tone**           | Brand voice, error messages, empty states, terminology            |
 | **performance-quality** | Latency thresholds, retry behavior, caching, degradation strategy |
 
-**Where it appears:** `product-context.yaml` → `product.quality_dimensions`; `/envision` Phase 1 declares them; `/reflect` checks them; `/calibrate` addresses them.
+**Where it appears:** `product-context.yaml` → `product.quality_dimensions`; `/aep-envision` Phase 1 declares them; `/aep-reflect` checks them; `/aep-calibrate` addresses them.
 
 See also: **Calibration**, **Alignment Layer**
 
@@ -559,17 +559,17 @@ See also: **Calibration**, **Alignment Layer**
 
 The single source of truth for the entire product. A YAML file committed to git that evolves incrementally across skills:
 
-| Section        | Populated by                                   |
-| -------------- | ---------------------------------------------- |
-| `opportunity`  | `/envision` Phase 0                            |
-| `product`      | `/envision` Phase 1 (incl. quality_dimensions) |
-| `calibration`  | `/envision` (plan) + `/calibrate` (history)    |
-| `architecture` | `/map` Step 1 + `/calibrate` (light types)     |
-| `stories`      | `/map` Steps 2–3                               |
-| `topology`     | `/map` Step 4                                  |
-| `layer_gates`  | `/map` Step 3                                  |
-| `cost`         | `/build` → `/wrap`                             |
-| `changelog`    | All skills that modify the file                |
+| Section        | Populated by                                        |
+| -------------- | --------------------------------------------------- |
+| `opportunity`  | `/aep-envision` Phase 0                             |
+| `product`      | `/aep-envision` Phase 1 (incl. quality_dimensions)  |
+| `calibration`  | `/aep-envision` (plan) + `/aep-calibrate` (history) |
+| `architecture` | `/aep-map` Step 1 + `/aep-calibrate` (light types)  |
+| `stories`      | `/aep-map` Steps 2–3                                |
+| `topology`     | `/aep-map` Step 4                                   |
+| `layer_gates`  | `/aep-map` Step 3                                   |
+| `cost`         | `/aep-build` → `/aep-wrap`                          |
+| `changelog`    | All skills that modify the file                     |
 
 Version format: major (opportunity shift), minor (architecture/map change), patch (dispatch/build/wrap). Only the **Main Session** writes to this file (**Concurrency Protocol**).
 
@@ -579,17 +579,17 @@ See also: **Concurrency Protocol**, **Changelog**
 
 ### Upstream Candidate
 
-A lesson or observation from a downstream project build that may warrant changes to AEP skills, documentation, or patterns. Marked during `/workflow-feedback` capture. Only upstream candidates are reviewed during the AEP-side pull process. Items classified as `process` or `tech-stack` are almost always upstream candidates; `discovery` items are upstream only if they reveal a pattern applicable beyond one project.
+A lesson or observation from a downstream project build that may warrant changes to AEP skills, documentation, or patterns. Marked during `/aep-workflow-feedback` capture. Only upstream candidates are reviewed during the AEP-side pull process. Items classified as `process` or `tech-stack` are almost always upstream candidates; `discovery` items are upstream only if they reveal a pattern applicable beyond one project.
 
-**Where it appears:** `.dev-workflow/feedback.md` (downstream); `/workflow-feedback` review mode (AEP).
+**Where it appears:** `.dev-workflow/feedback.md` (downstream); `/aep-workflow-feedback` review mode (AEP).
 
 See also: **Workflow Feedback**
 
 ### Workflow Feedback
 
-The standardized process for capturing and routing observations about AEP workflow effectiveness. Downstream projects write feedback during or after builds using `/workflow-feedback` capture; the AEP repo reviews and pulls improvements using `/workflow-feedback` review. Distinct from product feedback (handled by `/reflect`): workflow feedback concerns the development process, not the product being built.
+The standardized process for capturing and routing observations about AEP workflow effectiveness. Downstream projects write feedback during or after builds using `/aep-workflow-feedback` capture; the AEP repo reviews and pulls improvements using `/aep-workflow-feedback` review. Distinct from product feedback (handled by `/aep-reflect`): workflow feedback concerns the development process, not the product being built.
 
-**Where it appears:** `/workflow-feedback` skill; `.dev-workflow/feedback.md` (downstream output); `docs/lessons/` and `docs/tech-stack/` (AEP destinations).
+**Where it appears:** `/aep-workflow-feedback` skill; `.dev-workflow/feedback.md` (downstream output); `docs/lessons/` and `docs/tech-stack/` (AEP destinations).
 
 See also: **Upstream Candidate**
 
@@ -599,55 +599,55 @@ See also: **Upstream Candidate**
 
 ### Better-T-Stack
 
-A full-stack TypeScript monorepo scaffold engine used by `/scaffold`. Default stack: Hono + TanStack Router + Drizzle + SQLite + Better Auth + tRPC + Turborepo + Biome + Bun. Supports customization of frontend, backend, database, ORM, auth, API layer, runtime, package manager, and addons. Has built-in template presets (t3, pern, mern, uniwind).
+A full-stack TypeScript monorepo scaffold engine used by `/aep-scaffold`. Default stack: Hono + TanStack Router + Drizzle + SQLite + Better Auth + tRPC + Turborepo + Biome + Bun. Supports customization of frontend, backend, database, ORM, auth, API layer, runtime, package manager, and addons. Has built-in template presets (t3, pern, mern, uniwind).
 
-**Where it appears:** `/scaffold` Phase 3.
+**Where it appears:** `/aep-scaffold` Phase 3.
 
 ### cmux
 
-A Claude Code tab multiplexer that creates visual tabs for parallel **Workspace Sessions**. Each workspace gets its own cmux tab for terminal display, making it easy to monitor multiple agents working in parallel.
+A Claude Code tab multiplexer that creates visual tabs for parallel **Workspace Sessions** under the pinned **legacy** (tmux) launch mode. Each tmux-hosted workspace gets its own cmux tab for terminal display. Optional — native launch modes have their own surfaces (teammate panes, `claude attach`, Codex threads).
 
-**Where it appears:** `/launch` (creates cmux tab for new workspace).
+**Where it appears:** `/aep-launch` legacy mode (creates cmux tab for new workspace).
 
 See also: **tmux**, **Workspace Session**
 
 ### Feature Branch
 
-The git branch a workspace agent works on, named `feat/<name>` and created by `/launch` together with the worktree (`git worktree add -b feat/<name>`). One feature branch per **Story**. PRs target the **Integration Branch** (`$BASE`) and are squash-merged with `--delete-branch`, after which `/wrap` removes the corresponding worktree and the local branch.
+The git branch a workspace agent works on, named `feat/<name>` and created by `/aep-launch` together with the worktree (`git worktree add -b feat/<name>`). One feature branch per **Story**. PRs target the **Integration Branch** (`$BASE`) and are squash-merged with `--delete-branch`, after which `/aep-wrap` removes the corresponding worktree and the local branch.
 
-**Where it appears:** `/launch` (creates branch + worktree); `/build` (commits to it); `/wrap` (removes it).
+**Where it appears:** `/aep-launch` (creates branch + worktree); `/aep-build` (commits to it); `/aep-wrap` (removes it).
 
 See also: **Integration Branch**, **Git Worktree**, **One-Commit-per-Task Pattern**, **Workspace Session**
 
 ### Integration Branch
 
-The branch AEP integrates feature work into — feature worktrees are created from it, rebased onto it, PR'd into it, merged into it, and all control-plane commits (`/dispatch`, `/design`, `/wrap` archive, story status) land on it. Referred to as `$BASE` across the skills. **Auto-detected:** in _single-branch mode_ (no `develop`) it is `main` (also the production branch); in _two-branch mode_ (`develop` exists) it is `develop` (staging) while `main` is the promote-only production branch that AEP never touches. Override the detected name with `git config aep.integration-branch <name>`. Distinct from the production branch: promotion (e.g. `develop` → `main`) is the user's CI/CD or PR step, like deployment, which is outside AEP's scope.
+The branch AEP integrates feature work into — feature worktrees are created from it, rebased onto it, PR'd into it, merged into it, and all control-plane commits (`/aep-dispatch`, `/aep-design`, `/aep-wrap` archive, story status) land on it. Referred to as `$BASE` across the skills. **Auto-detected:** in _single-branch mode_ (no `develop`) it is `main` (also the production branch); in _two-branch mode_ (`develop` exists) it is `develop` (staging) while `main` is the promote-only production branch that AEP never touches. Override the detected name with `git config aep.integration-branch <name>`. Distinct from the production branch: promotion (e.g. `develop` → `main`) is the user's CI/CD or PR step, like deployment, which is outside AEP's scope.
 
-**Where it appears:** `/onboard` Phase 5 (detect + persist); `/git-ref` → "Integration Branch" (resolver + config key); every git-touching skill resolves `$BASE` from it.
+**Where it appears:** `/aep-onboard` Phase 5 (detect + persist); `/aep-git-ref` → "Integration Branch" (resolver + config key); every git-touching skill resolves `$BASE` from it.
 
 See also: **Feature Branch**, **Git Worktree**, **Control Plane**
 
 ### Git Worktree
 
-A `git worktree` is a separate working tree backed by the same `.git/objects` store as the main checkout. AEP creates one per parallel agent at `.feature-workspaces/<name>/` — sharing history (no duplication) but with its own independent working tree and checked-out branch. Created by `/launch`, removed by `/wrap`. Replaces the previous jj-workspace abstraction.
+A `git worktree` is a separate working tree backed by the same `.git/objects` store as the main checkout. AEP creates one per parallel agent at `.feature-workspaces/<name>/` — sharing history (no duplication) but with its own independent working tree and checked-out branch. Created by `/aep-launch`, removed by `/aep-wrap`. Replaces the previous jj-workspace abstraction.
 
-**Where it appears:** `/launch` (`git worktree add -b feat/<name> .feature-workspaces/<name> "$BASE"`); `/wrap` (`git worktree remove`); `/git-ref` (full lifecycle reference).
+**Where it appears:** `/aep-launch` (`git worktree add -b feat/<name> .feature-workspaces/<name> "$BASE"`); `/aep-wrap` (`git worktree remove`); `/aep-git-ref` (full lifecycle reference).
 
-See also: **Feature Branch**, **Workspace Session**, **/git-ref**
+See also: **Feature Branch**, **Workspace Session**, **/aep-git-ref**
 
 ### OpenSpec CLI
 
-The command-line tool for spec-driven development. Commands: `openspec init` (initialize), `openspec explore` (research phase), `openspec propose` (generate specs), `openspec apply` (implementation), `openspec archive` (preserve completed work). Installed as a project dependency and aliased via `/scaffold`.
+The command-line tool for spec-driven development. Commands: `openspec init` (initialize), `openspec explore` (research phase), `openspec propose` (generate specs), `openspec apply` (implementation), `openspec archive` (preserve completed work). Installed as a project dependency and aliased via `/aep-scaffold`.
 
-**Where it appears:** `/scaffold` Phase 5; `/design` (explore/propose); `/wrap` (archive).
+**Where it appears:** `/aep-scaffold` Phase 5; `/aep-design` (explore/propose); `/aep-wrap` (archive).
 
 See also: **OpenSpec**, **OpenSpec Change**
 
 ### tmux
 
-A terminal multiplexer that hosts **Workspace Session** Claude Code instances. Each workspace runs in a tmux session. The **Orchestrator** communicates with workspace agents exclusively via `tmux send-keys` — this is the enforcement mechanism for **Orchestrator Boundaries**.
+A terminal multiplexer that hosts **Workspace Sessions** under the **legacy** launch mode (explicit pin via `git config aep.executor-backend tmux`, or generic-host fallback). In that mode the **Orchestrator** communicates with workspace agents via `tmux send-keys` — one of the per-mode transports behind `executor.nudge()`, the enforcement mechanism for **Orchestrator Boundaries**. Native launch modes (Claude Code agent teams / background sessions, Codex subagents / exec workers) need no tmux.
 
-**Where it appears:** `/launch` (creates tmux session); `/autopilot` (sends commands via tmux); `/build` Phase 5 (spawns evaluator in tmux split).
+**Where it appears:** `/aep-launch` legacy mode (creates tmux session); `/aep-autopilot` (nudges via tmux when legacy); `/aep-build` Phase 5 (legacy evaluator in tmux split).
 
 See also: **cmux**, **Orchestrator Boundaries**, **Workspace Session**
 
@@ -671,11 +671,11 @@ product/
 
 ### Readiness Score
 
-A per-story spec completeness score (0.0–1.0) computed during `/dispatch` (Step 3). Components: acceptance criteria count, interface obligations defined, files affected identified, verification defined, no unresolved open questions. Routes stories: < 0.5 → `/design`, >= 0.7 → `/launch`, between → user decision.
+A per-story spec completeness score (0.0–1.0) computed during `/aep-dispatch` (Step 3). Components: acceptance criteria count, interface obligations defined, files affected identified, verification defined, no unresolved open questions. Routes stories: < 0.5 → `/aep-design`, >= 0.7 → `/aep-launch`, between → user decision.
 
 ### Outcome Contract
 
-A testable hypothesis attached to each layer in `product-context.yaml`. Format: "If users can do X, then Y business outcome follows" with a success metric, target, and decision rule (keep_if / otherwise). Evaluated by `/reflect` after layer completion — not automated test results, but product-level learning.
+A testable hypothesis attached to each layer in `product-context.yaml`. Format: "If users can do X, then Y business outcome follows" with a success metric, target, and decision rule (keep_if / otherwise). Evaluated by `/aep-reflect` after layer completion — not automated test results, but product-level learning.
 
 ### VCS Abstraction (resolved — 2026-04)
 

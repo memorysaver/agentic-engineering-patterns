@@ -1,109 +1,126 @@
 ---
 name: aep-executor
 description: |-
-  Host-agnostic executor abstraction for spawning and steering implementation agents. This is a utility skill — it defines how /launch, /build, and /autopilot start a worktree-bound agent, send it mid-flight instructions, check liveness, present it for human review, and tear it down, across Claude Code or Codex, with or without tmux/cmux, or (on explicit opt-in) as a Claude Code dynamic workflow. Reference its files from any skill that needs to run work in an isolated workspace. Triggers on "executor", "which backend", "spawn workspace", "run under codex", "no tmux", "cmux optional", "run as a workflow", "host detection".
+  Host-agnostic executor abstraction for spawning and steering implementation agents. This is a utility skill — it defines how /aep-launch, /aep-build, and /aep-autopilot start a worktree-bound agent, send it mid-flight instructions, check liveness, surface human gates, present it for review, and tear it down, across Claude Code (agent teams / background sessions) or Codex (native subagents / exec workers), with tmux+cmux as the legacy pinned fallback. Reference its files from any skill that needs to run work in an isolated workspace. Triggers on "executor", "which backend", "launch mode", "spawn workspace", "run under codex", "agent teams", "claude-team", "no tmux", "with tmux", "run as a workflow", "host detection".
 ---
 
 # Executor Abstraction
 
 A reusable abstraction for **running implementation work in an isolated
 workspace**, independent of which agent host (Claude Code, Codex) or which
-process/presentation tools (tmux, cmux, native subagents, dynamic workflows) are
-available. Lifecycle skills speak one vocabulary of operations; this skill maps
-each operation to a concrete recipe per backend. Codex coding launches are
-subagent-first and still use AEP-created git worktrees; tmux remains the default
-session backend for Claude Code and generic executors.
+mechanism (agent teams, background sessions, native subagents, exec workers,
+tmux, dynamic workflows) is available. Lifecycle skills speak one vocabulary of
+operations; this skill maps each operation to a concrete recipe per mode.
+
+**Native-first (v1.6):** Claude Code launches use agent teams (`claude-team`)
+or native background sessions (`claude-bg`); Codex launches use native
+subagents (`codex-subagent`) or headless exec workers (`codex-exec`). tmux+cmux
+is the **`legacy`** mode — selected only by explicit pin
+(`git config aep.executor-backend tmux`) or on generic hosts. Every mode runs
+its worker in an AEP-created git worktree at `.feature-workspaces/<ws>`.
 
 **This skill is both a utility library and a standalone skill:**
 
-- **As a library:** `/launch`, `/build`, and `/autopilot` reference its
-  `references/backends.md` for detection, backend selection, and per-operation
-  recipes.
+- **As a library:** `/aep-launch`, `/aep-build`, and `/aep-autopilot` reference its
+  `references/` files for detection, mode selection, and per-operation recipes.
 - **As a standalone skill:** Invoke directly to detect the current host and
-  report which backend would be selected (useful when debugging "why did it pick
+  report which mode would be selected (useful when debugging "why did it pick
   X").
 
 ---
 
 ## Why This Exists
 
-The control plane (`/dispatch` scoring, the `.dev-workflow/signals/` protocol) is
-already host-independent. The coupling lived in the execution plane — a
-`claude --dangerously-skip-permissions` process, hosted in tmux, presented
-through cmux. This abstraction isolates that coupling so the same workflow runs
-under Claude Code or Codex, in a terminal or a Desktop app, with cmux as an
-optional convenience rather than a hard dependency.
+The control plane (`/aep-dispatch` scoring, the `.dev-workflow/signals/` protocol)
+is host-independent. The coupling lived in the execution plane — historically a
+`claude` process hosted in tmux, presented through cmux. This abstraction
+isolates that coupling so the same workflow runs under Claude Code or the Codex
+desktop app/CLI, using each host's **native** parallel-agent machinery, with
+tmux as a pinned fallback rather than a default.
 
-See [`docs/decisions/host-agnostic-executor.md`](../../../docs/decisions/host-agnostic-executor.md)
-for the full decision record.
+See [`docs/decisions/native-first-executor.md`](../../../docs/decisions/native-first-executor.md)
+(and the earlier [`host-agnostic-executor.md`](../../../docs/decisions/host-agnostic-executor.md))
+for the decision records.
 
 ---
 
 ## How Other Skills Use This
 
-| Skill            | What it uses                                             | Operations                             |
-| ---------------- | -------------------------------------------------------- | -------------------------------------- |
-| `/launch`        | Start the implementation agent + expose it for review    | `detect`, `spawn`, `present`           |
-| `/build` Phase 5 | Spawn the evaluator in the right execution context       | `detect`, `spawn_evaluator`            |
-| `/autopilot`     | Run the periodic tick check cheaply; steer workspaces    | `detect`, `check`, `nudge`, `liveness` |
-| `/wrap`          | Tear down the session + worktree after merge             | `teardown`                             |
-| `/dispatch`      | Resolve the handoff backend; route "…with workflow" runs | `detect`                               |
+| Skill                | What it uses                                          | Operations                                     |
+| -------------------- | ----------------------------------------------------- | ---------------------------------------------- |
+| `/aep-launch`        | Start the implementation agent + expose it for review | `detect`, `spawn`, `present`                   |
+| `/aep-build` Phase 5 | Spawn the evaluator in the right execution context    | `detect`, `spawn_evaluator`                    |
+| `/aep-build`         | Raise a human decision mid-build                      | `gate`                                         |
+| `/aep-autopilot`     | Run the periodic tick check cheaply; steer workspaces | `detect`, `check`, `nudge`, `liveness`, `gate` |
+| `/aep-wrap`          | Tear down the worker + worktree after merge           | `teardown`                                     |
+| `/aep-dispatch`      | Resolve the handoff mode; route "…with workflow" runs | `detect`                                       |
 
 ### Cross-skill reference path
 
-After sync with the `aep-` prefix, the reference is at:
+After sync with the `aep-` prefix, the references are at:
 
 ```
-.claude/skills/aep-executor/references/backends.md
+.claude/skills/aep-executor/references/backends.md       # detection, selection, cross-mode protocols
+.claude/skills/aep-executor/references/claude-native.md  # claude-team, claude-bg recipes
+.claude/skills/aep-executor/references/codex-native.md   # codex-subagent, codex-exec recipes + role TOMLs
+.claude/skills/aep-executor/references/tmux-session.md   # legacy recipes
 ```
 
-When a skill references this path, read it before spawning or steering any
-workspace agent.
+Read `backends.md` first, then the recipe file for the selected mode.
 
 ---
 
 ## The Operation Contract
 
-Every consumer speaks these verbs. `references/backends.md` supplies the recipe
-for each, per backend.
+Every consumer speaks these verbs. The recipe files supply the implementation
+per mode.
 
-| Op                          | Purpose                                                                                                                                                  |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `detect()`                  | Resolve host + capabilities, select a backend                                                                                                            |
-| `spawn(ws, branch, prompt)` | Start an implementation agent bound to a worktree                                                                                                        |
-| `spawn_evaluator(ws, role)` | Start an evaluator agent (worktree-bound) in the backend's eval context                                                                                  |
-| `nudge(ws, msg)`            | Send a mid-flight instruction _(session backends only)_                                                                                                  |
-| `liveness(ws)`              | Is the agent actively working? _(session backends; git-diff fallback otherwise)_                                                                         |
-| `check(prompt, schema)`     | Run a read-only analysis prompt in a **cheap, context-isolated** agent; return its JSON result — keeps a long-lived orchestrator session's context small |
-| `monitor(ws)`               | Read `.dev-workflow/signals/status.json` — **host-independent, never changes**                                                                           |
-| `present(ws)`               | Human review surface (cmux tab → tmux attach → headless)                                                                                                 |
-| `teardown(ws)`              | Worktree/session cleanup                                                                                                                                 |
+| Op                          | Purpose                                                                                                                                                     |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `detect()`                  | Resolve host + native capabilities + pin, select a mode                                                                                                     |
+| `spawn(ws, branch, prompt)` | Start an implementation agent bound to the AEP worktree                                                                                                     |
+| `spawn_evaluator(ws, role)` | Start an evaluator agent (worktree-bound) in the mode's eval context                                                                                        |
+| `nudge(ws, msg)`            | Send a mid-flight instruction _(steerable modes; pull-based under claude-bg)_                                                                               |
+| `liveness(ws)`              | Is the agent actively working? _(mode-specific signal + git-diff corroboration)_                                                                            |
+| `gate(ws)`                  | Surface a worker's human decision: `needs-human.md` + the mode's transport, answered hub-and-spoke through the main agent (block-in-place or gate-and-park) |
+| `check(prompt, schema)`     | Run a read-only analysis prompt in a **cheap, context-isolated** agent; return its JSON result — keeps a long-lived orchestrator session's context small    |
+| `monitor(ws)`               | Read `.dev-workflow/signals/status.json` — **host-independent, never changes**                                                                              |
+| `present(ws)`               | Human review surface (teammate pane / `claude attach` / Codex thread / cmux tab / signals)                                                                  |
+| `teardown(ws)`              | Worker + worktree cleanup                                                                                                                                   |
 
 > **`monitor()` is already abstract.** Progress is reported through signal files
-> at phase boundaries regardless of the executor. Consumers read signals exactly
-> as they do today; only spawn/nudge/liveness/present/teardown vary by backend.
+> at phase boundaries regardless of the executor. Native push channels
+> (SendMessage, send_input) are an acceleration layer — the signal files remain
+> the durable, host-agnostic source of truth.
 
 ---
 
-## The Four Backends (summary)
+## The Modes (summary)
 
-| ID     | Backend                                         | Selected when                                 |
-| ------ | ----------------------------------------------- | --------------------------------------------- |
-| **B1** | claude/generic session in tmux + cmux tab       | non-Codex terminal host, tmux + cmux present  |
-| **B2** | claude/generic session in tmux, no cmux         | non-Codex terminal host, tmux present         |
-| **B3** | native subagent (CC Task tool / Codex subagent) | Codex host, or no tmux fallback               |
-| **B4** | dynamic-workflow fan-out, per-agent worktree    | explicit opt-in + Claude Code + Workflow tool |
+| Mode               | Backend                            | Lifetime      | Selected when                                                                  |
+| ------------------ | ---------------------------------- | ------------- | ------------------------------------------------------------------------------ |
+| **claude-team**    | agent teams, teammate per story    | session-bound | Claude Code + `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` + long-lived orchestrator |
+| **claude-bg**      | native background sessions         | OS-bound      | Claude Code (teams unavailable, or cron driver)                                |
+| **codex-subagent** | native multi_agent (`spawn_agent`) | session-bound | Codex with a living main thread (desktop app or interactive CLI)               |
+| **codex-exec**     | headless `codex exec --cd` workers | OS-bound      | Codex + cron driver, or hard isolation demanded                                |
+| **legacy**         | tmux session (+ optional cmux tab) | OS-bound      | explicit pin (`aep.executor-backend tmux`), or generic host w/ tmux            |
+| **workflow**       | CC dynamic-workflow fan-out        | session-bound | explicit opt-in ("…with workflow") + Claude Code                               |
+| **headless**       | one-shot native subagent           | session-bound | last resort                                                                    |
 
-Read `references/backends.md` for the detection recipe, the full per-operation
-recipes, the fallback ladder, and the worktree-context constraint.
+Read `references/backends.md` for the detection recipe, the full selection
+order, the driver × backend compatibility matrix, the human-gate protocol, and
+orphan re-adoption.
 
 ---
 
 ## Reference Files
 
-| File                                               | Contents                                                                                                                                                                      | When to read                                    |
-| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| [`references/backends.md`](references/backends.md) | Detection recipe, backend selection table, per-operation recipes (spawn/nudge/liveness/present/teardown) for B1–B4, the worktree-context constraint, the cmux fallback ladder | Before spawning or steering any workspace agent |
+| File                                                         | Contents                                                                                                    | When to read                                  |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| [`references/backends.md`](references/backends.md)           | Mode matrix, detection, selection order, driver compatibility, gate protocol, orphan re-adoption, `check()` | Always, before spawning or steering           |
+| [`references/claude-native.md`](references/claude-native.md) | `claude-team` (standing team) + `claude-bg` recipes, teams-flag enablement                                  | When the selected mode is a Claude native one |
+| [`references/codex-native.md`](references/codex-native.md)   | `codex-subagent` + `codex-exec` recipes, `aep-builder`/`aep-evaluator` role TOMLs, desktop app mapping      | When the selected mode is a Codex one         |
+| [`references/tmux-session.md`](references/tmux-session.md)   | `legacy` recipes (tmux spawn/nudge/liveness, cmux tab ladder)                                               | When `legacy` is pinned or selected           |
 
 ---
 
@@ -112,10 +129,11 @@ recipes, the fallback ladder, and the worktree-context constraint.
 Invoked directly, this skill reports what would happen:
 
 1. Run the detection recipe from `references/backends.md`.
-2. Print: host (claude/codex/generic), executor binary, tmux present?, cmux
-   present? (CLI reachable + a `cmux tree` target pane resolves), workflow-capable?,
-   and the **selected backend** with the reason.
-3. If the user asked "why not workflow", explain the opt-in + host gate.
+2. Print: host (claude/codex/generic), executor commands, native capabilities
+   (`TEAMS_AVAILABLE`, `BG_AVAILABLE`, `MULTI_AGENT_AVAILABLE`), pin, tmux/cmux
+   presence, orchestrator lifetime, and the **selected mode** with the reason.
+3. If the user asked "why not teams / why not workflow", explain the
+   flag/opt-in gates.
 
 This does not spawn anything — it is a dry-run of `detect()`.
 
@@ -123,26 +141,60 @@ This does not spawn anything — it is a dry-run of `detect()`.
 
 ## Design Decisions
 
-**Why a utility skill, not just a reference file:**
+**Why native-first, tmux demoted:**
 
-- It is invocable for ad-hoc host detection / debugging backend selection.
-- It appears in the skill list, making the abstraction discoverable.
-- Its `references/` directory is path-accessible to launch/build/autopilot.
+- Claude Code agent teams give each story its own context window, push
+  steering (`SendMessage`), a native human-gate channel (teammate→lead), and a
+  built-in display (`teammateMode`) — everything tmux+cmux provided, without
+  external tooling. Native background sessions (`claude --bg`/`attach`/`logs`/
+  `stop`/`respawn`) cover the same session lifecycle verbs as tmux for the
+  no-flag case. Codex multi_agent gives push steering (`send_input`) and a
+  native approval overlay in both the CLI and the desktop app.
 
-**Why backend selection is automatic (no flags/pins):**
+**Why AEP still owns the worktree:**
 
-- Detection is reliable from env markers (`$CLAUDECODE`, `$CODEX_*`, `$TMUX`) plus
-  `command -v` and a `cmux tree` pane probe (cmux is usable without `$CMUX_SOCKET`).
-  An override mechanism adds surface area for little gain.
-- The single manual lever is the dynamic-workflow opt-in, expressed in natural
-  language ("…with workflow"), consistent with the Workflow tool's own opt-in.
+- Host-managed worktrees pin their paths (`.claude/worktrees/`,
+  `$CODEX_HOME/worktrees`) and hide them from the orchestrator's `monitor()`
+  path. AEP's `git worktree add .feature-workspaces/<ws>` keeps the location
+  stable and main-visible; native workers are pointed at it by process cwd
+  (enforced) or prompt contract (no hooks — see backends.md).
 
-**Why autopilot only drives session backends:**
+**Why the single `legacy` pin exists (a narrow exception to "no pins"):**
 
-- `nudge()`/`liveness()` presuppose a _running session you can instruct_. B3/B4
-  collapse a build into one autonomous unit with no mid-flight surface. Autopilot
-  therefore requires B1/B2; the B4 workflow path is an alternative orchestrator,
-  not a backend autopilot steers.
+- Detection can't distinguish "tmux is installed" from "the user wants the
+  tmux+cmux workflow". Since native modes now outrank tmux on Claude Code, the
+  users who _prefer_ cmux's clickable tabs need one explicit lever:
+  `git config aep.executor-backend tmux` (or "…with tmux"). Everything else
+  remains automatic.
+
+**Why session-bound vs OS-bound is a first-class axis:**
+
+- Teammates and Codex subagents die with their parent session; bg sessions,
+  exec workers, and tmux sessions don't. An orchestrator's periodic driver
+  (long-lived `/loop` vs cron one-shots) therefore constrains the mode — the
+  compatibility matrix in `backends.md` makes that explicit, and orphan
+  re-adoption makes lead restarts non-fatal.
+
+**Why human gates are hub-and-spoke (main agent as the console):**
+
+- The human shouldn't have to chase worker surfaces. Every mode records the
+  gate in `needs-human.md`; the question flows to the **main agent**, which
+  asks the human and relays the answer. Steerable modes deliver the answer by
+  push (**block-in-place**); batch/pull modes (`workflow`, `headless`,
+  `codex-exec`, `claude-bg`) use **gate-and-park** — the worker commits WIP,
+  returns cleanly, and is resumed into the same worktree with the answer.
+  Parking is cheap because all worker state lives in the worktree +
+  `.dev-workflow/`, never only in agent context. Direct surfaces (teammate
+  pane, attach, threads) remain optional conveniences.
+
+**Why autopilot needs a steerable, driver-compatible mode:**
+
+- `nudge()` presupposes a worker you can reach mid-flight. `workflow` and
+  `headless` collapse a build into one autonomous unit with no mid-stage
+  surface — autopilot does not drive them (the workflow is its own
+  orchestrator; gate-and-park still gives both a human-gate path through the
+  main agent that launched them). All other modes are steerable, with
+  claude-bg degraded to pull-based nudging.
 
 ---
 
@@ -150,6 +202,7 @@ This does not spawn anything — it is a dry-run of `detect()`.
 
 After detecting/spawning, control returns to the calling skill:
 
-- `/launch` → sends the bootstrap prompt, then `/build` runs in the workspace
-- `/autopilot` → resumes its tick loop
-- `/dispatch` → completes the handoff
+- `/aep-launch` → the bootstrap was the spawn prompt (native modes) or sent over
+  tmux (legacy), then `/aep-build` runs in the workspace
+- `/aep-autopilot` → resumes its tick loop
+- `/aep-dispatch` → completes the handoff

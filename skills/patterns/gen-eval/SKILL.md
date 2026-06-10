@@ -1,7 +1,7 @@
 ---
 name: aep-gen-eval
 description: |-
-  Reusable generator/evaluator pattern for honest artifact validation. This is a utility skill — it provides the scoring framework, agent contracts, evaluation protocol, and findings format used by /build, /validate, and any skill that needs to evaluate agent-produced work. Use directly when you need to run a gen/eval loop on any artifact, or reference its files from other skills. Triggers on "gen/eval", "generator evaluator", "evaluate honestly", "separate evaluator", "scoring framework".
+  Reusable generator/evaluator pattern for honest artifact validation. This is a utility skill — it provides the scoring framework, agent contracts, evaluation protocol, and findings format used by /aep-build, /aep-validate, and any skill that needs to evaluate agent-produced work. Use directly when you need to run a gen/eval loop on any artifact, or reference its files from other skills. Triggers on "gen/eval", "generator evaluator", "evaluate honestly", "separate evaluator", "scoring framework".
 ---
 
 # Generator/Evaluator Pattern
@@ -20,11 +20,11 @@ A reusable design pattern for honest evaluation of agent-produced artifacts. Sep
 
 ## How Other Skills Use This
 
-| Skill            | What it uses                        | Reference files                                                    |
-| ---------------- | ----------------------------------- | ------------------------------------------------------------------ |
-| `/build` Phase 5 | Scoring framework + eval protocol   | `scoring-framework.md`, `eval-protocol.md`                         |
-| `/launch`        | Dimension presets for brainstorming | `scoring-framework.md` (presets section)                           |
-| `/validate`      | Agent prompts + findings format     | `agent-contracts.md`, `findings-format.md`, `scoring-framework.md` |
+| Skill                | What it uses                        | Reference files                                                    |
+| -------------------- | ----------------------------------- | ------------------------------------------------------------------ |
+| `/aep-build` Phase 5 | Scoring framework + eval protocol   | `scoring-framework.md`, `eval-protocol.md`                         |
+| `/aep-launch`        | Dimension presets for brainstorming | `scoring-framework.md` (presets section)                           |
+| `/aep-validate`      | Agent prompts + findings format     | `agent-contracts.md`, `findings-format.md`, `scoring-framework.md` |
 
 ### Cross-skill reference paths
 
@@ -56,12 +56,12 @@ Why:
 
 Read these files for detailed specifications. Each file is self-contained.
 
-| File                                                                 | Contents                                                                                                                                                        | When to read                                                         |
-| -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| [`references/scoring-framework.md`](references/scoring-framework.md) | Dimension definitions (1-5 scale), hard failure thresholds, dimension presets (UI, API, security, data, mixed), few-shot examples, anti-patterns                | Setting up evaluation criteria, scoring work, calibrating evaluators |
-| [`references/agent-contracts.md`](references/agent-contracts.md)     | Generator/evaluator role separation, prompt templates (generator, evaluator, protocol checker), context assembly rules                                          | Spawning evaluation agents, assembling prompts                       |
-| [`references/eval-protocol.md`](references/eval-protocol.md)         | Eval request/response format, verification JSON schema, the eval loop (request → response → fix → re-evaluate), execution contexts (tmux, Agent tool, subagent) | Running the evaluation loop, tracking verification state             |
-| [`references/findings-format.md`](references/findings-format.md)     | Severity categorization (blocking/important/minor), deduplication protocol, presentation format, changelog entry format                                         | Consolidating findings from multiple agents, presenting results      |
+| File                                                                 | Contents                                                                                                                                                                                                    | When to read                                                         |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| [`references/scoring-framework.md`](references/scoring-framework.md) | Dimension definitions (1-5 scale), hard failure thresholds, dimension presets (UI, API, security, data, mixed), few-shot examples, anti-patterns                                                            | Setting up evaluation criteria, scoring work, calibrating evaluators |
+| [`references/agent-contracts.md`](references/agent-contracts.md)     | Generator/evaluator role separation, prompt templates (generator, evaluator, protocol checker), context assembly rules                                                                                      | Spawning evaluation agents, assembling prompts                       |
+| [`references/eval-protocol.md`](references/eval-protocol.md)         | Eval request/response format, verification JSON schema, the eval loop (request → response → fix → re-evaluate), execution contexts (Task subagent, codex exec, tmux, workflow), the needs-human gate record | Running the evaluation loop, tracking verification state             |
+| [`references/findings-format.md`](references/findings-format.md)     | Severity categorization (blocking/important/minor), deduplication protocol, presentation format, changelog entry format                                                                                     | Consolidating findings from multiple agents, presenting results      |
 
 ---
 
@@ -119,13 +119,13 @@ Read `references/findings-format.md` for how to consolidate, categorize, and pre
 - It has its own description for triggering, so agents use it when appropriate
 - The `references/` directory is still accessible to other skills via path
 
-**Why not merge with `/validate`:**
+**Why not merge with `/aep-validate`:**
 
-- `/validate` is a product-context skill with 4 specific modes (product, design, code, document)
+- `/aep-validate` is a product-context skill with 4 specific modes (product, design, code, document)
 - The gen/eval pattern is more general — it applies to any evaluation scenario
-- `/validate` consumes the gen/eval pattern; it is not the pattern itself
+- `/aep-validate` consumes the gen/eval pattern; it is not the pattern itself
 
-**Why not keep in `/launch`:**
+**Why not keep in `/aep-launch`:**
 
 - Launch only sets up criteria; it doesn't run the pattern
 - The scoring framework is consumed by build, validate, AND launch
@@ -137,7 +137,7 @@ Read `references/findings-format.md` for how to consolidate, categorize, and pre
 
 After running gen/eval, proceed based on what was evaluated:
 
-- Product context → `/dispatch`
-- Design artifacts → `/launch`
-- Code → create PR or continue `/build`
+- Product context → `/aep-dispatch`
+- Design artifacts → `/aep-launch`
+- Code → create PR or continue `/aep-build`
 - Documents → publish or share

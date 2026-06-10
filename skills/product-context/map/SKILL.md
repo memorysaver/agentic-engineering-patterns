@@ -1,6 +1,6 @@
 ---
 name: aep-map
-description: Decompose a product into system map, layered story graph, and agent topology. Use after /envision, or when the user says "decompose", "story map", "system architecture", "break this down", "plan the stories", "agent topology". Produces the complete execution plan that the feature workflow operates on.
+description: Decompose a product into system map, layered story graph, and agent topology. Use after /aep-envision, or when the user says "decompose", "story map", "system architecture", "break this down", "plan the stories", "agent topology". Produces the complete execution plan that the feature workflow operates on.
 ---
 
 # Map
@@ -10,7 +10,7 @@ Decompose the Context Document into a system map (modules + interfaces), a layer
 **Where this fits:**
 
 ```
-/envision → /map → /scaffold → [ /design → /launch → /build → /wrap ] → /reflect
+/aep-envision → /aep-map → /aep-scaffold → [ /aep-design → /aep-launch → /aep-build → /aep-wrap ] → /aep-reflect
              ▲ you are here
 ```
 
@@ -34,7 +34,7 @@ cat product-context.yaml
 - **Split mode** (`product/index.yaml` exists): Read product definition (opportunity, personas, product.\*) from `product/index.yaml`. Read operational state from `product-context.yaml`.
 - **V1 mode**: Read everything from `product-context.yaml`.
 
-If product definition is missing (no `product` section in either file), run `/envision` first.
+If product definition is missing (no `product` section in either file), run `/aep-envision` first.
 
 ---
 
@@ -94,7 +94,7 @@ Each story follows the **Story Spec** format (see `templates/story-spec.md`) and
 - `business_value` (1-10, or null to derive from priority)
 - `compile_mode` (default `single_change`; use `grouped_change` for tightly coupled stories, `shared_enabler` for infrastructure)
 
-**All stories start with `status: pending`.** Stories follow a state machine: `pending → ready → in_progress → in_review → completed` (or `blocked` / `failed` as error states). The `/dispatch` skill manages state transitions during execution.
+**All stories start with `status: pending`.** Stories follow a state machine: `pending → ready → in_progress → in_review → completed` (or `blocked` / `failed` as error states). The `/aep-dispatch` skill manages state transitions during execution.
 
 ### Activity Mapping
 
@@ -131,35 +131,35 @@ Write all stories to the `stories` section of `product-context.yaml`. Also popul
 
 For each layer that has an `outcome_contract` defined (see `product.layers[].outcome_contract`), ensure the layer gate test definition aligns with the success metric. If no outcome contract exists for a layer, consider adding one — Jeff Patton emphasizes that layers should be anchored in outcomes, not just feature completeness.
 
-The outcome contract is evaluated by `/reflect` after layer completion. It answers: "did this layer achieve what we hypothesized?"
+The outcome contract is evaluated by `/aep-reflect` after layer completion. It answers: "did this layer achieve what we hypothesized?"
 
 ### Capability Maps (multi-journey products)
 
-If `product/index.yaml` exists (created by `/envision` for multi-journey products), also write per-capability `map.yaml` files:
+If `product/index.yaml` exists (created by `/aep-envision` for multi-journey products), also write per-capability `map.yaml` files:
 
-- `product/maps/<capability>/map.yaml` — backbone activities, layers, story stubs for this capability
+- `product/maps/<capability>/aep-map.yaml` — backbone activities, layers, story stubs for this capability
 - Story stubs in `map.yaml` are sketches; the full stories in `product-context.yaml` are the operational versions
 
-> **Split mode note:** In split mode, the capability map's `map.yaml` story stubs are narrative sketches. The full stories are written to `product-context.yaml`, and `product/index.yaml` is NOT modified by `/map` (it only reads from it).
+> **Split mode note:** In split mode, the capability map's `map.yaml` story stubs are narrative sketches. The full stories are written to `product-context.yaml`, and `product/index.yaml` is NOT modified by `/aep-map` (it only reads from it).
 
 - This is additive — if no capability maps exist, skip this step
 
 ### Alignment Layers (`.5` Layers)
 
-After defining each implementation layer, review `calibration.plan` from `product-context.yaml` (operational file, both modes) (if populated by `/envision`) or consider which quality dimensions may need human calibration:
+After defining each implementation layer, review `calibration.plan` from `product-context.yaml` (operational file, both modes) (if populated by `/aep-envision`) or consider which quality dimensions may need human calibration:
 
 - **UI-facing stories** → consider visual-design and/or copy-tone calibration
 - **New API endpoints** → consider api-surface calibration
 - **New domain entities** → consider data-model calibration
 - **First user-testable layer** → consider scope-direction calibration
 
-**For heavy dimensions** (visual-design, ux-flow, copy-tone): plan a `.5` alignment layer with stories tagged `calibration_type: <dimension>`. Run `/calibrate <dimension>` before dispatching to generate a brief and capture decisions into `calibration/<type>.yaml`.
+**For heavy dimensions** (visual-design, ux-flow, copy-tone): plan a `.5` alignment layer with stories tagged `calibration_type: <dimension>`. Run `/aep-calibrate <dimension>` before dispatching to generate a brief and capture decisions into `calibration/<type>.yaml`.
 
-**For light dimensions** (api-surface, data-model, scope-direction, performance-quality): plan a `/calibrate <dimension>` checkpoint BEFORE dispatching the relevant stories in the next integer layer. No `.5` layer needed — decisions update `product-context.yaml` directly.
+**For light dimensions** (api-surface, data-model, scope-direction, performance-quality): plan a `/aep-calibrate <dimension>` checkpoint BEFORE dispatching the relevant stories in the next integer layer. No `.5` layer needed — decisions update `product-context.yaml` directly.
 
-- **Layer 0.5** (first `.5` layer): Typically establishes the visual design system. Run `/calibrate visual-design` to create `calibration/visual-design.yaml`.
-- **Layer 1.5, 2.5** (subsequent `.5` layers): Extend calibration to new patterns. `/calibrate` detects existing calibration artifacts and generates focused briefs covering only the delta.
-- **Opt-in, not automatic.** The `/reflect` step after each layer classifies calibration needs by dimension. The human decides which dimensions need attention. But the workflow makes the question unavoidable.
+- **Layer 0.5** (first `.5` layer): Typically establishes the visual design system. Run `/aep-calibrate visual-design` to create `calibration/visual-design.yaml`.
+- **Layer 1.5, 2.5** (subsequent `.5` layers): Extend calibration to new patterns. `/aep-calibrate` detects existing calibration artifacts and generates focused briefs covering only the delta.
+- **Opt-in, not automatic.** The `/aep-reflect` step after each layer classifies calibration needs by dimension. The human decides which dimensions need attention. But the workflow makes the question unavoidable.
 
 ### Feedback Loop
 
@@ -169,7 +169,7 @@ Decomposition agents may discover module boundaries are wrong. They submit amend
 
 ## Step 4: Agent Topology Design
 
-**Why this lives here:** Per Anthropic's research, "each subagent needs an objective, an output format, guidance on tools and sources, and clear task boundaries — defined before execution." Topology is a decomposition decision — it determines how `/launch` configures workspaces and what context `/build` agents receive.
+**Why this lives here:** Per Anthropic's research, "each subagent needs an objective, an output format, guidance on tools and sources, and clear task boundaries — defined before execution." Topology is a decomposition decision — it determines how `/aep-launch` configures workspaces and what context `/aep-build` agents receive.
 
 Define the agent roles, handoff contracts, and routing rules using the **Agent Topology** template (see `templates/agent-topology.md`):
 
@@ -246,7 +246,7 @@ Always append to the `changelog` section.
 
 ## For Iteration
 
-When updating the map (triggered by `/reflect` or new requirements):
+When updating the map (triggered by `/aep-reflect` or new requirements):
 
 1. Read the existing product definition (`product/index.yaml` in split mode, `product-context.yaml` in v1 mode) and operational state from `product-context.yaml`
 2. Identify what's changed — new modules, revised interfaces, new stories
@@ -270,13 +270,13 @@ When updating the map (triggered by `/reflect` or new requirements):
 Decomposition is complete. If no project exists yet:
 
 ```
-/scaffold
+/aep-scaffold
 ```
 
 If the project already exists, start executing stories:
 
 ```
-/dispatch
+/aep-dispatch
 ```
 
-`/dispatch` reads the story graph from `product-context.yaml` and begins moving stories through the state machine (`pending → ready → in_progress → ...`), routing each through `/design → /launch → /build → /wrap`.
+`/aep-dispatch` reads the story graph from `product-context.yaml` and begins moving stories through the state machine (`pending → ready → in_progress → ...`), routing each through `/aep-design → /aep-launch → /aep-build → /aep-wrap`.

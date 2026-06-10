@@ -2,11 +2,11 @@
 
 Reusable design patterns extracted from the AEP workflow. These are utility skills — both directly invokable and referenceable by other skills.
 
-| Pattern                         | What it does                                                                                                              | Used by                                                  |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| [gen-eval](gen-eval/SKILL.md)   | Generator/evaluator separation for honest artifact validation                                                             | `/build` Phase 5, `/launch` evaluator setup, `/validate` |
-| [executor](executor/SKILL.md)   | Host-agnostic backend for spawning/steering workspace agents (Codex subagent-first; Claude/generic tmux; workflow opt-in) | `/launch`, `/build` Phase 5, `/autopilot`, `/dispatch`   |
-| [autopilot](autopilot/SKILL.md) | Tick-based autonomous orchestration of dispatch-launch-monitor-review-wrap cycle                                          | `/loop`, orchestrates `/dispatch`, `/launch`, `/wrap`    |
+| Pattern                         | What it does                                                                                                                                          | Used by                                                                |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| [gen-eval](gen-eval/SKILL.md)   | Generator/evaluator separation for honest artifact validation                                                                                         | `/aep-build` Phase 5, `/aep-launch` evaluator setup, `/aep-validate`   |
+| [executor](executor/SKILL.md)   | Host-agnostic launch modes for spawning/steering workspace agents (Claude teams/bg sessions; Codex subagents/exec; tmux when pinned; workflow opt-in) | `/aep-launch`, `/aep-build` Phase 5, `/aep-autopilot`, `/aep-dispatch` |
+| [autopilot](autopilot/SKILL.md) | Tick-based autonomous orchestration of dispatch-launch-monitor-review-wrap cycle                                                                      | `/loop`, orchestrates `/aep-dispatch`, `/aep-launch`, `/aep-wrap`      |
 
 ## Why Patterns Exist
 

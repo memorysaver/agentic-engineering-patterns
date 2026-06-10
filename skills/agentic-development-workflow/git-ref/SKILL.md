@@ -1,11 +1,11 @@
 ---
 name: aep-git-ref
-description: AEP-specific reference for git + git worktree workflows. Use when the user asks "how do I create a worktree?", "what's the AEP branch convention?", "how do I clean up a worktree?", "how does AEP use git?", "remind me of git commands for parallel agents", or needs to recover from a worktree mishap. Documents worktree lifecycle, branch naming, the one-commit-per-task pattern, recovery procedures, and PR conventions used by `/launch`, `/build`, and `/wrap`.
+description: AEP-specific reference for git + git worktree workflows. Use when the user asks "how do I create a worktree?", "what's the AEP branch convention?", "how do I clean up a worktree?", "how does AEP use git?", "remind me of git commands for parallel agents", or needs to recover from a worktree mishap. Documents worktree lifecycle, branch naming, the one-commit-per-task pattern, recovery procedures, and PR conventions used by `/aep-launch`, `/aep-build`, and `/aep-wrap`.
 ---
 
 # Git + Worktree Reference (AEP)
 
-`/launch`, `/build`, and `/wrap` operate on a plain git repository plus `git worktree` for parallel agent isolation. There is no separate VCS, no colocated mode, no special wrapper — when these skills say "commit", they mean `git commit`. This skill documents the AEP-specific conventions on top of standard git.
+`/aep-launch`, `/aep-build`, and `/aep-wrap` operate on a plain git repository plus `git worktree` for parallel agent isolation. There is no separate VCS, no colocated mode, no special wrapper — when these skills say "commit", they mean `git commit`. This skill documents the AEP-specific conventions on top of standard git.
 
 If you've used git for ten minutes, you already know 90% of this. The remaining 10% is the conventions AEP layers on top.
 
@@ -29,9 +29,9 @@ See [docs/decisions/migrate-from-jj-to-git.md](../../../docs/decisions/migrate-f
 ## Integration Branch
 
 Every AEP git operation targets the **integration branch** — the branch feature worktrees are
-created from, rebased onto, PR'd into, merged into, and where control-plane commits (`/dispatch`,
-`/design`, the `/wrap` archive) land. Throughout this skill and the bash blocks in `/launch`,
-`/build`, `/wrap`, and the product-context skills, this branch is referred to as `$BASE`.
+created from, rebased onto, PR'd into, merged into, and where control-plane commits (`/aep-dispatch`,
+`/aep-design`, the `/aep-wrap` archive) land. Throughout this skill and the bash blocks in `/aep-launch`,
+`/aep-build`, `/aep-wrap`, and the product-context skills, this branch is referred to as `$BASE`.
 
 AEP **auto-detects** one of two modes — no configuration required for the common cases:
 
@@ -66,7 +66,7 @@ Resolution order:
 
 1. **Explicit override** — `git config --get aep.integration-branch`. This is an **override only**,
    for a non-standard integration branch name (e.g. `staging`, `integration`). You do **not** set it
-   for the standard `main`/`develop` cases — those are auto-detected. `/onboard` reports the detected
+   for the standard `main`/`develop` cases — those are auto-detected. `/aep-onboard` reports the detected
    mode and only writes this key when you use a non-standard name.
 2. **Auto-detect** — `develop` if it exists locally or on `origin`.
 3. **Default** — `main` (single-branch mode).
@@ -111,7 +111,7 @@ git -C .feature-workspaces/<name> status     # status inside a specific worktree
 git -C .feature-workspaces/<name> log --oneline "$BASE"..HEAD   # commits unique to the feature branch
 ```
 
-### Remove (`/wrap` step 6)
+### Remove (`/aep-wrap` step 6)
 
 ```bash
 git worktree remove .feature-workspaces/<name>
@@ -139,12 +139,12 @@ git worktree repair .feature-workspaces/<name>
 
 ## Branch Naming
 
-| Branch            | Pattern              | Created by                |
-| ----------------- | -------------------- | ------------------------- |
-| Feature work      | `feat/<short-name>`  | `/launch` (one per story) |
-| Migration / chore | `chore/<short-name>` | manually, when applicable |
-| Hotfix off main   | `fix/<short-name>`   | manually                  |
-| Migration project | `migration/<topic>`  | manually                  |
+| Branch            | Pattern              | Created by                    |
+| ----------------- | -------------------- | ----------------------------- |
+| Feature work      | `feat/<short-name>`  | `/aep-launch` (one per story) |
+| Migration / chore | `chore/<short-name>` | manually, when applicable     |
+| Hotfix off main   | `fix/<short-name>`   | manually                      |
+| Migration project | `migration/<topic>`  | manually                      |
 
 **Rules:**
 
@@ -154,7 +154,7 @@ git worktree repair .feature-workspaces/<name>
 
 ---
 
-## The One-Commit-per-Task Pattern (Phase 4 of `/build`)
+## The One-Commit-per-Task Pattern (Phase 4 of `/aep-build`)
 
 This is the largest AEP-specific convention.
 
@@ -234,7 +234,7 @@ We always squash-merge. The feature branch's per-task commits collapse into one 
 
 ## Control-Plane Commits (on the integration branch)
 
-`/dispatch`, `/envision`, `/map`, `/calibrate`, `/validate`, `/reflect`, and the `/wrap` archive step all commit directly to the integration branch (`$BASE`). The pattern is identical:
+`/aep-dispatch`, `/aep-envision`, `/aep-map`, `/aep-calibrate`, `/aep-validate`, `/aep-reflect`, and the `/aep-wrap` archive step all commit directly to the integration branch (`$BASE`). The pattern is identical:
 
 ```bash
 # Resolve $BASE — see "Integration Branch" above (override → develop → main)
@@ -299,7 +299,7 @@ du -sh .feature-workspaces/             # working-tree footprint
 du -sh .git/objects                     # shared history
 ```
 
-If disk pressure hits before agents finish, prefer pausing new `/launch` invocations over forcibly removing in-flight worktrees.
+If disk pressure hits before agents finish, prefer pausing new `/aep-launch` invocations over forcibly removing in-flight worktrees.
 
 ---
 

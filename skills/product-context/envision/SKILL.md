@@ -1,6 +1,6 @@
 ---
 name: aep-envision
-description: Product-level opportunity and product framing. Use when starting a new product from scratch, revisiting product direction, or when the user says "new product idea", "validate this idea", "product framing", "what should we build", "revisit our assumptions". Walks through opportunity validation and produces a Context Document that feeds into /map and /design.
+description: Product-level opportunity and product framing. Use when starting a new product from scratch, revisiting product direction, or when the user says "new product idea", "validate this idea", "product framing", "what should we build", "revisit our assumptions". Walks through opportunity validation and produces a Context Document that feeds into /aep-map and /aep-design.
 ---
 
 # Envision
@@ -10,7 +10,7 @@ Transform a fuzzy product idea into a precise, testable product definition. Firs
 **Where this fits:**
 
 ```
-/envision → /map → /scaffold → [ /design → /launch → /build → /wrap ] → /reflect
+/aep-envision → /aep-map → /aep-scaffold → [ /aep-design → /aep-launch → /aep-build → /aep-wrap ] → /aep-reflect
 ▲ you are here
 ```
 
@@ -124,7 +124,7 @@ Hand the Context Document to agents that did not participate in the conversation
 
 Each reviewer produces a challenge list. The user resolves each item — either by refining the document or marking it as an explicit `open_question` with a default assumption and a revisit trigger.
 
-> Note: The stress test is itself a form of pre-build calibration — independent agents check alignment before building. Post-build calibration (`/calibrate`) extends this to dimensions that only become visible after agents have produced output: visual design, UX flow, naming, tone.
+> Note: The stress test is itself a form of pre-build calibration — independent agents check alignment before building. Post-build calibration (`/aep-calibrate`) extends this to dimensions that only become visible after agents have produced output: visual design, UX flow, naming, tone.
 
 Record the stress test results in `product.stress_test` within the YAML.
 
@@ -142,13 +142,13 @@ Record the stress test results in `product.stress_test` within the YAML.
    - `calibration.plan` (mapped from quality_dimensions)
    - `calibration.history: []`
    - `changelog` entry recording what was created
-   - All other operational sections left empty (populated by `/map`)
+   - All other operational sections left empty (populated by `/aep-map`)
 
 **V1 mode:** Write everything to `product-context.yaml` using `templates/product-context-schema.yaml` as the structural reference.
 
 On subsequent runs — read the existing file(s), update the relevant sections, and preserve all other sections (e.g., `architecture`, `stories`, `topology`).
 
-If quality dimensions were declared, also write the initial `calibration.plan` section — mapping each dimension to the layer where calibration is expected. This plan is refined by `/map` (which has concrete layer definitions) and executed by `/calibrate`.
+If quality dimensions were declared, also write the initial `calibration.plan` section — mapping each dimension to the layer where calibration is expected. This plan is refined by `/aep-map` (which has concrete layer definitions) and executed by `/aep-calibrate`.
 
 #### Capability Maps (for multi-journey products)
 
@@ -157,7 +157,7 @@ If the product has **2+ distinct user journeys**, also create capability map fil
 1. Ensure `product/index.yaml` has multiple entries in `capabilities[]`
 2. For each capability, create:
    - `product/maps/<capability-id>/frame.yaml` — scope, boundary, primary user, outcome contract
-   - Story stubs are populated later by `/map`
+   - Story stubs are populated later by `/aep-map`
 
 Simple single-journey products get one capability entry but skip `frame.yaml` and `map.yaml`.
 
@@ -196,7 +196,7 @@ git push origin "$BASE"
 
 ## For Iteration
 
-When revisiting an existing product (triggered by `/reflect` or the user's own initiative):
+When revisiting an existing product (triggered by `/aep-reflect` or the user's own initiative):
 
 1. Read the existing product definition (`product/index.yaml` in split mode, `product-context.yaml` in v1 mode)
 2. Identify what's changed — new learnings, invalidated assumptions, scope shifts
@@ -205,18 +205,18 @@ When revisiting an existing product (triggered by `/reflect` or the user's own i
 5. Append to the `changelog` section
 6. Commit the updated version (version history is itself valuable)
 
-### Boundary: When to Use `/envision` vs `/reflect`
+### Boundary: When to Use `/aep-envision` vs `/aep-reflect`
 
-Not every post-layer adjustment requires envision. Most learning leads to re-slicing (moving stories between layers), which is handled entirely in `/reflect`. For details, see `docs/decisions/release-line-adjustments.md`.
+Not every post-layer adjustment requires envision. Most learning leads to re-slicing (moving stories between layers), which is handled entirely in `/aep-reflect`. For details, see `docs/decisions/release-line-adjustments.md`.
 
-**What does NOT trigger `/envision`** (handle in `/reflect` instead):
+**What does NOT trigger `/aep-envision`** (handle in `/aep-reflect` instead):
 
 - Moving stories between layers (e.g., promoting a Layer 2 story to Layer 1)
 - Adding new stories to existing activities
 - Re-prioritizing the next layer based on what you learned
 - Adjusting release line boundaries without changing the backbone
 
-**What DOES trigger `/envision`:**
+**What DOES trigger `/aep-envision`:**
 
 - Backbone changes — new activities, removed activities, reordered user journey
 - Product framing changes — persona, JTBD, or MVP boundary needs redefinition
@@ -240,7 +240,7 @@ Not every post-layer adjustment requires envision. Most learning leads to re-sli
 Product is envisioned. Proceed to:
 
 ```
-/map
+/aep-map
 ```
 
 This decomposes the Context Document into a system map, layered story graph, and agent topology.

@@ -21,6 +21,81 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 _Nothing yet._
 
+## [1.6.0] - 2026-06-10
+
+**Native-first executor backends**: launch/dispatch/build/autopilot/wrap now
+target each host's native parallel-agent machinery instead of tmux+cmux. The
+B1–B4 ladder is replaced by named launch modes; every mode still runs its
+worker in the AEP-created worktree at `.feature-workspaces/<ws>` with the
+file-based signals protocol as the source of truth. Decision record:
+[`docs/decisions/native-first-executor.md`](docs/decisions/native-first-executor.md).
+
+### Added
+
+- **`claude-team` mode** — Claude Code agent teams: one teammate per story in a
+  **standing team** (TeamCreate once; spawn/shutdown teammates per tick), push
+  steering via `SendMessage`, native display via `teammateMode`. Requires the
+  experimental `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` flag (project
+  `.claude/settings.json` `env` block; `/aep-onboard` documents it).
+- **`claude-bg` mode** — Claude Code native background sessions
+  (`claude --bg` / `attach` / `logs` / `stop` / `respawn`): the GA fallback;
+  OS-bound, cron-driver compatible, worktree-enforced by process cwd.
+- **`codex-subagent` mode** — Codex multi_agent workers (desktop app + CLI)
+  with shipped `aep-builder` / `aep-evaluator` roles (`.codex/agents/*.toml`),
+  `send_input` steering, and the native approval overlay as a human gate.
+- **`codex-exec` mode** — headless `codex exec --cd <worktree>` workers,
+  steerable across sessions via `codex exec resume <id>`; the Codex mode for
+  cron-driven autopilot and hard cwd isolation.
+- **Human-gate protocol (hub-and-spoke)** — `.dev-workflow/signals/needs-human.md`
+  - `status.json` `blocked_on: "human"`: host-agnostic record of decisions only
+    the human can make. The **main agent is the canonical human console**: the
+    question flows back to the orchestrator, the human answers there, and the
+    answer is relayed per mode — by push on steerable modes
+    (**block-in-place**), or by resuming a parked worker into its worktree on
+    batch/pull modes (**gate-and-park**: the worker commits WIP, records the
+    gate, and ends its run cleanly). Direct worker surfaces (teammate pane,
+    `claude attach`, Codex thread, `tmux attach`) are optional conveniences.
+    Gated workspaces count as waiting, not stuck.
+- **Workflow mode is now a complete backend** — gate-and-park gives the
+  dynamic-workflow fan-out a human-gate path: build agents return a structured
+  `gated` result instead of guessing or stalling; the main agent collects
+  gated stories after the run, asks the human, and resumes them into their
+  existing worktrees (continuation via `resumeFromRunId` or re-launch). New
+  "Mode: workflow" recipe in `backends.md`; the `/aep-dispatch … with
+workflow` path now creates the `.feature-workspaces/<ws>` worktrees and
+  announces gate behavior instead of "no mid-flight feedback".
+- **Orphan re-adoption** — lead restarts no longer strand session-bound
+  workers: autopilot re-spawns into the existing worktree with the recovery
+  bootstrap instead of failing the story.
+- New executor references: `claude-native.md`, `codex-native.md`,
+  `tmux-session.md`; new `gate()` operation; driver × backend compatibility
+  matrix (session-bound vs OS-bound worker lifetimes).
+- Autopilot state: `backend`, `agent_id`, `last_liveness_hash` (generalizes
+  `last_tmux_hash`), `human_gate` escalation type, `readopted` action.
+
+### Changed
+
+- **Behavior change:** Claude Code with tmux installed no longer auto-selects
+  tmux — native modes win. Pin the old workflow with
+  `git config aep.executor-backend tmux` (or "…with tmux"). tmux+cmux recipes
+  are preserved verbatim as the **`legacy`** mode (generic-host fallback).
+- Autopilot accepts any steerable, driver-compatible mode (was: B1/B2 only);
+  Codex autopilot is now supported (in-thread ticks → codex-subagent; scheduled
+  `codex exec` ticks → codex-exec).
+- `/aep-build` Phase 5 evaluator spawn is mode-dispatched: foreground Task
+  subagent (Claude native modes) or `codex exec --cd` with the aep-evaluator
+  role (Codex modes); the evaluator prompt is delivered at spawn time — no
+  sleep/poll/kill-pane on native modes.
+- `/aep-wrap` teardown is mode-dispatched (teammate shutdown / `claude stop` /
+  `close_agent` / no-op / `tmux kill-session`).
+- **Command naming normalized to `/aep-*`** across all skills, README, and
+  docs: every AEP skill is invoked by its canonical registered name
+  (`/aep-autopilot`, `/aep-dispatch`, `/aep-launch`, …) — the unprefixed forms
+  (`/autopilot`, `/launch`) no longer appear, eliminating the prefix confusion.
+  Non-AEP commands (`/loop`, `/opsx:*`, Codex `/agent`, `/workflows`) are
+  unchanged. (Changelog entries v1.5.0 and older keep their original wording
+  as historical record.)
+
 ## [1.5.0] - 2026-06-09
 
 Configurable **integration branch**: AEP no longer hardcodes `main`. The branch

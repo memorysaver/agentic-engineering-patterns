@@ -6,7 +6,7 @@ Reference document for the Protocol Checker agent. Defines the exact requirement
 
 ## Dispatch Protocol Requirements
 
-The `/dispatch` skill reads stories from `product-context.yaml` and computes `dispatch_score` for ranking. Every story MUST have these fields for dispatch to function.
+The `/aep-dispatch` skill reads stories from `product-context.yaml` and computes `dispatch_score` for ranking. Every story MUST have these fields for dispatch to function.
 
 ### Required Story Fields
 
@@ -78,20 +78,20 @@ layer_gates:
 
 ---
 
-## Design Protocol Requirements (/design → /launch)
+## Design Protocol Requirements (/aep-design → /aep-launch)
 
-OpenSpec changes created by `/dispatch` and consumed by `/design` must include:
+OpenSpec changes created by `/aep-dispatch` and consumed by `/aep-design` must include:
 
 ### Story Spec Completeness
 
-For `/design` to skip straight to `/launch` (well-specified path):
+For `/aep-design` to skip straight to `/aep-launch` (well-specified path):
 
 - 3+ specific, testable acceptance criteria
 - Interface obligations defined (if touching module boundaries)
 - Files affected identified
 - Complexity S or M
 
-For `/design` to refine first (ambiguous path):
+For `/aep-design` to refine first (ambiguous path):
 
 - Fewer than 3 acceptance criteria
 - Missing interface details
@@ -114,7 +114,7 @@ openspec/changes/<story-id>/
 
 ---
 
-## Build Protocol Requirements (/build)
+## Build Protocol Requirements (/aep-build)
 
 ### Feature Verification JSON
 

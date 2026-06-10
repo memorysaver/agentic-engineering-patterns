@@ -1,6 +1,6 @@
 # Scope/Direction — Capture Questions
 
-Ask these questions one at a time during `/calibrate capture` for scope-direction.
+Ask these questions one at a time during `/aep-calibrate capture` for scope-direction.
 
 ## Questions
 
@@ -12,7 +12,7 @@ Ask these questions one at a time during `/calibrate capture` for scope-directio
 6. **Remove list:** Was anything built that should be removed entirely?
 7. **Layer impact:** Should these changes happen in the current layer (rework) or the next layer (iterate forward)?
 8. **Release line cutting:** Looking at upcoming layers, what is the absolute minimum to ship a useful release? Which features are essential vs. nice-to-have? Should any stories move between layers to hit a viable release point sooner?
-9. **Framing check:** Has the persona, JTBD, or opportunity hypothesis shifted? (If yes, route to `/envision` instead)
+9. **Framing check:** Has the persona, JTBD, or opportunity hypothesis shifted? (If yes, route to `/aep-envision` instead)
 
 ## Output
 

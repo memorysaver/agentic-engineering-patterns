@@ -1,7 +1,7 @@
 ---
 name: aep-validate
 description: |-
-  Generator/evaluator validation for any AEP artifact — product context, architecture, stories, code, or documents. Use after any generation phase (/envision, /map, /design, /build) or when the user says "validate", "verify", "check the design", "dry-run", "evaluate", "gen/eval", "generator evaluator". Spawns parallel agents: a Generator (dry-run the artifact), an Evaluator (check against reality), and optionally a Protocol Checker (verify downstream compatibility). Modifies only the artifact being validated — never implements code.
+  Generator/evaluator validation for any AEP artifact — product context, architecture, stories, code, or documents. Use after any generation phase (/aep-envision, /aep-map, /aep-design, /aep-build) or when the user says "validate", "verify", "check the design", "dry-run", "evaluate", "gen/eval", "generator evaluator". Spawns parallel agents: a Generator (dry-run the artifact), an Evaluator (check against reality), and optionally a Protocol Checker (verify downstream compatibility). Modifies only the artifact being validated — never implements code.
 ---
 
 # Validate
@@ -23,14 +23,14 @@ Run a generator/evaluator pattern against any artifact produced by the AEP workf
 **Where this fits:**
 
 ```
-/envision → /map → /validate → /dispatch → /design → /launch → /build → /wrap
+/aep-envision → /aep-map → /aep-validate → /aep-dispatch → /aep-design → /aep-launch → /aep-build → /aep-wrap
                     ▲ you are here
 
 Also usable after any phase:
-  /envision → /validate   (validate product context)
-  /map      → /validate   (validate architecture + stories)
-  /design   → /validate   (validate specs before launch)
-  /build    → /validate   (already built into Phase 5 — use that instead)
+  /aep-envision → /aep-validate   (validate product context)
+  /aep-map      → /aep-validate   (validate architecture + stories)
+  /aep-design   → /aep-validate   (validate specs before launch)
+  /aep-build    → /aep-validate   (already built into Phase 5 — use that instead)
 ```
 
 **Session:** Main, can be autonomous or interactive
@@ -73,7 +73,7 @@ The skill operates in one of four modes based on the artifact type. Each mode co
 
 ### Mode A: Product Context Validation
 
-**When:** After `/envision` or `/map` — validating `product-context.yaml` (and `product/index.yaml` in split mode)
+**When:** After `/aep-envision` or `/aep-map` — validating `product-context.yaml` (and `product/index.yaml` in split mode)
 
 **Split-mode cross-file checks:**
 
@@ -124,7 +124,7 @@ Score using the story mapping dimensions from `.claude/skills/aep-gen-eval/refer
 
 ### Mode B: Design Validation
 
-**When:** After `/design` — validating OpenSpec artifacts (proposal, design, specs, tasks)
+**When:** After `/aep-design` — validating OpenSpec artifacts (proposal, design, specs, tasks)
 **Agents:** Generator + Evaluator
 
 | Agent     | Role                                 | What it checks                                                                  |
@@ -135,14 +135,14 @@ Score using the story mapping dimensions from `.claude/skills/aep-gen-eval/refer
 ### Mode C: Code Validation
 
 **When:** After implementation — validating code changes
-**Agents:** Generator + Evaluator (same as `/build` Phase 5)
+**Agents:** Generator + Evaluator (same as `/aep-build` Phase 5)
 
 | Agent     | Role                         | What it checks                                                             |
 | --------- | ---------------------------- | -------------------------------------------------------------------------- |
 | Generator | Review code against spec     | Does the code match what was specified? Missing features, incomplete flows |
 | Evaluator | Test the running application | Functional testing, edge cases, security, performance                      |
 
-> **Note:** For code validation in a workspace, prefer `/build` Phase 5 which has the full evaluator loop with tmux split panes. Use this skill for code review on the integration branch or for lighter validation.
+> **Note:** For code validation in a workspace, prefer `/aep-build` Phase 5 which has the full evaluator loop (spawned worktree-bound via executor.spawn_evaluator). Use this skill for code review on the integration branch or for lighter validation.
 
 ### Mode D: Document Validation
 
@@ -350,7 +350,7 @@ git push origin "$BASE"
 
 ## Validation Dimensions
 
-When the agents evaluate, they should consider these dimensions (adapted from the evaluator criteria in `/build`). Not all dimensions apply to every mode.
+When the agents evaluate, they should consider these dimensions (adapted from the evaluator criteria in `/aep-build`). Not all dimensions apply to every mode.
 
 ### For Product Context (Mode A)
 
@@ -386,7 +386,7 @@ See `references/evaluator-criteria.md` for the full 5-dimension scoring framewor
 
 ## When NOT to Use This Skill
 
-- **During `/build` Phase 5** — use the built-in evaluator loop instead (it has tmux split, verification JSON, scoring framework)
+- **During `/aep-build` Phase 5** — use the built-in evaluator loop instead (it has executor.spawn_evaluator, verification JSON, scoring framework)
 - **For subjective quality** — this skill validates factual correctness and completeness, not aesthetic judgment
 - **For tiny changes** — single-file edits or typo fixes don't need a 3-agent validation
 
@@ -437,8 +437,8 @@ By default, Mode A spawns 3 agents, Modes B-D spawn 2. You can adjust:
 After validation, proceed to the appropriate downstream skill:
 
 ```
-Product context validated → /dispatch
-Design validated          → /launch
-Code validated            → create PR (or /build Phase 9)
+Product context validated → /aep-dispatch
+Design validated          → /aep-launch
+Code validated            → create PR (or /aep-build Phase 9)
 Document validated        → publish/share
 ```

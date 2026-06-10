@@ -4,7 +4,27 @@ This document is the bootstrap guide for spawned agents running in a git worktre
 
 ## Context
 
-You are a Claude Code agent spawned in an isolated git worktree to implement a feature autonomously. The design phases (1-3) were completed on the integration branch by the user, and `/launch` created your worktree on a fresh `feat/<name>` branch. Your job is to execute Phases 0, 4-12.
+You are an agent spawned in an isolated git worktree to implement a feature autonomously. The design phases (1-3) were completed on the integration branch by the user, and `/aep-launch` created your worktree on a fresh `feat/<name>` branch. Your job is to execute Phases 0, 4-12.
+
+### Know your launch mode
+
+How you were started determines how you reach the human and how the
+orchestrator reaches you (full table: `aep-executor/references/backends.md`):
+
+| You are…                                                                         | Mode           | You raise human gates via…                                           |
+| -------------------------------------------------------------------------------- | -------------- | -------------------------------------------------------------------- |
+| a Claude Code **teammate** (spawned into a team, you can `SendMessage` the lead) | claude-team    | `HUMAN_GATE:` message to the lead + `needs-human.md`; wait in place  |
+| a Claude Code session whose cwd **is** the worktree (background session)         | claude-bg      | `needs-human.md`, then **park** (commit WIP, end run cleanly)        |
+| a Codex **subagent** (aep-builder role, parent thread exists)                    | codex-subagent | ask the parent thread + `needs-human.md`; wait in place              |
+| a headless `codex exec` run                                                      | codex-exec     | `needs-human.md`, then **park**                                      |
+| a dynamic-workflow build agent                                                   | workflow       | `needs-human.md` + return a structured `gated` result, then **park** |
+| inside a tmux pane                                                               | legacy         | `needs-human.md`; wait in place (answer arrives via nudge)           |
+
+Whatever the mode: your prompt names your worktree path — operate exclusively
+inside it, and report everything through `.dev-workflow/signals/`. The answer
+always comes back via the **main agent** (hub-and-spoke); parked workers are
+resumed into this worktree with the answer. The human-gate steps are in
+`/aep-build` SKILL.md ("The Human-Gate Protocol").
 
 ## Bootstrap Sequence
 
@@ -25,7 +45,7 @@ ls openspec/changes/
 ```bash
 # Read the full change context
 cat openspec/changes/<change-name>/proposal.md
-cat openspec/changes/<change-name>/design.md
+cat openspec/changes/<change-name>/aep-design.md
 cat openspec/changes/<change-name>/tasks.md
 ls openspec/changes/<change-name>/specs/ 2>/dev/null
 ```
@@ -83,7 +103,7 @@ After reading `tasks.md` (see SKILL.md Phase 0 step 6), generate these additiona
 
 Now follow the workflow starting from **Phase 4: OpenSpec Apply**.
 
-Read the full workflow at the `/build` skill (skills/agentic-development-workflow/build/SKILL.md) for phase details.
+Read the full workflow at the `/aep-build` skill (skills/agentic-development-workflow/build/SKILL.md) for phase details.
 
 ---
 

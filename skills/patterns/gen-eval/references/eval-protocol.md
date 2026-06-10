@@ -16,9 +16,9 @@ The request→response→fix loop for running generator/evaluator cycles. Covers
 
 ## Execution Contexts
 
-The gen/eval pattern can execute in three different contexts. The protocol is the same; the mechanics differ. When `/build` runs the loop, the context tracks the **executor backend** in play (see `aep-executor/references/backends.md`): session backends (B1/B2) → Context A; native subagent (B3) → Context B; dynamic workflow (B4) → Context C.
+The gen/eval pattern can execute in three different contexts. The protocol is the same; the mechanics differ. When `/aep-build` runs the loop, the context tracks the **executor mode** in play (see `aep-executor/references/backends.md`): legacy (pinned tmux) → Context A; claude-team / claude-bg (foreground Task subagent) → Context B mechanism, worktree-bound; codex-subagent / codex-exec (`codex exec --cd` with the aep-evaluator role) and workflow (verify stage) → Context C mechanism, in-host. For the native modes the evaluator prompt is delivered **at spawn time** — no readiness wait, no separate send, no teardown.
 
-### Context A: Tmux Split Panes (Workspace — used by /build under B1/B2)
+### Context A: Tmux Split Panes (Workspace — used by /aep-build under legacy/pinned-tmux)
 
 Generator runs in the top tmux pane. Evaluator is spawned as a separate agent instance in the bottom pane.
 
@@ -48,7 +48,7 @@ tmux kill-pane -t :.1
 
 **Note:** Use `tmux split-window`, not `cmux split`. The generator runs inside tmux but was not spawned by cmux, so it cannot use cmux socket commands.
 
-### Context B: Parallel Agent Tool Calls (Main Session — used by /validate)
+### Context B: Parallel Agent Tool Calls (Main Session — used by /aep-validate)
 
 Generator and evaluator are spawned as parallel agents using the Agent tool. They work independently and their results are consolidated after both complete.
 
@@ -64,11 +64,21 @@ Consolidate findings.
 
 **When to use:** Validating artifacts on the main branch. No running application needed. Agents need read access to the codebase but don't modify it.
 
+> **Context B mechanism in /aep-build (claude-team / claude-bg):** the generator
+> spawns a single **foreground** Task subagent with the evaluator prompt; it
+> inherits the worktree cwd and returns on completion. Same mechanism as above,
+> but worktree-bound and sequential — not the main-session read-only use.
+
 ### Context C: Subagent Spawning (CI/Automation)
 
 Generator and evaluator are spawned via the Claude API or SDK as separate conversations.
 
 **When to use:** Automated pipelines, CI checks, scheduled validation.
+
+> **Context C mechanism in /aep-build (codex-subagent / codex-exec / workflow):**
+> a bounded `codex exec --cd <worktree>` one-shot with the `aep-evaluator`
+> role, or the workflow's worktree-isolated verify stage. Programmatic spawn,
+> but worktree-bound review — not an API/SDK CI job.
 
 ---
 
@@ -190,6 +200,23 @@ Used in multi-round mode (workspace context). Files live in `.dev-workflow/signa
   "updated_at": "2026-03-30T12:00:00Z"
 }
 ```
+
+### needs-human.md (worker writes — the human-gate record)
+
+When the loop cannot converge (or any decision needs the human), the worker
+appends to `.dev-workflow/signals/needs-human.md` and sets
+`"blocked_on": "human"` in `status.json`:
+
+```markdown
+## <ISO8601> — Phase 5 (eval round <N>)
+
+**Question:** <the decision needed, with options considered>
+**Context:** <why the generator/evaluator pair can't resolve it>
+```
+
+After acting on the answer the worker appends `resolved: <summary>` and clears
+`blocked_on`. How the question reaches the human is per launch mode — see the
+Human-Gate Protocol in `aep-executor/references/backends.md`.
 
 ---
 

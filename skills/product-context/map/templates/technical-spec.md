@@ -4,7 +4,7 @@ A production-grade system specification for protocol-heavy systems. Use this tem
 
 > **Important boundary:** This template is opt-in. Most projects go directly from context-document to system-map. Use this only when the system has protocol-level complexity that those templates don't capture.
 
-**When to use this template:** During `/map`, if the System Map reveals 3+ interface contracts requiring protocol sequences, 2+ distinct state machines, explicit failure classes with different recovery behaviors, or trust boundaries crossing module lines.
+**When to use this template:** During `/aep-map`, if the System Map reveals 3+ interface contracts requiring protocol sequences, 2+ distinct state machines, explicit failure classes with different recovery behaviors, or trust boundaries crossing module lines.
 
 **Reference exemplar:** See `references/symphony-spec-reference.md` for an annotated analysis of OpenAI's Symphony SPEC.md — the standard this template is modeled after.
 

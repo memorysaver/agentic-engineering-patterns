@@ -16,7 +16,7 @@
 
 ## Naming/Grouping Concerns
 
-[from /reflect observation or ambient detection]
+[from /aep-reflect observation or ambient detection]
 
 - **Naming inconsistency:** [examples — mixed conventions, unclear verbs, ambiguous nouns]
 - **Grouping issue:** [examples — related endpoints spread across modules, unrelated endpoints grouped]

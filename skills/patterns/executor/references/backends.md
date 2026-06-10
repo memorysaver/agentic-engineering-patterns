@@ -1,141 +1,164 @@
 # Executor Backends
 
-Detection, backend selection, and the per-operation recipes that make
-`/launch`, `/build`, and `/autopilot` host-agnostic. Read this before spawning
-or steering any workspace agent.
+Detection, mode selection, and the cross-backend protocols that make
+`/aep-launch`, `/aep-build`, `/aep-autopilot`, and `/aep-wrap` host-agnostic. Read this before
+spawning or steering any workspace agent. Per-operation recipes live in three
+sibling files:
+
+| Recipe file                            | Modes                           |
+| -------------------------------------- | ------------------------------- |
+| [`claude-native.md`](claude-native.md) | `claude-team`, `claude-bg`      |
+| [`codex-native.md`](codex-native.md)   | `codex-subagent`, `codex-exec`  |
+| [`tmux-session.md`](tmux-session.md)   | `legacy` (tmux + optional cmux) |
 
 ---
 
 ## Table of Contents
 
-1. [Detection](#detection)
-2. [Backend Selection](#backend-selection)
-3. [Operation Recipes](#operation-recipes)
-4. [The Worktree-Context Constraint](#the-worktree-context-constraint)
-5. [The cmux Fallback Ladder](#the-cmux-fallback-ladder)
+1. [The Mode Matrix](#the-mode-matrix)
+2. [Detection](#detection)
+3. [Mode Selection](#mode-selection)
+4. [Driver × Backend Compatibility](#driver--backend-compatibility)
+5. [Common Recipes (all modes)](#common-recipes-all-modes)
+6. [The Human-Gate Protocol](#the-human-gate-protocol)
+7. [Mode: workflow (dynamic-workflow fan-out)](#mode-workflow-dynamic-workflow-fan-out)
+8. [Orphan Re-adoption](#orphan-re-adoption)
+9. [The Worktree-Context Constraint](#the-worktree-context-constraint)
+10. [Legacy B1–B4 Mapping](#legacy-b1b4-mapping)
+
+---
+
+## The Mode Matrix
+
+Native modes come first; tmux is the explicit-pin / generic-host fallback.
+**Lifetime** is the axis that matters for orchestration: _session-bound_
+workers (teammates, Codex subagents) die with the orchestrator session;
+_OS-bound_ workers (bg sessions, exec processes, tmux sessions) survive it.
+
+| Mode               | Backend                         | Lifetime      | Spawn                                     | Nudge                                            | Human gate                                                                | Present                            |
+| ------------------ | ------------------------------- | ------------- | ----------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------- | ---------------------------------- |
+| **claude-team**    | agent teams, teammate per story | session-bound | Agent tool into standing team             | `SendMessage` (push)                             | teammate→lead `HUMAN_GATE:` + `needs-human.md`                            | teammate pane / `Shift+Down`       |
+| **claude-bg**      | native background sessions      | OS-bound      | `cd <worktree> && claude --bg`            | `feedback.md` (pull); stop/respawn if hard-stuck | gate-and-park → main agent (resume w/ answer); `claude attach` optional   | `claude attach` / `claude logs`    |
+| **codex-subagent** | native multi_agent              | session-bound | `spawn_agent(role=aep-builder)`           | `send_input` (push)                              | approval overlay + `needs-human.md`                                       | `/agent` (CLI) / thread list (app) |
+| **codex-exec**     | headless exec workers           | OS-bound      | `codex exec --cd <worktree>` (bg process) | `codex exec resume <id>`                         | gate-and-park → main agent (`exec resume` w/ answer)                      | signals + PR                       |
+| **legacy**         | tmux session (+ cmux tab)       | OS-bound      | `tmux new-session`                        | `tmux send-keys`                                 | `needs-human.md` + `tmux attach`                                          | cmux tab / `tmux attach`           |
+| **workflow**       | CC dynamic workflow fan-out     | session-bound | Workflow tool pipeline                    | none mid-stage (steer at stage boundaries)       | gate-and-park → main agent (structured `gated` result + `needs-human.md`) | `/workflows` + signals             |
+| **headless**       | one-shot native subagent        | session-bound | Task/Agent tool, worktree-bound           | none                                             | gate-and-park → main agent (re-spawn w/ answer)                           | signals + PR                       |
+
+**Announce the selection.** Before spawning, state which mode and why — e.g.
+"Claude Code + agent teams flag → `claude-team`: one teammate per story in the
+standing team; steer with SendMessage; watch via teammate panes."
 
 ---
 
 ## Detection
 
-`detect()` resolves the **host**, its two **executor commands** (interactive
-session vs headless one-shot — they are different invocations, see below), the
-**presentation surface**, and **workflow capability** — using env markers plus
-`command -v`. No guessing, no hardcoded executor.
+`detect()` resolves the **host**, its two **executor commands**, the **native
+capabilities**, any **explicit pin**, and the **presentation surface**.
 
 ```bash
 # --- HOST + executor commands ---
-# Two modes, because the session backends (B1/B2) need a LONG-LIVED, steerable
-# process while evaluator/check execs may need a ONE-SHOT runner — and the two are
-# different invocations per CLI:
-#   $EXECUTOR       interactive session (stays alive, accepts tmux send-keys)
+#   $EXECUTOR       interactive session (stays alive — legacy/tmux, evaluator panes)
 #   $EXECUTOR_EXEC  headless one-shot   (runs the given prompt to completion, exits)
 if [ -n "$CLAUDECODE" ]; then
   HOST=claude
-  EXECUTOR="claude --dangerously-skip-permissions"            # interactive is the default; NO -p
+  EXECUTOR="claude --dangerously-skip-permissions"            # interactive; NO -p
   EXECUTOR_EXEC="claude -p --dangerously-skip-permissions"    # -p/--print = non-interactive
-  READY_GREP='❯'                                              # pane shows ❯ when ready
+  READY_GREP='❯'
 elif command -v codex >/dev/null 2>&1 && { [ -n "$CODEX_HOME" ] || env | grep -q '^CODEX_'; }; then
   HOST=codex
-  EXECUTOR="codex --dangerously-bypass-approvals-and-sandbox"           # session fallback only
-  EXECUTOR_EXEC="codex exec --dangerously-bypass-approvals-and-sandbox" # cheap/check one-shots, not coding launch
-  READY_GREP=''                                                         # codex TUI has no ❯ — use a timed wait
+  EXECUTOR="codex --dangerously-bypass-approvals-and-sandbox"
+  EXECUTOR_EXEC="codex exec --dangerously-bypass-approvals-and-sandbox"
+  READY_GREP=''
 else
   HOST=generic
   EXECUTOR="${AEP_EXECUTOR:-}"; EXECUTOR_EXEC="${AEP_EXECUTOR_EXEC:-$EXECUTOR}"; READY_GREP=''
 fi
-# Guard: never spawn an empty command (an unset executor would start a bare login shell).
 [ -z "$EXECUTOR" ] && { echo "executor unresolved — set \$AEP_EXECUTOR or run under Claude Code / Codex"; }
 
-# --- PRESENTATION: how a human watches a running session ---
-# cmux can host a review tab whenever its CLI is reachable AND we can resolve a
-# target pane — it does NOT require $CMUX_SOCKET. The cmux CLI drives cmux over its
-# Unix socket even when $CMUX_SOCKET is unset (e.g. Claude Code inside a
-# cmux-managed tmux session does not inherit it). Resolve the binary robustly, then
-# confirm a target pane exists: `cmux tree` marks the orchestrator's own pane
-# "◀ here", or $CMUX_PANE_ID is set when we're already inside a surface.
+# --- NATIVE CAPABILITIES ---
+TEAMS_AVAILABLE=$([ "$HOST" = claude ] && [ -n "$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS" ] && echo yes || echo no)
+BG_AVAILABLE=$([ "$HOST" = claude ] && claude --help 2>/dev/null | grep -q -- '--bg' && echo yes || echo no)
+MULTI_AGENT_AVAILABLE=$([ "$HOST" = codex ] && codex features list 2>/dev/null | grep -q 'multi_agent.*true' && echo yes || echo no)
+WORKFLOW_CAPABLE=$([ "$HOST" = claude ] && echo yes || echo no)   # the host agent knows it has the Workflow tool
+
+# --- EXPLICIT PIN (the single manual lever besides "…with workflow") ---
+PIN=$(git config --get aep.executor-backend 2>/dev/null || true)   # e.g. "tmux"
+
+# --- PRESENTATION (for legacy mode): cmux needs a reachable CLI + a target pane,
+#     NOT $CMUX_SOCKET (the CLI drives cmux over its socket even when unset) ---
 CMUX="$(command -v cmux || echo /Applications/cmux.app/Contents/Resources/bin/cmux)"
 if [ -x "$CMUX" ] && { "$CMUX" tree 2>/dev/null | grep -q '◀ here' || [ -n "$CMUX_PANE_ID" ]; }; then
   PRESENT=cmux
 elif command -v tmux >/dev/null 2>&1; then
   PRESENT=tmux
 else
-  PRESENT=none          # Desktop / no multiplexer
+  PRESENT=none
 fi
-
-# --- WORKFLOW CAPABILITY: only Claude Code has the dynamic-workflow (Workflow) tool ---
-# Not shell-probable. The host agent knows: if you are Claude Code, you have it.
-WORKFLOW_CAPABLE=$([ "$HOST" = claude ] && echo yes || echo no)
 ```
 
-> **Correct CLI invocations (verified against Claude Code 2.1.161 / Codex 0.130.0):**
+> **Correct CLI invocations (verified against Claude Code 2.1.161+ / Codex 0.130.0):**
 >
-> |            | interactive session (B1/B2) → `$EXECUTOR`          | headless one-shot (B3 / exec) → `$EXECUTOR_EXEC`        |
+> |            | interactive session → `$EXECUTOR`                  | headless one-shot → `$EXECUTOR_EXEC`                    |
 > | ---------- | -------------------------------------------------- | ------------------------------------------------------- |
 > | **claude** | `claude --dangerously-skip-permissions`            | `claude -p --dangerously-skip-permissions`              |
 > | **codex**  | `codex --dangerously-bypass-approvals-and-sandbox` | `codex exec --dangerously-bypass-approvals-and-sandbox` |
 >
-> `--rc` is **not** a real Claude Code flag (it was a bug; removed). `codex exec`
-> is **non-interactive** and reserved for cheap/read-only check-style one-shots;
-> Codex coding launches use the native subagent/worktree path (B3) first, even
-> when tmux is installed. Codex's full-bypass flag is
-> `--dangerously-bypass-approvals-and-sandbox` (there is no `--yolo` /
-> `--full-auto`).
+> `--rc` is **not** a real Claude Code flag. Codex's full-bypass flag is
+> `--dangerously-bypass-approvals-and-sandbox` (no `--yolo` / `--full-auto`).
 
-Notes:
-
-- **cmux does not require `$CMUX_SOCKET`.** The `cmux` CLI controls cmux over its
-  Unix socket even when `$CMUX_SOCKET` is unset (Claude Code running inside a
-  cmux-managed tmux session does not inherit it). What you actually need to open a
-  _sibling_ tab is a **target pane**: `cmux tree` marks the orchestrator's own pane
-  `◀ here`, and `$CMUX_PANE_ID` / `$CMUX_WORKSPACE_ID` are set when you're inside a
-  surface. Reachable CLI **and** a resolvable pane ⇒ B1; reachable but no pane ⇒ B2.
-- `$TMUX` (set when already inside a tmux session) and `$CLAUDE_CODE_*` are
-  available for finer decisions but are not required for backend selection.
-- **Host knows itself.** A skill is executed by whatever agent loaded it. If you
-  are Claude Code, `$CLAUDECODE` is set and the Workflow tool is available to you.
-  If you are Codex, the `CODEX_*` markers are set and `/launch` uses Codex native
-  subagents for coding work (`codex exec` only for cheap/check one-shots).
-  Detection confirms what the executing agent already is.
+**Orchestrator lifetime is not shell-probable — the agent knows it.** You are
+_long-lived_ when you're an interactive session or a `/loop`-driven session
+(Claude Code) or a living Codex main thread (desktop or interactive CLI). You
+are _ephemeral_ when this invocation is a cron/launchd-spawned one-shot (e.g. a
+scheduled `codex exec` autopilot tick). Session-bound modes require a
+long-lived orchestrator.
 
 ---
 
-## Backend Selection
+## Mode Selection
 
-Apply in order. The first match wins. B4 is the only explicit opt-in path; Codex
-coding launches are subagent-first so they keep Codex-native execution while
-retaining AEP's git worktree isolation.
+Apply in order; first match wins. `workflow` is the only natural-language
+opt-in; `legacy` is the only pin.
 
 ```
-B4  dynamic-workflow   IF user explicitly opted in ("…with workflow")
-                       AND WORKFLOW_CAPABLE == yes        → select B4, stop
-B3  codex-subagent     ELIF HOST == codex                 → select B3, stop
-B1  session+cmux       ELIF PRESENT == cmux               → select B1
-B2  session+tmux       ELIF PRESENT == tmux               → select B2
-B3  native-subagent    ELSE (PRESENT == none)             → select B3
+workflow        IF user explicitly opted in ("…with workflow") AND WORKFLOW_CAPABLE
+legacy          IF PIN == tmux, or user said "…with tmux"
+claude-team     ELIF HOST == claude AND TEAMS_AVAILABLE AND orchestrator is long-lived
+claude-bg       ELIF HOST == claude AND BG_AVAILABLE
+codex-subagent  ELIF HOST == codex AND MULTI_AGENT_AVAILABLE AND orchestrator is a living main thread
+codex-exec      ELIF HOST == codex
+legacy          ELIF PRESENT == cmux or PRESENT == tmux     (generic hosts)
+headless        ELSE
 ```
 
-| ID     | Backend                                         | Monitor                        | Mid-flight nudge | Notes                                                  |
-| ------ | ----------------------------------------------- | ------------------------------ | ---------------- | ------------------------------------------------------ |
-| **B1** | claude/generic session in tmux, cmux tab        | signals                        | yes              | Prior default for session-capable non-Codex hosts.     |
-| **B2** | claude/generic session in tmux, no cmux         | signals                        | yes              | Full loop; human runs `tmux attach` to watch live.     |
-| **B3** | native subagent (CC Task tool / Codex subagent) | returned result + git/PR state | no               | Codex default; non-Codex fallback when no tmux exists. |
-| **B4** | dynamic-workflow fan-out, per-agent worktree    | `/workflows` view + signals    | no               | Opt-in, billed, background. Autonomous batch.          |
-
-**Announce the selection.** Before spawning, state which backend and why — e.g.
-"Codex host → native subagent (B3): I'll create the AEP worktree first, then run
-the build in a Codex worker bound to that worktree. There is no live tmux monitor
-or mid-flight feedback in this mode."
+**Behavior change vs v1.x:** Claude Code with tmux installed no longer
+auto-selects tmux — native modes win. Users who want the tmux+cmux workflow
+back pin it: `git config aep.executor-backend tmux`.
 
 ---
 
-## Operation Recipes
+## Driver × Backend Compatibility
 
-### `spawn(ws, branch, bootstrap_prompt)`
+An orchestrator (notably `/aep-autopilot`) is driven either by a **long-lived
+session** (Claude Code `/loop`; a living Codex main thread ticking in-thread)
+or by a **cron/launchd scheduler** that starts a fresh session per tick.
+Session-bound workers cannot outlive their parent, so:
 
-Start an implementation agent on `feat/<branch>` in
-`.feature-workspaces/<ws>/`. The worktree is created the same way for every
-backend; only the agent-start differs.
+| Driver                                           | claude-team            | claude-bg                         | codex-subagent                          | codex-exec                                 | legacy |
+| ------------------------------------------------ | ---------------------- | --------------------------------- | --------------------------------------- | ------------------------------------------ | ------ |
+| Long-lived session (`/loop`, living main thread) | ✅                     | ✅                                | ✅                                      | ✅                                         | ✅     |
+| Cron/launchd (fresh session per tick)            | ❌ team dies with lead | ✅ OS-level, any session attaches | ❌ subagents invisible to a new session | ✅ `codex exec resume` works cross-process | ✅     |
+
+A consumer that needs steering (autopilot) must pick a mode compatible with its
+driver: on Claude Code, `/loop` + `claude-team` (or `claude-bg`); on Codex,
+in-thread ticks + `codex-subagent`, or cron ticks + `codex-exec`.
+
+---
+
+## Common Recipes (all modes)
+
+### Worktree creation — always AEP-owned, before any spawn
 
 ```bash
 # Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
@@ -144,177 +167,25 @@ BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
   || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
 BASE=${BASE:-main}
 
-# Common to all backends — create the worktree (outside .claude/ — see launch guardrails)
 mkdir -p .feature-workspaces
 git worktree add -b feat/<ws> .feature-workspaces/<ws> "$BASE"
 ```
 
-> `$EXECUTOR` is the **interactive** session command from `detect()` for B1/B2 —
-> bare `claude` / generic session command, never `-p` / `codex exec`. Guard first:
-> `[ -z "$EXECUTOR" ] && { echo "run detect() — \$EXECUTOR unset"; exit 1; }`
-> so an unset executor aborts loudly instead of launching a bare login shell.
+Every mode points its worker at this directory. OS-bound modes bind by process
+cwd (enforced); session-bound native modes bind by prompt contract (AEP's
+no-hooks decision: rely on model capability + skill instructions — do not
+install WorktreeCreate hooks or redirect host-managed worktree paths).
 
-**B1 — session in tmux + cmux review tab:**
-
-Spawn the tmux session **only**. The cmux review tab is attached _after_ the
-bootstrap is sent (see "Attach the cmux review tab" below): attaching a surface
-focuses the tmux composer and blocks external `send-keys`, so the prompt must land
-first.
-
-```bash
-tmux new-session -d -s <ws> -c .feature-workspaces/<ws> "$EXECUTOR"
-```
-
-**B2 — session in tmux, no cmux:**
-
-```bash
-tmux new-session -d -s <ws> -c .feature-workspaces/<ws> "$EXECUTOR"
-echo "Workspace running in tmux session '<ws>'. Watch it live with: tmux attach -t <ws>"
-```
-
-**Readiness + bootstrap send (B1/B2).** Wait for the agent to initialize, then
-send the prompt. The readiness signal is executor-specific (`$READY_GREP` from
-`detect()`); the send uses `-l` so a multi-line prompt is entered literally and a
-single trailing `Enter` submits it (a bare `send-keys "$PROMPT" Enter` would let
-embedded newlines submit the prompt line-by-line):
-
-```bash
-if [ -n "$READY_GREP" ]; then
-  for _ in $(seq 1 12); do
-    tmux capture-pane -t <ws>:0 -p -S -5 | grep -q "$READY_GREP" && break; sleep 2
-  done
-else
-  sleep 8           # codex TUI has no ❯ glyph — give the composer time to come up
-fi
-tmux send-keys -t <ws>:0.0 -l -- "$bootstrap_prompt"   # literal text (handles multi-line)
-tmux send-keys -t <ws>:0.0 Enter                       # one submit
-```
-
-**Attach the cmux review tab (B1 only, AFTER the bootstrap).** Open the tab as a
-**sibling in the pane that holds the orchestrator's own tab** — never
-`cmux new-workspace` (that makes a separate top-level workspace) and never a bare
-`cmux new-surface` (it defaults to an unset `$CMUX_WORKSPACE_ID`). Resolve the pane
-from `cmux tree` (the orchestrator's tab is marked `◀ here`), falling back to the
-surface env vars when we're inside one:
-
-```bash
-# $CMUX is the CLI path resolved in detect(). Run this only when PRESENT == cmux.
-read -r WS PANE < <("$CMUX" tree 2>/dev/null | awk '
-  /workspace workspace:/ {for (i=1;i<=NF;i++) if ($i ~ /^workspace:/) ws=$i}
-  /pane pane:/           {for (i=1;i<=NF;i++) if ($i ~ /^pane:/)      pane=$i}
-  /◀ here/               {print ws, pane; exit}')
-: "${WS:=$CMUX_WORKSPACE_ID}" "${PANE:=$CMUX_PANE_ID}"
-if [ -n "$PANE" ]; then                                  # genuine B1 — a target pane exists
-  SREF=$("$CMUX" new-surface --type terminal --workspace "$WS" --pane "$PANE" --focus true \
-         | grep -oE 'surface:[0-9]+' | head -1)
-  "$CMUX" send --surface "$SREF" "tmux attach -t <ws>"$'\n'   # trailing newline submits
-  "$CMUX" rename-tab --surface "$SREF" "<ws>"
-else                                                     # reachable but no pane → degrade to B2
-  echo "cmux reachable but no target pane — headless B2: tmux attach -t <ws>"
-fi
-```
-
-**B3 — native subagent (Codex default; non-Codex fallback when no tmux):**
-
-- **Claude Code host:** use the Task/Agent tool with `isolation: worktree` (or
-  cwd set to `.feature-workspaces/<ws>/`), passing `bootstrap_prompt` as the
-  agent prompt. The subagent runs `/build` to completion and returns its result.
-  Prefer background mode so the main session can poll signals between turns.
-- **Codex host:** spawn a Codex worker/subagent after the common worktree setup.
-  The worker prompt must include the absolute worktree path and this contract:
-  "Operate only in `<repo>/.feature-workspaces/<ws>` on branch `feat/<ws>`.
-  Run the bootstrap prompt from that directory. Do not edit the main checkout.
-  Report progress through `.dev-workflow/signals/` and finish with the usual
-  `/build` result/PR state." Use the native Codex subagent mechanism available in
-  the host; if the host exposes a separate Codex thread that can be started in an
-  existing directory, start it in `.feature-workspaces/<ws>/`.
-- **Do not use `codex exec` for coding launch.** Keep `codex exec` for
-  cheap/read-only checks and other bounded one-shot analysis, not long-running
-  implementation.
-- No `nudge()`/`liveness()` — the subagent runs to completion. `monitor()`
-  degrades to reading any signals the subagent wrote, plus final git/PR state.
-
-**B4 — dynamic workflow (Claude Code, explicit opt-in):**
-
-Author a workflow whose stage(s) build (and verify) each story with per-agent
-worktree isolation. One agent per story; the build stage runs `/build` for that
-story's OpenSpec change.
-
-```js
-// sketch — the build agent gets the worktree via isolation:'worktree'.
-// `stories` is the dispatched wave: each item = { change: "<openspec-change-id>", bootstrap: "<prompt tail>" }.
-const VERDICT = {
-  type: "object",
-  properties: { real: { type: "boolean" }, summary: { type: "string" } },
-  required: ["real"],
-};
-await pipeline(
-  stories,
-  (s) =>
-    agent(`Run /build for OpenSpec change ${s.change}. ${s.bootstrap}`, {
-      isolation: "worktree",
-      phase: "Build",
-    }),
-  (built, s) =>
-    agent(`Adversarially verify the build for ${s.change}.`, { phase: "Verify", schema: VERDICT }),
-);
-```
-
-Monitoring is via the `/workflows` view; the build agents still write signals.
-No mid-run human input — this is the hands-free batch path.
-
-### `spawn_evaluator(ws, role)` — evaluator, worktree-bound, per backend
-
-Spawn a **separate** evaluator agent (never the generator grading itself), always
-**bound to the workspace worktree** so it sees the build's files and git state.
-`/build` Phase 5 calls this; the request/response signal files and convergence
-rules are identical across backends — only the spawn mechanism differs:
-
-| Backend   | Evaluator spawn                                                                           | eval-protocol context                                                                                                  |
-| --------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **B1/B2** | `tmux split-window -v -c .feature-workspaces/<ws> "$EXECUTOR"` (interactive, bottom pane) | Context A                                                                                                              |
-| **B3**    | sibling worktree-bound subagent/evaluator using the host's native agent mechanism         | Context B **mechanism** (Agent-tool/subagent) — but worktree-bound, **not** the main-session read-only `/validate` use |
-| **B4**    | the workflow's `verify` stage (already worktree-isolated, in-host)                        | Context C **mechanism** (programmatic subagent) — in-host dynamic-workflow, not API/SDK CI                             |
-
-> The eval-protocol Context labels describe the _spawn mechanism_; under the
-> executor the evaluator is **always worktree-bound** (per the Worktree-Context
-> Constraint below), which is what keeps it consistent with the generator's build
-> and with autopilot's "never spawn a reviewer from main" boundary.
-
-### `nudge(ws, msg)` — session backends (B1/B2) only
-
-```bash
-# -l sends the message literally (handles multi-line nudges); a separate Enter submits once.
-tmux send-keys -t <ws>:0.0 -l -- "<msg>"
-tmux send-keys -t <ws>:0.0 Enter
-```
-
-There is no `nudge` for B3 (subagent already returned or is non-interactive) or
-B4 (workflows take no mid-run input). A consumer that requires nudging — notably
-`/autopilot` — must run on a session backend. If detection yields B3/B4 and the
-consumer needs `nudge`, surface that and stop.
-
-### `liveness(ws)` — session backends (B1/B2)
-
-```bash
-# Session activity: capture the pane and compare to the last hash
-tmux capture-pane -t <ws>:0.0 -p -S -20
-# Host-independent fallback / corroboration: uncommitted work in the worktree
-git -C .feature-workspaces/<ws> diff --stat
-```
-
-Pane-capture is the B1/B2 signal; the `git diff --stat` check is host-independent
-and is the only liveness signal available under B3/B4 (where it corroborates the
-returned result rather than a live pane).
-
-### `monitor(ws)` — host-independent, all backends
+### `monitor(ws)` — host-independent, never changes
 
 ```bash
 cat .feature-workspaces/<ws>/.dev-workflow/signals/status.json
 ls  .feature-workspaces/<ws>/.dev-workflow/signals/ready-for-review.flag 2>/dev/null
+ls  .feature-workspaces/<ws>/.dev-workflow/signals/needs-human.md 2>/dev/null
 ```
 
-Unchanged from today. Mid-flight feedback is written the same way for B1/B2:
+Mid-flight feedback is written the same way for every mode (push channels are
+an acceleration layer, not a replacement — the file is the durable record):
 
 ```bash
 cat >> .feature-workspaces/<ws>/.dev-workflow/signals/feedback.md <<'EOF'
@@ -324,51 +195,41 @@ Priority: high
 EOF
 ```
 
+### Worktree removal — `teardown()` tail, all modes
+
+```bash
+# (mode-specific session/agent teardown first — see the recipe files)
+git worktree remove .feature-workspaces/<ws> \
+  || git worktree remove --force .feature-workspaces/<ws>
+git worktree prune
+```
+
 ### `check(prompt, schema)` — cheap, context-isolated analysis
 
-Run a **read-only analysis** prompt in a throwaway, cheap-model agent and return
-its structured JSON. The point is **context isolation**: the verbose reading
-(state file + every workspace `signals/`, `gh pr view`, …) happens in the cheap
-agent's own context and is discarded — only the small JSON result crosses back,
-so a long-lived orchestrator session (e.g. `/autopilot` under `/loop`) doesn't
-accumulate per-tick tokens. The check **never reads workspace code** (signals
-only), so it does not cross the orchestrator boundary.
+Run a **read-only analysis** prompt in a throwaway, cheap-model agent and
+return its structured JSON. The point is context isolation: the verbose
+reading (state file + every workspace `signals/`, `gh pr view`, …) happens in
+the cheap agent's own context — only the small JSON result crosses back. The
+check **never reads workspace code** (signals only).
 
-The host's cheap model and isolation mechanism (model names drift — these are the
-current defaults, override as needed):
-
-**Claude Code — Haiku subagent (own context window; only its final message returns):**
+**Claude Code — Haiku subagent:**
 
 ```
-Use the Agent/Task tool with:
-  model: haiku
-  tools: Read, Bash, Glob        # signals + jq + gh; no workspace-code reads
-  prompt: <the analysis prompt; instruct it to OUTPUT ONLY the JSON in `schema`>
-Capture the returned text as the JSON result.
+Agent/Task tool: model haiku; tools Read, Bash, Glob;
+prompt: <the analysis prompt; OUTPUT ONLY the JSON in `schema`>
 ```
 
-> A subagent cannot spawn further subagents (one level). That's fine — the check
-> only reads and decides; it returns actions for the orchestrator to perform.
-
-**Codex — `codex exec` cheap one-shot (fresh context per call; only stdout returns):**
+**Codex — `codex exec` cheap one-shot:**
 
 ```bash
 codex exec -m gpt-5.4-mini -c model_reasoning_effort=low \
   -C "$PWD" --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox \
-  --output-schema /tmp/aep-check.schema.json \
-  -o /tmp/aep-check.out.json \
-  "<the analysis prompt>" < /dev/null      # < /dev/null: exec hangs on stdin otherwise
-jq . /tmp/aep-check.out.json               # read the structured result
+  --output-schema /tmp/aep-check.schema.json -o /tmp/aep-check.out.json \
+  "<the analysis prompt>" < /dev/null
+jq . /tmp/aep-check.out.json
 ```
 
-`--output-schema` constrains the final message to your JSON Schema; `-o` writes
-just that message to a file. For CHECK, prefer `codex exec` because it gives the
-orchestrator a fresh cheap context and structured stdout. This is different from
-coding launch, where Codex uses the worktree-bound native subagent path (B3).
-
-**Result schema (the CHECK → ACT contract).** The check returns an action list the
-orchestrator executes; it may write its own state files (e.g. `autopilot-state.json`)
-but does not mutate workspaces:
+**Result schema (the CHECK → ACT contract):**
 
 ```json
 {
@@ -386,64 +247,187 @@ but does not mutate workspaces:
 }
 ```
 
-### `present(ws)` — human review surface
+---
 
-| Surface       | Recipe                                                                              |
-| ------------- | ----------------------------------------------------------------------------------- |
-| cmux (B1)     | the cmux review tab attached at the end of `spawn()` already shows the live session |
-| tmux (B2)     | tell the human: `tmux attach -t <ws>` (read-only: `tmux attach -t <ws> -r`)         |
-| none (B3)     | headless — review via `monitor()` signals and the PR when it lands                  |
-| workflow (B4) | the `/workflows` view; plus signals + PR                                            |
+## The Human-Gate Protocol
 
-### `teardown(ws)`
+A worker mid-build can hit a decision only the human can make (design
+ambiguity, eval non-convergence, Phase 11.5 manual QA). The record is
+host-agnostic; the transport is per-mode — but the **canonical human console
+is the main agent** (hub-and-spoke): the worker's question flows back to the
+orchestrator, the orchestrator asks the human (AskUserQuestion / plain text in
+the main session), and relays the answer to the worker. The human never _has_
+to visit a worker's surface; per-mode direct interaction (teammate pane,
+`claude attach`, Codex thread, `tmux attach`) is an optional convenience.
 
-```bash
-# Stop the session if one exists (B1/B2)
-tmux kill-session -t <ws> 2>/dev/null || true
-# Remove the worktree (all backends; /wrap normally owns this).
-# Try a clean remove first; fall back to --force only if leftover files block it
-# (don't blanket-swallow the error — a silently-skipped removal leaves an orphan).
-git worktree remove .feature-workspaces/<ws> \
-  || git worktree remove --force .feature-workspaces/<ws>
-git worktree prune
+**The record (always, every mode):** the worker appends to
+`.dev-workflow/signals/needs-human.md` and sets `"blocked_on": "human"` in
+`status.json`:
+
+```markdown
+## <ISO8601> — <phase>
+
+**Question:** <the decision needed, with the options considered>
+**Context:** <why the worker can't decide autonomously>
 ```
 
-B3 subagents and B4 workflow agents that used `isolation: worktree` are cleaned
-up by their runtime; only an explicitly created `.feature-workspaces/<ws>`
-worktree needs `git worktree remove`.
+**Two gate styles.** The worker's behavior after recording the gate depends on
+whether its mode has a push channel back into it:
+
+- **Block-in-place** (steerable modes — claude-team, codex-subagent, legacy):
+  the worker raises the gate, keeps doing whatever doesn't depend on the
+  answer, and waits. The answer arrives on the mode's push transport.
+- **Gate-and-park** (batch/pull modes — workflow, headless, codex-exec, and
+  claude-bg): there is no push channel into a running worker, so the worker
+  **parks**: commit WIP (or leave the tree clean), update `status.json`
+  (`blocked_on: "human"`, current phase), then **end its run cleanly**. The
+  orchestrator detects the gate, gets the human's answer, and **resumes a
+  worker into the same worktree** — the same recipe as orphan re-adoption,
+  with the answer prepended: "The human decided: <answer>. Run
+  `bash .dev-workflow/init.sh` to recover state, mark the needs-human entry
+  resolved, then continue the /aep-build flow." Parking is cheap because all
+  state lives in the worktree + `.dev-workflow/`, not in the agent's context.
+
+**The transport (per mode):**
+
+| Mode           | Style          | Worker raises it via                                                    | Main agent relays the human's answer via                                                             | Optional direct surface            |
+| -------------- | -------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| claude-team    | block-in-place | `SendMessage` to the lead, prefixed `HUMAN_GATE:`                       | `SendMessage(to: <ws>, ...)`                                                                         | type in the teammate pane          |
+| claude-bg      | gate-and-park  | the file (orchestrator detects on next tick)                            | resume the session with the answer (`claude -r <id> ...`), or respawn w/ recovery bootstrap + answer | `claude attach <id>` while it runs |
+| codex-subagent | block-in-place | native approval overlay (approvals) / ask the parent thread (decisions) | `send_input(<id>, "<answer>")`                                                                       | open the thread (`o` / app click)  |
+| codex-exec     | gate-and-park  | the file (orchestrator detects on next tick)                            | `codex exec resume <id> "<answer>"`                                                                  | — (headless)                       |
+| workflow       | gate-and-park  | stage returns a structured `gated` result + the file                    | continuation run for gated stories with the answer in the prompt (see Mode: workflow)                | — (batch)                          |
+| headless       | gate-and-park  | the file; the one-shot subagent returns with a gated result             | re-spawn a one-shot into the same worktree with recovery bootstrap + answer                          | — (one-shot)                       |
+| legacy         | block-in-place | the file                                                                | `executor.nudge()` (`tmux send-keys`) or `feedback.md`                                               | `tmux attach -t <ws>`              |
+
+**Resolution:** after acting on the answer, the worker appends
+`resolved: <summary>` under its entry and clears `blocked_on`. The autopilot
+escalation queue consumes the same file — an unresolved `needs-human.md` entry
+becomes an escalation whose `expected_human_action` is "answer in the main
+session" plus the mode-specific relay recipe above. A parked workspace counts
+as **waiting, not stuck and not failed**.
+
+---
+
+## Mode: workflow (dynamic-workflow fan-out)
+
+Claude Code's Workflow tool builds a whole dispatched wave as one deterministic
+fan-out: one build agent per locked story, each with per-agent worktree
+isolation, with `/aep-dispatch` authoring the script (the "…with workflow"
+path bypasses `/aep-launch`). With hub-and-spoke gating this is a complete
+backend, not just a fire-and-forget batch: gates park and return to the main
+agent for confirmation, then gated stories resume.
+
+```js
+// sketch — one agent per story; gates surface in the structured result.
+// `stories` is the dispatched wave: { change, worktree, bootstrap } per item.
+const BUILD_RESULT = {
+  type: "object",
+  properties: {
+    status: { enum: ["completed", "gated", "failed"] },
+    question: { type: "string" }, // set when status == "gated" (mirror of needs-human.md)
+    summary: { type: "string" },
+  },
+  required: ["status"],
+};
+const results = await pipeline(
+  stories,
+  (s) =>
+    agent(
+      `You operate EXCLUSIVELY in ${s.worktree}. Run /aep-build for OpenSpec change ${s.change}. ${s.bootstrap}
+       If you hit a decision only the human can make: append it to .dev-workflow/signals/needs-human.md,
+       set blocked_on:"human" in status.json, commit WIP, and RETURN status "gated" with the question —
+       do not guess and do not wait.`,
+      { phase: "Build", schema: BUILD_RESULT },
+    ),
+  (built, s) =>
+    built.status === "completed"
+      ? agent(`Adversarially verify the build for ${s.change} in ${s.worktree}.`, {
+          phase: "Verify",
+          schema: BUILD_RESULT,
+        })
+      : built,
+);
+return results;
+```
+
+**Gate handling (main agent, after the workflow returns):** collect
+`status: "gated"` items, ask the human each `question` (AskUserQuestion), then
+resume each gated story into its **existing** worktree — either a continuation
+workflow over the gated subset or individual re-launches — with the recovery
+bootstrap + the answer ("The human decided: <answer>…"). `Workflow
+resumeFromRunId` makes the continuation cheap (completed agents return from
+cache). Mid-stage there is still no push nudge — steering happens at stage
+boundaries and through gates.
+
+`monitor()` is unchanged (the build agents still write signals); progress is
+also visible in the `/workflows` view. Autopilot does not drive this mode —
+the workflow is its own orchestrator; its gates surface to the main agent that
+authored it.
+
+> AEP-created worktrees vs `isolation: 'worktree'`: prefer creating the
+> `.feature-workspaces/<ws>` worktrees first (launch guardrails apply) and
+> passing the path in the prompt, so `monitor()`/wrap paths stay standard. The
+> Workflow tool's own `isolation: 'worktree'` puts agents in host-managed
+> paths — acceptable for ad-hoc batches, but then signals live outside
+> `.feature-workspaces/` and `/aep-wrap` does not apply.
+
+---
+
+## Orphan Re-adoption
+
+Session-bound workers (teammates, Codex subagents) die when the orchestrator
+session dies, but their **work does not** — it lives in the worktree and
+`.dev-workflow/`. When an orchestrator (re)starts and finds state claiming an
+active workspace whose agent no longer exists (TaskList / `list_agents` /
+`claude agents` comes up empty):
+
+1. Treat it as an **orphan, not a failure** — do not mark the story failed.
+2. Read `signals/status.json` for the last known phase.
+3. Re-launch a worker **into the existing worktree** with the current mode's
+   spawn recipe and a recovery bootstrap:
+   "Run `bash .dev-workflow/init.sh` to recover state, read
+   `.dev-workflow/signals/feedback.md`, then continue the /aep-build flow from the
+   current phase."
+4. Record the new `agent_id` in orchestrator state.
+
+This is why worker progress must always flow through signals + commits, never
+live only in an agent's context.
 
 ---
 
 ## The Worktree-Context Constraint
 
-**B3 and B4 MUST spawn their agents bound to the workspace worktree** — via
-`isolation: worktree` or by setting the agent's working directory to
-`.feature-workspaces/<ws>/`.
+**Every spawned worker and evaluator MUST be bound to the workspace worktree** —
+by process cwd (claude-bg, codex-exec, legacy, evaluator execs) or by prompt
+contract (claude-team, codex-subagent, headless).
 
 This is not optional. The autopilot orchestrator boundary forbids spawning a
-reviewer/agent "from main" precisely because such an agent lacks the workspace's
-files, git state, and eval history. Binding the spawned agent to the worktree
-gives it exactly that context, so the boundary's intent is satisfied under every
-backend. The gen/eval separation (generator ≠ evaluator) and the rule that the
-main session never reads workspace code directly both still hold — only the
-spawn mechanism changes.
+reviewer/agent "from main" precisely because such an agent lacks the
+workspace's files, git state, and eval history. Binding the spawned agent to
+the worktree gives it exactly that context, so the boundary's intent is
+satisfied under every mode. The gen/eval separation (generator ≠ evaluator)
+and the rule that the main session never reads workspace code both still hold —
+only the spawn mechanism changes.
+
+**Codex caveat:** `spawn_agent` has no cwd parameter, so the codex-subagent
+binding is a directory contract hardened by the `aep-builder` role's
+`developer_instructions` (see `codex-native.md`). The contract stays inside the
+`workspace-write` sandbox because `.feature-workspaces/` is under the project
+root. Hard enforcement is available via `codex-exec`.
 
 ---
 
-## The cmux Fallback Ladder
+## Legacy B1–B4 Mapping
 
-cmux is a **convenience, never a requirement**. Nothing functional depends on
-it; it is purely the human's clickable live-view tab.
+For readers of v1.2–v1.5 docs and ADRs:
 
-```
-cmux tab attachable → B1: clickable review tab (sibling of the orchestrator's tab), live view
-tmux present        → B2: same session + monitor loop; `tmux attach` to watch
-no multiplexer      → B3: headless autonomous subagent; review via signals + PR
-```
+| Old                   | New                                                       |
+| --------------------- | --------------------------------------------------------- |
+| B1 (tmux + cmux tab)  | `legacy` with cmux present                                |
+| B2 (tmux only)        | `legacy`                                                  |
+| B3 (native subagent)  | `codex-subagent` (Codex) / `headless` (one-shot fallback) |
+| B4 (dynamic workflow) | `workflow`                                                |
 
-"cmux tab attachable" = the `cmux` CLI is reachable **and** a target pane resolves
-(`cmux tree` shows `◀ here`, or `$CMUX_PANE_ID` is set) — it does **not** require
-`$CMUX_SOCKET`. Reachable-but-no-pane degrades to B2; losing cmux costs only the
-tab UI. The file-based monitor loop and mid-flight feedback survive in B2
-unchanged. Skills must therefore gate every cmux call on detection and never abort
-merely because cmux is absent.
+New in v1.6: `claude-team`, `claude-bg`, `codex-exec`, the human-gate protocol,
+and orphan re-adoption. See `docs/decisions/native-first-executor.md`.
