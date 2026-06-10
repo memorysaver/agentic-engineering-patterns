@@ -467,6 +467,61 @@ MAIN SESSION (you + AI)                WORKSPACE SESSION (agent alone)
 
 **Why git + worktree:** `git worktree add -b feat/<name>` gives each agent an isolated working tree on its own branch, sharing `.git/objects` so history isn't duplicated. Linear commits (one per `tasks.md` row) make the PR's commit list a readable table of contents. Squash-merge keeps `main`'s history clean. AEP previously used Jujutsu (jj); see [docs/decisions/migrate-from-jj-to-git.md](docs/decisions/migrate-from-jj-to-git.md) for why we switched.
 
+#### Launch modes — native-first executor backends
+
+`/aep-launch` doesn't hardwire one runtime. It detects the host through the
+**executor abstraction** (`aep-executor`) and spawns the workspace agent with
+the host's _native_ parallel-agent machinery — tmux+cmux survives only as an
+explicitly-pinned legacy mode. Every mode satisfies the same invariants: one
+story = one context window + one AEP-created worktree at
+`.feature-workspaces/<name>` + one `.dev-workflow/` plan dir, with file-based
+signals as the source of truth.
+
+| Mode               | Host / mechanism                                                | Lifetime      | Mid-flight steering                 | Watch it via                    |
+| ------------------ | --------------------------------------------------------------- | ------------- | ----------------------------------- | ------------------------------- |
+| **claude-team**    | Claude Code agent teams — one teammate per story, standing team | session-bound | `SendMessage` (push)                | teammate pane / `Shift+Down`    |
+| **claude-bg**      | Claude Code native background sessions (`claude --bg`)          | OS-bound      | `feedback.md` (pull) + stop/respawn | `claude attach` / `claude logs` |
+| **codex-subagent** | Codex multi_agent (desktop app + CLI), `aep-builder` role       | session-bound | `send_input` (push)                 | thread list / `/agent`          |
+| **codex-exec**     | headless `codex exec --cd <worktree>` workers                   | OS-bound      | `codex exec resume <id>`            | signals + PR                    |
+| **workflow**       | Claude Code dynamic-workflow fan-out (one agent per story)      | session-bound | stage boundaries + gates only       | `/workflows` view + signals     |
+| **legacy**         | tmux session (+ optional cmux tab) — pin or generic-host only   | OS-bound      | `tmux send-keys`                    | cmux tab / `tmux attach`        |
+
+Selection is automatic and native-first (teams flag → `claude-team`; otherwise
+`claude-bg`; Codex main thread → `codex-subagent`; cron-driven → `codex-exec`).
+The two manual levers: `git config aep.executor-backend tmux` pins legacy, and
+"…with workflow" opts into the batch fan-out. **Lifetime matters for
+orchestration:** session-bound workers die with the orchestrator session, so
+`/aep-autopilot` under a long-lived `/loop` can use any mode, while cron-driven
+ticks need the OS-bound ones. Full detection/selection/recipes:
+[`skills/patterns/executor/references/backends.md`](skills/patterns/executor/references/backends.md).
+
+#### Human gates — hub-and-spoke, two styles
+
+A workspace agent that hits a decision only the human can make (design
+ambiguity, eval non-convergence, manual QA) never guesses and never silently
+stalls — it raises a **human gate**: append the question to
+`.dev-workflow/signals/needs-human.md` and set `blocked_on: "human"` in
+`status.json`. The **main agent is the canonical human console**
+(hub-and-spoke): the question flows back to the orchestrator, you answer it
+there, and the answer is relayed to the worker. You never _have_ to visit a
+worker's surface — the per-mode panes/threads/attach are optional conveniences.
+How the answer travels depends on the mode:
+
+- **Block-in-place** (claude-team / codex-subagent / legacy): the worker waits
+  in place; the answer arrives on the mode's push channel (`SendMessage` /
+  `send_input` / tmux nudge).
+- **Gate-and-park** (workflow / headless / codex-exec / claude-bg): no push
+  channel reaches a running worker, so the worker **parks** — commits WIP,
+  records the gate, and ends its run cleanly. The orchestrator collects the
+  question, asks you, and **resumes a worker into the same worktree** with
+  your answer. Parking is cheap because all worker state lives in the worktree
+  - `.dev-workflow/`, never only in agent context.
+
+Gate-and-park is what makes the **workflow** mode a complete backend rather
+than fire-and-forget batch: each build agent returns a structured `gated`
+result, the main agent asks you after the run, and gated stories resume in
+their worktrees. Gated workspaces count as _waiting_ — not stuck, not failed.
+
 ### 3. Project Setup — the one-time foundation
 
 Gets your machine and project ready. Run once.
@@ -632,12 +687,11 @@ Generate a dimension-specific brief, explore or discuss, capture decisions for a
 | `/aep-executor`  | patterns                     | Host-agnostic backend for spawning/steering workspace agents                                            |
 | `/aep-autopilot` | patterns                     | Autonomous dispatch-launch-monitor-wrap loop via `/loop`                                                |
 
-Launches are **native-first**: Claude Code uses agent teams (`claude-team`) or
-native background sessions (`claude-bg`); Codex uses native subagents
-(`codex-subagent`) or headless exec workers (`codex-exec`). tmux+cmux is the
-pinned **legacy** mode (`git config aep.executor-backend tmux`) and the
-generic-host fallback. Every mode runs in an AEP-created git worktree at
-`.feature-workspaces/<name>`.
+Launches are **native-first** with **hub-and-spoke human gates** — see
+[Launch modes](#launch-modes--native-first-executor-backends) and
+[Human gates](#human-gates--hub-and-spoke-two-styles) in the Feature
+Lifecycle section above for the full mode table and the
+block-in-place / gate-and-park strategy.
 
 ## Documentation
 
