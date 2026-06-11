@@ -141,18 +141,25 @@ back pin it: `git config aep.executor-backend tmux`.
 ## Driver × Backend Compatibility
 
 An orchestrator (notably `/aep-autopilot`) is driven either by a **long-lived
-session** (Claude Code `/loop`; a living Codex main thread ticking in-thread)
-or by a **cron/launchd scheduler** that starts a fresh session per tick.
-Session-bound workers cannot outlive their parent, so:
+session** or by a **cron/launchd scheduler** that starts a fresh session per
+tick. The long-lived class has two in-session variants — the **goal driver**
+(`/goal`, native on both hosts, the autopilot default, self-terminating per
+layer) and the fixed-interval **loop driver** (`/loop`; a living Codex main
+thread ticking in-thread). Both are equally compatible with every steerable
+mode. Session-bound workers cannot outlive their parent, so:
 
-| Driver                                           | claude-team            | claude-bg                         | codex-subagent                          | codex-exec                                 | legacy |
-| ------------------------------------------------ | ---------------------- | --------------------------------- | --------------------------------------- | ------------------------------------------ | ------ |
-| Long-lived session (`/loop`, living main thread) | ✅                     | ✅                                | ✅                                      | ✅                                         | ✅     |
-| Cron/launchd (fresh session per tick)            | ❌ team dies with lead | ✅ OS-level, any session attaches | ❌ subagents invisible to a new session | ✅ `codex exec resume` works cross-process | ✅     |
+| Driver                                                          | claude-team            | claude-bg                         | codex-subagent                          | codex-exec                                 | legacy |
+| --------------------------------------------------------------- | ---------------------- | --------------------------------- | --------------------------------------- | ------------------------------------------ | ------ |
+| Long-lived session (`/goal` **or** `/loop`, living main thread) | ✅                     | ✅                                | ✅                                      | ✅                                         | ✅     |
+| Cron/launchd (fresh session per tick)                           | ❌ team dies with lead | ✅ OS-level, any session attaches | ❌ subagents invisible to a new session | ✅ `codex exec resume` works cross-process | ✅     |
 
 A consumer that needs steering (autopilot) must pick a mode compatible with its
-driver: on Claude Code, `/loop` + `claude-team` (or `claude-bg`); on Codex,
-in-thread ticks + `codex-subagent`, or cron ticks + `codex-exec`.
+driver: on Claude Code, `/goal` (or `/loop`) + `claude-team` (or `claude-bg`);
+on Codex, in-thread `/goal` (or manual ticks) + `codex-subagent`, or cron ticks
+
+- `codex-exec`. **The goal driver is in-session only** — it cannot drive a
+  fresh-session-per-tick scheduler, so the cron/launchd row is always the
+  `/loop`/`codex exec` path.
 
 ---
 

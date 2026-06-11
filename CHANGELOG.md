@@ -21,6 +21,50 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 _Nothing yet._
 
+## [1.7.0] - 2026-06-11
+
+**Goal-driven autopilot driver**: `/aep-autopilot` now keeps itself ticking with
+a **goal driver** by default — the host-native `/goal` primitive (Claude Code
+v2.1.139+ and Codex's experimental `goals` feature) — which re-fires a tick when
+there is work and **self-terminates** when the current layer is complete or a
+human-judgment gate is hit. The fixed-interval `/loop` driver is retained as a
+fallback (`--loop`). Only the _driver_ changes; the 7-step CHECK→ACT tick, the
+delegated cheap CHECK, the signals protocol, and the orchestrator boundary are
+unchanged. Decision record:
+[`docs/decisions/goal-driven-autopilot.md`](docs/decisions/goal-driven-autopilot.md).
+
+### Added
+
+- **Goal driver (default)** — `/aep-autopilot` with no `--loop` flag builds a
+  one-layer goal condition and drives it via `/goal`: "layer N complete (all
+  stories merged + wrapped) OR autopilot paused". Scoped to **one layer per run**
+  — it stops at the layer boundary so the human runs the layer gate / `/aep-reflect`
+  and re-invokes for the next layer. Native and near-symmetric on both hosts
+  (Claude Code Haiku-evaluator Stop hook; Codex persisted thread goal with
+  `token_budget`).
+- **Per-tick surface + wait tail (step ⑦, goal driver only)** — each tick
+  surfaces a **signals-only** `AUTOPILOT …` status line for the goal evaluator to
+  judge (boundary-safe: never workspace code), then waits a bounded **floor**
+  (default `5m`, `--floor`) before ending the turn. The floor is the anti-hot-loop
+  mechanism — CC uses `Monitor` with a hard timeout (a raw foreground `sleep` is
+  blocked in a turn); Codex uses shell `sleep`.
+- **Goal-driver flags** — `--floor <dur>` (per-tick wait floor) and
+  `--max-turns <n>` (runaway backstop, default `200`); on Codex a `token_budget`
+  is set as the hard wall (soft-stops to `budget_limited`).
+
+### Changed
+
+- **`/aep-autopilot` default behavior** — the default driver is now goal-driven
+  and self-terminating per layer. The command surface is unchanged; `--loop
+<interval>` selects the prior fixed-interval behavior exactly.
+- **`/aep-autopilot stop`** — cancels whichever driver is active (`/goal clear`
+  for the goal driver; `/loop` cancel or cron/launchd removal for the loop
+  driver).
+- **Driver × backend compatibility** (executor `backends.md`) — the long-lived
+  session class now names two in-session variants, `/goal` (default) and `/loop`;
+  the goal driver is in-session-only, so the cron/launchd row stays the
+  `/loop` / `codex exec` path.
+
 ## [1.6.0] - 2026-06-10
 
 **Native-first executor backends**: launch/dispatch/build/autopilot/wrap now

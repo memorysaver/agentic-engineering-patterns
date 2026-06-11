@@ -64,17 +64,18 @@ topology:
 /aep-autopilot
 ```
 
-One command. Initializes state, runs the first tick, and starts a recurring loop (default: every 5 minutes). Use `--loop` to customize the interval:
+One command. Initializes state, runs the first tick, and keeps ticking until the **current layer is complete**, then stops on its own. The default driver is **goal-driven** (`/goal`, native on Claude Code and Codex): it re-fires a tick when there is work and self-terminates at the layer boundary so you can run the layer gate / `/aep-reflect` and re-invoke for the next layer. Use `--floor` to tune the goal driver's per-tick wait (default 5m), or `--loop` for the fixed-interval fallback driver:
 
 ```
-/aep-autopilot --loop 10m
+/aep-autopilot --floor 3m       # goal driver, tighter per-tick wait
+/aep-autopilot --loop 10m       # fixed-interval loop driver instead
 ```
 
 ---
 
 ## The Autonomous Cycle
 
-Autopilot runs as a tick-based state machine. Every 5 minutes, a tick executes:
+Autopilot runs as a tick-based state machine. Under the **goal driver** each tick runs, surfaces a signals-only status line, and waits a floor (default 5m) before the `/goal` evaluator decides whether to re-fire or stop (layer complete / paused); under the **loop driver** a tick fires every interval. Either way, a tick executes:
 
 ```
 /aep-autopilot tick
@@ -98,15 +99,17 @@ Autopilot runs as a tick-based state machine. Every 5 minutes, a tick executes:
     │   ├─ /aep-dispatch + /aep-launch for top story
     │   └─ Check layer completion → gate test if needed
     │
-    └─ ⑦ Write state + history + status
+    └─ ⑦ Write state + history + status  (+ surface status line + wait, goal driver)
 ```
 
-The cycle continues until:
+The cycle continues until (goal driver — scoped to the current layer):
 
-- All stories in all layers complete → stop and notify human
+- All stories in the **current layer** complete → goal met, stop and hand back to the human (run the layer gate / `/aep-reflect`, then re-invoke `/aep-autopilot` for the next layer)
 - Design escalation → pause and notify human
 - Layer gate fails → pause and notify human
-- No stories ready → wait for in-progress workspaces
+- No stories ready → wait for in-progress workspaces (the per-tick floor)
+
+(Under the loop driver the cadence is the fixed interval and it runs across layers until you `/aep-autopilot stop`.)
 
 ---
 
