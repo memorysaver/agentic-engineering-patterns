@@ -59,7 +59,9 @@ Within the open window, each tick performs two independent reads:
 
 ### (a) Health signals
 
-Read every signal named in `topology.routing.post_merge_guard.health_signals`. These are service-level, signals-only probes — no workspace code:
+Read every signal named in `topology.routing.post_merge_guard.health_signals`. These are service-level, signals-only probes — no workspace code.
+
+> **Coverage precondition.** Run `coverage_check(health_signals)` (`../../../product-context/reflect/references/telemetry-ingestion.md` §1.5) first: a signal like `error_rate` / `latency_p95` that needs a metrics source must be **bound** (the `/aep-map` Telemetry Binding step wired a `telemetry_sources` entry / `health_url`). An **unbound** signal is reported as "telemetry binding incomplete — run /aep-map", **not** treated as green — never infer health from a signal you can't actually read. (`ci_status` / `health_endpoint` / `smoke_check` are self-describing and need no binding.)
 
 | Signal kind       | How the orchestrator reads it (examples)                                             |
 | ----------------- | ------------------------------------------------------------------------------------ |

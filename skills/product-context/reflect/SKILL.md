@@ -144,7 +144,7 @@ If the completed layer has an `outcome_contract` defined in `product.layers[]`:
 
 **Auto-evaluation (optional, opt-in):** The pause above can be skipped per `references/telemetry-ingestion.md`:
 
-- If `topology.routing.auto_outcome_eval: quantitative` **and** the success metric is quantitative (a numeric target measurable from analytics/monitoring) → fetch the actual value per `references/telemetry-ingestion.md`, apply `keep_if`/`otherwise` mechanically, and record the result in the changelog — no pause. If the metric can't be fetched, fall back to the human pause.
+- If `topology.routing.auto_outcome_eval: quantitative` **and** the success metric is quantitative (a numeric target measurable from analytics/monitoring) → first run `coverage_check([metric])` (`references/telemetry-ingestion.md` §1.5): if the metric isn't bound to a telemetry source (the `/aep-map` Telemetry Binding step wasn't done), **fall back to the human pause** and note "run /aep-map observability step". If covered → fetch the actual value per `references/telemetry-ingestion.md`, apply `keep_if`/`otherwise` mechanically, and record the result in the changelog — no pause. (A fetch failure also falls back to the human pause.)
 - **Qualitative** metrics still pause for the human as described above — **unless** `topology.routing.full_auto: true`, in which case the agent evaluates the qualitative metric by its own judgment and applies the decision rule with no pause.
 - Default (`auto_outcome_eval: none`, `full_auto: false`) preserves the current human-in-the-loop behavior exactly.
 

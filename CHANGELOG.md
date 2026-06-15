@@ -45,6 +45,12 @@ is opt-in via `topology.routing` flags.
   hard regression → conservative `auto_revert` (default off, warn + escalate).
 - **Telemetry-driven reflect** (G5) — `reflect/references/telemetry-ingestion.md`:
   automated source ingestion + quantitative outcome-contract auto-evaluation.
+- **Telemetry source determination** — projects decide sources via a hybrid
+  metric-driven rule: `/aep-scaffold`/`/aep-onboard` detect the observability stack
+  (candidate sources); `/aep-map` binds each quantitative `success_metric` +
+  `health_signal` to a source (`metric_map`); a shared `coverage_check()` lets
+  `/aep-watch`, `/aep-reflect`, and the post-merge guard **block auto when the
+  binding is incomplete** instead of silently no-op'ing.
 - **Visual Design evaluator dimension** (G3) — vision-model scoring of screenshots
   against the design system, for both Claude and Codex (multimodal).
 - **`full_auto` master switch** (A1) — `topology.routing.full_auto` (default false)

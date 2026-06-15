@@ -48,11 +48,57 @@ name only — **never embed secrets in the repo or in `product-context.yaml`**.
 
 ---
 
+## 1.5 Deciding which sources to wire (the coverage rule)
+
+You don't list telemetry for its own sake — **a source is needed _iff_ some
+declared signal requires it.** The decision is **hybrid**:
+
+1. **Metric-driven (what signals do we need?)** — enumerate every **quantitative**
+   `success_metric` across `product.layers[].outcome_contract` plus every
+   `topology.routing.post_merge_guard.health_signals` entry. That set _is_ the
+   demand for telemetry.
+2. **Inventory (which tool provides each?)** — `/aep-scaffold`'s audit detects the
+   project's observability stack (Sentry, Datadog, PostHog, OpenTelemetry, log
+   drains, `/healthz`-style endpoints) and records **candidate** `telemetry_sources`
+   (kind + endpoint + `token_env`, no `metric_map` yet); you can also add candidates
+   by hand.
+3. **Bind (`/aep-map`)** — for each needed signal, attach it to a candidate source
+   by adding a `metric_map: { <metric-or-signal>: "<query>" }` entry. A needed
+   signal with no measurable source is **flagged**, not ignored: make the metric
+   qualitative, or record it `unmeasured` — never leave a quantitative metric
+   silently un-sourced.
+
+### `coverage_check(needed)` — the guard helper
+
+Consumers that rely on telemetry (`/aep-watch`, `/aep-reflect` Step 2.75,
+`/aep-autopilot`) call this **before** trusting auto behavior. It is pure
+config inspection — no network:
+
+```
+coverage_check(needed_signals):
+  missing = []
+  for sig in needed_signals:           # quantitative success_metric names + health_signals
+    if no telemetry_sources[*].metric_map has key == sig
+       (and, for a health_signal, no source/endpoint provides it):
+      missing.append(sig)
+  return { covered: missing == [], missing }
+```
+
+**On `covered == false`:** surface
+`"telemetry binding incomplete for <missing> — run /aep-map (observability step)"`
+and **block the auto path** (watch refuses to claim auto-coverage; reflect falls
+back to the human pause; autopilot pauses). Missing wiring must **block auto,
+never silently no-op** — that's the v2 human-in-the-loop default.
+
+---
+
 ## 2. Outcome-contract auto-evaluation
 
 A layer's `outcome_contract` carries a `success_metric` (`type` + `target`) and a
-`decision_rule` (`keep_if` / `otherwise`). Evaluate per
-`topology.routing.auto_outcome_eval`:
+`decision_rule` (`keep_if` / `otherwise`). **Precondition:** run
+`coverage_check([success_metric])` (§1.5) first — if the metric isn't bound to a
+source, take the human-pause path (the binding is incomplete; do not auto-eval).
+When covered, evaluate per `topology.routing.auto_outcome_eval`:
 
 | Metric `type`                                        | `auto_outcome_eval: quantitative`                                                                                                     | default (`none`)               |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |

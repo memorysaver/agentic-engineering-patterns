@@ -133,6 +133,30 @@ For each layer that has an `outcome_contract` defined (see `product.layers[].out
 
 The outcome contract is evaluated by `/aep-reflect` after layer completion. It answers: "did this layer achieve what we hypothesized?"
 
+### Telemetry Binding (observability)
+
+This is where the project **decides its telemetry sources** — metric-driven, then
+inventory (see the coverage rule in `references/telemetry-ingestion.md` §1.5).
+
+1. **Collect the needed signals:** every **quantitative** `success_metric`
+   (`type` ∈ `task_completion_rate | time_to_complete | error_rate | satisfaction_score`)
+   across the layers, plus any `topology.routing.post_merge_guard.health_signals`
+   you intend to monitor. That set is the demand for telemetry.
+2. **Bind each to a source:** start from the **candidate `telemetry_sources`**
+   detected by `/aep-scaffold`'s audit (or ask the user which tool provides
+   each — Sentry / Datadog / PostHog / analytics / health endpoint). For each needed
+   signal add a `metric_map: { <metric-or-signal>: "<query>" }` entry on the
+   matching source, and fill its `endpoint` + `token_env` (name only — never the
+   secret).
+3. **Flag the unmeasurable:** a quantitative `success_metric` with no source either
+   becomes **qualitative** (it will pause for human judgment in `/aep-reflect`) or is
+   recorded `unmeasured` — never leave a quantitative metric silently un-sourced.
+
+Write the result to `topology.routing.telemetry_sources` (+ `health_signals`).
+`/aep-reflect`, `/aep-watch`, and `/aep-autopilot` run `coverage_check()` against
+this before trusting any auto path; an incomplete binding **blocks auto**, it does
+not silently no-op.
+
 ### Capability Maps (multi-journey products)
 
 If `product/index.yaml` exists (created by `/aep-envision` for multi-journey products), also write per-capability `map.yaml` files:

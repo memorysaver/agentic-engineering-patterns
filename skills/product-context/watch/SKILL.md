@@ -114,11 +114,26 @@ Each tick runs the same four-step body. **Idempotent** — re-running with no ne
 source data produces no new stories (the dedupe + `since` high-water mark guarantee it).
 
 ```
+⓪ PRECHECK  → verify the /aep-map telemetry binding is complete (coverage_check)
 ① PULL      → fetch new findings from each configured source (since high-water mark)
 ② CLASSIFY  → run each finding through the /aep-reflect Step 2 classifier
 ③ DEDUPE    → drop findings that already map to an existing story
 ④ WRITE     → create bug/refinement stories (or surface proposals)
 ```
+
+### Step 0: Precondition — verify the map binding
+
+`/aep-watch` consumes telemetry sources, so first confirm `/aep-map` actually
+**bound** them — don't silently watch nothing. Run `coverage_check()` (the helper
+in `references/telemetry-ingestion.md` §1.5) over the signals this watch needs:
+each `topology.routing.watch.sources[]` entry (and any `metric`/`error_stream` it
+relies on) must resolve to a wired `topology.routing.telemetry_sources` entry with
+a `metric_map`.
+
+- **Covered** → proceed to Step 1.
+- **Not covered** (sources empty, or a referenced metric has no `metric_map`) →
+  **do not claim auto-coverage.** Surface:
+  `"telemetry binding incomplete for <missing> — run /aep-map (Telemetry Binding step) before /aep-watch can ingest it"`, skip the uncovered sources, and (if nothing is covered) stop the tick with that message. A missing binding **blocks**; it never silently no-ops.
 
 ### Step 1: Pull from Sources
 
