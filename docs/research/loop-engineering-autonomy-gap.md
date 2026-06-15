@@ -79,7 +79,7 @@ Retry Loop / Plan-Execute-Verify / Explore-Narrow / Human-in-the-Loop。
 
 - **G2 — 換策略復原階梯**（genuine adaptation）。現況 eval FAIL 同一 generator 同思路再修，5 輪打滿升級人；缺「重讀 spec → 換做法 → 拆 story → 換 agent → 才找人」。
 - **G3 — 設計歧義 / 視覺品質自主評斷**。`auto_design` 只是自動跑互動式 `/aep-design`；視覺品質明文「agent 無法判斷」靠 `.5` polish layer 人工。
-- **G4 — Post-merge guard & 自動 rollback ⭐ 安全關鍵**。現況 merge 後即 wrap，無生產健康監控 / 自動 revert / canary / audit log。
+- **G4 — Post-merge guard & 自動 rollback ⭐ 安全關鍵**。現況 merge 後即 wrap，無生產健康監控 / 自動 revert / canary / audit log。**驗證面向（部署後 staging/prod dogfood，host-aware）已展開設計：[g4-dogfood-validation-design.md](./g4-dogfood-validation-design.md)。**
 - **G5 — Telemetry 驅動 reflect / outcome 評估**。現況 `reflect` 逐一問人，outcome contract 明文 pause 等人工判斷。
 - **G6 — 自我餵食工作發掘 ("discovers")**。新工作只能從人工 envision/reflect 進入。
 - **G7 — Loop hygiene**。per-phase token/tool-call 硬預算、termination 區分「打到上限」vs「真正無解」。
