@@ -13,7 +13,7 @@ Set up your environment for agentic TypeScript development AND get oriented to h
 
 > **Returning user?** If you've run `/aep-onboard` before and you're just re-verifying your environment, skip to Phase 1.
 
-Before installing tools, get the mental model. AEP is not a "command runner" — it's a workflow that separates _thinking_ (what to build) from _doing_ (building it). Installing the tools without understanding this will leave you staring at a blank terminal wondering which of 16 skills to run first.
+Before installing tools, get the mental model. AEP is not a "command runner" — it's a workflow that separates _thinking_ (what to build) from _doing_ (building it). Installing the tools without understanding this will leave you staring at a blank terminal wondering which of 17 skills to run first.
 
 **The three mental models you need:**
 
@@ -25,7 +25,7 @@ Before installing tools, get the mental model. AEP is not a "command runner" —
 
 **v2 split-mode (good to know):** Some projects store product context in two files — `product/index.yaml` (stable intent: opportunity, personas, capabilities, constraints) + `product-context.yaml` (mutable state: architecture, stories, cost, changelog). All skills auto-detect which mode a project uses. If you see only `product-context.yaml`, that's v1 single-file mode and it works exactly the same way. See [docs/aep-v2-improvement-guideline.md](../../../docs/aep-v2-improvement-guideline.md).
 
-**Next step:** for the full 10-minute first-hour guide — including a table of all 16 skills, four concrete paths (new product / existing project / single feature / hands-free), and a glossary shortlist — read **[docs/orientation.md](../../../docs/orientation.md)**. Then come back to Phase 1.
+**Next step:** for the full 10-minute first-hour guide — including a table of all 17 skills, four concrete paths (new product / existing project / single feature / hands-free), and a glossary shortlist — read **[docs/orientation.md](../../../docs/orientation.md)**. Then come back to Phase 1.
 
 ---
 
@@ -364,7 +364,7 @@ Pointers for going deeper. None of these are required reading — check what's r
 
 **Mental models & concepts**
 
-- [docs/orientation.md](../../../docs/orientation.md) — the canonical first-hour guide (mental models + 16 skills + four paths)
+- [docs/orientation.md](../../../docs/orientation.md) — the canonical first-hour guide (mental models + 17 skills + four paths)
 - [README.md "Why This Exists"](../../../README.md#why-this-exists) — the full argument for spec-precision-over-execution-speed
 - [docs/glossary.md](../../../docs/glossary.md) — precise definitions for every AEP term (ubiquitous language)
 

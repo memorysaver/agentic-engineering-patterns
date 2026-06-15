@@ -22,13 +22,13 @@ This reference defines an escalating recovery ladder. Each rung tries something 
 
 Round numbers are tunable per project; the **shape** is what matters — each rung is a strictly larger change of strategy than the one below it.
 
-| Eval round | Rung | Strategy |
-| ---------- | ---- | -------- |
-| 1–2 | **Same fix** | Same generator fixes the FAIL items normally. Current default behavior. |
-| 3 | **Re-ground** | Same generator re-reads the FULL spec + design + contracts **from scratch** and re-attempts. |
-| 4 | **Different approach** | Spawn a **fresh generator** told "the previous approach failed on X; take a different design path." Not anchored on the stuck solution. |
-| 5 | **Decompose** | Split the story into smaller sub-stories / sub-tasks; attempt the **smallest viable slice**. Surface the proposed split. |
-| after 5 | **Human gate** | Ladder exhausted → escalate with type `eval_not_converging`. |
+| Eval round | Rung                   | Strategy                                                                                                                                |
+| ---------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| 1–2        | **Same fix**           | Same generator fixes the FAIL items normally. Current default behavior.                                                                 |
+| 3          | **Re-ground**          | Same generator re-reads the FULL spec + design + contracts **from scratch** and re-attempts.                                            |
+| 4          | **Different approach** | Spawn a **fresh generator** told "the previous approach failed on X; take a different design path." Not anchored on the stuck solution. |
+| 5          | **Decompose**          | Split the story into smaller sub-stories / sub-tasks; attempt the **smallest viable slice**. Surface the proposed split.                |
+| after 5    | **Human gate**         | Ladder exhausted → escalate with type `eval_not_converging`.                                                                            |
 
 ### Round 1–2 — Same fix (current behavior)
 
@@ -105,9 +105,9 @@ The fresh generator is still a generator: the evaluator role is untouched, and t
 
 ## Cross-References
 
-| Where | What it covers |
-| ----- | -------------- |
-| `/aep-build` Phase 5 | Runs the multi-round gen/eval loop; this ladder governs what the generator does on each FAIL round. |
-| `eval-protocol.md` → Convergence Rules / needs-human gate | `max_rounds`, the escalation format, and the `needs-human.md` + `blocked_on` gate record the ladder feeds into. |
-| `aep-autopilot` tick-protocol Step ④ | The orchestrator observes `eval_round` / `recovery_rung`, nudges a stalled workspace, and emits the `eval_not_converging` escalation once the ladder is exhausted. It only nudges — the workspace runs its own loop and climbs its own ladder. |
-| `aep-executor` `scripts/spawn-liveness-probe.sh` | Post-spawn liveness probe the rung-4 fresh generator MUST pass. |
+| Where                                                     | What it covers                                                                                                                                                                                                                                 |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/aep-build` Phase 5                                      | Runs the multi-round gen/eval loop; this ladder governs what the generator does on each FAIL round.                                                                                                                                            |
+| `eval-protocol.md` → Convergence Rules / needs-human gate | `max_rounds`, the escalation format, and the `needs-human.md` + `blocked_on` gate record the ladder feeds into.                                                                                                                                |
+| `aep-autopilot` tick-protocol Step ④                      | The orchestrator observes `eval_round` / `recovery_rung`, nudges a stalled workspace, and emits the `eval_not_converging` escalation once the ladder is exhausted. It only nudges — the workspace runs its own loop and climbs its own ladder. |
+| `aep-executor` `scripts/spawn-liveness-probe.sh`          | Post-spawn liveness probe the rung-4 fresh generator MUST pass.                                                                                                                                                                                |

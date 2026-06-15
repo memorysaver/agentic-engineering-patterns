@@ -370,13 +370,13 @@ convergence rules are identical across modes.
 
 For each round N (starting at 1, max 5), the generator's response to a FAIL escalates along the **change-strategy recovery ladder** (`.claude/skills/aep-gen-eval/references/recovery-ladder.md`) rather than retrying the same way every round:
 
-| Eval round | Rung | Generator move |
-| ---------- | ---- | -------------- |
-| 1–2 | **Same fix** | Same generator fixes the FAIL items in place (current default). |
-| 3 | **Re-ground** | Same generator re-reads the FULL spec + design + contracts from scratch, then re-attempts. |
-| 4 | **Different approach** | Spawn a **fresh `native-bg-subagent` generator** told "the previous approach failed on X; take a different design path" — not anchored on the stuck solution (it inherits the existing worktree). |
-| 5 | **Decompose** | Split the story into sub-tasks; attempt the **smallest viable slice** and surface the proposed split. |
-| after 5 | **Human gate** | Ladder exhausted → escalate with type `eval_not_converging`. |
+| Eval round | Rung                   | Generator move                                                                                                                                                                                    |
+| ---------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1–2        | **Same fix**           | Same generator fixes the FAIL items in place (current default).                                                                                                                                   |
+| 3          | **Re-ground**          | Same generator re-reads the FULL spec + design + contracts from scratch, then re-attempts.                                                                                                        |
+| 4          | **Different approach** | Spawn a **fresh `native-bg-subagent` generator** told "the previous approach failed on X; take a different design path" — not anchored on the stuck solution (it inherits the existing worktree). |
+| 5          | **Decompose**          | Split the story into sub-tasks; attempt the **smallest viable slice** and surface the proposed split.                                                                                             |
+| after 5    | **Human gate**         | Ladder exhausted → escalate with type `eval_not_converging`.                                                                                                                                      |
 
 Track the rung with `eval_round` + `recovery_rung` in `status.json` (see the ladder's State Tracking). **Generator≠evaluator separation holds** — the evaluator only scores; re-grounding, a fresh generator, and decomposition are all generator-side moves. **Skip the ladder and escalate immediately** on a hard-failure / security FAIL (auth-model gap, data-exposure risk), a spec contradiction, or a missing external dependency — these need human judgment, not a different approach. See the ladder file for full rung rationale and the rung-4 fresh-generator spawn contract (`native-bg-subagent` + post-spawn liveness probe).
 

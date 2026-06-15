@@ -61,13 +61,13 @@ Within the open window, each tick performs two independent reads:
 
 Read every signal named in `topology.routing.post_merge_guard.health_signals`. These are service-level, signals-only probes — no workspace code:
 
-| Signal kind         | How the orchestrator reads it (examples)                                                  |
-| ------------------- | ----------------------------------------------------------------------------------------- |
-| `ci_status`         | `gh run view <id> --json status,conclusion` for the post-merge pipeline                   |
-| `health_endpoint`   | `curl -fsS --max-time 5 <health_url>` (e.g. `/healthz`, `/readyz`) → expect 2xx           |
-| `error_rate`        | query the project's metrics/log source for error-rate over the window vs. a baseline      |
-| `latency_p95`       | same source — p95 latency vs. baseline threshold                                          |
-| `smoke_check`       | a declared CLI/API smoke command exiting 0                                                |
+| Signal kind       | How the orchestrator reads it (examples)                                             |
+| ----------------- | ------------------------------------------------------------------------------------ |
+| `ci_status`       | `gh run view <id> --json status,conclusion` for the post-merge pipeline              |
+| `health_endpoint` | `curl -fsS --max-time 5 <health_url>` (e.g. `/healthz`, `/readyz`) → expect 2xx      |
+| `error_rate`      | query the project's metrics/log source for error-rate over the window vs. a baseline |
+| `latency_p95`     | same source — p95 latency vs. baseline threshold                                     |
+| `smoke_check`     | a declared CLI/API smoke command exiting 0                                           |
 
 A signal is **red** when it fails its declared threshold (non-2xx health, CI `failure`, error-rate above baseline + margin, etc.). One transient red is not a regression — require the red to persist across **2 consecutive ticks** (or match a declared confirm rule) before treating it as confirmed, to avoid reverting on a deploy-warmup blip.
 
@@ -117,7 +117,7 @@ A health signal is **confirmed red** (or the deploy failed). The deployed servic
   }
   ```
 - **`auto_revert: true` (opt-in) and regression confirmed:**
-  1. **Revert** — `gh pr revert <number>` (opens/auto-merges a revert PR per repo policy) or revert the merge commit on `$BASE` and push. This is the **one** sanctioned exception to "never act on the merge" — it is a *recovery* action, gated behind explicit opt-in, not a normal merge.
+  1. **Revert** — `gh pr revert <number>` (opens/auto-merges a revert PR per repo policy) or revert the merge commit on `$BASE` and push. This is the **one** sanctioned exception to "never act on the merge" — it is a _recovery_ action, gated behind explicit opt-in, not a normal merge.
   2. **Record an incident** — write `.dev-workflow/incidents/<story_id>-<ISO8601>.md` (or append to `autopilot-history.jsonl` with `type: incident`): the red signals, readings, the reverted PR, and the deploy outcome.
   3. **Feed `/aep-reflect`** — hand the incident to the reflect classifier so the regression becomes a learning + a follow-up story (root-cause / guard hardening), closing the loop the same way Path 1 does for UX issues.
   4. Set `guard_state.reverted = true` so no later tick reverts the same story twice (see [state](#state--idempotency)).

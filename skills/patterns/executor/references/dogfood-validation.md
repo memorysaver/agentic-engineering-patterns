@@ -50,11 +50,11 @@ dogfood_method():
       else:                        return "degrade"            # API checks
 ```
 
-| Host / mode                    | Native method (default)                | Detection                       | Fallback                          |
-| ------------------------------ | -------------------------------------- | ------------------------------- | --------------------------------- |
-| **Claude Code** (any mode)     | `/agent-browser:dogfood`               | `agent_browser_healthy()`       | non-UI → API/curl; UI → human-eval |
+| Host / mode                        | Native method (default)                                   | Detection                      | Fallback                             |
+| ---------------------------------- | --------------------------------------------------------- | ------------------------------ | ------------------------------------ |
+| **Claude Code** (any mode)         | `/agent-browser:dogfood`                                  | `agent_browser_healthy()`      | non-UI → API/curl; UI → human-eval   |
 | **Codex desktop** (codex-subagent) | native in-app browser + computer-use (GPT-5.4 multimodal) | desktop + computer-use enabled | Playwright skill → agent-browser CLI |
-| **Codex headless** (codex-exec) | write + run a Playwright script        | `playwright_available()`        | agent-browser CLI → API checks    |
+| **Codex headless** (codex-exec)    | write + run a Playwright script                           | `playwright_available()`       | agent-browser CLI → API checks       |
 
 > **Why Codex splits two ways.** Computer-use and the in-app (Atlas) browser are
 > **desktop-only**. `codex exec` (headless) has neither, so it writes and runs a
@@ -97,7 +97,7 @@ post-deploy report path (staging/prod), one entry per finding:
 **Severity:** blocker | major | minor
 **Category:** UX | logic | visual | edge-case | accessibility | performance
 **Repro:** <ordered steps to reproduce against the target URL>
-**Observed:** <what happened>  **Expected:** <what should happen>
+**Observed:** <what happened> **Expected:** <what should happen>
 **Evidence:** <screenshot path / log excerpt>
 ```
 

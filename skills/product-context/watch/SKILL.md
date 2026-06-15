@@ -23,7 +23,7 @@ sources → [ /aep-watch: pull → classify → dedupe → write stories ] → p
 
 `/aep-reflect` is the **human-in-the-loop** feedback classifier you run after
 shipping. `/aep-watch` is its **always-on** sibling: same classification logic,
-no human prompting each finding — it is what makes the loop *continuous*.
+no human prompting each finding — it is what makes the loop _continuous_.
 
 **Where this fits:**
 
@@ -75,19 +75,19 @@ Watch is driven entirely by `topology.routing.watch` in `product-context.yaml`:
 ```yaml
 topology:
   routing:
-    full_auto: false            # A1 master switch (see below)
+    full_auto: false # A1 master switch (see below)
     watch:
-      sources:                  # what to pull from — see references/telemetry-ingestion.md
-        - type: bug_tracker     # e.g. github_issues, linear, jira, sentry, datadog, log_stream
+      sources: # what to pull from — see references/telemetry-ingestion.md
+        - type: bug_tracker # e.g. github_issues, linear, jira, sentry, datadog, log_stream
           query: "is:open label:bug"
         - type: error_stream
           dsn: "<sentry/rollbar/...>"
         - type: telemetry
           metric: "error_rate"
           threshold: 0.02
-      interval: 30m             # poll cadence for the /loop or cron driver
-      auto_create: false        # write stories directly vs. surface proposals
-      since: null               # high-water mark — last ingested timestamp (watch maintains this)
+      interval: 30m # poll cadence for the /loop or cron driver
+      auto_create: false # write stories directly vs. surface proposals
+      since: null # high-water mark — last ingested timestamp (watch maintains this)
 ```
 
 **Confirmation policy (default conservative):**
@@ -129,11 +129,11 @@ Step 1 draws on) — do not invent a new finding shape here. Each finding normal
 
 ```yaml
 - source: "sentry"
-  external_id: "ISSUE-4821"        # stable id used for dedupe
+  external_id: "ISSUE-4821" # stable id used for dedupe
   title: "TypeError in checkout flow"
-  detail: "..."                     # stack/message/metric summary
-  signal: error_stream             # bug_tracker | error_stream | telemetry
-  count: 142                        # occurrences / affected users (priority input)
+  detail: "..." # stack/message/metric summary
+  signal: error_stream # bug_tracker | error_stream | telemetry
+  count: 142 # occurrences / affected users (priority input)
   first_seen: "<ISO8601>"
   last_seen: "<ISO8601>"
 ```
@@ -149,13 +149,13 @@ duplicate that logic here**; apply `/aep-reflect`'s "Classify Each Observation"
 rules (see `../reflect/SKILL.md` → Step 2). Watch only acts autonomously on the
 two categories it can safely turn into work:
 
-| Classification        | Watch action                                                              |
-| --------------------- | ------------------------------------------------------------------------- |
-| **Bug**               | Create a bug story (Step 4).                                              |
-| **Refinement**        | Create a refinement story in the next layer (Step 4).                    |
-| **Discovery**         | Do NOT auto-create. Surface for `/aep-reflect` → `/aep-envision`/`/aep-map`. |
-| **Opportunity shift** | Do NOT auto-create. Always escalate to a human — this changes the bet.   |
-| **Process / Calibration** | Do NOT auto-create. Surface for `/aep-reflect`.                       |
+| Classification            | Watch action                                                                 |
+| ------------------------- | ---------------------------------------------------------------------------- |
+| **Bug**                   | Create a bug story (Step 4).                                                 |
+| **Refinement**            | Create a refinement story in the next layer (Step 4).                        |
+| **Discovery**             | Do NOT auto-create. Surface for `/aep-reflect` → `/aep-envision`/`/aep-map`. |
+| **Opportunity shift**     | Do NOT auto-create. Always escalate to a human — this changes the bet.       |
+| **Process / Calibration** | Do NOT auto-create. Surface for `/aep-reflect`.                              |
 
 Discoveries, opportunity shifts, calibrations, and process findings **always**
 go to a human regardless of `full_auto` — they change product intent or workflow,
@@ -183,11 +183,11 @@ For each surviving **bug** / **refinement** finding, build a story:
 - id: "watch-<source>-<external_id>"
   title: "<finding title>"
   description: "<finding detail> (auto-discovered by /aep-watch from <source>)"
-  type: bug                       # or refinement
+  type: bug # or refinement
   status: pending
-  priority: high                  # bugs: high; tune by count/severity (see below)
-  layer: <active_layer>           # bug → current layer; refinement → next layer
-  module: <best-effort or unset>  # leave unset if the source doesn't localize it
+  priority: high # bugs: high; tune by count/severity (see below)
+  layer: <active_layer> # bug → current layer; refinement → next layer
+  module: <best-effort or unset> # leave unset if the source doesn't localize it
   watch_origin:
     source: "<source>"
     external_id: "<external_id>"

@@ -55,6 +55,18 @@ Machine-readable state file. Read and written by the autopilot tick.
     }
   ],
 
+  "guard_state": {
+    "PROJ-002": {
+      "pr_number": 142,
+      "deploy_status": "deployed",
+      "monitor_until": "2026-04-01T10:40:00Z",
+      "health": { "ci_status": "green", "error_rate": "ok", "health_endpoint": "ok" },
+      "dogfood_done": true,
+      "reverted": false,
+      "escalated": false
+    }
+  },
+
   "stats": {
     "stories_completed": 3,
     "stories_failed": 0,
@@ -121,16 +133,32 @@ Machine-readable state file. Read and written by the autopilot tick.
 
 #### Escalation Entry
 
-| Field                   | Type         | Description                                                                                              |
-| ----------------------- | ------------ | -------------------------------------------------------------------------------------------------------- |
-| `type`                  | enum         | `"design_needed"`, `"stuck"`, `"failed"`, `"layer_gate_failed"`, `"eval_not_converging"`, `"human_gate"` |
-| `story_id`              | string       | Related story ID                                                                                         |
-| `workspace`             | string\|null | Workspace name (null if not yet launched)                                                                |
-| `reason`                | string       | One-line reason                                                                                          |
-| `details`               | string       | Detailed explanation of why escalation triggered                                                         |
-| `expected_human_action` | string       | What the human should do                                                                                 |
-| `created_at`            | string       | ISO8601 timestamp                                                                                        |
-| `acknowledged`          | boolean      | Whether human has seen this                                                                              |
+| Field                   | Type         | Description                                                                                                                         |
+| ----------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `type`                  | enum         | `"design_needed"`, `"stuck"`, `"failed"`, `"layer_gate_failed"`, `"eval_not_converging"`, `"human_gate"`, `"post_merge_regression"` |
+| `story_id`              | string       | Related story ID                                                                                                                    |
+| `workspace`             | string\|null | Workspace name (null if not yet launched)                                                                                           |
+| `reason`                | string       | One-line reason                                                                                                                     |
+| `details`               | string       | Detailed explanation of why escalation triggered                                                                                    |
+| `expected_human_action` | string       | What the human should do                                                                                                            |
+| `created_at`            | string       | ISO8601 timestamp                                                                                                                   |
+| `acknowledged`          | boolean      | Whether human has seen this                                                                                                         |
+
+#### `guard_state` Entry (post-merge guard, keyed by story_id)
+
+Persists the post-merge guard's per-story state so a tick is idempotent
+(deploy-once, dogfood-once, revert-once, escalate-once). See
+`references/post-merge-guard.md`.
+
+| Field           | Type    | Description                                                                       |
+| --------------- | ------- | --------------------------------------------------------------------------------- |
+| `pr_number`     | number  | Merged PR being guarded                                                           |
+| `deploy_status` | enum    | `"pending"`, `"deployed"`, `"failed"`                                             |
+| `monitor_until` | string  | ISO8601 — end of the `window_min` monitoring window                               |
+| `health`        | object  | Last reading per configured `health_signals` key (e.g. `ci_status`, `error_rate`) |
+| `dogfood_done`  | boolean | Whether host-aware post-deploy dogfood has run for this story                     |
+| `reverted`      | boolean | Whether a revert was already issued (guards against double-revert)                |
+| `escalated`     | boolean | Whether a `post_merge_regression` escalation was already emitted                  |
 
 ---
 

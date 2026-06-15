@@ -1,6 +1,6 @@
 # AEP Orientation Guide
 
-**A 10-minute first-hour tour for new users.** Read this before (or right after) running `/aep-onboard`. When you finish, you'll know what AEP is, the three mental models that drive every skill, what each of the 16 skills does, and which of four concrete paths matches your situation.
+**A 10-minute first-hour tour for new users.** Read this before (or right after) running `/aep-onboard`. When you finish, you'll know what AEP is, the three mental models that drive every skill, what each of the 17 skills does, and which of four concrete paths matches your situation.
 
 For precise definitions of every term used here, see the [Glossary](glossary.md). For a one-page decision tree, see the [Skills Quick Reference](skills-quick-reference.md).
 
@@ -94,7 +94,7 @@ More: [README.md "The Feature Lifecycle"](../README.md) and [skills/agentic-deve
 
 ---
 
-## 3. The 16 Skills at a Glance
+## 3. The 17 Skills at a Glance
 
 | Skill                    | Plugin                       | Session   | Purpose                                                         |
 | ------------------------ | ---------------------------- | --------- | --------------------------------------------------------------- |
@@ -107,6 +107,7 @@ More: [README.md "The Feature Lifecycle"](../README.md) and [skills/agentic-deve
 | `/aep-dispatch`          | product-context              | Main      | Pick next story + create OpenSpec change + hand off             |
 | `/aep-calibrate`         | product-context              | Main      | Human alignment checkpoint for any quality dimension            |
 | `/aep-reflect`           | product-context              | Main      | Classify feedback + update context (close the loop)             |
+| `/aep-watch`             | product-context              | Main      | Ingest telemetry/errors → auto-file stories (self-feeding loop) |
 | `/aep-design`            | agentic-development-workflow | Main      | Interactive feature design (explore + propose + review)         |
 | `/aep-launch`            | agentic-development-workflow | Main      | Spawn autonomous workspace + optional evaluator                 |
 | `/aep-build`             | agentic-development-workflow | Workspace | Implement → test → PR → merge (autonomous)                      |
@@ -237,4 +238,4 @@ One-line pointers so you know what to look up when you hit an unfamiliar term. F
 
 ---
 
-**You're done with orientation.** The rest of AEP is discoverable from the three mental models, the 16-skill table, and the four paths. When in doubt, reach for the decision tree in the quick reference — it covers the common forks.
+**You're done with orientation.** The rest of AEP is discoverable from the three mental models, the 17-skill table, and the four paths. When in doubt, reach for the decision tree in the quick reference — it covers the common forks.

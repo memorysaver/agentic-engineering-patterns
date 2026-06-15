@@ -410,7 +410,7 @@ topology:
     post_merge_guard: # G4a — watch merged stories' deploy health (see autopilot/references/post-merge-guard.md)
       window_min: 15
       auto_revert: false # conservative default: warn + escalate only; true = auto `gh pr revert` on confirmed regression
-      health_signals: [] # e.g. ["ci", "error_rate", "health_endpoint"]
+      health_signals: [] # e.g. ["ci_status", "error_rate", "health_endpoint"]
     telemetry_sources: [] # G5 — read-only error-log/analytics/monitoring sources (reference env/secret store; never embed secrets)
     watch: # G6 /aep-watch self-feeding discovery
       sources: []
