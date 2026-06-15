@@ -1,5 +1,7 @@
 # Goal-Driven Autopilot Driver
 
+> **Superseded in part (2026-06):** `claude-team` was removed (silent agent-teams spawn failure on Claude Code ≥ 2.1.x) and replaced by `native-bg-subagent` as the Claude Code default, with a mandatory post-spawn liveness probe. See [`remove-claude-team.md`](./remove-claude-team.md).
+
 > Decision record (2026-06-11). Adds a **goal-driven driver** as the default way
 > `/aep-autopilot` keeps itself ticking, alongside the existing fixed-interval
 > `/loop` driver (retained as a fallback). This changes only the **driver** — how

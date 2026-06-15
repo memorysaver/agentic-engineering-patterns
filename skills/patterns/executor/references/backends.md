@@ -5,11 +5,11 @@ Detection, mode selection, and the cross-backend protocols that make
 spawning or steering any workspace agent. Per-operation recipes live in three
 sibling files:
 
-| Recipe file                            | Modes                           |
-| -------------------------------------- | ------------------------------- |
-| [`claude-native.md`](claude-native.md) | `claude-team`, `claude-bg`      |
-| [`codex-native.md`](codex-native.md)   | `codex-subagent`, `codex-exec`  |
-| [`tmux-session.md`](tmux-session.md)   | `legacy` (tmux + optional cmux) |
+| Recipe file                            | Modes                             |
+| -------------------------------------- | --------------------------------- |
+| [`claude-native.md`](claude-native.md) | `native-bg-subagent`, `claude-bg` |
+| [`codex-native.md`](codex-native.md)   | `codex-subagent`, `codex-exec`    |
+| [`tmux-session.md`](tmux-session.md)   | `legacy` (tmux + optional cmux)   |
 
 ---
 
@@ -32,22 +32,40 @@ sibling files:
 
 Native modes come first; tmux is the explicit-pin / generic-host fallback.
 **Lifetime** is the axis that matters for orchestration: _session-bound_
-workers (teammates, Codex subagents) die with the orchestrator session;
+workers (native-bg-subagents, Codex subagents) die with the orchestrator session;
 _OS-bound_ workers (bg sessions, exec processes, tmux sessions) survive it.
 
-| Mode               | Backend                         | Lifetime      | Spawn                                     | Nudge                                            | Human gate                                                                | Present                            |
-| ------------------ | ------------------------------- | ------------- | ----------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------- | ---------------------------------- |
-| **claude-team**    | agent teams, teammate per story | session-bound | Agent tool into standing team             | `SendMessage` (push)                             | teammate→lead `HUMAN_GATE:` + `needs-human.md`                            | teammate pane / `Shift+Down`       |
-| **claude-bg**      | native background sessions      | OS-bound      | `cd <worktree> && claude --bg`            | `feedback.md` (pull); stop/respawn if hard-stuck | gate-and-park → main agent (resume w/ answer); `claude attach` optional   | `claude attach` / `claude logs`    |
-| **codex-subagent** | native multi_agent              | session-bound | `spawn_agent(role=aep-builder)`           | `send_input` (push)                              | approval overlay + `needs-human.md`                                       | `/agent` (CLI) / thread list (app) |
-| **codex-exec**     | headless exec workers           | OS-bound      | `codex exec --cd <worktree>` (bg process) | `codex exec resume <id>`                         | gate-and-park → main agent (`exec resume` w/ answer)                      | signals + PR                       |
-| **legacy**         | tmux session (+ cmux tab)       | OS-bound      | `tmux new-session`                        | `tmux send-keys`                                 | `needs-human.md` + `tmux attach`                                          | cmux tab / `tmux attach`           |
-| **workflow**       | CC dynamic workflow fan-out     | session-bound | Workflow tool pipeline                    | none mid-stage (steer at stage boundaries)       | gate-and-park → main agent (structured `gated` result + `needs-human.md`) | `/workflows` + signals             |
-| **headless**       | one-shot native subagent        | session-bound | Task/Agent tool, worktree-bound           | none                                             | gate-and-park → main agent (re-spawn w/ answer)                           | signals + PR                       |
+| Mode                   | Backend                                 | Lifetime      | Spawn                                                                        | Nudge                                                        | Human gate                                                                | Present                            |
+| ---------------------- | --------------------------------------- | ------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------- | ---------------------------------- |
+| **native-bg-subagent** | Agent tool `run_in_background`, no team | session-bound | Agent tool `run_in_background: true`, **no `team_name`**, **no active team** | `feedback.md` (pull); `SendMessage(to: agentId)` best-effort | gate-and-park → main agent (re-spawn w/ answer)                           | `TaskOutput` / JSONL `output_file` |
+| **claude-bg**          | native background sessions              | OS-bound      | `cd <worktree> && claude --bg` _(only if `BG_AVAILABLE`; see note)_          | `feedback.md` (pull); stop/respawn if hard-stuck             | gate-and-park → main agent (resume w/ answer); `claude attach` optional   | `claude attach` / `claude logs`    |
+| **codex-subagent**     | native multi_agent                      | session-bound | `spawn_agent(role=aep-builder)`                                              | `send_input` (push)                                          | approval overlay + `needs-human.md`                                       | `/agent` (CLI) / thread list (app) |
+| **codex-exec**         | headless exec workers                   | OS-bound      | `codex exec --cd <worktree>` (bg process)                                    | `codex exec resume <id>`                                     | gate-and-park → main agent (`exec resume` w/ answer)                      | signals + PR                       |
+| **legacy**             | tmux session (+ cmux tab)               | OS-bound      | `tmux new-session`                                                           | `tmux send-keys`                                             | `needs-human.md` + `tmux attach`                                          | cmux tab / `tmux attach`           |
+| **workflow**           | CC dynamic workflow fan-out             | session-bound | Workflow tool pipeline                                                       | none mid-stage (steer at stage boundaries)                   | gate-and-park → main agent (structured `gated` result + `needs-human.md`) | `/workflows` + signals             |
+| **headless**           | one-shot native subagent                | session-bound | Task/Agent tool, worktree-bound                                              | none                                                         | gate-and-park → main agent (re-spawn w/ answer)                           | signals + PR                       |
+
+> **`claude-team` was removed (2026-06).** On Claude Code ≥ 2.1.x the agent-teams
+> spawn path fails **silently**: the teams runtime pastes the long
+> `claude … --agent-id <name>@<team> --settings '<big JSON>'` launch command into
+> a detached `claude-swarm-<pid>` tmux pane, the `--settings` JSON is **truncated
+> mid-string and never submitted**, so no worker process ever starts — yet the
+> team roster still lists the member as "active". A live team also **poisons
+> teamless background spawns** (they auto-route through the same broken tmux
+> backend). `native-bg-subagent` replaces it as the Claude Code default. See
+> `docs/decisions/remove-claude-team.md`.
 
 **Announce the selection.** Before spawning, state which mode and why — e.g.
-"Claude Code + agent teams flag → `claude-team`: one teammate per story in the
-standing team; steer with SendMessage; watch via teammate panes."
+"Claude Code → `native-bg-subagent`: in-process background subagent (Agent tool,
+`run_in_background`, no team); pull-steer via `feedback.md`; verified live by the
+post-spawn liveness probe."
+
+> **`native-bg-subagent` success signature.** A working spawn returns a
+> **bare-hex `agentId`** (e.g. `adfb6cb206155a92e`) with a JSONL `output_file`,
+> **not** an `@<team>` id. It is non-blocking and auto-notifies on completion.
+> (A foreground in-process subagent also works but blocks the orchestrator turn.)
+> **Pre-spawn:** if any team is active, `TeamDelete` it first — a live team
+> re-routes teamless spawns into the broken agent-teams tmux backend.
 
 ---
 
@@ -77,8 +95,17 @@ fi
 [ -z "$EXECUTOR" ] && { echo "executor unresolved — set \$AEP_EXECUTOR or run under Claude Code / Codex"; }
 
 # --- NATIVE CAPABILITIES ---
-TEAMS_AVAILABLE=$([ "$HOST" = claude ] && [ -n "$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS" ] && echo yes || echo no)
+# NOTE: agent-teams (the old TEAMS_AVAILABLE / CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS
+# gate) is NO LONGER consulted — claude-team was removed (silent spawn failure;
+# see the mode-matrix note). Do not select a mode from the teams flag alone.
 BG_AVAILABLE=$([ "$HOST" = claude ] && claude --help 2>/dev/null | grep -q -- '--bg' && echo yes || echo no)
+# ^ On Claude Code ≥ 2.1.x the one-shot `claude --bg` spawn flag was REMOVED
+#   (background agents are now the interactive `claude agents` view, not a
+#   scriptable flag). On such builds BG_AVAILABLE=no and claude-bg is skipped —
+#   the Claude Code default is native-bg-subagent (session-bound). If you need an
+#   OS-bound Claude worker for a cron/launchd driver and `--bg` is gone, that
+#   driver is unsupported on Claude Code — use Codex codex-exec or a long-lived
+#   in-session goal/loop driver instead.
 MULTI_AGENT_AVAILABLE=$([ "$HOST" = codex ] && codex features list 2>/dev/null | grep -q 'multi_agent.*true' && echo yes || echo no)
 WORKFLOW_CAPABLE=$([ "$HOST" = claude ] && echo yes || echo no)   # the host agent knows it has the Workflow tool
 
@@ -122,19 +149,31 @@ Apply in order; first match wins. `workflow` is the only natural-language
 opt-in; `legacy` is the only pin.
 
 ```
-workflow        IF user explicitly opted in ("…with workflow") AND WORKFLOW_CAPABLE
-legacy          IF PIN == tmux, or user said "…with tmux"
-claude-team     ELIF HOST == claude AND TEAMS_AVAILABLE AND orchestrator is long-lived
-claude-bg       ELIF HOST == claude AND BG_AVAILABLE
-codex-subagent  ELIF HOST == codex AND MULTI_AGENT_AVAILABLE AND orchestrator is a living main thread
-codex-exec      ELIF HOST == codex
-legacy          ELIF PRESENT == cmux or PRESENT == tmux     (generic hosts)
-headless        ELSE
+workflow            IF user explicitly opted in ("…with workflow") AND WORKFLOW_CAPABLE
+legacy              IF PIN == tmux, or user said "…with tmux"
+native-bg-subagent  ELIF HOST == claude AND orchestrator is long-lived   # default on Claude Code
+claude-bg           ELIF HOST == claude AND BG_AVAILABLE                  # OS-bound (cron); only if `claude --bg` exists
+codex-subagent      ELIF HOST == codex AND MULTI_AGENT_AVAILABLE AND orchestrator is a living main thread
+codex-exec          ELIF HOST == codex
+legacy              ELIF PRESENT == cmux or PRESENT == tmux               (generic hosts)
+headless            ELSE
 ```
+
+**Behavior change (2026-06): `claude-team` removed.** The agent-teams spawn path
+fails silently on Claude Code ≥ 2.1.x (see the mode-matrix note), so it is no
+longer selectable. The Claude Code default is now **native-bg-subagent** (Agent
+tool, `run_in_background`, no team). The teams env flag is ignored. There is no
+"…with agent team" opt-in — the backend is broken, not merely de-prioritized.
 
 **Behavior change vs v1.x:** Claude Code with tmux installed no longer
 auto-selects tmux — native modes win. Users who want the tmux+cmux workflow
 back pin it: `git config aep.executor-backend tmux`.
+
+> **Post-spawn liveness probe is mandatory (never trust a flag or roster).**
+> Selecting a mode does NOT mean its spawn worked. After ANY spawn, before
+> declaring the worker "running", run the probe in
+> [Post-Spawn Liveness Probe](#post-spawn-liveness-probe). On failure, tear the
+> dead spawn down and **auto-fall-back to `native-bg-subagent`**.
 
 ---
 
@@ -148,16 +187,18 @@ layer) and the fixed-interval **loop driver** (`/loop`; a living Codex main
 thread ticking in-thread). Both are equally compatible with every steerable
 mode. Session-bound workers cannot outlive their parent, so:
 
-| Driver                                                          | claude-team            | claude-bg                         | codex-subagent                          | codex-exec                                 | legacy |
-| --------------------------------------------------------------- | ---------------------- | --------------------------------- | --------------------------------------- | ------------------------------------------ | ------ |
-| Long-lived session (`/goal` **or** `/loop`, living main thread) | ✅                     | ✅                                | ✅                                      | ✅                                         | ✅     |
-| Cron/launchd (fresh session per tick)                           | ❌ team dies with lead | ✅ OS-level, any session attaches | ❌ subagents invisible to a new session | ✅ `codex exec resume` works cross-process | ✅     |
+| Driver                                                          | native-bg-subagent                   | claude-bg                         | codex-subagent                          | codex-exec                                 | legacy |
+| --------------------------------------------------------------- | ------------------------------------ | --------------------------------- | --------------------------------------- | ------------------------------------------ | ------ |
+| Long-lived session (`/goal` **or** `/loop`, living main thread) | ✅                                   | ✅                                | ✅                                      | ✅                                         | ✅     |
+| Cron/launchd (fresh session per tick)                           | ❌ bg subagent dies with the session | ✅ OS-level, any session attaches | ❌ subagents invisible to a new session | ✅ `codex exec resume` works cross-process | ✅     |
 
 A consumer that needs steering (autopilot) must pick a mode compatible with its
-driver: on Claude Code, `/goal` (or `/loop`) + `claude-team` (or `claude-bg`);
-on Codex, in-thread `/goal` (or manual ticks) + `codex-subagent`, or cron ticks
+driver: on Claude Code, `/goal` (or `/loop`) + `native-bg-subagent` (or
+`claude-bg` where `--bg` exists); on Codex, in-thread `/goal` (or manual ticks)
 
-- `codex-exec`. **The goal driver is in-session only** — it cannot drive a
+- `codex-subagent`, or cron ticks
+
+* `codex-exec`. **The goal driver is in-session only** — it cannot drive a
   fresh-session-per-tick scheduler, so the cron/launchd row is always the
   `/loop`/`codex exec` path.
 
@@ -210,6 +251,46 @@ git worktree remove .feature-workspaces/<ws> \
   || git worktree remove --force .feature-workspaces/<ws>
 git worktree prune
 ```
+
+### Post-Spawn Liveness Probe
+
+**Run after EVERY spawn, before declaring the worker "running".** A spawn call
+returning, a flag being set, or a roster/state entry saying "active" is **NOT**
+evidence the worker started. (The removed `claude-team` mode failed exactly here:
+the launch command was truncated in a tmux pane and never submitted, yet the team
+roster still showed the member "active" — a silently dead worktree the autopilot
+only flagged 30+ minutes later.)
+
+A worker is **live** only if BOTH hold within `N` seconds (default 90):
+
+1. **Process / agent exists** — a real worker is running:
+   - native-bg-subagent: the bg agent appears in `TaskList` AND its spawn returned
+     a **bare-hex `agentId`** with a JSONL `output_file` (not an `@<team>` id)
+   - claude-bg: `claude agents --json` shows the session `running`
+   - codex-subagent: `list_agents` shows `<agent_id>`
+   - codex-exec: the `codex exec` PID is alive
+   - legacy: `pane_current_command` is `claude` (not `zsh`) — a `zsh` pane means the
+     launch command never submitted
+2. **Worktree shows activity** — `.dev-workflow/signals/status.json` was written
+   **OR** `git -C .feature-workspaces/<ws> diff --stat` is non-empty.
+
+```bash
+bash .claude/skills/aep-executor/scripts/spawn-liveness-probe.sh <ws> <agent_id> [N]
+# exit 0 = live; exit 1 = dead spawn (probe failed)
+```
+
+**On probe failure (dead spawn):**
+
+1. Tear down the dead remnant — kill the stuck pane/process, and if a team got
+   created during the attempt, `TeamDelete` it (a live team poisons the fallback).
+2. Do **not** mark the story failed and do **not** leave the worktree for the
+   autopilot to time-out on later.
+3. **Auto-fall-back to `native-bg-subagent`** (Agent tool, `run_in_background`,
+   no team) into the **existing** worktree, then probe again. native-bg-subagent
+   is the terminal fallback — if it also fails the probe, only then escalate.
+
+This contract is what `/aep-launch` Step 4 and the autopilot orphan/stuck checks
+both consume — "roster/state says active" is never accepted as liveness.
 
 ### `check(prompt, schema)` — cheap, context-isolated analysis
 
@@ -264,7 +345,7 @@ host-agnostic; the transport is per-mode — but the **canonical human console
 is the main agent** (hub-and-spoke): the worker's question flows back to the
 orchestrator, the orchestrator asks the human (AskUserQuestion / plain text in
 the main session), and relays the answer to the worker. The human never _has_
-to visit a worker's surface; per-mode direct interaction (teammate pane,
+to visit a worker's surface; per-mode direct interaction (`TaskOutput`,
 `claude attach`, Codex thread, `tmux attach`) is an optional convenience.
 
 **The record (always, every mode):** the worker appends to
@@ -281,11 +362,11 @@ to visit a worker's surface; per-mode direct interaction (teammate pane,
 **Two gate styles.** The worker's behavior after recording the gate depends on
 whether its mode has a push channel back into it:
 
-- **Block-in-place** (steerable modes — claude-team, codex-subagent, legacy):
+- **Block-in-place** (steerable modes — codex-subagent, legacy):
   the worker raises the gate, keeps doing whatever doesn't depend on the
   answer, and waits. The answer arrives on the mode's push transport.
-- **Gate-and-park** (batch/pull modes — workflow, headless, codex-exec, and
-  claude-bg): there is no push channel into a running worker, so the worker
+- **Gate-and-park** (batch/pull modes — native-bg-subagent, workflow, headless,
+  codex-exec, and claude-bg): there is no push channel into a running worker, so the worker
   **parks**: commit WIP (or leave the tree clean), update `status.json`
   (`blocked_on: "human"`, current phase), then **end its run cleanly**. The
   orchestrator detects the gate, gets the human's answer, and **resumes a
@@ -297,15 +378,15 @@ whether its mode has a push channel back into it:
 
 **The transport (per mode):**
 
-| Mode           | Style          | Worker raises it via                                                    | Main agent relays the human's answer via                                                             | Optional direct surface            |
-| -------------- | -------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| claude-team    | block-in-place | `SendMessage` to the lead, prefixed `HUMAN_GATE:`                       | `SendMessage(to: <ws>, ...)`                                                                         | type in the teammate pane          |
-| claude-bg      | gate-and-park  | the file (orchestrator detects on next tick)                            | resume the session with the answer (`claude -r <id> ...`), or respawn w/ recovery bootstrap + answer | `claude attach <id>` while it runs |
-| codex-subagent | block-in-place | native approval overlay (approvals) / ask the parent thread (decisions) | `send_input(<id>, "<answer>")`                                                                       | open the thread (`o` / app click)  |
-| codex-exec     | gate-and-park  | the file (orchestrator detects on next tick)                            | `codex exec resume <id> "<answer>"`                                                                  | — (headless)                       |
-| workflow       | gate-and-park  | stage returns a structured `gated` result + the file                    | continuation run for gated stories with the answer in the prompt (see Mode: workflow)                | — (batch)                          |
-| headless       | gate-and-park  | the file; the one-shot subagent returns with a gated result             | re-spawn a one-shot into the same worktree with recovery bootstrap + answer                          | — (one-shot)                       |
-| legacy         | block-in-place | the file                                                                | `executor.nudge()` (`tmux send-keys`) or `feedback.md`                                               | `tmux attach -t <ws>`              |
+| Mode               | Style          | Worker raises it via                                                    | Main agent relays the human's answer via                                                             | Optional direct surface            |
+| ------------------ | -------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| native-bg-subagent | gate-and-park  | the file (orchestrator detects on next tick)                            | re-spawn a bg subagent into the same worktree with recovery bootstrap + answer                       | `TaskOutput` while it runs         |
+| claude-bg          | gate-and-park  | the file (orchestrator detects on next tick)                            | resume the session with the answer (`claude -r <id> ...`), or respawn w/ recovery bootstrap + answer | `claude attach <id>` while it runs |
+| codex-subagent     | block-in-place | native approval overlay (approvals) / ask the parent thread (decisions) | `send_input(<id>, "<answer>")`                                                                       | open the thread (`o` / app click)  |
+| codex-exec         | gate-and-park  | the file (orchestrator detects on next tick)                            | `codex exec resume <id> "<answer>"`                                                                  | — (headless)                       |
+| workflow           | gate-and-park  | stage returns a structured `gated` result + the file                    | continuation run for gated stories with the answer in the prompt (see Mode: workflow)                | — (batch)                          |
+| headless           | gate-and-park  | the file; the one-shot subagent returns with a gated result             | re-spawn a one-shot into the same worktree with recovery bootstrap + answer                          | — (one-shot)                       |
+| legacy             | block-in-place | the file                                                                | `executor.nudge()` (`tmux send-keys`) or `feedback.md`                                               | `tmux attach -t <ws>`              |
 
 **Resolution:** after acting on the answer, the worker appends
 `resolved: <summary>` under its entry and clears `blocked_on`. The autopilot
@@ -383,11 +464,15 @@ authored it.
 
 ## Orphan Re-adoption
 
-Session-bound workers (teammates, Codex subagents) die when the orchestrator
-session dies, but their **work does not** — it lives in the worktree and
-`.dev-workflow/`. When an orchestrator (re)starts and finds state claiming an
-active workspace whose agent no longer exists (TaskList / `list_agents` /
-`claude agents` comes up empty):
+Session-bound workers (native-bg-subagents, Codex subagents) die when the
+orchestrator session dies, but their **work does not** — it lives in the worktree
+and `.dev-workflow/`. When an orchestrator (re)starts and finds state claiming an
+active workspace, **decide orphan-vs-live by the real-liveness probe, never by
+roster/state membership** (a roster can show a never-started worker as "active" —
+the `claude-team` failure mode). Treat as an orphan when the
+[Post-Spawn Liveness Probe](#post-spawn-liveness-probe) fails — the agent process
+is gone (TaskList / `list_agents` / `claude agents` empty) **or** the worktree
+shows no activity:
 
 1. Treat it as an **orphan, not a failure** — do not mark the story failed.
 2. Read `signals/status.json` for the last known phase.
@@ -407,7 +492,7 @@ live only in an agent's context.
 
 **Every spawned worker and evaluator MUST be bound to the workspace worktree** —
 by process cwd (claude-bg, codex-exec, legacy, evaluator execs) or by prompt
-contract (claude-team, codex-subagent, headless).
+contract (native-bg-subagent, codex-subagent, headless).
 
 This is not optional. The autopilot orchestrator boundary forbids spawning a
 reviewer/agent "from main" precisely because such an agent lacks the
@@ -436,5 +521,10 @@ For readers of v1.2–v1.5 docs and ADRs:
 | B3 (native subagent)  | `codex-subagent` (Codex) / `headless` (one-shot fallback) |
 | B4 (dynamic workflow) | `workflow`                                                |
 
-New in v1.6: `claude-team`, `claude-bg`, `codex-exec`, the human-gate protocol,
-and orphan re-adoption. See `docs/decisions/native-first-executor.md`.
+New in v1.6: `claude-bg`, `codex-exec`, the human-gate protocol, and orphan
+re-adoption. See `docs/decisions/native-first-executor.md`.
+
+**Removed 2026-06:** `claude-team` (silent agent-teams spawn failure) — replaced
+by **`native-bg-subagent`** as the Claude Code default, plus the mandatory
+[Post-Spawn Liveness Probe](#post-spawn-liveness-probe). See
+`docs/decisions/remove-claude-team.md`.

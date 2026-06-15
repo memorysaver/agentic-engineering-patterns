@@ -340,12 +340,12 @@ After implementation, verify the code before moving to testing. This phase uses 
 
 If `.dev-workflow/evaluator-criteria.md` exists (written during `/aep-launch`), spawn an evaluator via `executor.spawn_evaluator()`. The generator orchestrates the entire evaluation loop — no manual intervention needed. The spawn mechanism tracks the active executor mode (read `.claude/skills/aep-executor/references/backends.md`):
 
-| Generator mode                  | Evaluator spawn (`executor.spawn_evaluator`)                                                                                        | eval-protocol mechanism                                                           |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| **claude-team / claude-bg**     | **foreground Task subagent** in the generator's own session — inherits the worktree cwd; the evaluator prompt _is_ the spawn prompt | **Context B mechanism**, worktree-bound — _not_ its read-only `/aep-validate` use |
-| **codex-subagent / codex-exec** | `codex exec --cd <abs worktree>` with the `aep-evaluator` role — enforced cwd, bounded one-shot                                     | **Context C mechanism**, in-host headless — _not_ API/SDK CI                      |
-| **legacy** (tmux)               | `tmux split-window` — evaluator in a bottom pane                                                                                    | **Context A** (tmux split)                                                        |
-| **workflow**                    | the workflow's `verify` stage (worktree-isolated)                                                                                   | **Context C mechanism**, in-host — _not_ API/SDK CI                               |
+| Generator mode                     | Evaluator spawn (`executor.spawn_evaluator`)                                                                                        | eval-protocol mechanism                                                           |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| **native-bg-subagent / claude-bg** | **foreground Task subagent** in the generator's own session — inherits the worktree cwd; the evaluator prompt _is_ the spawn prompt | **Context B mechanism**, worktree-bound — _not_ its read-only `/aep-validate` use |
+| **codex-subagent / codex-exec**    | `codex exec --cd <abs worktree>` with the `aep-evaluator` role — enforced cwd, bounded one-shot                                     | **Context C mechanism**, in-host headless — _not_ API/SDK CI                      |
+| **legacy** (tmux)                  | `tmux split-window` — evaluator in a bottom pane                                                                                    | **Context A** (tmux split)                                                        |
+| **workflow**                       | the workflow's `verify` stage (worktree-isolated)                                                                                   | **Context C mechanism**, in-host — _not_ API/SDK CI                               |
 
 > **Always worktree-bound.** Whatever the mode, the evaluator runs against this
 > workspace's worktree (files + git state), per `executor.spawn_evaluator()`.
@@ -384,7 +384,7 @@ For each round N (starting at 1, max 5):
    ```
 
 3. **Spawn the evaluator (mode-dispatched, prompt = spawn prompt):**
-   - **claude-team / claude-bg:** spawn a **foreground Task subagent** with
+   - **native-bg-subagent / claude-bg:** spawn a **foreground Task subagent** with
      `EVAL_PROMPT`. It inherits the worktree cwd and returns when done — no
      sleep, no send step, no teardown.
    - **codex-subagent / codex-exec:**
@@ -466,11 +466,10 @@ do not guess and do not silently stall. Raise a gate:
    mode — see the Human-Gate Protocol in `aep-executor/references/backends.md`).
    The answer always comes back through the **main agent** (hub-and-spoke) —
    you never need the human to visit your surface:
-   - **claude-team:** `SendMessage` the team lead, message prefixed `HUMAN_GATE:`
    - **codex-subagent:** ask the parent thread (approvals surface natively)
    - **legacy:** the file is the transport — the orchestrator detects it and
      relays the answer via nudge
-   - **claude-bg / codex-exec / workflow / headless:** **gate-and-park** — no
+   - **native-bg-subagent / claude-bg / codex-exec / workflow / headless:** **gate-and-park** — no
      push channel reaches you, so after recording the gate: commit WIP (or
      leave the tree clean), update `status.json`, and **end your run cleanly**
      (workflow agents: return a structured `gated` result carrying the

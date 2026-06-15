@@ -21,6 +21,40 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 _Nothing yet._
 
+## [1.8.0] - 2026-06-15
+
+### Changed
+
+- **Executor: removed the `claude-team` backend.** Its agent-teams spawn path
+  fails silently on Claude Code ≥ 2.1.x — the launch command is truncated in a
+  detached `claude-swarm` tmux pane and never submitted, so no worker starts,
+  yet the team roster still reports the member "active". `native-bg-subagent`
+  replaces it as the Claude Code default. The agent-teams env flag is no longer
+  consulted and there is no "…with agent team" opt-in. See
+  [`docs/decisions/remove-claude-team.md`](docs/decisions/remove-claude-team.md).
+- Orphan/stuck detection now decides liveness by the **real-liveness probe**
+  (process/agent exists AND worktree shows activity), never by roster/state
+  membership.
+
+### Added
+
+- **`native-bg-subagent` executor backend** (Claude Code default): Agent tool
+  with `run_in_background: true`, no team. Success signature is a bare-hex
+  `agentId` + JSONL `output_file`; steered via `SendMessage(to: agentId)` +
+  `feedback.md`; human gate is gate-and-park.
+- **Mandatory post-spawn liveness probe** with auto-fall-back to
+  `native-bg-subagent` on failure
+  (`skills/patterns/executor/scripts/spawn-liveness-probe.sh`).
+- Explicit **one launch = one worktree = one subagent = one story** invariant in
+  `/aep-launch` (the `compile_mode: grouped_change` story group is the one
+  documented exception).
+
+### Fixed
+
+- `claude-bg` is now gated on `BG_AVAILABLE`; documented that the `claude --bg`
+  one-shot spawn flag was removed on Claude Code ≥ 2.1.x (so claude-bg is skipped
+  there and native-bg-subagent is used).
+
 ## [1.7.0] - 2026-06-11
 
 **Goal-driven autopilot driver**: `/aep-autopilot` now keeps itself ticking with

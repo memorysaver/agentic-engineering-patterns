@@ -8,7 +8,7 @@ turn then waits the per-tick floor — step ⑦ — before ending)
 this tick each turn until the layer completes; loop driver (fallback) —
 `/loop 5m /aep-autopilot tick`; or manual `/aep-autopilot tick`
 
-> **BOUNDARY REMINDER:** The autopilot is an orchestrator. Every action on a workspace is `executor.nudge()` / `executor.liveness()` — autopilot runs only on **steerable, driver-compatible modes** (claude-team / claude-bg / codex-subagent / codex-exec / legacy; see the per-mode transport table in SKILL.md and `aep-executor/references/backends.md`). The nudge texts in this file are mode-independent — deliver each through the workspace's `backend` transport (`SendMessage` / `feedback.md` / `send_input` / `codex exec resume` / `tmux send-keys`). Never spawn code reviewers from main, never read workspace source code, never call `gh pr merge`. See SKILL.md "STOP — Orchestrator Boundaries".
+> **BOUNDARY REMINDER:** The autopilot is an orchestrator. Every action on a workspace is `executor.nudge()` / `executor.liveness()` — autopilot runs only on **steerable, driver-compatible modes** (native-bg-subagent / claude-bg / codex-subagent / codex-exec / legacy; see the per-mode transport table in SKILL.md and `aep-executor/references/backends.md`). The nudge texts in this file are mode-independent — deliver each through the workspace's `backend` transport (`SendMessage(to: agentId)` / `feedback.md` / `send_input` / `codex exec resume` / `tmux send-keys`). Liveness is the [post-spawn liveness probe](../../executor/references/backends.md#post-spawn-liveness-probe) (process exists AND worktree active) — **never** roster/state membership. Never spawn code reviewers from main, never read workspace source code, never call `gh pr merge`. See SKILL.md "STOP — Orchestrator Boundaries".
 
 **EXECUTION MODEL — CHECK → ACT** (see SKILL.md "Execution model"). A tick is two halves:
 
@@ -77,7 +77,8 @@ For each workspace in `state.workspaces`:
   counting and emit an `escalate` action of type `human_gate`. The
   `expected_human_action` is hub-and-spoke: **the human answers in the main
   session**; the orchestrator relays it on the mode's channel —
-  `SendMessage` (claude-team) / resume the session with the answer
+  re-spawn a bg subagent into the worktree with the answer
+  (native-bg-subagent, parked) / resume the session with the answer
   (claude-bg, parked) / `send_input` (codex-subagent) /
   `codex exec resume <agent_id> "<answer>"` (codex-exec, parked) /
   `executor.nudge()` (legacy). A **parked** worker (gate-and-park: its run
@@ -86,16 +87,19 @@ For each workspace in `state.workspaces`:
   crashed or stuck.
 - Clear the escalation when the entry gains a `resolved:` line.
 
-**Orphan check (session-bound modes — claude-team, codex-subagent):**
+**Orphan check (session-bound modes — native-bg-subagent, codex-subagent) — by real liveness, not roster:**
 
-- If the workspace's `agent_id` no longer appears in TaskList / `list_agents`
-  (lead restarted, worker crashed) but the worktree exists with progress,
-  emit a `launch` action flagged `readopt: true` — the ACT re-spawns a worker
-  **into the existing worktree** with the recovery bootstrap ("Run
-  `bash .dev-workflow/init.sh` to recover state, read
+- Apply the [post-spawn liveness probe](../../executor/references/backends.md#post-spawn-liveness-probe):
+  the workspace is an **orphan** when its `agent_id` no longer appears in TaskList
+  / `list_agents` (lead restarted, worker crashed, **or the spawn never actually
+  started** — e.g. the removed claude-team's truncated-launch failure) **and/or**
+  the worktree shows no live process — even if state/roster still says "active".
+  If the worktree exists with progress, emit a `launch` action flagged
+  `readopt: true` — the ACT re-spawns a worker **into the existing worktree** with
+  the recovery bootstrap ("Run `bash .dev-workflow/init.sh` to recover state, read
   `.dev-workflow/signals/feedback.md`, then continue the /aep-build flow"), then
-  updates `agent_id`. Do not mark the story failed; do not create a new
-  worktree.
+  updates `agent_id`. Do not mark the story failed; do not create a new worktree.
+  **Never** accept roster/state membership as proof the worker is alive.
 
 ---
 
@@ -277,16 +281,16 @@ When signals are stale (same phase and completion_pct as previous tick), check w
 **Step 1 — Check mode-specific activity** and compare against
 `last_liveness_hash` stored in the workspace state entry:
 
-| Mode           | Activity probe                                                          |
-| -------------- | ----------------------------------------------------------------------- |
-| claude-team    | TaskList/TaskGet for the teammate — task status / last message changed? |
-| claude-bg      | `claude agents --json` status + `claude logs <agent_id> \| tail -20`    |
-| codex-subagent | `list_agents` status for `<agent_id>`                                   |
-| codex-exec     | `tail -20 .feature-workspaces/<name>/.dev-workflow/worker.log`          |
-| legacy         | `tmux capture-pane -t <name>:0.0 -p -S -20`                             |
+| Mode               | Activity probe                                                                   |
+| ------------------ | -------------------------------------------------------------------------------- |
+| native-bg-subagent | TaskList / `TaskOutput <agentId>` — task status / output changed?                |
+| claude-bg          | `claude agents --json` status + `claude logs <agent_id> \| tail -20`             |
+| codex-subagent     | `list_agents` status for `<agent_id>`                                            |
+| codex-exec         | `tail -20 .feature-workspaces/<name>/.dev-workflow/worker.log`                   |
+| legacy             | `tmux capture-pane -t <name>:0.0 -p -S -20` (a `zsh` pane = never-started spawn) |
 
 - **`last_liveness_hash` is null** (first tick after launch or restart) → Populate it with the hash of the current probe output. Do NOT increment `consecutive_stuck_ticks`. The workspace gets benefit of the doubt on its first stale-signal tick.
-- **The agent no longer exists** (teammate gone from TaskList, `list_agents` empty, `claude agents` shows exited, tmux session missing) → on a **session-bound mode** this is an **orphan**: emit the re-adoption `launch` action (see Step ②), do NOT count it stuck. On an **OS-bound mode** a missing process means a crashed/exited agent → increment `consecutive_stuck_ticks`.
+- **The agent no longer exists** (bg subagent gone from TaskList, `list_agents` empty, `claude agents` shows exited, tmux session missing) → on a **session-bound mode** this is an **orphan**: emit the re-adoption `launch` action (see Step ②), do NOT count it stuck. On an **OS-bound mode** a missing process means a crashed/exited agent → increment `consecutive_stuck_ticks`.
 - **Probe output differs from `last_liveness_hash`** → Agent is active, signals are lagging. Update `last_liveness_hash`. Do NOT increment `consecutive_stuck_ticks`.
 - **Probe output matches `last_liveness_hash`** → Proceed to Step 2.
 
@@ -411,8 +415,8 @@ If no escalation:
      "wave": 1,
      "readiness_score": 0.8,
      "routed_to": "launch",
-     "backend": "claude-team",
-     "agent_id": "<teammate name | bg session id | codex agent id | exec session id | tmux session name>",
+     "backend": "native-bg-subagent",
+     "agent_id": "<bare-hex bg-subagent id | bg session id | codex agent id | exec session id | tmux session name>",
      "phase": 0,
      "phase_name": "initializing",
      "story_status": "in_progress",
@@ -431,7 +435,7 @@ If no escalation:
 
    For grouped changes: `story_ids` contains all story IDs in the group, `compile_mode` is `"grouped_change"`, `change_group` is the group ID, and `story_id` is the first story in the group (used as the primary identifier).
 
-**Max ONE launch per tick.** Launching involves creating a git worktree, spawning a worker (teammate / bg session / subagent / exec / tmux), and delivering a bootstrap prompt — too slow for multiple per tick.
+**Max ONE launch per tick.** Launching involves creating a git worktree, spawning a worker (bg subagent / bg session / subagent / exec / tmux), running the post-spawn liveness probe, and delivering a bootstrap prompt — too slow for multiple per tick.
 
 ### Layer Completion
 

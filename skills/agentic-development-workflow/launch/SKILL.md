@@ -1,6 +1,6 @@
 ---
 name: aep-launch
-description: Spawn an autonomous workspace agent for feature implementation. Use after /aep-design is complete, or when the user says "launch workspace", "start building", "spawn agent", "send it to build". Creates a git worktree on a feature branch, starts the selected executor mode (Claude Code agent teams or background sessions; Codex native subagents or exec workers; tmux only when pinned), and optionally sets up a separate evaluator agent. Followed by /aep-build (which runs autonomously in the workspace).
+description: Spawn an autonomous workspace agent for feature implementation. Use after /aep-design is complete, or when the user says "launch workspace", "start building", "spawn agent", "send it to build". Creates a git worktree on a feature branch, starts the selected executor mode (Claude Code native background subagents or background sessions; Codex native subagents or exec workers; tmux only when pinned), and optionally sets up a separate evaluator agent. Followed by /aep-build (which runs autonomously in the workspace).
 ---
 
 # Launch
@@ -14,10 +14,13 @@ quality assurance.
 > **Native-first:** This skill does not hardwire `claude` + tmux + cmux. It
 > delegates spawning and presentation to `aep-executor`. Read
 > `.claude/skills/aep-executor/references/backends.md` before spawning. On
-> Claude Code the launch mode is **claude-team** (agent teams) or **claude-bg**
-> (native background sessions); on Codex it is **codex-subagent** or
+> Claude Code the launch mode is **native-bg-subagent** (default — Agent tool
+> `run_in_background`, no team) or **claude-bg** (native background sessions,
+> where `claude --bg` exists); on Codex it is **codex-subagent** or
 > **codex-exec**; **legacy** (tmux + optional cmux) runs only when explicitly
 > pinned or on generic hosts. Every mode uses the same AEP-created worktree.
+> (`claude-team` was removed — silent agent-teams spawn failure; see
+> `aep-executor/references/backends.md`.)
 
 **Where this fits:**
 
@@ -118,10 +121,11 @@ The branch deletion is gated on `ahead == 0` so live workspaces are never affect
 Run the detection recipe from `.claude/skills/aep-executor/references/backends.md`
 and **announce the selection**, e.g.:
 
-- "Claude Code + agent teams flag → **claude-team**: one teammate per story;
-  steer with SendMessage; watch via teammate panes."
-- "Claude Code, no teams flag → **claude-bg**: native background session;
-  watch with `claude attach <id>`."
+- "Claude Code → **native-bg-subagent**: in-process background subagent (Agent
+  tool, `run_in_background`, no team); steer with `SendMessage(to: agentId)` /
+  `feedback.md`; watch with `TaskOutput`."
+- "Claude Code + `claude --bg` present, OS-bound need → **claude-bg**: native
+  background session; watch with `claude attach <id>`."
 - "Codex main thread → **codex-subagent**: native worker (aep-builder role);
   steer with send_input; threads visible in the app / `/agent`."
 - "Pinned tmux → **legacy**: tmux session (+ cmux tab if available)."
@@ -131,6 +135,15 @@ If the user said "…with workflow" and the host is Claude Code, select
 instead of the steps below.
 
 ## Step 2: Create the Worktree (common to all modes)
+
+> **Invariant — one launch = one worktree = one subagent = one story.** Each
+> `/aep-launch` creates exactly one worktree and spawns exactly one worker (one
+> `native-bg-subagent` on Claude Code) to build exactly one story. Do not put
+> multiple stories into a single launch and do not spawn a second worker into a
+> worktree that already has a live one. (The autopilot enforces the upstream half
+> of this: **max ONE launch per tick** — see `aep-autopilot` tick protocol Step
+> ⑥.) The one exception is a `compile_mode: grouped_change` story group, which is
+> deliberately compiled into a single change/worktree/worker — see Step 4.
 
 > **Important:** Workspaces must live **outside** `.claude/` — Claude Code
 > treats everything under `.claude/` as sensitive and blocks file writes with
@@ -186,20 +199,36 @@ The bootstrap **is the spawn prompt** for every native mode; only `legacy`
 has a separate send step. Full recipes live in the executor reference files —
 this is the dispatch:
 
-### Mode: claude-team (`aep-executor/references/claude-native.md`)
+> **Post-spawn verification is mandatory — do NOT return "running" from a spawn
+> until the liveness probe passes.** After spawning, run the
+> [Post-Spawn Liveness Probe](../../patterns/executor/references/backends.md#post-spawn-liveness-probe)
+> (`bash .claude/skills/aep-executor/scripts/spawn-liveness-probe.sh <name> <agent_id>`):
+> the worker process/agent must exist **and** the worktree must show activity
+> (status.json written or non-empty `git diff`) within N seconds. On failure,
+> tear down the dead spawn (and `TeamDelete` any team that got created) and
+> **auto-fall-back to `native-bg-subagent`** into the same worktree — never leave
+> a silently-dead worktree for the autopilot to flag 30+ minutes later. "Roster
+> says active" is not liveness.
 
-Ensure the standing team exists (`TeamCreate` once, team "aep" — see the
-standing-team pattern in the reference), then spawn one teammate named `<name>`
-with the Agent tool. The teammate prompt = worktree contract (absolute path +
-"operate exclusively there") + `$PROMPT` + the human-gate instructions.
-Record the teammate name as `agent_id`.
+### Mode: native-bg-subagent (`aep-executor/references/claude-native.md`) — Claude Code default
 
-### Mode: claude-bg (`aep-executor/references/claude-native.md`)
+Pre-flight: if any agent-teams team is active, `TeamDelete` it first (a live team
+re-routes teamless background spawns through the broken agent-teams backend). Then
+spawn with the Agent tool: `run_in_background: true`, **no `team_name`**, prompt =
+worktree contract (absolute path + "operate exclusively there") + `$PROMPT` + the
+human-gate instructions. A working spawn returns a **bare-hex `agentId`** with a
+JSONL `output_file` (not an `@<team>` id) — record it as `agent_id`. Then run the
+liveness probe above.
+
+### Mode: claude-bg (`aep-executor/references/claude-native.md`) — only if `claude --bg` exists
 
 ```bash
 cd .feature-workspaces/<name> && claude --bg --dangerously-skip-permissions "$PROMPT"
-cd - >/dev/null   # record the printed session id as agent_id
+cd - >/dev/null   # record the printed session id as agent_id; then run the liveness probe
 ```
+
+> On Claude Code ≥ 2.1.x the `claude --bg` flag is absent (`BG_AVAILABLE=no`) —
+> detection won't select this mode; native-bg-subagent is used instead.
 
 ### Mode: codex-subagent (`aep-executor/references/codex-native.md`)
 
@@ -223,13 +252,13 @@ the exec session id as `agent_id` (steerable later via `codex exec resume`).
 
 Tell the user where to watch/steer, per mode:
 
-| Mode           | Watch                                              | Steer                                                |
-| -------------- | -------------------------------------------------- | ---------------------------------------------------- |
-| claude-team    | teammate pane (split) or `Shift+Down` (in-process) | type in the pane, or lead relays via SendMessage     |
-| claude-bg      | `claude attach <id>` / `claude logs <id>`          | attach; or `feedback.md`                             |
-| codex-subagent | app thread list / `/agent`                         | open the thread; or `send_input` via the main thread |
-| codex-exec     | signals + PR (headless)                            | `codex exec resume <id> "<msg>"`                     |
-| legacy         | cmux tab / `tmux attach -t <name>`                 | `tmux send-keys` or `feedback.md`                    |
+| Mode               | Watch                                     | Steer                                                |
+| ------------------ | ----------------------------------------- | ---------------------------------------------------- |
+| native-bg-subagent | `TaskOutput <agentId>` / signals          | `SendMessage(to: agentId)` or `feedback.md`          |
+| claude-bg          | `claude attach <id>` / `claude logs <id>` | attach; or `feedback.md`                             |
+| codex-subagent     | app thread list / `/agent`                | open the thread; or `send_input` via the main thread |
+| codex-exec         | signals + PR (headless)                   | `codex exec resume <id> "<msg>"`                     |
+| legacy             | cmux tab / `tmux attach -t <name>`        | `tmux send-keys` or `feedback.md`                    |
 
 ---
 
@@ -321,11 +350,11 @@ The generator self-orchestrates the evaluation loop at Phase 5. **You do not
 need to spawn the evaluator manually.** `/aep-build` Phase 5 picks the matching
 spawn via `executor.spawn_evaluator()`:
 
-| Generator mode              | Evaluator spawn                                                                                                           |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| claude-team / claude-bg     | foreground Task subagent in the generator's session (inherits the worktree cwd; the evaluator prompt is the spawn prompt) |
-| codex-subagent / codex-exec | `codex exec --cd <abs worktree>` with the `aep-evaluator` role — enforced cwd, bounded one-shot                           |
-| legacy                      | `tmux split-window` bottom pane (under cmux the surface shows both panes)                                                 |
+| Generator mode                 | Evaluator spawn                                                                                                           |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| native-bg-subagent / claude-bg | foreground Task subagent in the generator's context (inherits the worktree cwd; the evaluator prompt is the spawn prompt) |
+| codex-subagent / codex-exec    | `codex exec --cd <abs worktree>` with the `aep-evaluator` role — enforced cwd, bounded one-shot                           |
+| legacy                         | `tmux split-window` bottom pane (under cmux the surface shows both panes)                                                 |
 
 The full loop is documented in the build skill's Phase 5. In summary:
 
@@ -393,11 +422,11 @@ the worker is waiting on a decision — answer it through the mode's transport
 The main session stays on the integration branch (`$BASE`) and can:
 
 - Launch multiple workspace workers (one per feature)
-- See them all: teammate panes (**claude-team**), `claude agents --json`
+- See them all: `TaskList` (**native-bg-subagent**), `claude agents --json`
   (**claude-bg**), the thread list / `list_agents` (**codex-subagent**),
   `tmux ls` (**legacy**)
-- Switch into any worker: click its pane / `claude attach <id>` / open its
-  thread / `tmux attach -t <name>`
+- Switch into any worker: `TaskOutput <agentId>` / `claude attach <id>` / open
+  its thread / `tmux attach -t <name>`
 - Handle `/aep-wrap` after each PR merges
 
 > Under **codex-exec**, **workflow**, and **headless** there is no live surface —

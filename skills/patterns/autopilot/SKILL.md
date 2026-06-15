@@ -70,13 +70,13 @@ every liveness probe is `executor.liveness(ws)` — the table below is the
 per-mode implementation of those verbs. Nudge texts shown in the tick protocol
 are mode-independent; deliver them through your mode's transport.
 
-| Op         | claude-team                                  | claude-bg                                                                  | codex-subagent           | codex-exec                           | legacy                                 |
-| ---------- | -------------------------------------------- | -------------------------------------------------------------------------- | ------------------------ | ------------------------------------ | -------------------------------------- |
-| `nudge`    | `SendMessage(<ws>, msg)`                     | append `feedback.md`; hard-stuck ≥6 ticks → stop+respawn (recovery prompt) | `send_input(<id>, msg)`  | `codex exec resume <id> "<msg>"`     | `tmux send-keys -l` + separate `Enter` |
-| `liveness` | TaskList/TaskGet + `git -C <ws> diff --stat` | `claude agents --json` + `claude logs <id>` tail + git diff                | `list_agents` + git diff | signals + worker.log tail + git diff | `capture-pane` hash + git diff         |
-| `present`  | teammate pane / `Shift+Down`                 | `claude attach <id>`                                                       | thread list / `/agent`   | signals + PR                         | cmux tab / `tmux attach`               |
+| Op         | native-bg-subagent                                | claude-bg                                                                  | codex-subagent           | codex-exec                           | legacy                                 |
+| ---------- | ------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------ | ------------------------------------ | -------------------------------------- |
+| `nudge`    | `SendMessage(to: agentId, msg)` + `feedback.md`   | append `feedback.md`; hard-stuck ≥6 ticks → stop+respawn (recovery prompt) | `send_input(<id>, msg)`  | `codex exec resume <id> "<msg>"`     | `tmux send-keys -l` + separate `Enter` |
+| `liveness` | TaskList + worktree-activity probe (never roster) | `claude agents --json` + `claude logs <id>` tail + git diff                | `list_agents` + git diff | signals + worker.log tail + git diff | `capture-pane` hash + git diff         |
+| `present`  | `TaskOutput <agentId>`                            | `claude attach <id>`                                                       | thread list / `/agent`   | signals + PR                         | cmux tab / `tmux attach`               |
 
-- **Driver compatibility:** session-bound workers (claude-team teammates,
+- **Driver compatibility:** session-bound workers (native-bg-subagents,
   codex-subagents) die with the orchestrator session. **Long-lived driver** —
   the **goal driver** (`/goal`, default) or the fixed-interval `/loop`, both
   running in a living Claude Code session or Codex main thread → any steerable
@@ -85,15 +85,17 @@ are mode-independent; deliver them through your mode's transport.
   external scheduler** — `/goal` is inherently in-session and cannot drive a
   fresh-session-per-tick scheduler, so unattended OS-scheduled runs keep using
   the `/loop`/`codex exec` path.
-- **claude-team — the standing team:** at `/aep-autopilot` start, `TeamCreate`
-  **once** (team "aep"). Each tick-⑥ launch spawns one teammate into it; each
-  tick-③ wrap shuts that teammate down (team persists); `/aep-autopilot stop`
-  shuts down all teammates then `TeamDelete`. Never one-team-per-story (one
-  team at a time is a hard limit) and never expect the team to survive a lead
-  restart.
-- **Orphan re-adoption (session-bound modes):** if state lists an active
-  workspace whose agent no longer exists (TaskList / `list_agents` empty for
-  it), it is an **orphan, not a failure** — re-spawn a worker into the
+- **Post-spawn liveness probe (all modes):** after every launch, before counting
+  the worker as running, confirm the process/agent exists **and** the worktree
+  shows activity (`status.json` written or non-empty `git diff`) within N
+  seconds — `scripts/spawn-liveness-probe.sh`. On failure, tear the dead spawn
+  down and auto-fall-back to **native-bg-subagent**. **Never** treat "state says
+  active" as liveness (the removed `claude-team` failed exactly here — see
+  `docs/decisions/remove-claude-team.md`).
+- **Orphan re-adoption (session-bound modes, by real liveness):** if the liveness
+  probe fails for a workspace state lists as active (agent gone from TaskList /
+  `list_agents`, **or** worktree inactive — even if state still says active), it
+  is an **orphan, not a failure** — re-spawn a worker into the
   existing worktree with the recovery bootstrap (protocol in
   `aep-executor/references/backends.md`).
 - **workflow / headless (no mid-stage surface):** autopilot's tick/nudge
@@ -125,7 +127,7 @@ action list; the orchestrator then ACTs on it (nudge / wrap / launch / escalate)
 
 ### Never Do List
 
-- **NEVER use the Agent tool to spawn code reviewers from the main session** — this is categorical, not a context problem you can engineer around. Even a worktree-bound reviewer spawned from main pulls workspace code and quality judgments into the orchestrator's context, which is exactly what the boundary forbids; "but I could give it the worktree" is **not** a valid exception. Instead: `executor.nudge()` to trigger the workspace's own gen/eval loop. (Spawning a **builder teammate/worker at launch** and steering it with `SendMessage`/`send_input` is the nudge transport, not a reviewer spawn — the evaluator is always spawned by the _generator inside the workspace_, never by autopilot.)
+- **NEVER use the Agent tool to spawn code reviewers from the main session** — this is categorical, not a context problem you can engineer around. Even a worktree-bound reviewer spawned from main pulls workspace code and quality judgments into the orchestrator's context, which is exactly what the boundary forbids; "but I could give it the worktree" is **not** a valid exception. Instead: `executor.nudge()` to trigger the workspace's own gen/eval loop. (Spawning a **builder bg subagent/worker at launch** and steering it with `SendMessage(to: agentId)`/`send_input` is the nudge transport, not a reviewer spawn — the evaluator is always spawned by the _generator inside the workspace_, never by autopilot.)
 - **NEVER call `gh pr merge`** — workspace agents run pre-merge checks (rebase, CI verification, comment resolution) as part of Phase 12. Merging from main bypasses these checks and has caused premature merges where incomplete test results were accepted. Instead: `executor.nudge()` telling the workspace to complete Phase 12.
 - **NEVER read workspace source files** — only read signal files under `.dev-workflow/signals/`. The main session's job is to observe progress via signals, not to understand the code. If you need code reviewed, trigger the workspace's evaluator.
 - **NEVER use `Read`, `Grep`, or `Bash` to inspect workspace code** — even "just checking" pulls implementation details into main session context, which leads to the main session forming opinions about code quality and then acting on them (spawning reviewers, suggesting fixes). Stay out of workspace code entirely.
@@ -253,9 +255,10 @@ Verify these conditions before proceeding:
    ```
 
 4. Resolve the **launch mode + driver pair** (executor `detect()` + the driver ×
-   backend matrix). If the mode is **claude-team**, create the standing team
-   now: `TeamCreate` (team "aep") — once, for the whole autopilot run.
-   Announce the pair, e.g. "claude-team + /loop" or "codex-exec + launchd".
+   backend matrix). On Claude Code the default is **native-bg-subagent** (no team
+   to create — if any agent-teams team is active, `TeamDelete` it first, since a
+   live team poisons teamless background spawns).
+   Announce the pair, e.g. "native-bg-subagent + /goal" or "codex-exec + launchd".
 
 5. Run the first tick immediately (see tick protocol below).
 
@@ -331,8 +334,8 @@ Verify these conditions before proceeding:
 
    Where `<interval>` is from `--loop` flag (default: `5m`). `/loop` invokes
    `/aep-autopilot tick` each interval; the tick keeps the main session cheap by
-   delegating its CHECK to a Haiku subagent. This is the driver
-   that supports **claude-team** (the team lives in this session).
+   delegating its CHECK to a Haiku subagent. Like the goal driver it keeps the
+   session alive, so session-bound modes (**native-bg-subagent**) work under it.
 
    **Codex — two driver options:**
    - **In-thread (long-lived):** the orchestrator is a living main thread
@@ -532,10 +535,11 @@ Gracefully stop the autopilot and cancel the active driver (goal or loop).
      so `stop` is mainly for early termination.)
    - **Loop driver:** cancel the `/loop` (use the loop skill's cancel mechanism),
      or remove the cron/launchd job for an OS-scheduled run.
-5. **claude-team only:** if no teammates are still building, shut them all down
-   and `TeamDelete` the standing team. If workers are still mid-build, leave
-   the team alive (deleting it would kill session-bound workers) and note in
-   the status file that the team will be cleaned up after the last `/aep-wrap`.
+5. **native-bg-subagent:** background subagents are session-bound — they stop when
+   the orchestrator session ends. To stop early while preserving work, let each
+   in-flight worker reach a phase boundary (or `TaskStop <agentId>`); all state
+   lives in the worktree + `.dev-workflow/`, so a later session re-adopts the
+   orphan via the liveness probe. No team to delete.
 
 **What happens:**
 

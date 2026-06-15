@@ -1,5 +1,7 @@
 # Native-First Executor Backends
 
+> **Superseded in part (2026-06):** `claude-team` was removed (silent agent-teams spawn failure on Claude Code ≥ 2.1.x) and replaced by `native-bg-subagent` as the Claude Code default, with a mandatory post-spawn liveness probe. See [`remove-claude-team.md`](./remove-claude-team.md).
+
 > Decision record (2026-06-10). Supersedes parts of
 > [`host-agnostic-executor.md`](host-agnostic-executor.md): the B1–B4 backend
 > ladder is replaced by named launch modes, and tmux+cmux is demoted from
