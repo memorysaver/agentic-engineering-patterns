@@ -7,11 +7,12 @@
 
 ## 0. TL;DR
 
-AEP 已經是一個**成熟的外層迴圈 (outer loop)** — 在 loop engineering 的「目標定義、工具環境、誠實驗證 (gen/eval)、host-agnostic 執行、制度記憶」這幾項上甚至**領先**業界文章。缺口集中在三處：
+AEP 已經是一個**成熟的外層迴圈 (outer loop)** — 在 loop engineering 的「目標定義、工具環境、誠實驗證 (gen/eval)、host-agnostic 執行、制度記憶」這幾項上甚至**領先**業界文章。缺口集中在兩處：
 
-1. **內層迴圈的 context 紀律** — 單一 workspace agent 跑完 Phase 0–13，有 context rot 風險，缺 Ralph 式 fresh-context-per-task。
-2. **自主復原能力** — 卡關時只會「重試同一招 → 升級給人」，缺「換策略」的階梯。
-3. **合併後的生產回饋迴圈未閉環** — 缺自動 rollback / telemetry 驅動的 reflect / 自我餵食的工作發掘。這也是讓無人值守自主**安全**的前提。
+1. **自主復原能力** — 卡關時只會「重試同一招 → 升級給人」，缺「換策略」的階梯。
+2. **合併後的生產回饋迴圈未閉環** — 缺自動 rollback / telemetry 驅動的 reflect / 自我餵食的工作發掘。這也是讓無人值守自主**安全**的前提。
+
+> **註：** Ralph 式「per-task fresh context」（原 G1）**經評估後否決** —— AEP 的 spawn 單位是 **story**（每輪一個 worker 對一個 story），不在 story 內再細分 per-task context。詳見 §3。
 
 ---
 
@@ -61,10 +62,10 @@ Retry Loop / Plan-Execute-Verify / Explore-Narrow / Human-in-the-Loop。
 | ① Clear Goal / Task Definition                                    | `product-context.yaml`、stories、OpenSpec specs、`contracts.md`、`dispatch_score`/`readiness_score`        | ✅ 強                                                               | `dispatch/SKILL.md`、`build` Phase 1–3 |
 | ② Tool Set for Environment                                        | workspace agent 全工具、dev server、`ports.env`、test runners                                              | ✅ 強                                                               | `build` Phase 4/6、`init.sh`           |
 | ③ Context Management（外層）                                      | CHECK 委派 Haiku/`codex exec`（避免 orchestrator 膨脹）、`lessons.md` 注入（cap 2000 tokens）              | ✅ 強                                                               | `tick-protocol.md` CHECK→ACT           |
-| ③ Context Management（內層）                                      | **單一 workspace agent 跑完 Phase 0–13**，task-by-task 但**同一 context**；`init.sh` 只在 reset 後被動復原 | ⚠️ 缺口 G1                                                          | `build/SKILL.md` 全 13 phase           |
+| ③ Context Management（內層）                                      | **單一 workspace agent 跑完 Phase 0–13**，task-by-task 但**同一 context**；`init.sh` 只在 reset 後被動復原 | ✅ 設計選擇（story-based spawn，不細分 per-task；否決 G1，見 §3）   | `build/SKILL.md` 全 13 phase           |
 | ④ Termination Logic                                               | goal driver layer 邊界自停、`--max-turns 200`、`layer_complete` 條件、escalation triggers                  | ✅ 大致強（但「unsolvable」其實只是「打到上限」）                   | `tick-protocol.md` ⑦                   |
 | ⑤ Error Handling & Recovery                                       | gen/eval loop、stuck detection + liveness、orphan 再領養、retry 計數                                       | ⚠️ 部分（缺「換策略」）                                             | `tick-protocol.md` ④⑤                  |
-| Ralph：single-task fresh context                                  | 一個 task 一個 commit，但 context 不重置                                                                   | ⚠️ 缺口 G1                                                          | —                                      |
+| Ralph：single-task fresh context                                  | 一個 task 一個 commit，但 context 不重置                                                                   | ➖ 不採用（spawn 單位為 story，非 per-task；否決 G1）               | —                                      |
 | Ralph：architectural back-pressure                                | 有 CI / gen-eval / contracts                                                                               | ⚠️ 部分（缺 post-merge 自動 rollback / property tests / audit log） | 缺口 G4                                |
 | verification precedes autonomy                                    | gen/eval 分離、`feature-verification.json`「只有 evaluator 能改」                                          | ✅ 強                                                               | `gen-eval/SKILL.md`                    |
 | per-iteration budget / 結構化回饋 / 測失敗路徑                    | 有 cost 追蹤、signals；codex 有 `token_budget`                                                             | ⚠️ 部分（預算非全 backend 硬約束）                                  | 缺口 G7                                |
@@ -76,7 +77,6 @@ Retry Loop / Plan-Execute-Verify / Explore-Narrow / Human-in-the-Loop。
 
 ### Bucket 1：執行/戰術層缺口（可自動化）
 
-- **G1 — 內層 fresh-context per task**（防 context rot；Ralph malloc）。現況 lead 一路跑完 13 phase。
 - **G2 — 換策略復原階梯**（genuine adaptation）。現況 eval FAIL 同一 generator 同思路再修，5 輪打滿升級人；缺「重讀 spec → 換做法 → 拆 story → 換 agent → 才找人」。
 - **G3 — 設計歧義 / 視覺品質自主評斷**。`auto_design` 只是自動跑互動式 `/aep-design`；視覺品質明文「agent 無法判斷」靠 `.5` polish layer 人工。
 - **G4 — Post-merge guard & 自動 rollback ⭐ 安全關鍵**。現況 merge 後即 wrap，無生產健康監控 / 自動 revert / canary / audit log。
@@ -97,15 +97,19 @@ Retry Loop / Plan-Execute-Verify / Explore-Narrow / Human-in-the-Loop。
 
 最終問責 / 生產事故價值判斷、倫理與商業風險決策。
 
+### 已否決
+
+- **G1 — 內層 fresh-context per task**（原 P1）。**否決理由：** AEP 的 spawn 單位是 **story**（每輪一個 worker 對應一個 story），刻意不在 story 內再切 per-task fresh context。Ralph 的 per-task malloc 適用於「單執行緒一路做」的模型；AEP 已用 story 粒度 + worktree 隔離 + 階段性 signals 達到 context 邊界控制，再細分一層與「每輪 spawn 都 story-based」的設計原則衝突，且徒增 spawn/lessons 捕捉的複雜度。Context rot 的殘餘風險改由 §G2（換策略時開 fresh generator）與既有 `init.sh` 復原機制承接。
+
 ---
 
 ## 4. 建議優先序（供後續實作規劃）
 
-| 優先   | 缺口                                   | 為何                                             |
-| ------ | -------------------------------------- | ------------------------------------------------ |
-| **P0** | G4 post-merge guard、G2 復原階梯       | 沒 G4 → 無人值守不安全；沒 G2 → 一直 spin 回找人 |
-| **P1** | G1 fresh-context、G5 telemetry reflect | 內層品質/規模 + 閉合外層回饋迴圈                 |
-| **P2** | G6 自我餵食、G3 視覺自主、G7 hygiene   | 推向真正連續自主                                 |
+| 優先   | 缺口                                 | 為何                                             |
+| ------ | ------------------------------------ | ------------------------------------------------ |
+| **P0** | G4 post-merge guard、G2 復原階梯     | 沒 G4 → 無人值守不安全；沒 G2 → 一直 spin 回找人 |
+| **P1** | G5 telemetry reflect                 | 閉合外層回饋迴圈                                 |
+| **P2** | G6 自我餵食、G3 視覺自主、G7 hygiene | 推向真正連續自主                                 |
 
 > 逐檔案的實作藍圖（新增 reference / config flag / 修改點）已草擬，待決定推進哪些缺口後再展開為正式 spec。複用既有抽象：`executor.spawn/nudge/check`、gen/eval 協定、signals、`product-context.yaml` config、autopilot state schema。
 
@@ -113,7 +117,7 @@ Retry Loop / Plan-Execute-Verify / Explore-Narrow / Human-in-the-Loop。
 
 ## 5. Codex / Claude Code 相容性判定
 
-對照 executor 抽象層（`detect/spawn/spawn_evaluator/nudge/liveness/gate/check/monitor/present/teardown` + 檔案式 signals，本就用來吸收 host 差異）。**結論：7 個方法全數雙邊相容**，無任一只能在單一 host 跑。
+對照 executor 抽象層（`detect/spawn/spawn_evaluator/nudge/liveness/gate/check/monitor/present/teardown` + 檔案式 signals，本就用來吸收 host 差異）。**結論：保留的 6 個方法（G2–G7，G1 已否決）全數雙邊相容**，無任一只能在單一 host 跑。
 
 | 方法                                | 依賴機制                                                                        | Claude Code      | Codex               | 判定             |
 | ----------------------------------- | ------------------------------------------------------------------------------- | ---------------- | ------------------- | ---------------- |
@@ -121,15 +125,14 @@ Retry Loop / Plan-Execute-Verify / Explore-Narrow / Human-in-the-Loop。
 | G4 post-merge guard / auto-rollback | autopilot tick 讀 signals + `bash`/`gh pr revert`；back-pressure 為 git/CI 設定 | ✅               | ✅                  | 全相容           |
 | G5 telemetry 驅動 reflect           | `bash`/`curl`/`jq` + 分類 prompt                                                | ✅               | ✅                  | 全相容           |
 | G6 自我餵食 `/aep-watch`            | `/loop`(Claude) 或 `codex exec` cron(Codex) 驅動 — 相容性矩陣 cron 列雙邊 ✅    | ✅               | ✅                  | 全相容           |
-| G1 per-task fresh context           | 每 task 呼叫 `executor.spawn` 開 worktree-bound 新 worker                       | ✅ team/headless | ✅ subagent/exec    | 全相容（見註 1） |
 | G3 視覺品質 evaluator               | 餵 screenshot 給 vision model 評分                                              | ✅ 原生多模態    | ✅ 多模態（已確認） | 全相容           |
-| G7 per-phase 預算硬牆               | 用量上限                                                                        | ✅ `--max-turns` | ✅ `--max-turns`    | 全相容（見註 2） |
+| G7 per-phase 預算硬牆               | 用量上限                                                                        | ✅ `--max-turns` | ✅ `--max-turns`    | 全相容（見註 1） |
 
-**註 1（G1 巢狀）：** workspace agent 內再 spawn per-task 子 agent。為避開 Workflow 工具單層巢狀限制與 `spawn_agent` 無 cwd 參數的問題，統一以 **exec / headless one-shot per task** 表達（OS process / 一次性 subagent，worktree 由 cwd 或 prompt 契約綁定），雙邊皆成立。
+> G1（per-task fresh context）已否決，故不列入相容性評估，見 §3。
 
-**註 2（G7 決策）：** 統一以 **`--max-turns`（turn 數）** 作為唯一的 per-phase / runaway 預算機制 —— 雙邊原生都有（`autopilot/SKILL.md:185,646`）。**不採用** Codex 專屬的 `token_budget` 當主要約束，避免 host 不對稱；Codex 的 `token_budget` 至多作為可選的次要保險。預算抽象因此是 host-agnostic 的單一 knob。
+**註 1（G7 決策）：** 統一以 **`--max-turns`（turn 數）** 作為唯一的 per-phase / runaway 預算機制 —— 雙邊原生都有（`autopilot/SKILL.md:185,646`）。**不採用** Codex 專屬的 `token_budget` 當主要約束，避免 host 不對稱；Codex 的 `token_budget` 至多作為可選的次要保險。預算抽象因此是 host-agnostic 的單一 knob。
 
-**註 3（G3 視覺）：** Codex 確認為多模態，可吃 screenshot；視覺 evaluator 維度雙邊一致。截圖擷取可走既有 webapp-testing / agent-browser 工具，圖檔再交給各 host 的多模態 evaluator。
+**註 2（G3 視覺）：** Codex 確認為多模態，可吃 screenshot；視覺 evaluator 維度雙邊一致。截圖擷取可走既有 webapp-testing / agent-browser 工具，圖檔再交給各 host 的多模態 evaluator。
 
 ---
 
