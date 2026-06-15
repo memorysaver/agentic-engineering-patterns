@@ -111,6 +111,28 @@ Retry Loop / Plan-Execute-Verify / Explore-Narrow / Human-in-the-Loop。
 
 ---
 
+## 5. Codex / Claude Code 相容性判定
+
+對照 executor 抽象層（`detect/spawn/spawn_evaluator/nudge/liveness/gate/check/monitor/present/teardown` + 檔案式 signals，本就用來吸收 host 差異）。**結論：7 個方法全數雙邊相容**，無任一只能在單一 host 跑。
+
+| 方法                                | 依賴機制                                                                        | Claude Code      | Codex               | 判定             |
+| ----------------------------------- | ------------------------------------------------------------------------------- | ---------------- | ------------------- | ---------------- |
+| G2 換策略復原階梯                   | protocol 文字 + `executor.spawn` 開 fresh generator                             | ✅               | ✅                  | 全相容           |
+| G4 post-merge guard / auto-rollback | autopilot tick 讀 signals + `bash`/`gh pr revert`；back-pressure 為 git/CI 設定 | ✅               | ✅                  | 全相容           |
+| G5 telemetry 驅動 reflect           | `bash`/`curl`/`jq` + 分類 prompt                                                | ✅               | ✅                  | 全相容           |
+| G6 自我餵食 `/aep-watch`            | `/loop`(Claude) 或 `codex exec` cron(Codex) 驅動 — 相容性矩陣 cron 列雙邊 ✅    | ✅               | ✅                  | 全相容           |
+| G1 per-task fresh context           | 每 task 呼叫 `executor.spawn` 開 worktree-bound 新 worker                       | ✅ team/headless | ✅ subagent/exec    | 全相容（見註 1） |
+| G3 視覺品質 evaluator               | 餵 screenshot 給 vision model 評分                                              | ✅ 原生多模態    | ✅ 多模態（已確認） | 全相容           |
+| G7 per-phase 預算硬牆               | 用量上限                                                                        | ✅ `--max-turns` | ✅ `--max-turns`    | 全相容（見註 2） |
+
+**註 1（G1 巢狀）：** workspace agent 內再 spawn per-task 子 agent。為避開 Workflow 工具單層巢狀限制與 `spawn_agent` 無 cwd 參數的問題，統一以 **exec / headless one-shot per task** 表達（OS process / 一次性 subagent，worktree 由 cwd 或 prompt 契約綁定），雙邊皆成立。
+
+**註 2（G7 決策）：** 統一以 **`--max-turns`（turn 數）** 作為唯一的 per-phase / runaway 預算機制 —— 雙邊原生都有（`autopilot/SKILL.md:185,646`）。**不採用** Codex 專屬的 `token_budget` 當主要約束，避免 host 不對稱；Codex 的 `token_budget` 至多作為可選的次要保險。預算抽象因此是 host-agnostic 的單一 knob。
+
+**註 3（G3 視覺）：** Codex 確認為多模態，可吃 screenshot；視覺 evaluator 維度雙邊一致。截圖擷取可走既有 webapp-testing / agent-browser 工具，圖檔再交給各 host 的多模態 evaluator。
+
+---
+
 ## Sources
 
 - [What Is Loop Engineering? — MindStudio](https://www.mindstudio.ai/blog/what-is-loop-engineering-ai-coding-agents)
