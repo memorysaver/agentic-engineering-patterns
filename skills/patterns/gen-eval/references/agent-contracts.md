@@ -17,13 +17,13 @@ Role definitions and prompt templates for generator and evaluator agents. The co
 
 ## Role Separation Principle
 
-| Rule | Rationale |
-|------|-----------|
-| Generator MUST NOT evaluate its own output | Agents consistently praise their own work |
-| Evaluator MUST NOT see generator's self-assessment | Anchoring bias corrupts independent evaluation |
-| Generator MUST NOT modify evaluator's scores or findings | Data integrity of evaluation results |
-| Evaluator MUST NOT implement fixes | Role contamination — evaluator becomes invested in the fix |
-| Both agents receive the SAME spec/requirements | Ensures evaluation is against the spec, not the generator's interpretation |
+| Rule                                                     | Rationale                                                                  |
+| -------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Generator MUST NOT evaluate its own output               | Agents consistently praise their own work                                  |
+| Evaluator MUST NOT see generator's self-assessment       | Anchoring bias corrupts independent evaluation                             |
+| Generator MUST NOT modify evaluator's scores or findings | Data integrity of evaluation results                                       |
+| Evaluator MUST NOT implement fixes                       | Role contamination — evaluator becomes invested in the fix                 |
+| Both agents receive the SAME spec/requirements           | Ensures evaluation is against the spec, not the generator's interpretation |
 
 ---
 
@@ -33,12 +33,12 @@ Role definitions and prompt templates for generator and evaluator agents. The co
 
 The generator produces or validates an artifact by attempting to use it. In different contexts:
 
-| Context | Generator does |
-|---------|---------------|
-| **Code review** (build) | Implements tasks, then self-checks completeness (but cannot score quality) |
-| **Artifact validation** (validate) | Walks through each item mentally, identifies gaps and ambiguities |
-| **Design review** | Attempts to implement the design mentally, finds missing details |
-| **Document review** | Follows the document's instructions step by step |
+| Context                            | Generator does                                                             |
+| ---------------------------------- | -------------------------------------------------------------------------- |
+| **Code review** (build)            | Implements tasks, then self-checks completeness (but cannot score quality) |
+| **Artifact validation** (validate) | Walks through each item mentally, identifies gaps and ambiguities          |
+| **Design review**                  | Attempts to implement the design mentally, finds missing details           |
+| **Document review**                | Follows the document's instructions step by step                           |
 
 ### Generator constraints
 
@@ -54,12 +54,14 @@ The generator produces a structured artifact or a findings list:
 
 ```markdown
 ## Assessment of [item]
+
 **Can implement?** Yes/No
 **Missing details:**
+
 - [specific gap that would cause guesswork]
-**Dependency gaps:**
+  **Dependency gaps:**
 - [what this item needs but doesn't declare]
-**Assumption mismatches:**
+  **Assumption mismatches:**
 - [implicit assumption that could be wrong]
 ```
 
@@ -71,12 +73,13 @@ The generator produces a structured artifact or a findings list:
 
 The evaluator independently assesses work against specifications. It has NO knowledge of the generator's internal reasoning or self-assessment.
 
-| Context | Evaluator does |
-|---------|---------------|
-| **Code review** (build) | Tests running application, reviews code, scores dimensions |
-| **Artifact validation** (validate) | Checks claims against codebase, verifies file paths, API shapes |
-| **Design review** | Verifies technical feasibility against actual code |
-| **Document review** | Confirms factual claims, tests commands |
+| Context                            | Evaluator does                                                                                                                          |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| **Code review** (build)            | Tests running application, reviews code, scores dimensions                                                                              |
+| **UI work** (build)                | Additionally receives screenshot(s) of the running app and scores Visual Design against the calibration/design-system spec (multimodal) |
+| **Artifact validation** (validate) | Checks claims against codebase, verifies file paths, API shapes                                                                         |
+| **Design review**                  | Verifies technical feasibility against actual code                                                                                      |
+| **Document review**                | Confirms factual claims, tests commands                                                                                                 |
 
 ### Evaluator constraints
 
@@ -84,8 +87,9 @@ The evaluator independently assesses work against specifications. It has NO know
 - **MUST** score against the dimension scale definitions (not gut feel)
 - **MUST** apply hard failure thresholds strictly
 - **MUST** provide actionable fix suggestions for every finding
+- **MUST**, for UI work, receive screenshot(s) of the running app (captured host-aware per `executor/references/dogfood-validation.md`) and score the **Visual Design** dimension against the project's `calibration/<type>.yaml` / design-system spec using its multimodal vision (Claude natively; Codex GPT-5.4)
 - **MUST NOT** rationalize problems away ("this is probably fine because...")
-- **MUST NOT** implement fixes (role contamination)
+- **MUST NOT** implement fixes or capture the screenshot itself (generator ≠ evaluator — the dogfood/capture step produces the image; the evaluator only judges it)
 - **CAN** update `passes`, `evaluated_by`, `round` in feature-verification.json
 
 ### Evaluator output format
@@ -94,7 +98,9 @@ The evaluator independently assesses work against specifications. It has NO know
 # Evaluation Round <N>
 
 ## Findings
+
 ### [PASS/FAIL]: [Finding title] ([Dimension]: [Score])
+
 - Steps to reproduce: [concrete steps]
 - Expected: [what should happen]
 - Actual: [what actually happens]
@@ -102,14 +108,17 @@ The evaluator independently assesses work against specifications. It has NO know
 - Fix: [specific, actionable suggestion]
 
 ## Scores
+
 - [Dimension 1]: [Score] — [justification referencing scale definition]
 - [Dimension 2]: [Score] — [justification]
-...
+  ...
 
 ## Result: PASS / FAIL
+
 [If FAIL: which thresholds were violated, what must be fixed]
 
 ## Verification Updates
+
 [Which items in feature-verification.json were updated]
 ```
 
@@ -135,18 +144,22 @@ A specialized evaluator that checks whether an artifact is compatible with the d
 # Protocol Compatibility Report
 
 ## Required fields check
+
 - [field]: present / MISSING
 - [field]: present / MISSING (required by [downstream skill])
 
 ## Structural validation
+
 - DAG validity: PASS / FAIL ([details])
 - Cross-references: PASS / FAIL ([broken refs])
 - Scoring compatibility: PASS / FAIL ([missing inputs])
 
 ## File conflict analysis
+
 - [file]: modified by [story A] and [story B] in same slice
 
 ## Summary
+
 [N] required fixes, [M] warnings
 ```
 
@@ -159,12 +172,14 @@ What each agent receives determines the quality of evaluation. Too much context 
 ### Generator context
 
 **Include:**
+
 1. The artifact being validated — full content
 2. The artifact's purpose — what downstream consumer uses it
 3. Technical constraints — stack, conventions, existing patterns
 4. Dependencies — what this artifact builds on
 
 **Exclude:**
+
 - Full codebase (evaluator's job)
 - History of how the artifact was created
 - Other artifacts not directly consumed
@@ -173,12 +188,14 @@ What each agent receives determines the quality of evaluation. Too much context 
 ### Evaluator context
 
 **Include:**
+
 1. The artifact being validated — full content
 2. The original spec/requirements — NOT the generator's interpretation
 3. Read access to the codebase — package.json, schemas, configs, source
 4. The specific claims to verify — file paths, versions, API signatures
 
 **Exclude:**
+
 - Generator's self-assessment or findings
 - Product vision or business context (unless evaluating product artifacts)
 - Other evaluator's findings (if running multiple evaluators)
@@ -186,11 +203,13 @@ What each agent receives determines the quality of evaluation. Too much context 
 ### Protocol Checker context
 
 **Include:**
+
 1. The artifact — specifically the section being checked
 2. The downstream protocol specification — exact field requirements, format rules
 3. Structural constraints — DAG rules, naming conventions
 
 **Exclude:**
+
 - The codebase (not relevant for protocol checking)
 - Quality dimensions (not its role)
 - Business context

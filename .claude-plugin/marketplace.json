@@ -5,13 +5,13 @@
     "email": "mho@looplia.run"
   },
   "metadata": {
-    "version": "1.8.0",
+    "version": "2.0.0",
     "description": "Skills for product planning, project scaffolding, and agentic development workflows."
   },
   "plugins": [
     {
       "name": "product-context",
-      "description": "Product-level planning and iteration: envision, map, dispatch, validate, calibrate, reflect.",
+      "description": "Product-level planning and iteration: envision, map, dispatch, validate, calibrate, reflect, watch.",
       "source": "./",
       "strict": false,
       "skills": [
@@ -20,7 +20,8 @@
         "./skills/product-context/dispatch",
         "./skills/product-context/validate",
         "./skills/product-context/calibrate",
-        "./skills/product-context/reflect"
+        "./skills/product-context/reflect",
+        "./skills/product-context/watch"
       ]
     },
     {

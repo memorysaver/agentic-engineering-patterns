@@ -397,6 +397,26 @@ topology:
     autonomous: false # true = /aep-autopilot can dispatch without human confirmation
     auto_design: false # true = skip /aep-design, go straight to /aep-launch for ambiguous stories
     skip_human_eval: none # none | backend | all — which stories skip human eval in /aep-wrap
+    # ─── v2 autonomy (all default to human-in-the-loop; opt-in only) ───
+    full_auto: false # master switch — true automates the strategic gates (design escalation, qualitative outcome eval); implies auto_design + auto_outcome_eval + watch.auto_create
+    auto_outcome_eval: none # none | quantitative — quantitative layer outcome contracts auto-evaluate from telemetry (see reflect/references/telemetry-ingestion.md)
+    deploy_targets: # post-deploy dogfood targets (G4); omit → fall back to CI/deploy output
+      staging_url: null
+      production_url: null
+    dogfood: # host-aware post-deploy validation (see executor/references/dogfood-validation.md)
+      method: auto # auto | agent-browser | codex-native | playwright
+      post_deploy_env: none # none | staging | production
+      on_issue: create_story # create_story | escalate
+    post_merge_guard: # G4a — watch merged stories' deploy health (see autopilot/references/post-merge-guard.md)
+      window_min: 15
+      auto_revert: false # conservative default: warn + escalate only; true = auto `gh pr revert` on confirmed regression
+      health_signals: [] # e.g. ["ci_status", "error_rate", "health_endpoint"]
+    telemetry_sources: [] # G5 — read-only signal sources. Detected by /aep-scaffold audit (or set by hand); /aep-map binds each needed quantitative success_metric + health_signal via metric_map (coverage rule: reflect/references/telemetry-ingestion.md §1.5). token_env only — never embed secrets.
+    #   - { kind: error_stream, endpoint: "https://…?since={since}", token_env: SENTRY_TOKEN, metric_map: { error_rate: "<query>" } }
+    watch: # G6 /aep-watch self-feeding discovery
+      sources: []
+      interval: 30m
+      auto_create: false # surface proposed stories for confirmation; true (or full_auto) = auto-create + dispatch
   handoffs:
     - from: implementer
       to: evaluator

@@ -207,3 +207,20 @@ Same as codex-subagent: `codex exec --cd <worktree>` with the evaluator prompt.
 
 The exec process exits on its own when the build completes; nothing to kill.
 Then the common worktree removal from `backends.md`.
+
+---
+
+## Dogfood / post-deploy validation (Codex)
+
+Host-aware dogfood (`dogfood_method()`) for Codex resolves by mode, per
+[`dogfood-validation.md`](dogfood-validation.md):
+
+- **codex-subagent** (desktop, GPT-5.4 multimodal): use the **native in-app
+  browser + computer-use** to drive the app and capture screenshots (computer-use
+  is desktop-only). Fallback: the Playwright skill, then agent-browser CLI.
+- **codex-exec** (headless): **write and run a Playwright script** (no computer-use
+  off the desktop app). Fallback: agent-browser CLI → API/curl checks.
+
+Screenshots feed the multimodal evaluator's Visual Design dimension
+(`aep-gen-eval/references/scoring-framework.md`). Full selection + `target_url()`
+resolution live in `dogfood-validation.md`.

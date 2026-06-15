@@ -196,10 +196,17 @@ Used in multi-round mode (workspace context). Files live in `.dev-workflow/signa
   "phase_name": "code-review",
   "eval_round": 2,
   "eval_result": "fail",
+  "recovery_rung": "reground",
   "completion_pct": 75,
   "updated_at": "2026-03-30T12:00:00Z"
 }
 ```
+
+`recovery_rung` (optional) tracks which rung of the
+[recovery ladder](recovery-ladder.md) the generator is on when `eval_result`
+keeps failing — `same_fix` | `reground` | `fresh_generator` | `decompose`. The
+autopilot tick reads it to know the ladder is being climbed before it emits an
+`eval_not_converging` escalation.
 
 ### needs-human.md (worker writes — the human-gate record)
 

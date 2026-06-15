@@ -1,6 +1,6 @@
 # Tick Protocol
 
-The 7-step state machine executed on each autopilot tick. Each tick is idempotent — running it twice with no external state change produces the same result and takes no duplicate actions.
+The 7-step state machine executed on each autopilot tick (with a ③.5 post-merge guard sub-step between wrap and guide-completion). Each tick is idempotent — running it twice with no external state change produces the same result and takes no duplicate actions.
 
 **Target duration:** <60 seconds of work per tick (under the goal driver the
 turn then waits the per-tick floor — step ⑦ — before ending)
@@ -13,7 +13,7 @@ this tick each turn until the layer completes; loop driver (fallback) —
 **EXECUTION MODEL — CHECK → ACT** (see SKILL.md "Execution model"). A tick is two halves:
 
 - **CHECK** — steps ①②⑤, the read-only/scoring parts of ④⑥, and the ⑦ state write. These run in a cheap, context-isolated agent via `executor.check()` (Claude Code Haiku subagent / Codex `codex exec`) and produce an **action list**. The CHECK reads signals only — never workspace code.
-- **ACT** — the orchestrator performs the emitted actions: ③ wrap, ④/⑤ nudges, ⑥ launch, escalations.
+- **ACT** — the orchestrator performs the emitted actions: ③ wrap, ③.5 post-merge guard (dogfood / reflect / revert), ④/⑤ nudges, ⑥ launch, escalations.
 
 The action-list schema is `{summary, state_written, actions[]}`, each action `{type, workspace, story_id, message, reason}` (full schema in `aep-executor/references/backends.md`). The step recipes below are both the content of the CHECK prompt and the templates the ACT executes.
 
@@ -122,6 +122,24 @@ After wrapping, **skip to step ⑦** (write state). The next tick will handle di
 
 ---
 
+## Step ③.5: Post-Merge Guard
+
+For each recently-merged story (one Step ③ wrapped within the monitoring window — default applies per `post-merge-guard.md`), run the **post-merge guard**. The detail lives in `references/post-merge-guard.md`; this step defers to it. Within the monitoring window:
+
+1. **Watch deploy health** — read deploy/CI signals and `gh` only (no workspace code, no `gh pr merge`). The orchestrator boundary holds.
+2. **Run host-aware dogfood** — exercise the merged change per the host-aware recipe in `post-merge-guard.md`.
+
+Two issue paths:
+
+- **Dogfood UX / functional issue** → route the finding through the `/aep-reflect` classifier, which auto-creates a follow-up story.
+- **Hard regression** (deploy health breaks / CI red on the integration branch) → apply the `post_merge_guard.auto_revert` policy:
+  - **DEFAULT (conservative, `auto_revert: false`)** → **warn + escalate** for human decision; do not revert.
+  - **`auto_revert: true`** (opt-in) → revert the merge.
+
+Emit any follow-up (reflect story / escalation / revert) as an action; never read workspace source — signals / CI / `gh` only.
+
+---
+
 ## Step ④: Guide Completion
 
 **This is the most important step. ALL actions here use `executor.nudge()` (delivered via the workspace's mode transport). NEVER spawn Agent tools for review. NEVER call `gh pr merge`. Workspace agents own code review and merging.**
@@ -219,7 +237,7 @@ executor.nudge(<workspace-name>,
   "Code has changed since your last evaluation. Re-run Phase 5 code review on the current state before proceeding with the PR. Write a new eval-request.md and spawn a fresh evaluator.")
 ```
 
-**Escalation:** No eval-response after 6 ticks (30 min) post-trigger → add escalation with type `"eval_not_converging"`.
+**Escalation:** No eval-response after 6 ticks (30 min) post-trigger → before escalating, the workspace must climb the **recovery ladder** (`../../gen-eval/references/recovery-ladder.md`): nudge it to work the ladder's rungs (re-scope, decompose, relax non-essential criteria, etc.) first. Only emit the `"eval_not_converging"` escalation **after the ladder is exhausted** — i.e. the workspace has reported the ladder spent without a PASS.
 
 ### Sub-step ④c: Guide to Merge
 
@@ -387,12 +405,12 @@ Before scoring individual stories, check for `compile_mode: grouped_change`:
 For the top-scored story (or group), use `readiness_score` for routing:
 
 - **readiness_score >= 0.7** → dispatch to `/aep-launch`
-- **readiness_score 0.5–0.7** → check `topology.routing.auto_design`:
-  - If `auto_design: true` → route through `/aep-design` automatically (no pause), then `/aep-launch`
-  - If `auto_design: false` → **ESCALATE** (pause for human design input)
-- **readiness_score < 0.5** → check `topology.routing.auto_design`:
-  - If `auto_design: true` → route through `/aep-design` automatically (no pause), then `/aep-launch`
-  - If `auto_design: false` → **ESCALATE** (pause for human design input)
+- **readiness_score 0.5–0.7** → check `topology.routing.full_auto` / `auto_design`:
+  - If `full_auto: true` (master switch) **or** `auto_design: true` → auto-route through the **non-interactive design resolver** (`/aep-design`, no pause), then `/aep-launch`
+  - Otherwise → **ESCALATE** (pause for human design input)
+- **readiness_score < 0.5** → check `topology.routing.full_auto` / `auto_design`:
+  - If `full_auto: true` (master switch) **or** `auto_design: true` → auto-route through the **non-interactive design resolver** (`/aep-design`, no pause), then `/aep-launch`
+  - Otherwise → **ESCALATE** (pause for human design input)
 - **`attempt_count >= 2`** → always **ESCALATE** regardless of readiness (repeated failures need human attention)
 
 If escalation triggers: follow the pause protocol from the main SKILL.md. Do not dispatch.
@@ -443,7 +461,10 @@ If all stories in the active layer are completed (after wraps):
 
 1. Suggest running the layer gate integration test
 2. If gate passes: update `layer_gates[layer].status: passed`
-3. **Outcome contract check:** If `product.layers[active_layer].outcome_contract` exists, add an escalation requesting the user to evaluate the outcome contract before advancing. Autopilot **pauses** — outcome evaluation requires human judgment (user testing, analytics, qualitative assessment). The user runs `/aep-reflect` which evaluates outcome contracts in Step 2.75. After `/aep-reflect` completes, resume autopilot.
+3. **Outcome contract check:** If `product.layers[active_layer].outcome_contract` exists, decide whether to auto-evaluate or pause:
+   - **Quantitative auto-eval:** If `topology.routing.auto_outcome_eval: quantitative` **and** the contract's metric is quantitative (a measurable threshold) → first run `coverage_check([metric])` (`../../../product-context/reflect/references/telemetry-ingestion.md` §1.5); if the metric isn't bound to a telemetry source (the `/aep-map` Telemetry Binding step wasn't done) → **pause** and escalate "run /aep-map observability step" (do not claim auto-coverage). If covered → auto-evaluate via the telemetry-ingestion recipe (ingest the telemetry, compare against the threshold) and **advance without pausing** when it passes. If the metric is qualitative, fall through to the pause rule below.
+   - **Qualitative / default pause:** Otherwise (no `auto_outcome_eval`, a qualitative metric, etc.) → **pause** and add an escalation requesting the user to evaluate the outcome contract before advancing — **UNLESS** `topology.routing.full_auto: true`, in which case auto-evaluate via the telemetry-ingestion recipe and advance without pause. Outcome evaluation otherwise requires human judgment (user testing, analytics, qualitative assessment). The user runs `/aep-reflect` which evaluates outcome contracts in Step 2.75. After `/aep-reflect` completes, resume autopilot.
+   - Default (no `auto_outcome_eval` / `full_auto` false) preserves the current human pause.
 4. If no outcome contract or outcome evaluation passes: advance to next layer
 5. If gate fails: add escalation, pause autopilot (layer gate failures require human judgment)
 6. If all layers complete: stop autopilot, notify human

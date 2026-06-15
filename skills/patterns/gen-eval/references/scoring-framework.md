@@ -30,61 +30,77 @@ Evaluate each dimension on a 1–5 scale. Score honestly — the value of evalua
 
 Does the implementation cover all tasks and specs?
 
-| Score | Definition |
-|-------|-----------|
-| 1 | Multiple tasks unimplemented or stubbed out |
-| 2 | Most tasks attempted but significant gaps remain |
-| 3 | All tasks addressed but some have missing edge cases or incomplete flows |
-| 4 | All tasks fully implemented with minor omissions |
-| 5 | Every task, edge case, and spec requirement implemented and verified |
+| Score | Definition                                                               |
+| ----- | ------------------------------------------------------------------------ |
+| 1     | Multiple tasks unimplemented or stubbed out                              |
+| 2     | Most tasks attempted but significant gaps remain                         |
+| 3     | All tasks addressed but some have missing edge cases or incomplete flows |
+| 4     | All tasks fully implemented with minor omissions                         |
+| 5     | Every task, edge case, and spec requirement implemented and verified     |
 
 ### 2. Correctness (1–5)
 
 Does the implementation work as specified? Are edge cases handled?
 
-| Score | Definition |
-|-------|-----------|
-| 1 | Core functionality broken — primary flows fail |
-| 2 | Main flows work but secondary flows or error paths fail |
-| 3 | Flows work under normal conditions but break on edge cases |
-| 4 | All flows work correctly with minor edge case gaps |
-| 5 | All flows work correctly including error states, empty states, and boundary conditions |
+| Score | Definition                                                                             |
+| ----- | -------------------------------------------------------------------------------------- |
+| 1     | Core functionality broken — primary flows fail                                         |
+| 2     | Main flows work but secondary flows or error paths fail                                |
+| 3     | Flows work under normal conditions but break on edge cases                             |
+| 4     | All flows work correctly with minor edge case gaps                                     |
+| 5     | All flows work correctly including error states, empty states, and boundary conditions |
 
 ### 3. UX Quality (1–5)
 
 Is the interface intuitive, responsive, and accessible?
 
-| Score | Definition |
-|-------|-----------|
-| 1 | Interface is confusing — users cannot complete basic tasks without guessing |
-| 2 | Interface works but has unintuitive interactions or missing feedback |
-| 3 | Functional UX with standard patterns but nothing polished |
-| 4 | Clean, intuitive UX with proper loading states, error messages, and responsive layout |
-| 5 | Polished UX with thoughtful transitions, accessibility, and delight details |
+| Score | Definition                                                                            |
+| ----- | ------------------------------------------------------------------------------------- |
+| 1     | Interface is confusing — users cannot complete basic tasks without guessing           |
+| 2     | Interface works but has unintuitive interactions or missing feedback                  |
+| 3     | Functional UX with standard patterns but nothing polished                             |
+| 4     | Clean, intuitive UX with proper loading states, error messages, and responsive layout |
+| 5     | Polished UX with thoughtful transitions, accessibility, and delight details           |
 
 ### 4. Security (1–5)
 
 Input validation, auth checks, data exposure?
 
-| Score | Definition |
-|-------|-----------|
-| 1 | Critical vulnerabilities — SQL injection, XSS, or auth bypass possible |
-| 2 | Major gaps — missing input validation on user-facing endpoints |
-| 3 | Basic validation present but inconsistent; some endpoints lack auth checks |
-| 4 | Solid validation and auth coverage with minor gaps in edge cases |
-| 5 | Comprehensive validation, parameterized queries, proper auth on all routes, no data leaks |
+| Score | Definition                                                                                |
+| ----- | ----------------------------------------------------------------------------------------- |
+| 1     | Critical vulnerabilities — SQL injection, XSS, or auth bypass possible                    |
+| 2     | Major gaps — missing input validation on user-facing endpoints                            |
+| 3     | Basic validation present but inconsistent; some endpoints lack auth checks                |
+| 4     | Solid validation and auth coverage with minor gaps in edge cases                          |
+| 5     | Comprehensive validation, parameterized queries, proper auth on all routes, no data leaks |
 
 ### 5. Code Quality (1–5)
 
 Conventions, maintainability, performance?
 
-| Score | Definition |
-|-------|-----------|
-| 1 | Inconsistent patterns, duplicated logic, no error handling |
-| 2 | Works but fragile — magic numbers, unclear naming, mixed conventions |
-| 3 | Acceptable quality following basic conventions; some areas need cleanup |
-| 4 | Clean, consistent code with proper error handling and clear structure |
-| 5 | Exemplary — clear abstractions, well-named, efficient, follows all project conventions |
+| Score | Definition                                                                             |
+| ----- | -------------------------------------------------------------------------------------- |
+| 1     | Inconsistent patterns, duplicated logic, no error handling                             |
+| 2     | Works but fragile — magic numbers, unclear naming, mixed conventions                   |
+| 3     | Acceptable quality following basic conventions; some areas need cleanup                |
+| 4     | Clean, consistent code with proper error handling and clear structure                  |
+| 5     | Exemplary — clear abstractions, well-named, efficient, follows all project conventions |
+
+### 6. Visual Design (1–5)
+
+Does a screenshot of the running UI match the project's design system? Evaluated by feeding a screenshot of the running app to the **multimodal evaluator**, scored against the project's design-system / calibration spec (`calibration/<type>.yaml`, e.g. `calibration/visual-design.yaml`) — spacing rhythm, visual hierarchy, brand/token consistency, alignment, and overall polish.
+
+| Score | Definition                                                                                                                        |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | Off-brand or visually broken — wrong colors/fonts, overlapping elements, no consistent spacing                                    |
+| 2     | Recognizable but inconsistent — ad-hoc spacing, mismatched tokens, weak hierarchy                                                 |
+| 3     | Follows the design system loosely — on-brand but uneven spacing/alignment, generic polish                                         |
+| 4     | Consistent with the design system — correct tokens, clear hierarchy, aligned, minor polish gaps                                   |
+| 5     | Pixel-faithful to the design system — consistent tokens, deliberate hierarchy and spacing, fully aligned, production-grade polish |
+
+> **Hard failure:** Visual Design < 3 for the `.5` polish layer — a screenshot that does not match the design system blocks the polish layer from passing.
+>
+> **Host-aware capture:** The screenshot is captured per `executor/references/dogfood-validation.md` — `/agent-browser:dogfood` on Claude, native in-app browser / computer-use on Codex (GPT-5.4 multimodal), or a Playwright script — and the resulting image is fed to the in-host multimodal evaluator (Claude natively; Codex GPT-5.4). This keeps the visual judgment in-host and removes the human dependency for routine design-system checks.
 
 ---
 
@@ -108,12 +124,13 @@ Select the preset matching the artifact type, then adjust with the user during e
 ### UI-heavy (forms, dashboards, layouts)
 
 ```
-Dimensions:  Completeness, Correctness, UX Quality, Originality, Accessibility
-Weight:      UX Quality (high), Originality (high)
+Dimensions:  Completeness, Correctness, UX Quality, Visual Design, Originality, Accessibility
+Weight:      UX Quality (high), Visual Design (high), Originality (high)
 De-weight:   Code Quality (still check but don't hard-fail)
-Add:         Originality — penalize generic "AI slop" (purple gradients, card layouts)
+Add:         Visual Design — score a screenshot against calibration/visual-design.yaml (multimodal)
+             Originality — penalize generic "AI slop" (purple gradients, card layouts)
              Accessibility — WCAG AA compliance, keyboard navigation, screen readers
-Hard fail:   UX Quality < 3, Completeness < 4
+Hard fail:   UX Quality < 3, Visual Design < 3, Completeness < 4
 ```
 
 ### API-only (endpoints, services, integrations)
@@ -151,11 +168,12 @@ Hard fail:   Data Integrity < 4, Completeness < 4
 ### Mixed / Full-stack
 
 ```
-Dimensions:  Completeness, Correctness, UX Quality, Security, Code Quality
+Dimensions:  Completeness, Correctness, UX Quality, Visual Design, Security, Code Quality
 Weight:      All equal (default)
-Add:         None — use the 5 defaults
+Add:         Visual Design — when the feature ships UI, score a screenshot against
+             calibration/visual-design.yaml (multimodal); omit for non-UI slices
 Adjust:      Weight toward the area the user identifies as highest risk
-Hard fail:   Default thresholds (any < 3, Completeness < 4)
+Hard fail:   Default thresholds (any < 3, Completeness < 4); Visual Design < 3 on UI/.5 layers
 ```
 
 ---
@@ -166,65 +184,65 @@ When evaluating product context, architecture, or design artifacts (not code):
 
 ### Completeness (1–5)
 
-| Score | Definition |
-|-------|-----------|
-| 1 | Major sections missing, enums undefined, no defaults specified |
-| 2 | Sections present but sparse — many fields lack values or constraints |
-| 3 | All sections present with some gaps in specificity |
-| 4 | Comprehensive with minor omissions (e.g., a missing enum value) |
-| 5 | Every field specified, all enums listed, all defaults documented |
+| Score | Definition                                                           |
+| ----- | -------------------------------------------------------------------- |
+| 1     | Major sections missing, enums undefined, no defaults specified       |
+| 2     | Sections present but sparse — many fields lack values or constraints |
+| 3     | All sections present with some gaps in specificity                   |
+| 4     | Comprehensive with minor omissions (e.g., a missing enum value)      |
+| 5     | Every field specified, all enums listed, all defaults documented     |
 
 ### Consistency (1–5)
 
-| Score | Definition |
-|-------|-----------|
-| 1 | Field names conflict across sections, broken references |
-| 2 | Some naming mismatches, a few invalid cross-references |
-| 3 | Generally consistent with isolated inconsistencies |
-| 4 | Consistent naming and valid references with minor style variations |
-| 5 | Perfectly consistent naming, all cross-references valid, uniform conventions |
+| Score | Definition                                                                   |
+| ----- | ---------------------------------------------------------------------------- |
+| 1     | Field names conflict across sections, broken references                      |
+| 2     | Some naming mismatches, a few invalid cross-references                       |
+| 3     | Generally consistent with isolated inconsistencies                           |
+| 4     | Consistent naming and valid references with minor style variations           |
+| 5     | Perfectly consistent naming, all cross-references valid, uniform conventions |
 
 ### Implementability (1–5)
 
-| Score | Definition |
-|-------|-----------|
-| 1 | Stories cannot be implemented — critical technical details missing |
-| 2 | Most stories implementable but several have ambiguous acceptance criteria |
-| 3 | All stories have a path to implementation with some guesswork needed |
-| 4 | Clear implementation path with minor ambiguities |
-| 5 | Every story is unambiguous — an implementer agent could build it without questions |
+| Score | Definition                                                                         |
+| ----- | ---------------------------------------------------------------------------------- |
+| 1     | Stories cannot be implemented — critical technical details missing                 |
+| 2     | Most stories implementable but several have ambiguous acceptance criteria          |
+| 3     | All stories have a path to implementation with some guesswork needed               |
+| 4     | Clear implementation path with minor ambiguities                                   |
+| 5     | Every story is unambiguous — an implementer agent could build it without questions |
 
 ### Security (1–5)
 
-| Score | Definition |
-|-------|-----------|
-| 1 | No security considerations in the design |
-| 2 | Security mentioned but critical gaps (e.g., no auth model, PII unaddressed) |
-| 3 | Basic security covered but edge cases missing |
-| 4 | Comprehensive security design with minor gaps |
-| 5 | Security-first design with threat model, data lineage, and compliance considerations |
+| Score | Definition                                                                           |
+| ----- | ------------------------------------------------------------------------------------ |
+| 1     | No security considerations in the design                                             |
+| 2     | Security mentioned but critical gaps (e.g., no auth model, PII unaddressed)          |
+| 3     | Basic security covered but edge cases missing                                        |
+| 4     | Comprehensive security design with minor gaps                                        |
+| 5     | Security-first design with threat model, data lineage, and compliance considerations |
 
 ### Downstream Compatibility (1–5)
 
-| Score | Definition |
-|-------|-----------|
-| 1 | Artifact cannot be consumed by downstream skills (missing required fields) |
-| 2 | Most fields present but format mismatches prevent consumption |
-| 3 | Consumable with minor fixups needed |
-| 4 | Fully compatible with minor cosmetic issues |
-| 5 | Perfect compatibility — downstream skills can consume without any transformation |
+| Score | Definition                                                                       |
+| ----- | -------------------------------------------------------------------------------- |
+| 1     | Artifact cannot be consumed by downstream skills (missing required fields)       |
+| 2     | Most fields present but format mismatches prevent consumption                    |
+| 3     | Consumable with minor fixups needed                                              |
+| 4     | Fully compatible with minor cosmetic issues                                      |
+| 5     | Perfect compatibility — downstream skills can consume without any transformation |
 
 ### Walking Skeleton Validity (1–5)
 
 Does Layer 0 represent the thinnest possible end-to-end user journey?
 
-| Score | Definition |
-|-------|-----------|
-| 1 | Layer 0 has gold-plated features, infrastructure-only stories, or no clear user journey |
-| 2 | A user journey exists but includes unnecessary scope — some stories could move to Layer 1+ |
-| 3 | Mostly minimal but 1-2 stories feel over-scoped for a walking skeleton |
-| 4 | Genuinely thin path with one minor luxury that could be deferred |
-| 5 | The absolute minimum — a user can complete the crudest possible journey, nothing more |
+| Score | Definition                                                                                 |
+| ----- | ------------------------------------------------------------------------------------------ |
+| 1     | Layer 0 has gold-plated features, infrastructure-only stories, or no clear user journey    |
+| 2     | A user journey exists but includes unnecessary scope — some stories could move to Layer 1+ |
+| 3     | Mostly minimal but 1-2 stories feel over-scoped for a walking skeleton                     |
+| 4     | Genuinely thin path with one minor luxury that could be deferred                           |
+| 5     | The absolute minimum — a user can complete the crudest possible journey, nothing more      |
 
 > "Build a skeleton that can walk before building a perfect leg." — Jeff Patton
 
@@ -232,37 +250,37 @@ Does Layer 0 represent the thinnest possible end-to-end user journey?
 
 Does each layer add meaningful new user capability in the right order?
 
-| Score | Definition |
-|-------|-----------|
-| 1 | Layers are arbitrary groupings with no clear progression of user value |
-| 2 | Some layers add user value, but ordering doesn't match priority |
-| 3 | Layers generally progress from core to enrichment, with 1-2 misplacements |
-| 4 | Clear value progression — each layer unlocks a meaningful new user capability |
-| 5 | Optimal ordering — users get the highest-value capabilities earliest, each layer builds naturally on the previous |
+| Score | Definition                                                                                                        |
+| ----- | ----------------------------------------------------------------------------------------------------------------- |
+| 1     | Layers are arbitrary groupings with no clear progression of user value                                            |
+| 2     | Some layers add user value, but ordering doesn't match priority                                                   |
+| 3     | Layers generally progress from core to enrichment, with 1-2 misplacements                                         |
+| 4     | Clear value progression — each layer unlocks a meaningful new user capability                                     |
+| 5     | Optimal ordering — users get the highest-value capabilities earliest, each layer builds naturally on the previous |
 
 ### Vision Alignment (1–5)
 
 Do all stories trace back to the opportunity brief and product vision?
 
-| Score | Definition |
-|-------|-----------|
-| 1 | Multiple stories serve no user need — pure technical infrastructure or scope creep |
-| 2 | Most stories serve the vision but some are "nice to have" that crept in |
-| 3 | All stories connect to user needs but some are indirect |
-| 4 | Clear traceability from each story to the opportunity brief |
-| 5 | Every story directly serves a stated user need, with explicit mapping to JTBD |
+| Score | Definition                                                                         |
+| ----- | ---------------------------------------------------------------------------------- |
+| 1     | Multiple stories serve no user need — pure technical infrastructure or scope creep |
+| 2     | Most stories serve the vision but some are "nice to have" that crept in            |
+| 3     | All stories connect to user needs but some are indirect                            |
+| 4     | Clear traceability from each story to the opportunity brief                        |
+| 5     | Every story directly serves a stated user need, with explicit mapping to JTBD      |
 
 ### INVEST Compliance (1–5)
 
 Do stories follow the INVEST criteria (Independent, Negotiable, Valuable, Estimable, Small, Testable)?
 
-| Score | Definition |
-|-------|-----------|
-| 1 | Stories are coupled, vague, and untestable — they are task lists, not stories |
-| 2 | Some stories meet INVEST but many are too large or have hidden dependencies |
-| 3 | Most stories are independent and testable but some are oversized or bundled |
-| 4 | Stories are well-formed with minor violations (e.g., one L story that should be split) |
-| 5 | Every story is independent, delivers observable value, has clear acceptance criteria, and is right-sized |
+| Score | Definition                                                                                               |
+| ----- | -------------------------------------------------------------------------------------------------------- |
+| 1     | Stories are coupled, vague, and untestable — they are task lists, not stories                            |
+| 2     | Some stories meet INVEST but many are too large or have hidden dependencies                              |
+| 3     | Most stories are independent and testable but some are oversized or bundled                              |
+| 4     | Stories are well-formed with minor violations (e.g., one L story that should be split)                   |
+| 5     | Every story is independent, delivers observable value, has clear acceptance criteria, and is right-sized |
 
 ### Story Mapping Hard Failure Thresholds
 
@@ -278,23 +296,23 @@ When evaluating structured documents (RFCs, migration plans, runbooks):
 
 ### Accuracy (1–5)
 
-| Score | Definition |
-|-------|-----------|
-| 1 | Multiple factual errors — wrong file paths, incorrect API signatures, outdated versions |
-| 2 | Some claims incorrect or unverifiable |
-| 3 | Mostly accurate with a few unverified claims |
-| 4 | All verifiable claims checked and correct |
-| 5 | Every claim verified against current codebase/documentation |
+| Score | Definition                                                                              |
+| ----- | --------------------------------------------------------------------------------------- |
+| 1     | Multiple factual errors — wrong file paths, incorrect API signatures, outdated versions |
+| 2     | Some claims incorrect or unverifiable                                                   |
+| 3     | Mostly accurate with a few unverified claims                                            |
+| 4     | All verifiable claims checked and correct                                               |
+| 5     | Every claim verified against current codebase/documentation                             |
 
 ### Executability (1–5)
 
-| Score | Definition |
-|-------|-----------|
-| 1 | Cannot be followed — missing steps, wrong commands, undefined prerequisites |
-| 2 | Followable with significant guesswork required |
-| 3 | Can be followed but some steps need interpretation |
-| 4 | Clear step-by-step with minor assumptions |
-| 5 | Fully executable — every command correct, every prerequisite listed |
+| Score | Definition                                                                  |
+| ----- | --------------------------------------------------------------------------- |
+| 1     | Cannot be followed — missing steps, wrong commands, undefined prerequisites |
+| 2     | Followable with significant guesswork required                              |
+| 3     | Can be followed but some steps need interpretation                          |
+| 4     | Clear step-by-step with minor assumptions                                   |
+| 5     | Fully executable — every command correct, every prerequisite listed         |
 
 ### Completeness (1–5)
 
@@ -368,14 +386,14 @@ Generator must fix both issues before re-evaluation.
 
 These are common evaluator failure modes — watch for them:
 
-| Anti-Pattern | What Happens | Why It's Wrong |
-|-------------|-------------|---------------|
-| **Surface testing** | Only test the happy path | Bugs hide in error paths and edge cases |
-| **Rationalization** | "This is probably fine because..." | If you found a problem, score it honestly |
-| **Score inflation** | Everything gets 4-5 | Compare against scale definitions, not gut feel |
-| **Scope creep** | "It would be nice if..." | Only evaluate against the spec, not wishlist items |
-| **Premature approval** | Passing after finding only minor issues | Minor issues compound — evaluate the whole surface first |
-| **Self-persuasion** | Identifying a problem then arguing it away | The problem exists. Score accordingly |
+| Anti-Pattern           | What Happens                               | Why It's Wrong                                           |
+| ---------------------- | ------------------------------------------ | -------------------------------------------------------- |
+| **Surface testing**    | Only test the happy path                   | Bugs hide in error paths and edge cases                  |
+| **Rationalization**    | "This is probably fine because..."         | If you found a problem, score it honestly                |
+| **Score inflation**    | Everything gets 4-5                        | Compare against scale definitions, not gut feel          |
+| **Scope creep**        | "It would be nice if..."                   | Only evaluate against the spec, not wishlist items       |
+| **Premature approval** | Passing after finding only minor issues    | Minor issues compound — evaluate the whole surface first |
+| **Self-persuasion**    | Identifying a problem then arguing it away | The problem exists. Score accordingly                    |
 
 ---
 
@@ -397,10 +415,12 @@ Create a `validation-criteria.md` in your project's `.dev-workflow/` directory:
 # Project Validation Criteria
 
 ## Additional dimensions
+
 - API Design: Check for consistent naming, proper status codes, error format
 - Data Privacy: Verify PII handling, encryption, deletion cascade
 
 ## Project-specific hard failures
+
 - Any endpoint missing Zod validation → Security FAIL
 - Any database change missing migration → Completeness FAIL
 ```

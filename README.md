@@ -615,7 +615,7 @@ These aren't rules we invented — they're patterns extracted from Anthropic's e
 
 ## Getting Started
 
-**Brand new to AEP?** Start with the [Orientation Guide](docs/orientation.md) for a 10-minute tour of the mental models, the 16 skills, and the four paths — then run `/aep-onboard`.
+**Brand new to AEP?** Start with the [Orientation Guide](docs/orientation.md) for a 10-minute tour of the mental models, the 17 skills, and the four paths — then run `/aep-onboard`.
 
 **New to this plugin?**
 

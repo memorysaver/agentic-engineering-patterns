@@ -629,9 +629,29 @@ grep -q '.dev-workflow/' .gitignore 2>/dev/null && echo "[x]" || echo "[ ] MISSI
 
 printf "  %-45s" ".feature-workspaces/ in .gitignore:"
 grep -q '.feature-workspaces/' .gitignore 2>/dev/null && echo "[x]" || echo "[ ] MISSING"
+
+# Observability stack (candidate telemetry sources for /aep-map binding)
+echo "--- Observability (telemetry source candidates) ---"
+deps="$(cat package.json 2>/dev/null) $(cat pyproject.toml 2>/dev/null)"
+for probe in "sentry:error_stream" "datadog:monitoring" "posthog:analytics" "amplitude:analytics" "@opentelemetry:monitoring" "newrelic:monitoring"; do
+  tool="${probe%%:*}"; kind="${probe##*:}"
+  printf "  %-45s" "$tool ($kind):"
+  echo "$deps" | grep -qi "$tool" && echo "[detected]" || echo "[ ]"
+done
+printf "  %-45s" "health endpoint (/healthz|/readyz|/health):"
+grep -rqiE '/(healthz|readyz|health)\b' . --include='*.ts' --include='*.js' --include='*.py' 2>/dev/null && echo "[detected]" || echo "[ ]"
 ```
 
 Show the user the results. Only proceed to fill gaps for items marked `[ ] MISSING`.
+
+**Observability → telemetry candidates.** For each `[detected]` tool, record a
+**candidate** entry under `topology.routing.telemetry_sources` (`kind` + a
+`token_env` name for its API key — never the secret; leave `endpoint`/`metric_map`
+for `/aep-map` to bind). These are just candidates: `/aep-map`'s Telemetry Binding
+step ties each needed `success_metric` / `health_signal` to one of them (coverage
+rule in `aep-reflect/references/telemetry-ingestion.md` §1.5). If nothing is
+detected, that's fine — note it so `/aep-map` knows quantitative metrics may need a
+tool added or must stay qualitative.
 
 ---
 
