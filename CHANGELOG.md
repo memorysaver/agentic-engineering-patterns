@@ -21,6 +21,51 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 _Nothing yet._
 
+## [2.0.0] - 2026-06-16
+
+The **autonomy loop** release. Closes the loop-engineering gaps identified in
+`docs/research/loop-engineering-autonomy-gap.md` (G2–G7) and adds a `full_auto`
+master switch. Every new capability defaults to **human-in-the-loop** — autonomy
+is opt-in via `topology.routing` flags.
+
+### Added
+
+- **`/aep-watch` skill** (G6) — continuously ingests telemetry / error streams /
+  bug trackers, classifies findings with the `/aep-reflect` classifier, and
+  auto-files bug/refinement stories so reflect→dispatch becomes self-feeding.
+- **Change-strategy recovery ladder** (G2) — `gen-eval/references/recovery-ladder.md`;
+  on repeated eval FAIL the build climbs same-fix → re-ground → fresh
+  `native-bg-subagent` generator → decompose **before** the `eval_not_converging`
+  human gate.
+- **Host-aware post-deploy dogfood** (G4b) — `executor/references/dogfood-validation.md`:
+  `dogfood_method()` (Claude → agent-browser; Codex → native in-app browser /
+  computer-use, or Playwright headless) + `target_url()` (config-first, CI fallback).
+- **Post-merge guard** (G4a) — `autopilot/references/post-merge-guard.md` + tick
+  Step ③.5: monitors merged stories' deploy health; dogfood issues → reflect story;
+  hard regression → conservative `auto_revert` (default off, warn + escalate).
+- **Telemetry-driven reflect** (G5) — `reflect/references/telemetry-ingestion.md`:
+  automated source ingestion + quantitative outcome-contract auto-evaluation.
+- **Visual Design evaluator dimension** (G3) — vision-model scoring of screenshots
+  against the design system, for both Claude and Codex (multimodal).
+- **`full_auto` master switch** (A1) — `topology.routing.full_auto` (default false)
+  gates the strategic human pauses (design escalation, qualitative outcome eval);
+  implies `auto_design` + `auto_outcome_eval` + `watch.auto_create`. New config keys
+  added to the product-context schema.
+
+### Changed
+
+- `/aep-build` Phase 5 climbs the recovery ladder; Phase 6 dogfood is host-aware
+  (degrades instead of skipping when agent-browser is absent).
+- `/aep-reflect` Step 1 supports automated ingestion; Step 2.75 auto-evaluates
+  quantitative outcome contracts (qualitative still pauses unless `full_auto`).
+- `/aep-autopilot` gains the post-merge guard step and `full_auto`-aware routing;
+  loop hygiene unified on `--max-turns` (G7).
+
+### Fixed
+
+- Carries forward the v1.8.0 executor fix (claude-team removed; `native-bg-subagent`
+  default + post-spawn liveness probe). Every new spawn path uses it.
+
 ## [1.8.0] - 2026-06-15
 
 ### Changed
