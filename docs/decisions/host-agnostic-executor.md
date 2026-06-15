@@ -1,5 +1,7 @@
 # Host-Agnostic Executor Abstraction
 
+> **Superseded in part (2026-06):** `claude-team` was removed (silent agent-teams spawn failure on Claude Code ≥ 2.1.x) and replaced by `native-bg-subagent` as the Claude Code default, with a mandatory post-spawn liveness probe. See [`remove-claude-team.md`](./remove-claude-team.md).
+
 > **Superseded in part (2026-06-10)** by
 > [`native-first-executor.md`](native-first-executor.md): the B1–B4 ladder is
 > replaced by named launch modes (claude-team / claude-bg / codex-subagent /

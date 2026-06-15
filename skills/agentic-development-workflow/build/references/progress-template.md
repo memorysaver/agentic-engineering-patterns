@@ -28,7 +28,7 @@
 ## Part C — Launch Workspace
 
 - [ ] Worktree created (`git worktree add -b feat/<name>`)
-- [ ] Workspace agent started via executor (mode: claude-team / claude-bg / codex-subagent / codex-exec / legacy tmux / workflow)
+- [ ] Workspace agent started via executor (mode: native-bg-subagent / claude-bg / codex-subagent / codex-exec / legacy tmux / workflow)
 - [ ] Bootstrap prompt sent
 - [ ] Evaluator agent launched (full mode only)
 

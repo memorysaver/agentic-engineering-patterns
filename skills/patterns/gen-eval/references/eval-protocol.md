@@ -16,7 +16,7 @@ The request→response→fix loop for running generator/evaluator cycles. Covers
 
 ## Execution Contexts
 
-The gen/eval pattern can execute in three different contexts. The protocol is the same; the mechanics differ. When `/aep-build` runs the loop, the context tracks the **executor mode** in play (see `aep-executor/references/backends.md`): legacy (pinned tmux) → Context A; claude-team / claude-bg (foreground Task subagent) → Context B mechanism, worktree-bound; codex-subagent / codex-exec (`codex exec --cd` with the aep-evaluator role) and workflow (verify stage) → Context C mechanism, in-host. For the native modes the evaluator prompt is delivered **at spawn time** — no readiness wait, no separate send, no teardown.
+The gen/eval pattern can execute in three different contexts. The protocol is the same; the mechanics differ. When `/aep-build` runs the loop, the context tracks the **executor mode** in play (see `aep-executor/references/backends.md`): legacy (pinned tmux) → Context A; native-bg-subagent / claude-bg (foreground Task subagent) → Context B mechanism, worktree-bound; codex-subagent / codex-exec (`codex exec --cd` with the aep-evaluator role) and workflow (verify stage) → Context C mechanism, in-host. For the native modes the evaluator prompt is delivered **at spawn time** — no readiness wait, no separate send, no teardown.
 
 ### Context A: Tmux Split Panes (Workspace — used by /aep-build under legacy/pinned-tmux)
 
@@ -64,7 +64,7 @@ Consolidate findings.
 
 **When to use:** Validating artifacts on the main branch. No running application needed. Agents need read access to the codebase but don't modify it.
 
-> **Context B mechanism in /aep-build (claude-team / claude-bg):** the generator
+> **Context B mechanism in /aep-build (native-bg-subagent / claude-bg):** the generator
 > spawns a single **foreground** Task subagent with the evaluator prompt; it
 > inherits the worktree cwd and returns on completion. Same mechanism as above,
 > but worktree-bound and sequential — not the main-session read-only use.

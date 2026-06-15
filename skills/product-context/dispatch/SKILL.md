@@ -506,7 +506,7 @@ git push origin "$BASE"
 
 > **Launch mode is normally resolved at `/aep-launch`, not here.** For the default
 > path dispatch stays executor-agnostic — it hands a well-specified change to
-> `/aep-launch`, which detects the host and selects a mode (claude-team /
+> `/aep-launch`, which detects the host and selects a mode (native-bg-subagent /
 > claude-bg / codex-subagent / codex-exec / legacy) via `aep-executor`. Native
 > modes outrank tmux on every host; dispatch does not need to know. **The one
 > exception is the _Dynamic Workflow_ opt-in (Step 5):** that path runs the

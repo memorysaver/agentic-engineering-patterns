@@ -30,12 +30,12 @@ CONTROL PLANE (human + AI)              EXECUTION PLANE (agents build)
 
 ### Feature Execution (Execution Plane)
 
-| Skill         | When to use                           | Input                                      | Output                                                                                                           | Session   |
-| ------------- | ------------------------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- | --------- |
-| `/aep-design` | Refine an ambiguous story spec        | Dispatched story (OpenSpec change on main) | Refined OpenSpec artifacts (proposal, design, specs, tasks)                                                      | Main      |
-| `/aep-launch` | Spawn autonomous agent for a story    | Well-specified story with OpenSpec change  | git worktree + native worker (teammate/bg session/codex subagent; tmux when pinned) + running `/aep-build` agent | Main      |
-| `/aep-build`  | Agent implements a feature end-to-end | OpenSpec artifacts on disk                 | Merged PR                                                                                                        | Workspace |
-| `/aep-wrap`   | Archive after PR merges               | Completed workspace with merged PR         | Archived OpenSpec, updated story status, cleaned workspace                                                       | Main      |
+| Skill         | When to use                           | Input                                      | Output                                                                                                   | Session   |
+| ------------- | ------------------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------- | --------- |
+| `/aep-design` | Refine an ambiguous story spec        | Dispatched story (OpenSpec change on main) | Refined OpenSpec artifacts (proposal, design, specs, tasks)                                              | Main      |
+| `/aep-launch` | Spawn autonomous agent for a story    | Well-specified story with OpenSpec change  | git worktree + native worker (bg subagent/codex subagent; tmux when pinned) + running `/aep-build` agent | Main      |
+| `/aep-build`  | Agent implements a feature end-to-end | OpenSpec artifacts on disk                 | Merged PR                                                                                                | Workspace |
+| `/aep-wrap`   | Archive after PR merges               | Completed workspace with merged PR         | Archived OpenSpec, updated story status, cleaned workspace                                               | Main      |
 
 ### Patterns (Reusable)
 

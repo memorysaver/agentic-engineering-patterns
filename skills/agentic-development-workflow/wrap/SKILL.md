@@ -158,7 +158,7 @@ as `backend`/`agent_id` in autopilot state, or evident from how you launched):
 
 ```bash
 # Mode-specific worker stop (each is a no-op for the other modes):
-#   claude-team    → SendMessage shutdown_request to teammate <name> (team persists)
+#   native-bg-subagent → TaskStop(<bare-hex bg-subagent id>) (session-bound, no team)
 #   claude-bg      → claude stop <agent_id>; claude rm <agent_id>
 #   codex-subagent → close_agent(<agent_id>) if still running
 #   codex-exec     → nothing to kill (the exec process exited with the build)

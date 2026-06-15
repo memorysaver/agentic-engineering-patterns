@@ -287,7 +287,7 @@ See also: **Dispatch**, **Workspace Session**
 
 ### Workspace Session
 
-An autonomous agent worker bound to an isolated **Git Worktree** on a fresh `feat/<name>` branch — a Claude Code teammate or background session, a Codex subagent or exec worker, or (legacy/pinned) a tmux-hosted session, per the executor launch mode. Created by `/aep-launch`, executes `/aep-build` phases 0–12 without user interaction. Communicates progress via **Signal Files**. One worktree per **Story**.
+An autonomous agent worker bound to an isolated **Git Worktree** on a fresh `feat/<name>` branch — a Claude Code bg subagent (`native-bg-subagent`) or background session, a Codex subagent or exec worker, or (legacy/pinned) a tmux-hosted session, per the executor launch mode. Created by `/aep-launch`, executes `/aep-build` phases 0–12 without user interaction. Communicates progress via **Signal Files**. One worktree per **Story**.
 
 **Where it appears:** `.feature-workspaces/<name>/`; `/aep-launch` creates it; `/aep-build` runs in it; `/aep-wrap` removes it.
 
@@ -605,7 +605,7 @@ A full-stack TypeScript monorepo scaffold engine used by `/aep-scaffold`. Defaul
 
 ### cmux
 
-A Claude Code tab multiplexer that creates visual tabs for parallel **Workspace Sessions** under the pinned **legacy** (tmux) launch mode. Each tmux-hosted workspace gets its own cmux tab for terminal display. Optional — native launch modes have their own surfaces (teammate panes, `claude attach`, Codex threads).
+A Claude Code tab multiplexer that creates visual tabs for parallel **Workspace Sessions** under the pinned **legacy** (tmux) launch mode. Each tmux-hosted workspace gets its own cmux tab for terminal display. Optional — native launch modes have their own surfaces (`TaskOutput`, `claude attach`, Codex threads).
 
 **Where it appears:** `/aep-launch` legacy mode (creates cmux tab for new workspace).
 
@@ -645,7 +645,7 @@ See also: **OpenSpec**, **OpenSpec Change**
 
 ### tmux
 
-A terminal multiplexer that hosts **Workspace Sessions** under the **legacy** launch mode (explicit pin via `git config aep.executor-backend tmux`, or generic-host fallback). In that mode the **Orchestrator** communicates with workspace agents via `tmux send-keys` — one of the per-mode transports behind `executor.nudge()`, the enforcement mechanism for **Orchestrator Boundaries**. Native launch modes (Claude Code agent teams / background sessions, Codex subagents / exec workers) need no tmux.
+A terminal multiplexer that hosts **Workspace Sessions** under the **legacy** launch mode (explicit pin via `git config aep.executor-backend tmux`, or generic-host fallback). In that mode the **Orchestrator** communicates with workspace agents via `tmux send-keys` — one of the per-mode transports behind `executor.nudge()`, the enforcement mechanism for **Orchestrator Boundaries**. Native launch modes (Claude Code `native-bg-subagent` / background sessions, Codex subagents / exec workers) need no tmux.
 
 **Where it appears:** `/aep-launch` legacy mode (creates tmux session); `/aep-autopilot` (nudges via tmux when legacy); `/aep-build` Phase 5 (legacy evaluator in tmux split).
 
