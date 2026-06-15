@@ -6,20 +6,33 @@ description: |-
 
 # Autopilot
 
-One command to go autonomous. Initializes state, runs the first tick, and starts a recurring loop — all in one invocation.
+One command to go autonomous. Initializes state, runs the first tick, and keeps
+itself ticking until the current layer is complete — all in one invocation. The
+default driver is **goal-driven** (`/goal`, native on both Claude Code and
+Codex): each tick advances the layer and then **the runtime decides whether to
+re-fire** based on a completion condition, so autopilot **stops on its own** when
+the layer is done or a human-judgment gate is hit. The fixed-interval `/loop`
+driver remains available as a fallback (`--loop`).
 
 ```
-/aep-autopilot                  # start with default 5m interval
-/aep-autopilot --loop 10m       # start with custom interval
+/aep-autopilot                  # start: goal-driven driver (default) — drives the CURRENT LAYER to completion, then stops
+/aep-autopilot --loop 10m       # start with the fixed-interval loop driver instead (custom interval)
+/aep-autopilot --floor 3m       # goal driver with a custom per-tick wait floor (default 5m)
 /aep-autopilot status           # check progress and escalations
-/aep-autopilot stop             # gracefully stop the loop
+/aep-autopilot stop             # gracefully stop the driver
 ```
+
+> **Scope is one layer per run.** The goal driver completes when every story in
+> the **current layer** is merged + wrapped, then hands control back so the human
+> can run the layer gate / `/aep-reflect` and re-invoke `/aep-autopilot` for the
+> next layer. This mirrors the existing pause-at-gate behavior with crisp
+> termination instead of an infinite loop.
 
 **Where this fits:**
 
 ```
 /aep-envision → /aep-map → /aep-validate
-  → /aep-autopilot
+  → /aep-autopilot   (goal: "layer N complete")
        ┌─────────────────────────────────────────────┐
        │  tick ①  read state                          │
        │  tick ②  sync signals                        │
@@ -27,9 +40,12 @@ One command to go autonomous. Initializes state, runs the first tick, and starts
        │  tick ④  GUIDE COMPLETION (quality + merge)   │
        │  tick ⑤  detect stuck workspaces              │
        │  tick ⑥  dispatch new work (/aep-launch)          │
-       │  tick ⑦  write state                          │
-       │  ... repeat every 5 min ...                   │
+       │  tick ⑦  write state + SURFACE status + WAIT  │
        └─────────────────────────────────────────────┘
+            │ goal evaluator reads the surfaced status line:
+            │   "is layer N complete, or is autopilot paused?"
+            ├─ no            → re-fire next tick (after the wait floor)
+            └─ yes / paused  → STOP (hand back to human)
   → /aep-reflect (after layer completes or autopilot stops)
 ```
 
@@ -47,7 +63,7 @@ You are an **ORCHESTRATOR**, not an **EXECUTOR**. All code operations happen ins
 ### Executor mode + driver (read once, applies throughout)
 
 Autopilot steers running workspace workers, so it requires a **steerable mode
-whose lifetime is compatible with the periodic driver** (see the driver ×
+whose lifetime is compatible with the driver** (see the driver ×
 backend matrix in `.claude/skills/aep-executor/references/backends.md`). Every
 "send to workspace" action in this skill is `executor.nudge(ws, msg)`, and
 every liveness probe is `executor.liveness(ws)` — the table below is the
@@ -61,10 +77,14 @@ are mode-independent; deliver them through your mode's transport.
 | `present`  | teammate pane / `Shift+Down`                 | `claude attach <id>`                                                       | thread list / `/agent`   | signals + PR                         | cmux tab / `tmux attach`               |
 
 - **Driver compatibility:** session-bound workers (claude-team teammates,
-  codex-subagents) die with the orchestrator session. Long-lived driver
-  (Claude Code `/loop`, a living Codex main thread ticking in-thread) → any
-  steerable mode. Cron/launchd driver (fresh session per tick) → OS-bound
-  modes only: **claude-bg**, **codex-exec**, **legacy**.
+  codex-subagents) die with the orchestrator session. **Long-lived driver** —
+  the **goal driver** (`/goal`, default) or the fixed-interval `/loop`, both
+  running in a living Claude Code session or Codex main thread → any steerable
+  mode. **Cron/launchd driver** (fresh session per tick) → OS-bound modes only
+  (**claude-bg**, **codex-exec**, **legacy**) **and only via `/loop` or an
+  external scheduler** — `/goal` is inherently in-session and cannot drive a
+  fresh-session-per-tick scheduler, so unattended OS-scheduled runs keep using
+  the `/loop`/`codex exec` path.
 - **claude-team — the standing team:** at `/aep-autopilot` start, `TeamCreate`
   **once** (team "aep"). Each tick-⑥ launch spawns one teammate into it; each
   tick-③ wrap shuts that teammate down (team persists); `/aep-autopilot stop`
@@ -148,15 +168,22 @@ The autopilot does NOT evaluate workspace code. It triggers and monitors the wor
 
 ## `/aep-autopilot` (default — start)
 
-Initialize autopilot, run the first tick, and start the recurring loop. This is a single command — no second step needed.
+Initialize autopilot, run the first tick, and start the driver (goal-driven by default; `--loop` for the fixed-interval fallback). This is a single command — no second step needed.
 
 **Usage:**
 
 ```
-/aep-autopilot                  # default: 5 minute tick interval
-/aep-autopilot --loop 10m       # custom interval
-/aep-autopilot --loop 3m        # faster for active development
+/aep-autopilot                  # default: goal driver — drives the current layer to completion, then stops
+/aep-autopilot --floor 3m       # goal driver, custom per-tick wait floor (default 5m)
+/aep-autopilot --loop 10m       # fixed-interval loop driver instead (custom interval) — the fallback
+/aep-autopilot --loop 3m        # loop driver, faster for active development
 ```
+
+**Driver selection rule:** the presence of `--loop <interval>` selects the
+fixed-interval **loop driver**; its absence selects the **goal driver** (the
+default). `--floor <dur>` only applies to the goal driver (the bounded per-tick
+wait, default `5m`); `--max-turns <n>` caps the goal driver as a runaway
+backstop (default `200`).
 
 ### Prerequisites
 
@@ -232,10 +259,69 @@ Verify these conditions before proceeding:
 
 5. Run the first tick immediately (see tick protocol below).
 
-6. Start the recurring **periodic driver** that fires `/aep-autopilot tick` every
-   interval. The driver is host-specific (the tick itself is host-agnostic),
-   and it constrains the launch mode (session-bound workers need a long-lived
-   orchestrator):
+6. Start the driver. The default is the **goal driver**; `--loop` selects the
+   fixed-interval **loop driver**. Both keep the orchestrator long-lived (so any
+   steerable mode works); the goal driver additionally **self-terminates** when
+   the layer is done. The tick body (the 7-step CHECK→ACT protocol below) is the
+   same under either driver — only how the next tick is triggered differs.
+
+   ### 6a. Goal driver (default)
+
+   Build the **goal condition** for the current layer and hand it to the host's
+   native `/goal` primitive. The condition is the success predicate the goal
+   evaluator judges each turn — against the **status line the tick surfaces**
+   (signals only — never workspace code) — plus a one-line per-turn directive:
+
+   ```
+   Layer <N> of this product is COMPLETE: every story in layer <N> is
+   status=completed AND its worktree has been wrapped (none remain under
+   .feature-workspaces/), as shown by the AUTOPILOT status line surfaced this
+   turn — OR autopilot has entered status=paused requiring human input (design
+   ambiguity, layer-gate failure, outcome contract, or repeated failure), as
+   shown by the same status line. Judge ONLY from the surfaced status line,
+   never from memory. Each turn, run exactly ONE `/aep-autopilot tick`, then end
+   the turn; never run more than one tick per turn. Stop after <max-turns> turns
+   if the layer has not completed.
+   ```
+
+   - **Claude Code (`/goal`, requires v2.1.139+):**
+
+     ```
+     /goal <the condition above>
+     ```
+
+     `/goal` starts a turn immediately and, after each turn, a small fast model
+     (Haiku) checks the condition against the conversation; "no" auto-starts the
+     next turn with the evaluator's reason as guidance, "yes" clears the goal and
+     stops. Pair with auto mode so each turn runs unattended. The per-tick wait
+     floor (step ⑦) is what prevents hot-looping — without it the evaluator
+     re-fires the instant a turn ends. (The evaluator reads only the surfaced
+     status line, so the orchestrator boundary holds: it never sees workspace
+     code.)
+
+   - **Codex (`goals` feature, experimental — enable with `--enable goals`):**
+
+     ```
+     /goal <the condition above>
+     ```
+
+     Set a `token_budget` as the hard runaway wall (on exhaustion Codex
+     soft-stops to `budget_limited` with a wrap-up steer rather than dying).
+     Codex continues the goal only when the thread is **idle**, the goal is
+     active, and it is within budget; `/goal pause` · `/goal resume` ·
+     `/goal check` · `/goal clear` manage it.
+
+   Under either host, **keep delegating each tick's CHECK** to a cheap
+   context-isolated agent (Haiku subagent / `codex exec` one-shot) — the goal
+   session is long-lived, so the token-isolation reason from "Execution model"
+   still holds.
+
+   ### 6b. Loop driver (fallback — `--loop <interval>`)
+
+   The fixed-interval driver, unchanged from earlier versions. Use it for hosts
+   without `/goal`, for fully-unattended **OS-scheduled** runs (cron/launchd —
+   `/goal` is in-session-only), or when you simply want a fixed cadence. The
+   loop driver does not self-terminate; stop it with `/aep-autopilot stop`.
 
    **Claude Code — `/loop` (GA, in-session, long-lived):**
 
@@ -245,7 +331,7 @@ Verify these conditions before proceeding:
 
    Where `<interval>` is from `--loop` flag (default: `5m`). `/loop` invokes
    `/aep-autopilot tick` each interval; the tick keeps the main session cheap by
-   delegating its CHECK to a Haiku subagent (see below). This is the driver
+   delegating its CHECK to a Haiku subagent. This is the driver
    that supports **claude-team** (the team lives in this session).
 
    **Codex — two driver options:**
@@ -273,7 +359,7 @@ Verify these conditions before proceeding:
 
 ## `/aep-autopilot tick`
 
-The per-tick handler invoked by the periodic driver. Can also be run manually at any time. **Idempotent** — safe to run multiple times with no state change producing no duplicate actions.
+The per-tick handler invoked by the driver (goal or loop). Can also be run manually at any time. **Idempotent** — safe to run multiple times with no state change producing no duplicate actions.
 
 **Execution model — CHECK → ACT.** A tick is two halves:
 
@@ -396,12 +482,19 @@ The 7-step protocol below is the **content of the CHECK prompt** (steps ①②�
      - If well-specified → run /aep-launch (max ONE launch per tick)
    - Add new workspace entry to state (with story_ids, wave, readiness_score)
 
-⑦ WRITE STATE [CHECK]
+⑦ WRITE STATE + SURFACE + WAIT [CHECK, then driver tail]
    - Write .dev-workflow/autopilot-state.json (atomic: write .tmp then rename)
    - Append tick summary to .dev-workflow/autopilot-history.jsonl
    - Update .dev-workflow/autopilot-status.md
    - Increment tick_count, set last_tick_at
    - Release tick lock
+   - SURFACE the AUTOPILOT status line into the transcript (GOAL DRIVER ONLY) —
+     signals-only, so the goal evaluator can judge "layer complete? paused?"
+   - WAIT the per-tick floor before ending the turn (GOAL DRIVER ONLY) — the
+     anti-hot-loop floor (default 5m, `--floor`). CC → Monitor with a hard
+     timeout (a raw foreground sleep is blocked); Codex → shell sleep.
+     Under the loop driver, neither the surface nor the wait runs (the `/loop`
+     interval is the cadence).
 ```
 
 ---
@@ -427,12 +520,18 @@ Also parse `.dev-workflow/autopilot-state.json` and present:
 
 ## `/aep-autopilot stop`
 
-Gracefully stop the autopilot and cancel the recurring loop.
+Gracefully stop the autopilot and cancel the active driver (goal or loop).
 
 1. Set `status: "stopped"` in `.dev-workflow/autopilot-state.json`
 2. Update `.dev-workflow/autopilot-status.md` with stopped state
 3. Log stop event to `.dev-workflow/autopilot-history.jsonl`
-4. Cancel the `/loop` (use the loop skill's cancel mechanism)
+4. Cancel the driver:
+   - **Goal driver:** clear the active goal — `/goal clear` (Claude Code; aliases
+     `stop`/`off`/`reset`/`none`/`cancel`) or `/goal clear` (Codex). No further
+     turn re-fires. (The goal driver also self-clears when the layer completes,
+     so `stop` is mainly for early termination.)
+   - **Loop driver:** cancel the `/loop` (use the loop skill's cancel mechanism),
+     or remove the cron/launchd job for an OS-scheduled run.
 5. **claude-team only:** if no teammates are still building, shut them all down
    and `TeamDelete` the standing team. If workers are still mid-build, leave
    the team alive (deleting it would kill session-bound workers) and note in
@@ -440,7 +539,7 @@ Gracefully stop the autopilot and cancel the recurring loop.
 
 **What happens:**
 
-- The recurring loop is cancelled — no more ticks
+- The active driver is cancelled — no more ticks
 - Running workspaces continue autonomously (they don't depend on autopilot)
 
 **What does NOT happen:**
@@ -515,7 +614,9 @@ After the human resolves the design issue:
 /aep-autopilot
 ```
 
-This re-reads the product context (now with refined specs), re-initializes the loop, and resumes ticking.
+This re-reads the product context (now with refined specs) and re-initializes
+the driver — under the goal driver it sets a fresh goal for the current layer;
+under the loop driver it restarts the `/loop` — then resumes ticking.
 
 ---
 
@@ -535,6 +636,15 @@ This re-reads the product context (now with refined specs), re-initializes the l
 - **Respect WIP limits** — never exceed `topology.routing.concurrency_limit`
 - **Atomic state writes** — write to `.tmp` then rename to prevent corruption
 - **Tick lock** — prevent overlapping ticks via `tick_in_progress` timestamp
+- **Goal driver is scoped to ONE layer** — the goal condition completes (or
+  pauses) at the current layer boundary; never widen it to the whole backlog
+- **Goal evaluator sees signals only** — the per-tick surfaced status line MUST
+  be signals-only (no workspace code, no file contents), preserving the
+  orchestrator boundary; the evaluator never reads code
+- **Per-tick wait floor is mandatory under the goal driver** — without it
+  `/goal` re-fires the instant a turn ends and hot-loops, burning tokens
+- **Always bound the goal** — `--max-turns` (default 200) and, on Codex, a
+  `token_budget`, so a non-converging layer can never run forever
 - **Pause on design ambiguity** — unless `auto_design: true`, escalate to human when readiness < 0.7
 - **Always escalate on repeated failures** — `attempt_count >= 2` always pauses, even with `auto_design: true`
 
@@ -548,5 +658,5 @@ After autopilot completes a layer or is stopped:
 | ----------------------- | --------------------------------------------------------------------------------- |
 | `/aep-reflect`          | After layer completes — evaluate outcome contracts (Step 2.75), classify feedback |
 | `/aep-autopilot status` | Anytime — check progress and escalations                                          |
-| `/aep-autopilot`        | After resolving a pause — resume the loop                                         |
+| `/aep-autopilot`        | After resolving a pause — resume the driver (re-sets the layer goal)              |
 | `/aep-dispatch`         | Manual mode — pick a specific story interactively                                 |

@@ -2,8 +2,11 @@
 
 The 7-step state machine executed on each autopilot tick. Each tick is idempotent — running it twice with no external state change produces the same result and takes no duplicate actions.
 
-**Target duration:** <60 seconds per tick
-**Invocation:** `/loop 5m /aep-autopilot tick` or manual `/aep-autopilot tick`
+**Target duration:** <60 seconds of work per tick (under the goal driver the
+turn then waits the per-tick floor — step ⑦ — before ending)
+**Invocation:** goal driver (default) — `/goal "<layer-N condition>"` re-fires
+this tick each turn until the layer completes; loop driver (fallback) —
+`/loop 5m /aep-autopilot tick`; or manual `/aep-autopilot tick`
 
 > **BOUNDARY REMINDER:** The autopilot is an orchestrator. Every action on a workspace is `executor.nudge()` / `executor.liveness()` — autopilot runs only on **steerable, driver-compatible modes** (claude-team / claude-bg / codex-subagent / codex-exec / legacy; see the per-mode transport table in SKILL.md and `aep-executor/references/backends.md`). The nudge texts in this file are mode-independent — deliver each through the workspace's `backend` transport (`SendMessage` / `feedback.md` / `send_input` / `codex exec resume` / `tmux send-keys`). Never spawn code reviewers from main, never read workspace source code, never call `gh pr merge`. See SKILL.md "STOP — Orchestrator Boundaries".
 
@@ -472,6 +475,41 @@ At natural checkpoints (layer complete, escalation, or autopilot stop), run the 
 4. **Increment** `tick_count`, set `last_tick_at = now`
 
 5. **Release tick lock** — set `tick_in_progress` to `null`
+
+### Goal-driver tail (steps 6–7 — skip entirely under the loop driver)
+
+The fixed-interval `/loop` driver stops here: the interval is the cadence and the
+`/loop` skill re-fires the next tick. The **goal driver** instead ends each turn
+with two extra actions so the `/goal` evaluator can decide whether to re-fire:
+
+6. **Surface the AUTOPILOT status line** into the transcript — one compact,
+   **signals-only** line (no workspace code, no file contents) the goal evaluator
+   judges the completion condition against. Derive every field from
+   `autopilot-state.json` + product-context layer data:
+
+   ```
+   AUTOPILOT layer=<N> wave=<W> stories=<total> done=<completed> in_progress=<n>
+     wrapped=<n> ready_remaining=<n> paused=<true|false> escalations=<n> tick=<k>
+   layer_complete=<true|false>   # true ⟺ done==total AND no worktrees remain
+   ```
+
+   `layer_complete=true` (or `paused=true`) is exactly what the goal condition
+   keys on. Because the line is signals-only, the evaluator never reads workspace
+   code — the orchestrator boundary holds.
+
+7. **Wait the per-tick floor**, then end the turn. This is the anti-hot-loop
+   floor — without it `/goal` re-fires the instant the turn ends. Default `5m`
+   (`--floor`); implement with the host's sanctioned bounded wait:
+   - **Claude Code:** the `Monitor` tool with a hard timeout (a raw foreground
+     `sleep` is blocked inside a turn). An early wake on a `signals/` change is an
+     allowed optimization but **not** required — the timeout alone guarantees a
+     bounded, stable cadence.
+   - **Codex:** a shell `sleep <floor>` (no restriction).
+
+   Ending the turn returns control to `/goal`, whose evaluator reads the surfaced
+   status line and either re-fires the next tick or stops (layer complete /
+   paused). Step ⑤'s stuck detection still runs every tick, so a stalled layer
+   escalates → `paused` → the goal stops for the human.
 
 ---
 
