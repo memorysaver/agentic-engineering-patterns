@@ -1,6 +1,6 @@
 # AEP Skills — Quick Reference
 
-A cheat sheet for all 16 AEP skills. For precise term definitions, see the [Glossary](glossary.md). For a guided first-hour introduction to the mental models behind these skills, see the [Orientation Guide](orientation.md).
+A cheat sheet for all 17 AEP skills. For precise term definitions, see the [Glossary](glossary.md). For a guided first-hour introduction to the mental models behind these skills, see the [Orientation Guide](orientation.md).
 
 ---
 
@@ -20,13 +20,14 @@ CONTROL PLANE (human + AI)              EXECUTION PLANE (agents build)
 
 ### Product Discovery (Control Plane)
 
-| Skill           | When to use                                     | Input                                                  | Output                                                           | Session |
-| --------------- | ----------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------- | ------- |
-| `/aep-envision` | New product idea, revisit direction             | Product idea (vague or refined)                        | `product-context.yaml` with `opportunity` + `product`            | Main    |
-| `/aep-map`      | After `/aep-envision` — decompose into stories  | `product-context.yaml` with product section            | Architecture, stories, topology, layer gates, cost added to YAML | Main    |
-| `/aep-validate` | Check quality of any artifact before proceeding | Any artifact (product context, design, code, document) | Scoring dimensions + findings                                    | Main    |
-| `/aep-dispatch` | Pick what to build next                         | `product-context.yaml` with stories                    | OpenSpec change + story status updated + handoff                 | Main    |
-| `/aep-reflect`  | After shipping — close the feedback loop        | Observations from user testing, errors, cost data      | Classified feedback + updated YAML                               | Main    |
+| Skill           | When to use                                              | Input                                                          | Output                                                           | Session |
+| --------------- | -------------------------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------- | ------- |
+| `/aep-envision` | New product idea, revisit direction                      | Product idea (vague or refined)                                | `product-context.yaml` with `opportunity` + `product`            | Main    |
+| `/aep-map`      | After `/aep-envision` — decompose into stories           | `product-context.yaml` with product section                    | Architecture, stories, topology, layer gates, cost added to YAML | Main    |
+| `/aep-validate` | Check quality of any artifact before proceeding          | Any artifact (product context, design, code, document)         | Scoring dimensions + findings                                    | Main    |
+| `/aep-dispatch` | Pick what to build next                                  | `product-context.yaml` with stories                            | OpenSpec change + story status updated + handoff                 | Main    |
+| `/aep-reflect`  | After shipping — close the feedback loop                 | Observations from user testing, errors, cost data              | Classified feedback + updated YAML                               | Main    |
+| `/aep-watch`    | Continuously ingest errors/telemetry → auto-file stories | Telemetry/bug-tracker/error sources (`topology.routing.watch`) | New bug/refinement stories in YAML → dispatch                    | Main    |
 
 ### Feature Execution (Execution Plane)
 
@@ -67,6 +68,7 @@ CONTROL PLANE (human + AI)              EXECUTION PLANE (agents build)
 "Ready to start coding"             → /aep-launch
 "Feature is done, PR merged"        → /aep-wrap
 "What did we learn?"                → /aep-reflect
+"Auto-file work from telemetry"     → /aep-watch
 "Capture process learnings"         → /aep-workflow-feedback
 "Pull learnings from downstreams"   → /aep-workflow-feedback
 "I want hands-free mode"            → /aep-autopilot

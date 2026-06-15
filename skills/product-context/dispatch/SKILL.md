@@ -523,6 +523,22 @@ Use the `readiness_score` computed in Step 3:
 - **readiness_score 0.5–0.7** → present to user for decision (`/aep-launch` or `/aep-design`)
 - **readiness_score < 0.5** → route to `/aep-design` (spec needs refinement)
 
+#### Full-auto / auto-design routing (medium/low readiness)
+
+Routing of an under-ready story depends on two `topology.routing` flags — the
+`full_auto` master switch (default **false**) and the finer-grained `auto_design`
+(default **false**). `full_auto` sits **above** `auto_design`: `full_auto: true`
+implies `auto_design: true`.
+
+- **`full_auto: true` OR `auto_design: true`** → a medium/low-readiness story
+  (readiness < 0.7) is resolved by a **non-interactive gen/eval design resolver** —
+  a design agent that refines the spec without a human, then routes to
+  `/aep-launch` — instead of escalating to interactive `/aep-design` (the G3 human
+  gate). No strategic pause.
+- **`full_auto: false` AND `auto_design: false` (default)** → keep escalating: a
+  medium/low-readiness story routes to interactive `/aep-design` for human design
+  refinement before launch. The strategic "what to build" gate stays with the human.
+
 ### Well-specified (readiness >= 0.7) → skip to /aep-launch
 
 - 3+ specific, testable acceptance criteria

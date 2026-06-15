@@ -86,6 +86,22 @@ Conventions, maintainability, performance?
 | 4 | Clean, consistent code with proper error handling and clear structure |
 | 5 | Exemplary — clear abstractions, well-named, efficient, follows all project conventions |
 
+### 6. Visual Design (1–5)
+
+Does a screenshot of the running UI match the project's design system? Evaluated by feeding a screenshot of the running app to the **multimodal evaluator**, scored against the project's design-system / calibration spec (`calibration/<type>.yaml`, e.g. `calibration/visual-design.yaml`) — spacing rhythm, visual hierarchy, brand/token consistency, alignment, and overall polish.
+
+| Score | Definition |
+|-------|-----------|
+| 1 | Off-brand or visually broken — wrong colors/fonts, overlapping elements, no consistent spacing |
+| 2 | Recognizable but inconsistent — ad-hoc spacing, mismatched tokens, weak hierarchy |
+| 3 | Follows the design system loosely — on-brand but uneven spacing/alignment, generic polish |
+| 4 | Consistent with the design system — correct tokens, clear hierarchy, aligned, minor polish gaps |
+| 5 | Pixel-faithful to the design system — consistent tokens, deliberate hierarchy and spacing, fully aligned, production-grade polish |
+
+> **Hard failure:** Visual Design < 3 for the `.5` polish layer — a screenshot that does not match the design system blocks the polish layer from passing.
+>
+> **Host-aware capture:** The screenshot is captured per `executor/references/dogfood-validation.md` — `/agent-browser:dogfood` on Claude, native in-app browser / computer-use on Codex (GPT-5.4 multimodal), or a Playwright script — and the resulting image is fed to the in-host multimodal evaluator (Claude natively; Codex GPT-5.4). This keeps the visual judgment in-host and removes the human dependency for routine design-system checks.
+
 ---
 
 ## Hard Failure Thresholds
@@ -108,12 +124,13 @@ Select the preset matching the artifact type, then adjust with the user during e
 ### UI-heavy (forms, dashboards, layouts)
 
 ```
-Dimensions:  Completeness, Correctness, UX Quality, Originality, Accessibility
-Weight:      UX Quality (high), Originality (high)
+Dimensions:  Completeness, Correctness, UX Quality, Visual Design, Originality, Accessibility
+Weight:      UX Quality (high), Visual Design (high), Originality (high)
 De-weight:   Code Quality (still check but don't hard-fail)
-Add:         Originality — penalize generic "AI slop" (purple gradients, card layouts)
+Add:         Visual Design — score a screenshot against calibration/visual-design.yaml (multimodal)
+             Originality — penalize generic "AI slop" (purple gradients, card layouts)
              Accessibility — WCAG AA compliance, keyboard navigation, screen readers
-Hard fail:   UX Quality < 3, Completeness < 4
+Hard fail:   UX Quality < 3, Visual Design < 3, Completeness < 4
 ```
 
 ### API-only (endpoints, services, integrations)
@@ -151,11 +168,12 @@ Hard fail:   Data Integrity < 4, Completeness < 4
 ### Mixed / Full-stack
 
 ```
-Dimensions:  Completeness, Correctness, UX Quality, Security, Code Quality
+Dimensions:  Completeness, Correctness, UX Quality, Visual Design, Security, Code Quality
 Weight:      All equal (default)
-Add:         None — use the 5 defaults
+Add:         Visual Design — when the feature ships UI, score a screenshot against
+             calibration/visual-design.yaml (multimodal); omit for non-UI slices
 Adjust:      Weight toward the area the user identifies as highest risk
-Hard fail:   Default thresholds (any < 3, Completeness < 4)
+Hard fail:   Default thresholds (any < 3, Completeness < 4); Visual Design < 3 on UI/.5 layers
 ```
 
 ---

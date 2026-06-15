@@ -41,6 +41,8 @@ driver remains available as a fallback (`--loop`).
        │  tick ⑤  detect stuck workspaces              │
        │  tick ⑥  dispatch new work (/aep-launch)          │
        │  tick ⑦  write state + SURFACE status + WAIT  │
+       │  post-merge-guard  monitor deploy health,     │
+       │                    revert regressions          │
        └─────────────────────────────────────────────┘
             │ goal evaluator reads the surfaced status line:
             │   "is layer N complete, or is autopilot paused?"
@@ -207,6 +209,26 @@ Verify these conditions before proceeding:
 - **Autonomous enabled:** `topology.routing.autonomous: true` must be set
 - **Stories available:** At least one story must be `ready` or `in_progress`
 - **Validated:** Product context should have passed `/aep-validate` (both passes)
+
+### `full_auto` — strategic master switch
+
+`topology.routing.full_auto` (default **false**) is the master switch over the
+**strategic** human gates — the "what to build" / architecture layer. With the
+default, those gates stay with the human:
+
+- **`full_auto: false` (default):** strategic pauses hold — ambiguous / low-readiness
+  stories escalate to a human for design (the design-escalation pause below), and
+  the qualitative outcome-contract evaluation pauses for human judgment before a
+  layer advances.
+- **`full_auto: true` (explicit opt-in only):** those strategic pauses auto-proceed
+  via agent judgment instead of waiting for a human.
+
+`full_auto` sits **above** the finer-grained flags under `topology.routing`
+(`auto_design`, `auto_outcome_eval`, `watch.auto_create`): `full_auto: true`
+**implies** all of them. The default keeps humans in control of the strategic
+layer; turning `full_auto` on removes those pauses only when the user explicitly
+opts in. See the per-flag behavior in **Design Escalation** below and in
+`aep-dispatch` (readiness-based routing).
 
 ### Start Protocol
 
@@ -387,6 +409,10 @@ The per-tick handler invoked by the driver (goal or loop). Can also be run manua
 The 7-step protocol below is the **content of the CHECK prompt** (steps ①②④a④b-detect
 ⑤⑥-scoring ⑦ = analysis + state write) plus the **ACT items** it emits (③ wrap,
 ④b/④c nudges, ⑥ launch, escalations). Full detail in `references/tick-protocol.md`.
+
+> **Post-merge guard:** after a story wraps and merges, a post-deploy guard step
+> monitors deploy health and can revert regressions — see
+> `references/post-merge-guard.md`.
 
 **Before every tick, re-read the "STOP — Orchestrator Boundaries" section above.**
 
