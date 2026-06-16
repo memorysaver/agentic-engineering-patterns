@@ -18,7 +18,7 @@ Pull from read-only sources with `bash`/`curl`/`jq` and reduce each to the
 
 ```json
 {
-  "source": "error_stream | analytics | monitoring | bug_tracker",
+  "source": "error_stream | analytics | monitoring | bug_tracker | dogfood",
   "signal": "one-line description of what was observed",
   "evidence": "url | query | sample (no secrets)",
   "story_ref": "<story-id if attributable, else null>",
@@ -45,6 +45,49 @@ telemetry_sources:
 
 **Safety:** access is **read-only**; reference credentials by env-var / secret-store
 name only — **never embed secrets in the repo or in `product-context.yaml`**.
+
+### Dogfood-report adapter (`kind: dogfood_report`)
+
+Dogfood runs — local (`/aep-build` Phase 6), post-deploy (autopilot post-merge
+guard), **or a standalone / ad-hoc live exercise** — emit the **unified markdown
+report** (`## <title>` / `**Severity:**` / `**Category:**` / `**Repro:**` /
+`**Observed:**` / `**Expected:**` / `**Evidence:**`) to `.dev-workflow/dogfood-*.md`
+(see `patterns/executor/references/dogfood-validation.md` → Unified report format).
+This adapter parses each `##` finding into the normalized record above so the
+**same** Step 2 classifier consumes it — closing the G6 self-feeding loop for
+**every** dogfood trigger, not just the guard path. It is a **file glob**, not a
+network source: self-describing, so `coverage_check` (§1.5) does not gate it.
+
+Source config:
+
+```yaml
+sources: # watch.sources[] (or telemetry_sources[])
+  - kind: dogfood_report
+    glob: ".dev-workflow/dogfood-*.md" # default; add post-deploy report paths as needed
+```
+
+Per-finding mapping (markdown field → normalized record):
+
+| Dogfood field                                | Normalized record                                                                                                                                            |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `## <title>`                                 | `signal` (one-line) + basis for the dedupe key                                                                                                               |
+| `**Repro / Observed / Expected / Evidence**` | `evidence` (repro steps + observed-vs-expected; **no secrets**)                                                                                              |
+| `**Severity:**`                              | priority input — `blocker`/`major` → `high`; `minor` → normal                                                                                                |
+| `**Category:**`                              | `suggested_class` hint — `UX`/`logic`/`edge-case`/`accessibility` → `bug`; `visual`/`performance` → `bug` when Severity ∈ {blocker,major}, else `refinement` |
+| —                                            | `source: "dogfood"`, `story_ref: null`                                                                                                                       |
+
+`suggested_class` is a **hint only** — the Step 2 classifier (and the human, unless
+`full_auto`) makes the final call, exactly as for every other source. In
+particular a finding that reads as **calibration / discovery / opportunity-shift /
+process** is **not** auto-filed; it surfaces to a human (see `/aep-watch` Step 2).
+
+**Stable dedupe key.** Each finding gets a deterministic
+`external_id = "dogfood:" + slug(report-basename) + ":" + shorthash(slug(title) + "|" + category)`,
+so re-running the **same** dogfood (same findings) never creates duplicate stories:
+`/aep-watch` Step 3 dedupes on `watch_origin.{source,external_id}`, and the
+post-merge guard Path 1 uses the **same** key, so whichever fires first wins and
+the other no-ops. A genuinely new finding (new title/category) yields a new id and
+a new story.
 
 ---
 
