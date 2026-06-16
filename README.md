@@ -130,6 +130,49 @@ still equals the locked content. To truly freeze a release, **commit the install
 bytes become the pin: teammates, CI, and Codex need no install step, and nothing drifts when
 upstream moves on. Upgrade deliberately by re-running `add@<newtag>` in its own PR.
 
+### Upgrading to a new release
+
+Upgrading is a deliberate **re-pin in its own PR** — never an in-place mutation. Re-run the
+install at the new tag once per agent the repo uses, then commit the changed skill files and
+`skills-lock.json` together:
+
+```bash
+# Newest tag: https://github.com/memorysaver/agentic-engineering-patterns/releases/latest
+npx skills add memorysaver/agentic-engineering-patterns@<newtag> -a claude-code --skill '*' -y
+npx skills add memorysaver/agentic-engineering-patterns@<newtag> -a codex        --skill '*' -y
+```
+
+Then:
+
+1. **Review the diff.** `git status` should show updated bytes under `.claude/skills/` and/or
+   `.agents/skills/`, brand-new files for any skills the release added (e.g. a new `aep-watch/`),
+   and rewritten hashes in `skills-lock.json`. Jumping several releases at once also backfills any
+   files your old pin predated — expect more new files than the changelog's headline.
+2. **Normalize `.claude/skills/aep-*` back to symlinks** if your layout shares one copy between
+   runtimes (see the gotcha below).
+3. **Commit with `--no-verify`** so the pre-commit formatter doesn't rewrite the pinned bytes and
+   break the lockfile hashes (see [Keep your formatter off the skills](#keep-your-formatter-off-the-skills)).
+4. **Verify.** `npx skills list` shows the new versions and `git status` is clean.
+
+> **Gotcha — the `-a claude-code` symlink copy.** If your canonical layout keeps
+> `.agents/skills/<name>` as the **real files** and `.claude/skills/<name>` as a **symlink** →
+> `../../.agents/skills/<name>` (so both runtimes share one copy), then `npx skills add -a claude-code`
+> **replaces those symlinks with copied real directories.** `git status` then shows the tracked
+> symlinks as **deleted** plus a pile of untracked files — a spurious, layout-breaking diff. Run the
+> `-a codex` install (which writes the real `.agents/` files) as well, then normalize the Claude side
+> back to symlinks before committing:
+>
+> ```bash
+> cd .claude/skills
+> for d in aep-*; do
+>   [ -L "$d" ] || { rm -rf "$d" && ln -s "../../.agents/skills/$d" "$d"; }
+> done
+> ```
+>
+> Afterward `git status` shows only the real `.agents/skills/**` updates (no phantom deletions) and
+> both runtimes resolve to one set of bytes again. Repos that install real copies for each agent
+> (no symlinks) can skip this step.
+
 ### Optional supplement: behavior + memory
 
 Two project-level capabilities AEP doesn't ship itself live in a separate repo,
