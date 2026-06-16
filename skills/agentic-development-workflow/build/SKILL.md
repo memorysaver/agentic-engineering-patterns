@@ -521,7 +521,7 @@ If the selected method is `/agent-browser:dogfood`, run it against `$BASE_URL`:
 /agent-browser:dogfood
 ```
 
-Whatever the method, emit the unified severity/category/repro report format (see `dogfood-validation.md` → Unified report format) so the downstream classifier stays host-agnostic. Document results in `.dev-workflow/dogfood-<feature>.md`.
+Whatever the method, emit the unified severity/category/repro report format (see `dogfood-validation.md` → Unified report format) so the downstream classifier stays host-agnostic. Document results in `.dev-workflow/dogfood-<feature>.md` — **write the report file, not just chat output**: that path is the ingestion contract (`dogfood-validation.md` → On issue), so `/aep-watch`'s `dogfood_report` source can auto-file bug/refinement findings. Findings left only in chat are a dead end.
 
 > **Signal update:** Update `.dev-workflow/signals/status.json` with `"phase": 6, "phase_name": "dogfood-testing"`.
 

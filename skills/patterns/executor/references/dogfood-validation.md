@@ -102,9 +102,22 @@ post-deploy report path (staging/prod), one entry per finding:
 ```
 
 **On issue** → route per `topology.routing.dogfood.on_issue` (default
-`create_story`): feed the report to the `/aep-reflect` classifier → create a
-bug/refinement story in `product-context.yaml` → dispatch (the G6 self-feeding
-loop). Set `escalate` instead to surface to the human rather than auto-filing.
+`create_story`): the report is ingested by the **`dogfood_report` adapter**
+(`product-context/_shared/references/telemetry-ingestion.md` → Dogfood-report
+adapter), which parses each `##` finding into a normalized record → the
+`/aep-reflect` Step 2 classifier → a bug/refinement story in
+`product-context.yaml` → dispatch (the G6 self-feeding loop). Set `escalate`
+instead to surface to the human rather than auto-filing.
+
+> **The report path is the contract.** Whatever the trigger — local Phase 6, the
+> post-deploy post-merge guard, or a **standalone / ad-hoc** dogfood — write the
+> unified report to `.dev-workflow/dogfood-*.md`. That is what makes the finding
+> ingestible: `/aep-watch`'s `dogfood_report` source (or the guard's Path 1) picks
+> it up on its next pass and runs it through the adapter above. A dogfood that
+> only prints findings to chat (never writing the report file) is a **dead end** —
+> nothing can auto-file it. Auto-creation still obeys the confirmation policy
+> (`full_auto` / `watch.auto_create`); only **bug / refinement** auto-file, while
+> calibration / discovery / opportunity-shift / process surface to a human.
 
 > Hard service regressions (health signals) are a **separate** path — they go
 > through the autopilot post-merge guard's revert policy, not this story-filing

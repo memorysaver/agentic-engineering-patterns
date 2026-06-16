@@ -44,6 +44,7 @@ Collect observations from all sources. Read product definition (from `product/in
 - **Error logs / monitoring:** Runtime failures, performance issues, unexpected behavior
 - **Cost data:** Review the `cost` section of `product-context.yaml`. If agent execution traces exist, review per-story costs. Which story types were expensive? Where did retries concentrate?
 - **Product instincts:** After seeing the thing work, what does the user's gut say? What feels right, what feels off?
+- **Dogfood reports:** Read `.dev-workflow/dogfood-*.md` (the unified severity/category/repro format). Normalize each `##` finding via the `dogfood_report` adapter (`references/telemetry-ingestion.md` → Dogfood-report adapter) into the same observation record Step 2 classifies — the same source `/aep-watch` ingests headlessly.
 - **Lessons learned:** Read `lessons-learned/*.md` for observations captured by workspace agents during builds. Summarize patterns across recent lessons — recurring errors, solutions that worked, missing documentation.
 
 Ask the user one source at a time. Don't rush — the quality of classification depends on the quality of input.

@@ -85,6 +85,8 @@ topology:
         - type: telemetry
           metric: "error_rate"
           threshold: 0.02
+        - type: dogfood_report # ingest dogfood findings (local / post-deploy / standalone)
+          glob: ".dev-workflow/dogfood-*.md" # default; see telemetry-ingestion.md adapter
       interval: 30m # poll cadence for the /loop or cron driver
       auto_create: false # write stories directly vs. surface proposals
       since: null # high-water mark — last ingested timestamp (watch maintains this)
@@ -140,14 +142,20 @@ a `metric_map`.
 For each entry in `watch.sources`, pull findings created/updated since
 `watch.since`. **Reuse the ingestion format and per-source adapters defined in
 `references/telemetry-ingestion.md`** (the same source contract `/aep-reflect`
-Step 1 draws on) — do not invent a new finding shape here. Each finding normalizes to:
+Step 1 draws on) — do not invent a new finding shape here. This includes the
+**`dogfood_report` adapter** (`telemetry-ingestion.md` → Dogfood-report adapter):
+parse each `##` finding in the configured `glob` (default `.dev-workflow/dogfood-*.md`)
+into the record below, with `external_id` = the adapter's deterministic
+`dogfood:<report>:<hash>` key so Step 3 dedupes re-runs of the same dogfood.
+A `dogfood_report` source is a self-describing file glob, so Step 0's
+`coverage_check` does not gate it. Each finding normalizes to:
 
 ```yaml
 - source: "sentry"
   external_id: "ISSUE-4821" # stable id used for dedupe
   title: "TypeError in checkout flow"
   detail: "..." # stack/message/metric summary
-  signal: error_stream # bug_tracker | error_stream | telemetry
+  signal: error_stream # bug_tracker | error_stream | telemetry | dogfood
   count: 142 # occurrences / affected users (priority input)
   first_seen: "<ISO8601>"
   last_seen: "<ISO8601>"
@@ -155,6 +163,12 @@ Step 1 draws on) — do not invent a new finding shape here. Each finding normal
 
 Advance `watch.since` to the newest `last_seen` only **after** the tick completes
 successfully (so a failed tick re-pulls rather than dropping findings).
+**Exception — `dogfood_report`:** the unified report carries no per-finding
+timestamp, so `count`/`first_seen`/`last_seen` are unset and `watch.since` does
+**not** advance for this source; re-scanning the glob each tick is harmless because
+Step 3 dedupes on the adapter's stable `external_id` (priority comes from the
+finding's Severity, not `count`). See `references/telemetry-ingestion.md` →
+Dogfood-report adapter.
 
 ### Step 2: Classify Each Finding
 

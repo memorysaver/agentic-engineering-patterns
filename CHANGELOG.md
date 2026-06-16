@@ -21,6 +21,41 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 _Nothing yet._
 
+## [2.0.1] - 2026-06-16
+
+Operationalize the **dogfood → reflect classifier → story** link so the G6
+self-feeding loop fires for **every** dogfood trigger — not just the autopilot
+post-merge guard. Previously "feed the report to the `/aep-reflect` classifier"
+was prose-only: no adapter parsed the unified markdown report into the classifier's
+normalized record, so a standalone / ad-hoc dogfood (and even the guard path) left
+findings on disk with no auto-filing. A dogfood that surfaced real bugs would stop
+and wait for a human to hand-author stories.
+
+### Added
+
+- **`dogfood_report` source adapter** (`product-context/_shared/references/telemetry-ingestion.md`):
+  parses each `##` finding in `.dev-workflow/dogfood-*.md` (unified
+  severity/category/repro format) into the normalized observation record the
+  `/aep-reflect` Step 2 classifier consumes. Maps Severity → priority, Category →
+  `suggested_class` hint, and assigns a deterministic
+  `external_id = dogfood:<report>:<hash>` so re-running the same dogfood never
+  duplicates stories. Self-describing file glob — not gated by `coverage_check`.
+- **`dogfood_report` watch source** (`/aep-watch`): a standalone, local, or
+  post-deploy dogfood report is now ingested headlessly — classified, deduped, and
+  (under `full_auto` / `watch.auto_create`) auto-filed as a bug/refinement story
+  that autopilot dispatches on its next tick. Calibration / discovery /
+  opportunity-shift / process findings still surface to a human.
+
+### Changed
+
+- **`dogfood-validation.md`** "On issue" — replaced the prose assertion with the
+  concrete adapter + watch ingestion path, and made the report-file path an
+  explicit contract: findings left only in chat are a dead end.
+- **`/aep-reflect` Step 1** — adds `.dev-workflow/dogfood-*.md` to the gathered
+  feedback sources (was omitted), normalized via the same adapter `/aep-watch` uses.
+- **`/aep-build` Phase 6** — write the dogfood report file even when findings are
+  clean, since that path is the ingestion contract.
+
 ## [2.0.0] - 2026-06-16
 
 The **autonomy loop** release. Closes the loop-engineering gaps identified in
