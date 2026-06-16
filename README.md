@@ -334,6 +334,8 @@ The workflow separates **thinking** from **doing**:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+> This is the conceptual split. The control plane also has **specialized steps** this view omits — `/aep-model` (noun-first Object Map, UI-facing only), `/aep-calibrate` (human alignment on `.5` layers), `/aep-validate`, and `/aep-watch`. They appear in the detailed [Product Context](#1-product-context--the-persistent-map) flow below.
+
 **Agents don't talk to each other.** They communicate through structured artifacts — context documents, story specs, interface contracts, signal files. The harness coordinates everything. This is a production system design, not a chatroom-style agent swarm.
 
 ## The Story Map
@@ -447,39 +449,45 @@ Each plugin implements one layer of the mental model.
 Captures the "what and why" of the entire product in a single `product-context.yaml` — committed to git, versioned, and machine-parseable.
 
 ```
-/aep-envision                        /aep-map                            /aep-reflect
-    │                               │                               │
-    ▼                               ▼                               ▼
-Opportunity Brief               System Map                      Classify feedback:
-"should we build this?"         "modules + interfaces"          bug → fix story
-    │                               │                           refinement → next layer
-    ▼                               ▼                           discovery → update map
-Context Document                Story Graph                     shift → re-envision
-"what exactly to build,         "layered work items,                │
- for whom, within               waves + slices"                     │
- what constraints"                  │                               │
-    │                               ▼                               │
-    │                           Agent Topology                      │
-    │                           "roles + contracts"                 │
-    │                               │                               │
-    └───────────────┬───────────────┘                               │
-                    │                                               │
-                    ▼                                               │
-               /aep-dispatch                                            │
-               "pick next story,          ◄─────────────────────────┘
-                create OpenSpec change,     (new stories feed back
-                route to /aep-design"            into the dispatch queue)
-                    │
-                    ├─── integer layer ──► /aep-design → /aep-launch → /aep-build → /aep-wrap
-                    │
-                    └─── .5 alignment layer ──► /aep-calibrate → human aligns
-                                                  → /aep-calibrate capture
-                                                  → /aep-dispatch → /aep-launch → /aep-build → /aep-wrap
+/aep-envision                 /aep-map                       /aep-reflect
+    │                            │                              │
+    ▼                            ▼                              ▼
+Opportunity Brief            System Map                     Classify feedback:
+"should we build this?"      "modules + interfaces"         bug → fix story
+    │                            │                           refinement → next layer
+    ▼                            ▼                           discovery → update map
+Context Document             Story Graph                    shift → re-envision
+"what to build, for whom"    "layered work items,               │
+    │                         waves + slices"                   │
+    │                            │                              │
+    │                            ▼                              │
+    │                        Agent Topology                     │
+    │                        "roles + contracts"                │
+    │                            │                              │
+    └──────────────┬─────────────┘                             │
+                   │                                            │
+                   ▼                                            │
+              /aep-model   (UI-facing only)                     │
+              "story map → Object Map:                          │
+               objects · relationships · CTAs ·                 │
+               attributes · screens (noun-first)"               │
+                   │                                            │
+                   ▼                                            │
+              /aep-dispatch   ◄────────────────────────────────┘
+              "pick next story,            (new stories feed
+               create OpenSpec change,      back into the
+               route to /aep-design"        dispatch queue)
+                   │
+                   ├─── integer layer ──► /aep-design → /aep-launch → /aep-build → /aep-wrap
+                   │
+                   └─── .5 alignment layer ──► /aep-calibrate → human aligns
+                                                 → /aep-calibrate capture
+                                                 → /aep-dispatch → /aep-launch → /aep-build → /aep-wrap
 ```
 
 All sections live in one `product-context.yaml` file — opportunity, product, architecture, stories (with state machine), topology, layer gates, cost tracking, and a semantic changelog.
 
-> **UI-facing products:** between `/aep-map` and `/aep-dispatch`, run **`/aep-model`** to turn the verb-first story map into a noun-first **Object Map** (OOUX/ORCA — objects → relationships → CTAs → attributes → screens). It auto-drafts from the story map, takes a short human approval, then governs object structure so build agents stop inventing one-step-one-screen task-wizard UIs. Stored under `product/` (`object-model.yaml` + `maps/<capability>/object-map.yaml`), gated by dispatch/launch. Background: [docs/research/ooux-object-modeling.md](docs/research/ooux-object-modeling.md).
+> **`/aep-model` is UI-facing only** (the noun-first **Object Map** step shown above). It auto-drafts from the story map, takes a short human approval, then governs object structure — so build agents stop inventing one-step-one-screen task-wizard UIs. Stored under `product/` (`object-model.yaml` + `maps/<capability>/object-map.yaml`), gated by dispatch/launch. Background: [docs/research/ooux-object-modeling.md](docs/research/ooux-object-modeling.md).
 
 **Why this exists:** Without a product-level map, each feature is designed in isolation. Agents build incompatible pieces. Module boundaries are implicit. The YAML makes the whole system visible, machine-readable, and git-versioned before any code is written.
 
