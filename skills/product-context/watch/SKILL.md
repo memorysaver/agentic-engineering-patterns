@@ -155,7 +155,7 @@ A `dogfood_report` source is a self-describing file glob, so Step 0's
   external_id: "ISSUE-4821" # stable id used for dedupe
   title: "TypeError in checkout flow"
   detail: "..." # stack/message/metric summary
-  signal: error_stream # bug_tracker | error_stream | telemetry
+  signal: error_stream # bug_tracker | error_stream | telemetry | dogfood
   count: 142 # occurrences / affected users (priority input)
   first_seen: "<ISO8601>"
   last_seen: "<ISO8601>"
@@ -163,6 +163,12 @@ A `dogfood_report` source is a self-describing file glob, so Step 0's
 
 Advance `watch.since` to the newest `last_seen` only **after** the tick completes
 successfully (so a failed tick re-pulls rather than dropping findings).
+**Exception — `dogfood_report`:** the unified report carries no per-finding
+timestamp, so `count`/`first_seen`/`last_seen` are unset and `watch.since` does
+**not** advance for this source; re-scanning the glob each tick is harmless because
+Step 3 dedupes on the adapter's stable `external_id` (priority comes from the
+finding's Severity, not `count`). See `references/telemetry-ingestion.md` →
+Dogfood-report adapter.
 
 ### Step 2: Classify Each Finding
 

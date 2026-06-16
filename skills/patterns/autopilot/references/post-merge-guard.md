@@ -95,7 +95,8 @@ The design fixes two **distinct** failure shapes (`g4-dogfood-validation-design.
 
 The deploy is healthy at the service level, but the dogfood surfaced a UX or functional defect (broken flow, visual regression, wrong copy, dead link). This is feedback, not an outage.
 
-- Feed the dogfood report to the **`/aep-reflect` classifier**, which classifies severity/category and **auto-creates a bug/refinement story** in `product-context.yaml` (links the G6 self-feeding loop).
+- Feed the dogfood report to the **`/aep-reflect` classifier** via the **`dogfood_report` adapter** (`../../../product-context/_shared/references/telemetry-ingestion.md` → Dogfood-report adapter), which classifies severity/category and **auto-creates a bug/refinement story** in `product-context.yaml` (links the G6 self-feeding loop).
+- **Stamp `watch_origin: {source: dogfood, external_id: <adapter key>}`** on each story you file, using the adapter's deterministic `external_id`. This is the **same** dedupe key `/aep-watch`'s `dogfood_report` source uses, so if watch also ingests the report neither path double-files — whichever runs first wins and the other no-ops (see the adapter's "No high-water mark — dedupe-only").
 - The new story enters the normal dispatch queue — Step ⑥ picks it up on a later tick by `readiness_score`.
 - **Never revert** for a Path-1 finding. The merged change stays; the fix ships as its own story.
 - Record `guard_state.dogfood = {report_path, issues_created:[story_ids]}`.
