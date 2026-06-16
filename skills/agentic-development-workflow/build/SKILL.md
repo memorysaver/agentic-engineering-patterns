@@ -311,6 +311,16 @@ Invoke the apply skill for guidance on implementing each task:
 
 The agent works **one task at a time**. Each task = one commit. The branch's commit history mirrors `tasks.md` 1:1, which makes per-task code review on the PR straightforward.
 
+> **UI-facing stories — obey the Object Map.** If the dispatched context package
+> includes an Object Map slice (objects, attributes, relationships, CTAs, screens),
+> treat it as binding structure: build the listed screens object-first (noun→verb —
+> object collection/detail, the given CTA placements), use the specified core
+> attributes, and do **not** introduce objects/screens outside the slice or collapse
+> a flow into a step-by-step wizard unless the slice marks it `task_oriented`.
+> Visual look (`calibration/visual-design.yaml`), copy voice (`copy-tone`), and
+> journey/transition (`ux-flow`) still govern taste — the Object Map governs object
+> structure and CTA grammar.
+
 Update the progress file checkbox for each completed task, and mark the Phase 4 checkbox when all tasks are done.
 
 > **If you need to amend a just-committed task** (e.g., you forgot a file), use `git commit --amend --no-edit` _before_ moving on. Once you've committed the next task, leave prior commits alone — fixes belong as a follow-up commit, not a rewrite.

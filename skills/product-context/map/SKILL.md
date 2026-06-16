@@ -185,6 +185,38 @@ After defining each implementation layer, review `calibration.plan` from `produc
 - **Layer 1.5, 2.5** (subsequent `.5` layers): Extend calibration to new patterns. `/aep-calibrate` detects existing calibration artifacts and generates focused briefs covering only the delta.
 - **Opt-in, not automatic.** The `/aep-reflect` step after each layer classifies calibration needs by dimension. The human decides which dimensions need attention. But the workflow makes the question unavoidable.
 
+> **Object Map feeds the heavy UI dimensions.** Once `/aep-model` has approved an
+> Object Map for a capability, the `visual-design` and `ux-flow` `.5`-layer briefs
+> derive their "pages/screens to design" from the Object Map's screen plan
+> (`product/maps/<cap>/object-map.yaml` → `screens`) instead of an ad-hoc `routes/`
+> scan. Structure first (object-model), then taste (visual-design) and journey
+> (ux-flow).
+
+### Object Map Drafts (UI-facing capabilities)
+
+After stories are decomposed, produce a **draft** noun-first Object Map for each
+UI-facing capability (a capability that declared the `object-model` quality
+dimension, or `visual-design`/`ux-flow`, or has user-facing stories). This is the
+bridge from the verb-first story map to the UI — it stops build agents from
+inventing one-step-one-screen task-wizard UIs.
+
+Mine the draft with the ORCA rounds (Objects → Relationships → CTAs → Attributes →
+screens) from `product.activities`, `stories[].description`, and
+`architecture.domain_model`. See the `/aep-model` skill and its
+`references/orca-process.md` for the derivation, and
+`templates/object-model-schema.yaml` + `templates/object-map-schema.yaml` for the
+structure. Write:
+
+- `product/object-model.yaml` — cross-capability object ontology (`provenance.reviewed: false`)
+- `product/maps/<capability>/object-map.yaml` — per UI-facing capability, **`status: draft`**
+
+**These are drafts only — do not mark them approved.** Object boundaries and IA
+are high-impact design decisions; `/aep-model` presents the draft for a short human
+review gate and flips `status: approved`. Dispatch/launch refuse UI-facing stories
+without an approved Object Map.
+
+> If a project is pure-backend/CLI (no UI-facing capability), skip this step.
+
 ### Feedback Loop
 
 Decomposition agents may discover module boundaries are wrong. They submit amendment proposals to the System Map. When amendments accumulate to 3+ items or any single amendment affects an interface contract, trigger an **Architecture Review** with the user before continuing.
@@ -297,10 +329,16 @@ Decomposition is complete. If no project exists yet:
 /aep-scaffold
 ```
 
-If the project already exists, start executing stories:
+If the project has UI-facing capabilities, approve the Object Map drafts before dispatching UI stories:
+
+```
+/aep-model
+```
+
+`/aep-model` presents the draft Object Map for a short human review gate and flips it to `approved`. Then start executing stories:
 
 ```
 /aep-dispatch
 ```
 
-`/aep-dispatch` reads the story graph from `product-context.yaml` and begins moving stories through the state machine (`pending → ready → in_progress → ...`), routing each through `/aep-design → /aep-launch → /aep-build → /aep-wrap`.
+`/aep-dispatch` reads the story graph from `product-context.yaml` and begins moving stories through the state machine (`pending → ready → in_progress → ...`), routing each through `/aep-design → /aep-launch → /aep-build → /aep-wrap`. For UI-facing stories it injects the approved Object Map slice and refuses to dispatch if no approved Object Map exists.

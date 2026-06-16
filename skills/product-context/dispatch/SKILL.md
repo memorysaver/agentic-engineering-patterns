@@ -460,6 +460,33 @@ No additional context needed — decisions are already in the architecture secti
 
 **Backward compatibility:** For `.5` layer stories without `calibration_type` set, default to visual-design. Check both `calibration/visual-design.yaml` and `design-context.yaml` (legacy path).
 
+#### Object Map Context (UI-facing stories)
+
+For UI-facing stories — those with `object_model_refs` set, `calibration_type` in
+{visual-design, ux-flow}, or a non-null `activity` on a UI module — inject the
+**Object Map slice**, not the whole model:
+
+1. Resolve the story's capability and read `product/maps/<capability>/object-map.yaml`.
+2. **Gate:** if it is missing or `status != approved`, **do not dispatch** —
+   instruct the user to run `/aep-model` first (same posture as the calibration gate).
+3. From the map's `coverage` index, select only the objects this story realizes and
+   include just those entries: their attributes (core/secondary/metadata), the
+   relationships among them, the CTAs (object × role) on them, and the screen(s) the
+   story builds. Skip unrelated objects — keep the slice minimal.
+4. Include the object-first directive:
+
+   ```markdown
+   This story realizes objects from an approved Object Map.
+   Build object-first (noun→verb): the listed screens, object cards/detail,
+   attributes, and CTA placements come from product/maps/<capability>/object-map.yaml.
+   Do not introduce objects or screen structures not in this slice, and do not
+   collapse the flow into a step-by-step wizard unless the map marks it task_oriented.
+   ```
+
+Visual look, copy voice, and journey/transition still come from
+`calibration/{visual-design,copy-tone,ux-flow}.yaml` — the Object Map governs object
+structure and CTA grammar, not taste.
+
 ### Assembly Rules
 
 1. **Prune aggressively** — irrelevant context degrades agent performance

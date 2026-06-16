@@ -94,6 +94,7 @@ Continue the conversation from Phase 0, now focused on product specifics. Lines 
 - **Quality dimensions:** Which dimensions of this product require human judgment that agents cannot provide? Not every dimension needs calibration — only those where "correct but not right" is likely. Common dimensions:
   - **Visual design** — brand identity, color, typography, layout (nearly always needed for user-facing products)
   - **UX flow** — user journey, information architecture, page transitions
+  - **Object model** — the noun-first object structure behind the UI (objects, their attributes, relationships, and the actions/CTAs on each). Unlike the others this is a **structural gate**, not a taste calibration: `/aep-map` auto-drafts an Object Map and `/aep-model` gets a short human approval. **Declare `object-model` by default for any UI-facing product/capability** — it is what stops build agents from inventing one-step-one-screen task-wizard UIs. (Skip only for pure-backend/CLI products.)
   - **API surface** — endpoint naming, grouping, error contracts (when external consumers exist)
   - **Data model** — entity naming, field semantics (when domain language matters)
   - **Copy/tone** — brand voice, error messages, empty states

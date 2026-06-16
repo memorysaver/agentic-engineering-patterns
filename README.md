@@ -238,12 +238,12 @@ npx skills experimental_install
 
 The `skills` CLI selects by skill name (there's no "group" flag). The groups map to these `--skill` names:
 
-| Group                                       | `--skill` names                                                                           |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| **Workflow** (agentic-development-workflow) | `aep-design`, `aep-launch`, `aep-build`, `aep-wrap`, `aep-git-ref`                        |
-| **Product** (product-context)               | `aep-envision`, `aep-map`, `aep-dispatch`, `aep-validate`, `aep-calibrate`, `aep-reflect` |
-| **Setup** (project-setup)                   | `aep-onboard`, `aep-scaffold`, `aep-testing-guide`                                        |
-| **Patterns** (patterns)                     | `aep-gen-eval`, `aep-executor`, `aep-autopilot`, `aep-workflow-feedback`                  |
+| Group                                       | `--skill` names                                                                                        |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| **Workflow** (agentic-development-workflow) | `aep-design`, `aep-launch`, `aep-build`, `aep-wrap`, `aep-git-ref`                                     |
+| **Product** (product-context)               | `aep-envision`, `aep-map`, `aep-model`, `aep-dispatch`, `aep-validate`, `aep-calibrate`, `aep-reflect` |
+| **Setup** (project-setup)                   | `aep-onboard`, `aep-scaffold`, `aep-testing-guide`                                                     |
+| **Patterns** (patterns)                     | `aep-gen-eval`, `aep-executor`, `aep-autopilot`, `aep-workflow-feedback`                               |
 
 ### Maintainer (legacy) workflow
 
@@ -478,6 +478,8 @@ Context Document                Story Graph                     shift → re-env
 ```
 
 All sections live in one `product-context.yaml` file — opportunity, product, architecture, stories (with state machine), topology, layer gates, cost tracking, and a semantic changelog.
+
+> **UI-facing products:** between `/aep-map` and `/aep-dispatch`, run **`/aep-model`** to turn the verb-first story map into a noun-first **Object Map** (OOUX/ORCA — objects → relationships → CTAs → attributes → screens). It auto-drafts from the story map, takes a short human approval, then governs object structure so build agents stop inventing one-step-one-screen task-wizard UIs. Stored under `product/` (`object-model.yaml` + `maps/<capability>/object-map.yaml`), gated by dispatch/launch. Background: [docs/research/ooux-object-modeling.md](docs/research/ooux-object-modeling.md).
 
 **Why this exists:** Without a product-level map, each feature is designed in isolation. Agents build incompatible pieces. Module boundaries are implicit. The YAML makes the whole system visible, machine-readable, and git-versioned before any code is written.
 

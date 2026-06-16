@@ -82,6 +82,7 @@ The skill operates in one of four modes based on the artifact type. Each mode co
 - `calibration.plan[].dimensions[]` must reference `product/index.yaml` `product.quality_dimensions[]`
 - No `opportunity` or `product` section should exist in `product-context.yaml` when split mode is active
 - `product/index.yaml` must have `personas`, `capabilities`, and `product` sections
+- If `object-model` is a declared quality dimension: every UI-facing capability has a `product/maps/<capability>/object-map.yaml`; each `stories[].object_model_refs` entry points to an existing object-map path + object id; object names are consistent with `architecture.domain_model` and `docs/glossary.md`
 
 Mode A runs **two passes** — product design quality first, then technical correctness:
 
@@ -109,6 +110,15 @@ Score using the story mapping dimensions from `.claude/skills/aep-gen-eval/refer
 - **Activity Consistency:** Every story with a non-null `activity` references a valid activity id from `product.activities`.
 - **Narrative Coherence:** Read activities left-to-right by `order` — they should form a coherent user narrative: "User [activity 1], then [activity 2], then..." If it doesn't flow, the backbone needs restructuring.
 - **Infrastructure Ratio:** If more than 60% of Layer 0 stories have null activity, the decomposition may be too technical — consider reframing stories around user capabilities.
+
+**Pass 1 Object Map checks** (if any `product/maps/*/object-map.yaml` exists):
+
+- **CTA Coverage:** Every UI story's verbs map to a CTA on some object in its capability's object-map `coverage`. An uncovered UI story means a missing object or a hidden task-flow.
+- **Object Home:** Every `primary_object` has at least one screen (`collection` or `detail`). A primary object with no home screen is unreachable.
+- **Anchor Present:** Each capability object-map declares a `navigation.anchor_object`.
+- **Task-Flow Justified:** Every `interaction_modes` entry with `mode: task_oriented` has a non-empty `reason` (object-first is the default; deviations must be justified).
+- **Approval State:** No UI-facing story is dispatch-ready while its capability object-map is still `status: draft` — it must be `approved` first (run `/aep-model`).
+- **Noun Coverage:** Every noun foraged from `product.activities` maps to an object or is justified as implementation-only.
 
 #### Pass 2: Technical Validation ("Can we build it correctly?")
 

@@ -74,7 +74,23 @@ type="${calibration_type:-visual-design}"
 
 **If the calibration artifact does not exist — ABORT.** The user must run `/aep-calibrate <type>` first. Agents dispatched without calibration context will reproduce the same generic output that created the need for alignment in the first place.
 
-### 4. Clean up orphan worktree/branch from prior failed launches
+### 4. Verify Object Map for UI-facing stories
+
+If the story is UI-facing (has `object_model_refs`, `calibration_type` in
+{visual-design, ux-flow}, or a non-null `activity` on a UI module):
+
+```bash
+# Resolve the story's capability, then check its Object Map exists and is approved
+grep -q 'status: approved' "product/maps/<capability>/object-map.yaml" 2>/dev/null \
+  && echo "object map approved" || echo "MISSING"
+```
+
+**If the Object Map is missing or not `approved` — ABORT.** The user must run
+`/aep-model` first. A UI-facing agent launched without the noun-first Object Map
+will invent ad-hoc, one-step-one-screen structure — exactly what the Object Map
+exists to prevent.
+
+### 5. Clean up orphan worktree/branch from prior failed launches
 
 Git worktree, unlike jj's `jj workspace forget`, does not auto-clean if a previous `/aep-launch` died mid-flight. Two failure modes can block re-launch — both are silent and confusing on first encounter. Run these idempotent checks before `git worktree add`:
 
