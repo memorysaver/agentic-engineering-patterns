@@ -4,13 +4,14 @@ Rules for organizing documentation in this directory.
 
 ## Categories
 
-| Category       | Directory     | What goes here                                                   | Naming convention                                               |
-| -------------- | ------------- | ---------------------------------------------------------------- | --------------------------------------------------------------- |
-| **Decisions**  | `decisions/`  | ADRs, post-mortems, improvement proposals that change AEP itself | Descriptive slug (`aep-v2-lesson-learning.md`)                  |
-| **Workflow**   | `workflow/`   | How AEP patterns work — process docs, not decisions about them   | Descriptive slug (`autonomous-loop.md`)                         |
-| **Tech-stack** | `tech-stack/` | Technology-specific gotchas, deployment patterns, library quirks | `<technology>-<topic>.md` (`rust-keyring-platform-features.md`) |
-| **Lessons**    | `lessons/`    | Date-prefixed observations from downstream project runs          | `YYYY-MM-DD-<project>-<context>.md`                             |
-| **Plans**      | `plans/`      | Design plans from `/design` skill                                | `YYYY-MM-DD-<topic>.md`                                         |
+| Category       | Directory     | What goes here                                                                                        | Naming convention                                               |
+| -------------- | ------------- | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| **Decisions**  | `decisions/`  | ADRs, post-mortems, improvement proposals that change AEP itself                                      | Descriptive slug (`aep-v2-lesson-learning.md`)                  |
+| **Workflow**   | `workflow/`   | How AEP patterns work — process docs, not decisions about them                                        | Descriptive slug (`autonomous-loop.md`)                         |
+| **Tech-stack** | `tech-stack/` | Technology-specific gotchas, deployment patterns, library quirks                                      | `<technology>-<topic>.md` (`rust-keyring-platform-features.md`) |
+| **Lessons**    | `lessons/`    | Date-prefixed observations from downstream project runs                                               | `YYYY-MM-DD-<project>-<context>.md`                             |
+| **Plans**      | `plans/`      | Design plans from `/design` skill                                                                     | `YYYY-MM-DD-<topic>.md`                                         |
+| **Research**   | `research/`   | Exploratory studies, source reviews, and gap analyses before a decision or implementation plan exists | Descriptive slug (`ooux-object-modeling.md`)                    |
 
 ## Key Distinctions
 
@@ -18,6 +19,7 @@ Rules for organizing documentation in this directory.
 - **Decisions** = reasoned changes to AEP itself. They explain why a pattern changed and what was decided.
 - **Tech-stack** = reusable technical knowledge that applies across projects. Not tied to a specific build run.
 - **Workflow** = how AEP patterns work day-to-day. Reference material for understanding the system.
+- **Research** = evidence gathering and synthesis. It can recommend follow-up work, but it is not itself an accepted design decision.
 
 ## Top-level Files
 
@@ -35,3 +37,4 @@ When adding new documentation, ask:
 3. **"Does this change how AEP works?"** → `decisions/`
 4. **"Does this explain an existing AEP pattern?"** → `workflow/`
 5. **"Is this a forward-looking design for a feature?"** → `plans/`
+6. **"Is this still exploratory evidence or gap analysis?"** → `research/`
