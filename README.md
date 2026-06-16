@@ -238,12 +238,12 @@ npx skills experimental_install
 
 The `skills` CLI selects by skill name (there's no "group" flag). The groups map to these `--skill` names:
 
-| Group                                       | `--skill` names                                                                           |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| **Workflow** (agentic-development-workflow) | `aep-design`, `aep-launch`, `aep-build`, `aep-wrap`, `aep-git-ref`                        |
-| **Product** (product-context)               | `aep-envision`, `aep-map`, `aep-dispatch`, `aep-validate`, `aep-calibrate`, `aep-reflect` |
-| **Setup** (project-setup)                   | `aep-onboard`, `aep-scaffold`, `aep-testing-guide`                                        |
-| **Patterns** (patterns)                     | `aep-gen-eval`, `aep-executor`, `aep-autopilot`, `aep-workflow-feedback`                  |
+| Group                                       | `--skill` names                                                                                        |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| **Workflow** (agentic-development-workflow) | `aep-design`, `aep-launch`, `aep-build`, `aep-wrap`, `aep-git-ref`                                     |
+| **Product** (product-context)               | `aep-envision`, `aep-map`, `aep-model`, `aep-dispatch`, `aep-validate`, `aep-calibrate`, `aep-reflect` |
+| **Setup** (project-setup)                   | `aep-onboard`, `aep-scaffold`, `aep-testing-guide`                                                     |
+| **Patterns** (patterns)                     | `aep-gen-eval`, `aep-executor`, `aep-autopilot`, `aep-workflow-feedback`                               |
 
 ### Maintainer (legacy) workflow
 
@@ -282,57 +282,9 @@ bun run skills:check    # verify the copies are in sync (also runs in CI + pre-c
 
 The workflow separates **thinking** from **doing**:
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│   CONTROL PLANE  (human decides what to build)                  │
-│                                                                 │
-│   You + AI collaborate on high-leverage decisions:              │
-│   goals, decomposition, architecture, priorities, feedback      │
-│                                                                 │
-│   ┌──────────┐    ┌──────────┐    ┌──────────┐                 │
-│   │ /aep-envision │───►│  /aep-map    │───►│ /aep-reflect │──┐              │
-│   │          │    │          │    │          │  │              │
-│   │ what to  │    │ how to   │    │ what we  │  │              │
-│   │ build    │    │ break it │    │ learned  │  │              │
-│   │          │    │ down     │    │          │  │              │
-│   └──────────┘    └──────────┘    └──────────┘  │              │
-│        ▲                │              │         │              │
-│        └────────────────┼──────────────┘         │              │
-│                         │  feedback loop         │              │
-│                         ▼                        │              │
-│                  ┌────────────┐                   │              │
-│                  │ /aep-dispatch  │  picks stories    │              │
-│                  │            │  from the map,    │              │
-│                  │ what to    │  creates OpenSpec │              │
-│                  │ work on    │  changes          │              │
-│                  │ next       │                   │              │
-│                  └─────┬──────┘                   │              │
-│                        │                         │              │
-└────────────────────────┼─────────────────────────┼──────────────┘
-                         │                         │
-          story specs    │    status + cost flow up │
-          flow down      │                         │
-                         ▼                         │
-┌──────────────────────────────────────────────────┼──────────────┐
-│                                                  │              │
-│   EXECUTION PLANE  (agents build it)             │              │
-│                                                                 │
-│   Agents receive precise specs, work in isolation,              │
-│   produce PRs. They don't decide what to build.                 │
-│                                                                 │
-│   ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌─────────┐  │
-│   │ /aep-design  │───►│ /aep-launch  │───►│  /aep-build  │───►│  /aep-wrap  │  │
-│   │          │    │          │    │          │    │         │  │
-│   │ refine   │    │ spawn    │    │ implement│    │ archive │  │
-│   │ the spec │    │ agent    │    │ + test   │    │ + update│  │
-│   │          │    │          │    │ + PR     │    │ status  │  │
-│   └──────────┘    └──────────┘    └──────────┘    └─────────┘  │
-│                                                                 │
-│   (repeat per story — multiple stories run in parallel)         │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+![AEP mental model: control plane and execution plane](assets/aep-mental-model.png)
+
+> This is the conceptual split. The control plane also has **specialized steps** this view omits — `/aep-model` (noun-first Object Map, UI-facing only), `/aep-calibrate` (human alignment on `.5` layers), `/aep-validate`, and `/aep-watch`. They appear in the detailed [Product Context](#1-product-context--the-persistent-map) flow below.
 
 **Agents don't talk to each other.** They communicate through structured artifacts — context documents, story specs, interface contracts, signal files. The harness coordinates everything. This is a production system design, not a chatroom-style agent swarm.
 
@@ -446,38 +398,11 @@ Each plugin implements one layer of the mental model.
 
 Captures the "what and why" of the entire product in a single `product-context.yaml` — committed to git, versioned, and machine-parseable.
 
-```
-/aep-envision                        /aep-map                            /aep-reflect
-    │                               │                               │
-    ▼                               ▼                               ▼
-Opportunity Brief               System Map                      Classify feedback:
-"should we build this?"         "modules + interfaces"          bug → fix story
-    │                               │                           refinement → next layer
-    ▼                               ▼                           discovery → update map
-Context Document                Story Graph                     shift → re-envision
-"what exactly to build,         "layered work items,                │
- for whom, within               waves + slices"                     │
- what constraints"                  │                               │
-    │                               ▼                               │
-    │                           Agent Topology                      │
-    │                           "roles + contracts"                 │
-    │                               │                               │
-    └───────────────┬───────────────┘                               │
-                    │                                               │
-                    ▼                                               │
-               /aep-dispatch                                            │
-               "pick next story,          ◄─────────────────────────┘
-                create OpenSpec change,     (new stories feed back
-                route to /aep-design"            into the dispatch queue)
-                    │
-                    ├─── integer layer ──► /aep-design → /aep-launch → /aep-build → /aep-wrap
-                    │
-                    └─── .5 alignment layer ──► /aep-calibrate → human aligns
-                                                  → /aep-calibrate capture
-                                                  → /aep-dispatch → /aep-launch → /aep-build → /aep-wrap
-```
+![AEP product context flow](assets/aep-product-context-flow.png)
 
 All sections live in one `product-context.yaml` file — opportunity, product, architecture, stories (with state machine), topology, layer gates, cost tracking, and a semantic changelog.
+
+> **`/aep-model` is UI-facing only** (the noun-first **Object Map** step shown above). It auto-drafts from the story map, takes a short human approval, then governs object structure — so build agents stop inventing one-step-one-screen task-wizard UIs. Stored under `product/` (`object-model.yaml` + `maps/<capability>/object-map.yaml`), gated by dispatch/launch. Background: [docs/research/ooux-object-modeling.md](docs/research/ooux-object-modeling.md).
 
 **Why this exists:** Without a product-level map, each feature is designed in isolation. Agents build incompatible pieces. Module boundaries are implicit. The YAML makes the whole system visible, machine-readable, and git-versioned before any code is written.
 
@@ -663,7 +588,7 @@ These aren't rules we invented — they're patterns extracted from Anthropic's e
 
 ## Getting Started
 
-**Brand new to AEP?** Start with the [Orientation Guide](docs/orientation.md) for a 10-minute tour of the mental models, the 17 skills, and the four paths — then run `/aep-onboard`.
+**Brand new to AEP?** Start with the [Orientation Guide](docs/orientation.md) for a 10-minute tour of the mental models, the 19 skills, and the four paths — then run `/aep-onboard`.
 
 **New to this plugin?**
 
@@ -721,6 +646,7 @@ Generate a dimension-specific brief, explore or discuss, capture decisions for a
 | ---------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `/aep-envision`  | product-context              | Opportunity brief + context document                                                                    |
 | `/aep-map`       | product-context              | System map + story graph + agent topology                                                               |
+| `/aep-model`     | product-context              | Object-first UI structure (OOUX/ORCA Object Map) for UI products                                        |
 | `/aep-dispatch`  | product-context              | Pick next story + create OpenSpec change                                                                |
 | `/aep-calibrate` | product-context              | Human alignment checkpoint for any quality dimension                                                    |
 | `/aep-reflect`   | product-context              | Classify feedback + update context                                                                      |

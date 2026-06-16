@@ -21,6 +21,59 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 _Nothing yet._
 
+## [2.1.0] - 2026-06-16
+
+Add an **object-first design stage** — `/aep-model` — that turns the verb-first
+story map into a noun-first **Object Map** (OOUX/ORCA) before UI is built, so build
+agents stop inventing one-step-one-screen task-wizard UIs. The structural UI plan
+(objects, attributes, relationships, CTAs, screens) is auto-drafted from artifacts
+AEP already produces, human-approved at a short gate, then governs build — leaving
+only taste (look/voice/journey) to `/aep-calibrate`. Background and the verb-first
+vs noun-first analysis: [`docs/research/ooux-object-modeling.md`](docs/research/ooux-object-modeling.md).
+
+### Added
+
+- **`/aep-model` skill** (`product-context`): runs ORCA (Objects → Relationships →
+  Calls-to-action → Attributes → screens) to draft an Object Map, takes a short
+  human review gate (object boundaries, primary anchor, task-flow exceptions), and
+  writes the approved noun-first blueprint. Sits between `/aep-map` and
+  `/aep-dispatch` for UI-facing products. Registered in
+  [`marketplace.json`](.claude-plugin/marketplace.json) `product-context` plugin.
+- **Object Map artifacts + schemas**: `product/object-model.yaml` (cross-capability
+  object ontology) and `product/maps/<capability>/object-map.yaml` (capability-scoped
+  ORCA/IA projection), via `_shared/templates/object-model-schema.yaml` and
+  `object-map-schema.yaml`. Object-first is the default; task-oriented flows are an
+  opt-in escape hatch recorded with a reason.
+- **ORCA reference** (`product-context/model/references/orca-process.md`):
+  round-by-round derivation from AEP inputs + the object-first/task-oriented decision
+  framework and the completeness checks.
+- **Glossary terms**: Object Model, Object Map, ORCA, Call-to-Action (CTA), Nested
+  Object Matrix, Object-First vs Task-Oriented.
+- **Research note** `docs/research/ooux-object-modeling.md` and a `Research` category
+  in [`docs/README.md`](docs/README.md).
+
+### Changed
+
+- **Schema** (`product-context-schema.yaml`): adds `stories[].object_model_refs`,
+  `stories[].capability`, `architecture.modules[].kind`, and the `object-model`
+  quality dimension. Object-map approvals are tracked as thin `calibration.history`
+  references — the artifact bodies stay under `product/`, not inlined into
+  `product-context.yaml`.
+- **`/aep-envision`**: declares the `object-model` structural gate by default for
+  UI-facing products.
+- **`/aep-map`**: auto-drafts Object Maps after decomposition; sets `module.kind` +
+  `story.capability`; flips an approved map to `stale` on re-decompose; routes Next
+  Step to `/aep-model`.
+- **`/aep-dispatch`**: injects the minimal Object Map slice into a story's context
+  package and refuses UI-facing stories without an approved (non-stale) map.
+- **`/aep-launch`**: aborts a UI-facing story when no approved Object Map covers it.
+- **`/aep-build`**: UI implementation obeys the injected Object Map slice (object structure and CTA grammar; taste still from calibration).
+- **`/aep-validate`**: Mode A gains Object Map completeness checks (coverage, object
+  homes, anchors, task-flow justification, ref resolution).
+
+All additions are backward-compatible — the object-model path only engages for
+UI-facing products that opt in.
+
 ## [2.0.1] - 2026-06-16
 
 Operationalize the **dogfood → reflect classifier → story** link so the G6

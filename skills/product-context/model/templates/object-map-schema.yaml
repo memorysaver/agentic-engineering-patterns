@@ -1,0 +1,103 @@
+# Object Map Schema — product/maps/<capability>/object-map.yaml
+#
+# The capability-scoped ORCA / IA projection (OOUX Rounds O→R→C→A plus Round 4
+# representation hints). One file per UI-facing capability. This is the
+# noun-first bridge between the verb-first story map and the actual UI: it says
+# WHICH objects appear, WHAT their fields are, HOW they nest, and WHAT actions
+# (CTAs) hang off each — BEFORE any screen is designed.
+#
+# Lifecycle: /aep-map writes a `status: draft`; /aep-model presents it, asks the
+# few high-leverage questions (object boundaries, primary anchor, task-flow
+# exceptions), and on approval flips `status: approved`. /aep-dispatch injects
+# ONLY the slice a story touches; /aep-launch refuses a UI-facing story whose
+# capability has no `approved` object-map.
+#
+# This file is STRUCTURAL, not visual. Colors/typography/spacing stay in
+# calibration/visual-design.yaml; journey/page/transition stay in
+# calibration/ux-flow.yaml. The object-map governs object structure + CTA grammar.
+#
+# See model/references/orca-process.md for derivation rules.
+
+schema: object-map/v1
+capability: <capability-id> # product/index.yaml capabilities[].id; in v1/single-journey use the default capability = project slug
+# Lifecycle: /aep-map writes `draft`; /aep-model flips to `approved`; /aep-map flips an
+# `approved` map back to `stale` when it re-decomposes stories/activities under this
+# capability. Dispatch/launch gates treat `draft` AND `stale` as "not ready" (abort → /aep-model).
+status: draft # draft | approved | stale
+generated_by: aep-map # aep-map (draft) | aep-model (refined/approved)
+generated_at: <ISO 8601>
+approved_at: null
+approved_by: null # "human" — set at the /aep-model review gate
+object_model_ref: product/object-model.yaml # the shared ontology this projects from
+
+# Canonical screen-id grammar (used wherever a screen is referenced, incl. coverage):
+#   <object-id>:<view>   where <view> ∈ collection | detail | create | edit
+# e.g. "order:collection", "order:detail". screens[] below declares which views exist
+# per object; coverage[].screens references them by this composite id.
+
+# ─── ROUND O — objects in play for THIS capability ──────────────
+# Subset of product/object-model.yaml. Primary objects get home screens; support
+# objects only appear nested inside others.
+primary_objects: [] # object ids the user navigates TO (each gets a collection + detail)
+supporting_objects: [] # object ids shown only inside another object's views
+
+# ─── ROUND R — Nested Object Matrix (capability-local) ──────────
+relationships:
+  - from: <object-id>
+    to: <object-id>
+    cardinality: one_to_many # one_to_one | one_to_many | many_to_many
+    nested: true # embed `to` inside `from`'s detail view
+    nav: true # this link is a navigation path the user can follow
+
+# ─── ROUND C — CTA Matrix (object × role → actions) ─────────────
+# Verbs are mined from the stories/activities for this capability and hung onto
+# the object they act on. role references product/index.yaml personas[].id.
+ctas:
+  - object: <object-id>
+    role: <persona-id>
+    actions:
+      - verb: "create" # the action (imperative)
+        from_story: <STORY-ID> # provenance: the story whose verb this is (or activity:<id>)
+        placement: collection # collection | detail | inline | global
+        priority: primary # primary | secondary
+
+# ─── ROUND A — attribute priority per object ────────────────────
+# What shows where. core → card + detail; secondary → detail only;
+# metadata → sort/filter keys (not necessarily rendered).
+attributes:
+  - object: <object-id>
+    core: [] # always visible
+    secondary: [] # detail only
+    metadata: [] # sort/filter keys
+
+# ─── ROUND 4 — representation hints (structural IA only) ─────────
+# NOT visual design. Just which structural views each object needs.
+screens:
+  - object: <object-id>
+    views: ["collection", "detail"] # collection (list/grid) | detail | create | edit
+    card_fields: [] # subset of attributes.core shown on the card
+    empty_state: "What to show when there are none"
+
+navigation:
+  anchor_object: <object-id> # the capability's home object (what the user sees first)
+  entry_points: [] # object ids reachable from primary nav
+
+# ─── OBJECT-FIRST DEFAULT + TASK-ORIENTED ESCAPE HATCH ──────────
+# Every flow defaults to object_first (noun→verb: pick an object, then act).
+# List a flow here ONLY to deviate to task_oriented (a deliberate wizard), with a
+# reason grounded in the decision framework (single goal / novice / linear / low
+# off-path tolerance — see orca-process.md and docs/research/ooux-object-modeling.md §6).
+interaction_modes:
+  - flow: <flow-name> # e.g., "onboarding", "checkout"
+    mode: task_oriented # object_first (default, no need to list) | task_oriented
+    reason: "Why a wizard wins here."
+
+# ─── STORY COVERAGE INDEX ───────────────────────────────────────
+# Which stories realize which objects/screens. /aep-dispatch reads this to inject
+# the minimal slice into a story's context package.
+coverage:
+  - story: <STORY-ID>
+    objects: [<object-id>]
+    screens: ["<object-id>:collection"]
+
+open_questions: [] # unresolved IA/object decisions surfaced to the human

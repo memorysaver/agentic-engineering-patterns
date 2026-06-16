@@ -1,0 +1,82 @@
+# Object Model Schema — product/object-model.yaml
+#
+# The cross-capability, USER-FACING object ontology (OOUX Rounds O + R).
+# Created and updated by /aep-model. This is a STABLE product-design file — it
+# lives under product/ alongside product/index.yaml, NOT inside the operational
+# product-context.yaml. product-context.yaml carries only a thin reference in
+# calibration.history (dimension: object-model).
+#
+# These are MENTAL-MODEL objects — the things the user perceives and acts on —
+# NOT backend data entities. They may map onto architecture.domain_model entities
+# (cross-linked via `backs_onto`), but the two are different lenses: domain_model
+# is how the system stores data; object-model is how the user thinks.
+#
+# Authoring: /aep-map produces a first draft; /aep-model presents it, asks the
+# few high-leverage questions, and the human approves. Do not hand-author the
+# whole thing — it is mined from existing AEP artifacts (activities, stories,
+# domain_model) and then human-reviewed.
+#
+# See model/references/orca-process.md for how each field is derived.
+
+schema: object-model/v1
+project: <project-name>
+updated_at: <ISO 8601>
+
+# ─── OBJECTS (ORCA Round O — Noun Foraging) ──────────────────────
+# The shared language of user-facing objects across the whole product.
+# Foraged from product.activities, story descriptions, problem/persona text,
+# and architecture.domain_model. Keep names consistent with docs/glossary.md
+# (ubiquitous language).
+objects:
+  - id: <object-slug> # e.g., "order", "report", "avatar"
+    name: "Human-readable" # e.g., "Order"
+    aliases: [] # other names users or the team call this thing
+    description: "One sentence — what this object is in the user's world"
+    backs_onto: [] # architecture.domain_model entity names (0..n; may be empty for pure-UI objects)
+    appears_in: [] # capability ids (from product/index.yaml capabilities[]) that use this object
+    source_evidence: # noun-foraging provenance — where this object was found
+      - "activity:<activity-id>"
+      - "story:<STORY-ID>"
+      - "domain_model:<entity>"
+    confidence: high # high | medium | low — extraction confidence (low → ask the human)
+    naming_decision: null # why this name won (fill when there was a real choice)
+    open_questions: [] # unresolved questions about this object's boundary
+
+# ─── RELATIONSHIPS (ORCA Round R — cross-capability spine) ───────
+# The shared backbone of the Nested Object Matrix. Capability-LOCAL relationships
+# live in product/maps/<capability>/object-map.yaml; only put cross-capability
+# links here.
+relationships:
+  - from: <object-id>
+    to: <object-id>
+    cardinality: one_to_many # one_to_one | one_to_many | many_to_many
+    label: "owns" # how the user understands the link (verb phrase)
+    nested: true # does `from` show `to` inline (drives detail-view composition)?
+
+# ─── SHARED ATTRIBUTES ───────────────────────────────────────────
+# Attributes an object carries everywhere. Capability-specific attributes belong
+# in the capability object-map. kind: core (always shown) | secondary (detail
+# only) | metadata (sort/filter keys).
+shared_attributes:
+  - object: <object-id>
+    attributes:
+      - name: <attr>
+        kind: core # core | secondary | metadata
+        type: string # display-type hint (string | number | date | enum | image | ref)
+        notes: null
+
+# ─── NAMING DECISIONS (ubiquitous language log) ──────────────────
+# Keep the user-facing vocabulary stable. Mirror confirmed names into
+# docs/glossary.md when they become product-wide terms.
+naming_decisions:
+  - object: <object-id>
+    chosen: "Order"
+    rejected: ["Purchase", "Transaction"]
+    reason: "Users say 'my orders', not 'my transactions'."
+
+# ─── PROVENANCE ──────────────────────────────────────────────────
+provenance:
+  generated_by: aep-map # aep-map (first draft) | aep-model (refined at review)
+  rounds_completed: ["O", "R"] # which ORCA rounds this file reflects
+  reviewed: false # set true after the /aep-model human review gate
+  reviewed_at: null

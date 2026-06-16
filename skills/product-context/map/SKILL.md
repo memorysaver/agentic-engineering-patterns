@@ -42,7 +42,7 @@ If product definition is missing (no `product` section in either file), run `/ae
 
 Produce a **System Map** (see `templates/system-map.md`) from the Context Document:
 
-- **Modules:** Major components with clear responsibility boundaries. Each module's "does not" definition is as important as its "does" definition.
+- **Modules:** Major components with clear responsibility boundaries. Each module's "does not" definition is as important as its "does" definition. Set each module's `kind` (`ui` | `backend` | `shared`) — `ui` modules render user-facing surfaces, which drives the UI-facing story trigger used by `/aep-model`, dispatch, and launch.
 - **Interface contracts:** For every module-to-module connection, define the exact API surface — endpoints, data shapes, error contracts. These are not documentation; they are executable specifications enforced by contract tests.
 - **Data flow:** How information moves through the system for each user journey in the MVP contract.
 - **Third-party boundaries:** External service integration points with failure modes.
@@ -98,7 +98,7 @@ Each story follows the **Story Spec** format (see `templates/story-spec.md`) and
 
 ### Activity Mapping
 
-After decomposition agents produce their stories, map each story to a user activity from `product.activities`:
+After decomposition agents produce their stories, map each story to a user activity from `product.activities` (and, in split mode, set `story.capability` to the owning `capabilities[]` id — this is how dispatch/launch later locate the story's Object Map; leave null in v1/single-journey, where the default capability is the project slug):
 
 - Stories that directly enable a user-facing capability get the activity they serve (e.g., "Create presigned upload URL" → `create-profile` because it enables the user to upload a selfie).
 - **Infrastructure/foundation stories that don't map to any specific user activity leave `activity` as null.** These are implementation enablers — they appear in the architecture view but NOT in the user journey story map. This is correct and expected.
@@ -161,7 +161,7 @@ not silently no-op.
 
 If `product/index.yaml` exists (created by `/aep-envision` for multi-journey products), also write per-capability `map.yaml` files:
 
-- `product/maps/<capability>/aep-map.yaml` — backbone activities, layers, story stubs for this capability
+- `product/maps/<capability>/map.yaml` — backbone activities, layers, story stubs for this capability
 - Story stubs in `map.yaml` are sketches; the full stories in `product-context.yaml` are the operational versions
 
 > **Split mode note:** In split mode, the capability map's `map.yaml` story stubs are narrative sketches. The full stories are written to `product-context.yaml`, and `product/index.yaml` is NOT modified by `/aep-map` (it only reads from it).
@@ -184,6 +184,49 @@ After defining each implementation layer, review `calibration.plan` from `produc
 - **Layer 0.5** (first `.5` layer): Typically establishes the visual design system. Run `/aep-calibrate visual-design` to create `calibration/visual-design.yaml`.
 - **Layer 1.5, 2.5** (subsequent `.5` layers): Extend calibration to new patterns. `/aep-calibrate` detects existing calibration artifacts and generates focused briefs covering only the delta.
 - **Opt-in, not automatic.** The `/aep-reflect` step after each layer classifies calibration needs by dimension. The human decides which dimensions need attention. But the workflow makes the question unavoidable.
+
+> **Object Map feeds the heavy UI dimensions.** Once `/aep-model` has approved an
+> Object Map for a capability, the `visual-design` and `ux-flow` `.5`-layer briefs
+> derive their "pages/screens to design" from the Object Map's screen plan
+> (`product/maps/<cap>/object-map.yaml` → `screens`) instead of an ad-hoc `routes/`
+> scan. Structure first (object-model), then taste (visual-design) and journey
+> (ux-flow).
+
+### Object Map Drafts (UI-facing capabilities)
+
+After stories are decomposed, produce a **draft** noun-first Object Map for each
+UI-facing capability (a capability that declared the `object-model` quality
+dimension, or `visual-design`/`ux-flow`, or has user-facing stories). This is the
+bridge from the verb-first story map to the UI — it stops build agents from
+inventing one-step-one-screen task-wizard UIs.
+
+Mine the draft with the ORCA rounds (Objects → Relationships → CTAs → Attributes →
+screens) from `product.activities`, `stories[].description`, and
+`architecture.domain_model`. See the `/aep-model` skill and its
+`references/orca-process.md` for the derivation, and
+`templates/object-model-schema.yaml` + `templates/object-map-schema.yaml` for the
+structure. Write:
+
+- `product/object-model.yaml` — cross-capability object ontology (`provenance.reviewed: false`)
+- `product/maps/<capability>/object-map.yaml` — per UI-facing capability, **`status: draft`**
+
+Use the `capabilities[]` ids for the `<capability>` path segment. In v1 /
+single-journey products (no `capabilities[]`), use a single default capability =
+the project slug (`product:` / `project:` in the YAML) and set every UI story's
+`coverage` entry under that one map.
+
+**These are drafts only — do not mark them approved.** Object boundaries and IA
+are high-impact design decisions; `/aep-model` presents the draft for a short human
+review gate and flips `status: approved`. Dispatch/launch refuse UI-facing stories
+without an approved Object Map.
+
+**Re-runs invalidate approval.** If a later `/aep-map` run re-decomposes stories or
+activities under a capability whose object-map is already `approved`, flip that
+map's `status: stale` (and `provenance.reviewed: false` on the shared
+`object-model.yaml` if its objects changed). The dispatch/launch gates treat `stale`
+like `draft` — they abort until `/aep-model` re-approves the delta.
+
+> If a project is pure-backend/CLI (no UI-facing capability), skip this step.
 
 ### Feedback Loop
 
@@ -297,10 +340,16 @@ Decomposition is complete. If no project exists yet:
 /aep-scaffold
 ```
 
-If the project already exists, start executing stories:
+If the project has UI-facing capabilities, approve the Object Map drafts before dispatching UI stories:
+
+```
+/aep-model
+```
+
+`/aep-model` presents the draft Object Map for a short human review gate and flips it to `approved`. Then start executing stories:
 
 ```
 /aep-dispatch
 ```
 
-`/aep-dispatch` reads the story graph from `product-context.yaml` and begins moving stories through the state machine (`pending → ready → in_progress → ...`), routing each through `/aep-design → /aep-launch → /aep-build → /aep-wrap`.
+`/aep-dispatch` reads the story graph from `product-context.yaml` and begins moving stories through the state machine (`pending → ready → in_progress → ...`), routing each through `/aep-design → /aep-launch → /aep-build → /aep-wrap`. For UI-facing stories it injects the approved Object Map slice and refuses to dispatch if no approved Object Map exists.

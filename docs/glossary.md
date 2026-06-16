@@ -669,6 +669,50 @@ product/
     map.yaml                    # Backbone + layers + story stubs
 ```
 
+### Object Model (OOUX)
+
+The cross-capability, user-facing **object ontology** — the things the user perceives and acts on (e.g. ORDER, REPORT, AVATAR), distinct from backend data entities (**System Map** `domain_model`). Produced by `/aep-model` via OOUX noun foraging. The noun-first counterpart to the verb-first **User Story Map**.
+
+**Where it appears:** `product/object-model.yaml` (stable, under `product/`); `/aep-model` creates it; thin reference in `product-context.yaml` → `calibration.history`.
+
+See also: **Object Map**, **ORCA**, **User Story Map**, **System Map**
+
+### Object Map (OOUX)
+
+A capability-scoped projection of the **Object Model** into implementable structure: which objects appear, their attributes (core/secondary/metadata), how they nest (**Nested Object Matrix**), the **Calls-to-Action** on each, and structural screens. It is the noun-first bridge from the story map to the UI — what stops build agents from inventing one-step-one-screen task-wizard UIs. Structural only: visual/voice/journey stay in **Calibration Artifacts**. Lifecycle: `/aep-map` drafts (`status: draft`), `/aep-model` approves (`status: approved`), `/aep-dispatch` injects only the slice a story touches.
+
+**Where it appears:** `product/maps/<capability>/object-map.yaml`; gated by `/aep-dispatch` and `/aep-launch` for UI-facing stories.
+
+See also: **Object Model**, **ORCA**, **Capability Map**, **Calibration**
+
+### ORCA (OOUX process)
+
+Sophia Prater's four-round OOUX process — **O**bjects → **R**elationships → **C**alls-to-action → **A**ttributes — answered before designing any screen. `/aep-model` runs an artifact-grounded version over AEP's existing inputs (`product.activities`, `stories[].description`, `architecture.domain_model`). See `skills/product-context/model/references/orca-process.md` and `docs/research/ooux-object-modeling.md`.
+
+See also: **Object Map**, **Call-to-Action**, **Nested Object Matrix**
+
+### Call-to-Action (CTA)
+
+An action a user can take _on an object_, tagged by role/persona (object × role matrix). In AEP, the **verbs** mined from stories/activities become CTAs hung on the objects they act on — the verb-first→noun-first join. Each CTA records placement (collection/detail/inline/global), priority, and the `from_story` it came from.
+
+**Where it appears:** `product/maps/<capability>/object-map.yaml` → `ctas`.
+
+See also: **Object Map**, **ORCA**
+
+### Nested Object Matrix (NOM)
+
+An objects-by-objects matrix describing relationships in the intersections (cardinality + whether one object nests inside another's view) — a scalable entity-relationship diagram from OOUX Round R. Relationships pave the navigation paths and drive detail-view composition.
+
+**Where it appears:** `product/object-model.yaml` (cross-capability) and `product/maps/<capability>/object-map.yaml` (capability-local) → `relationships`.
+
+See also: **Object Map**, **ORCA**
+
+### Object-First vs Task-Oriented
+
+The interaction-grammar choice: **object-first** (noun→verb — pick an object, then act; the AEP default) vs **task-oriented** (verb→noun — a guided wizard). Object Maps default every flow to object-first and record per-flow `task_oriented` deviations with a reason (e.g. onboarding, checkout). See the decision framework in `docs/research/ooux-object-modeling.md` §6.
+
+See also: **Object Map**, **ORCA**
+
 ### Readiness Score
 
 A per-story spec completeness score (0.0–1.0) computed during `/aep-dispatch` (Step 3). Components: acceptance criteria count, interface obligations defined, files affected identified, verification defined, no unresolved open questions. Routes stories: < 0.5 → `/aep-design`, >= 0.7 → `/aep-launch`, between → user decision.

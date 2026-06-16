@@ -7,6 +7,7 @@
 # Sections are populated incrementally:
 #   /aep-envision   → opportunity, product (incl. quality_dimensions), calibration.plan
 #   /aep-map        → architecture, stories, topology, layer_gates, cost
+#   /aep-model      → product/object-model.yaml + product/maps/<cap>/object-map.yaml (standalone); calibration.history (dimension: object-model); stories[].object_model_refs
 #   /aep-calibrate  → calibration.history, inline updates to architecture/product sections
 #   /aep-dispatch   → stories[].status, stories[].openspec_change (per story)
 #   /aep-build      → .dev-workflow/signals/status.json (story_status, pr_url, cost_usd)
@@ -157,8 +158,11 @@ product:
   # Dimensions where human judgment is needed that agents cannot provide.
   # Declared during /aep-envision, checked by /aep-reflect, executed by /aep-calibrate.
   # Not every dimension needs calibration — only those where "correct but not right" is likely.
+  # `object-model` is a STRUCTURAL gate (auto-drafted by /aep-model, human-approved),
+  # not a taste calibration — declare it for UI-facing products so UI stories get a
+  # noun-first Object Map before build. See skills/product-context/model.
   quality_dimensions:
-    - dimension: visual-design # visual-design | ux-flow | api-surface | data-model | scope-direction | copy-tone | performance-quality
+    - dimension: visual-design # visual-design | ux-flow | object-model | api-surface | data-model | scope-direction | copy-tone | performance-quality
       criticality: high # high | medium | low
       first_calibration_layer: 0.5
       rationale: "Why this dimension needs human calibration"
@@ -174,6 +178,8 @@ calibration:
     - layer: 0.5
       dimensions: ["visual-design"] # from product.quality_dimensions
       trigger: "Condition that activates this calibration"
+  # /aep-calibrate appends taste-dimension decisions here; /aep-model appends
+  # object-model approvals (artifact_path → product/maps/<cap>/object-map.yaml).
   history:
     - dimension: visual-design
       calibrated_at: <ISO date>
@@ -192,6 +198,7 @@ architecture:
   technical_spec: null # optional path to standalone technical specification document (e.g., "docs/technical-spec.md")
   modules:
     - name: <module-name>
+      kind: backend # ui | backend | shared — `ui` modules render user-facing surfaces (used by /aep-model + the UI-facing story trigger)
       responsibility: "What this module does"
       does_not: "What this module does NOT do (defines the boundary)"
       owns:
@@ -295,7 +302,9 @@ stories:
     layer: 0
     module: <module-name>
     activity: null # user activity from product.activities (null for infrastructure stories)
+    capability: null # capability id (product/index.yaml capabilities[].id); /aep-map sets it. Null in v1/single-journey → resolves to the default capability (project slug). Used to locate product/maps/<capability>/object-map.yaml.
     calibration_type: null # visual-design | ux-flow | api-surface | data-model | scope-direction | copy-tone | performance-quality (null for non-calibration stories)
+    object_model_refs: [] # /aep-model: object-map slice(s) this UI story realizes, as "<object-map-path>#<object-id>" where <object-id> ∈ object-map primary_objects/supporting_objects, e.g. ["product/maps/dashboard/object-map.yaml#order"] (empty for non-UI stories)
     slice: 1 # execution slice within layer (parallel batch)
     status: pending
     priority: critical # critical | high | medium | low
