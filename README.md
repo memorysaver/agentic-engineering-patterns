@@ -150,9 +150,14 @@ Then:
    files your old pin predated — expect more new files than the changelog's headline.
 2. **Normalize `.claude/skills/aep-*` back to symlinks** if your layout shares one copy between
    runtimes (see the gotcha below).
-3. **Commit with `--no-verify`** so the pre-commit formatter doesn't rewrite the pinned bytes and
+3. **Bump the AGENTS.md pin note.** If your `AGENTS.md` states the pinned version in prose — the
+   canonical header's `… pinned at **vX.Y.Z**) are self-describing …` line — update it to the new
+   tag so the doc doesn't drift from the installed bytes. It's hand-written, so the skill install
+   won't touch it. Stage it in the **same commit** as the skill bytes.
+4. **Commit with `--no-verify`** so the pre-commit formatter doesn't rewrite the pinned bytes and
    break the lockfile hashes (see [Keep your formatter off the skills](#keep-your-formatter-off-the-skills)).
-4. **Verify.** `npx skills list` shows the new versions and `git status` is clean.
+5. **Verify.** `npx skills list` shows the new versions, the AGENTS.md pin note matches the new tag,
+   and `git status` is clean.
 
 > **Gotcha — the `-a claude-code` symlink copy.** If your canonical layout keeps
 > `.agents/skills/<name>` as the **real files** and `.claude/skills/<name>` as a **symlink** →
