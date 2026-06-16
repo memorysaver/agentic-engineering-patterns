@@ -665,7 +665,7 @@ These aren't rules we invented — they're patterns extracted from Anthropic's e
 
 ## Getting Started
 
-**Brand new to AEP?** Start with the [Orientation Guide](docs/orientation.md) for a 10-minute tour of the mental models, the 17 skills, and the four paths — then run `/aep-onboard`.
+**Brand new to AEP?** Start with the [Orientation Guide](docs/orientation.md) for a 10-minute tour of the mental models, the 19 skills, and the four paths — then run `/aep-onboard`.
 
 **New to this plugin?**
 
@@ -723,6 +723,7 @@ Generate a dimension-specific brief, explore or discuss, capture decisions for a
 | ---------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `/aep-envision`  | product-context              | Opportunity brief + context document                                                                    |
 | `/aep-map`       | product-context              | System map + story graph + agent topology                                                               |
+| `/aep-model`     | product-context              | Object-first UI structure (OOUX/ORCA Object Map) for UI products                                        |
 | `/aep-dispatch`  | product-context              | Pick next story + create OpenSpec change                                                                |
 | `/aep-calibrate` | product-context              | Human alignment checkpoint for any quality dimension                                                    |
 | `/aep-reflect`   | product-context              | Classify feedback + update context                                                                      |

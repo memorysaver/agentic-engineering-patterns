@@ -36,8 +36,8 @@ task-wizard UIs. With it, they inherit one consistent object-oriented blueprint.
 Run `/aep-model` for **UI-facing** products/capabilities only. A capability is
 UI-facing when it declares the `object-model` quality dimension (set by
 `/aep-envision`), or declares `visual-design`/`ux-flow`, or has user-facing stories
-(non-null `activity` on a UI module). Pure-backend/CLI products skip it — there
-are no user-perceived objects to model.
+(non-null `activity` whose module is `kind: ui`). Pure-backend/CLI products skip it
+— there are no user-perceived objects to model.
 
 If nothing is UI-facing, say so and route the user straight to `/aep-dispatch`.
 
@@ -74,7 +74,14 @@ If `stories` is empty, run `/aep-map` first. If no product definition exists, ru
 
 ---
 
-## Step 1: Generate the Draft (ORCA, automated)
+## Step 1: Generate (or refine) the Draft (ORCA, automated)
+
+**If `/aep-map` already wrote draft artifacts** (`product/object-model.yaml` and
+`product/maps/<cap>/object-map.yaml` with `status: draft`), **read and refine them**
+— do not regenerate from scratch. Preserve their `provenance`/`source_evidence`,
+fill gaps, and fix obvious errors. Generate fresh only when no draft exists. (Set
+`provenance.generated_by`/`status` to reflect reality — `aep-map` for an untouched
+draft, refined in place here.)
 
 Run the four ORCA rounds per `references/orca-process.md`. This step is
 agent-driven — mine, don't ask yet.
@@ -101,7 +108,10 @@ Write:
 - `product/object-model.yaml` — the cross-capability ontology
   (`provenance.reviewed: false`).
 - `product/maps/<capability>/object-map.yaml` per UI-facing capability with
-  **`status: draft`**, including the `coverage` index (story → objects/screens).
+  **`status: draft`**, including the `coverage` index (story → objects/screens; screen
+  ids use the canonical `<object-id>:<view>` grammar). Use `capabilities[]` ids for
+  `<capability>`; in v1/single-journey (no `capabilities[]`) use one default
+  capability = the project slug.
 
 Default every flow to `object_first`. Only add an `interaction_modes` entry to
 mark a flow `task_oriented`, with a reason grounded in the decision framework.
@@ -145,7 +155,7 @@ On approval:
    ```yaml
    - dimension: object-model
      calibrated_at: "<ISO date>"
-     calibrated_from_layer: <layer>
+     calibrated_from_layer: <layer> # the active layer whose UI stories this approval unblocks
      mode: establishment # or extension
      artifact_path: "product/maps/<capability>/object-map.yaml"
      summary: "Approved object-first IA for <capability> — N primary objects, M task-flow exceptions"

@@ -29,6 +29,12 @@ artifact-grounded version because AEP already did the upstream research.
 Read story `description` defensively — it is a string in some projects and a
 `{what_changes, why}` object in others. Handle both.
 
+**Capability scoping fallbacks:** `frame.yaml` only exists for multi-journey
+products (`/aep-envision` skips it for single-journey). If it is absent, scope the
+capability from `product.activities` + the stories whose `capability` (or, in v1,
+all UI stories) belong to it. In v1 / single-journey products there is no
+`capabilities[]` — use one default capability whose id is the project slug.
+
 ---
 
 ## Round O — Objects (Noun Foraging)
@@ -45,7 +51,10 @@ Read story `description` defensively — it is a string in some projects and a
 4. **Merge synonyms, split overloaded nouns.** Record the call in
    `naming_decisions`. Keep names consistent with `docs/glossary.md`.
 5. Record `source_evidence` and `confidence` for each object. Low-confidence
-   objects become review-gate questions.
+   objects become review-gate questions. **Confidence rubric:** `high` = named
+   directly in an activity or as a `domain_model` entity; `medium` = inferred from
+   story text / appears once; `low` = guessed, a synonym merge, or a composed object
+   with no single backing entity. Surface every `low` at the gate.
 
 Output → `product/object-model.yaml` `objects[]`.
 
@@ -69,6 +78,9 @@ activities is an action the user does _to some object_ — hang it there.
 
 - Map each story/activity verb to its object and the acting `role` (persona).
 - Set `placement` (collection / detail / inline / global) and `priority`.
+  **Priority rule:** a CTA is `primary` when its story is `priority: critical|high`
+  or `business_value >= 7`, or it is the object's defining action (create/the verb in
+  the activity name); otherwise `secondary`.
 - Keep `from_story` provenance so dispatch can trace a CTA back to the story that
   needs it, and so coverage can be checked.
 
@@ -85,8 +97,12 @@ For each object, list its content elements + metadata and rank them:
 - **secondary** — detail view only.
 - **metadata** — sort/filter keys (timestamps, counts, status).
 
-Mine from `domain_model` fields, acceptance criteria, and existing UI. Shared
-attributes → object-model; capability-specific → object-map.
+Mine from `domain_model` fields, acceptance criteria, and existing UI. **Tier
+inference when there's no existing UI** (new products): name/title/label and the
+object's primary identifier → `core`; other `required: true` domain fields →
+`core`/`secondary`; timestamps, counts, status/enum flags → `metadata`; everything
+else → `secondary`. Shared attributes → object-model; capability-specific →
+object-map.
 
 ## Round 4 — Representation hints (structural only)
 

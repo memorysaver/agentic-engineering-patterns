@@ -77,18 +77,20 @@ type="${calibration_type:-visual-design}"
 ### 4. Verify Object Map for UI-facing stories
 
 If the story is UI-facing (has `object_model_refs`, `calibration_type` in
-{visual-design, ux-flow}, or a non-null `activity` on a UI module):
+{visual-design, ux-flow}, or a non-null `activity` whose module is `kind: ui`):
 
 ```bash
-# Resolve the story's capability, then check its Object Map exists and is approved
-grep -q 'status: approved' "product/maps/<capability>/object-map.yaml" 2>/dev/null \
-  && echo "object map approved" || echo "MISSING"
+# Find the object-map that COVERS this story (capability-agnostic — works whether or
+# not story.capability is set), then require status: approved.
+MAP=$(grep -rl 'story: <STORY-ID>' product/maps/*/object-map.yaml 2>/dev/null | head -1)
+{ [ -n "$MAP" ] && grep -q 'status: approved' "$MAP"; } \
+  && echo "object map approved: $MAP" || echo "MISSING"
 ```
 
-**If the Object Map is missing or not `approved` — ABORT.** The user must run
-`/aep-model` first. A UI-facing agent launched without the noun-first Object Map
-will invent ad-hoc, one-step-one-screen structure — exactly what the Object Map
-exists to prevent.
+**If no approved Object Map covers the story (missing, `draft`, or `stale`) —
+ABORT.** The user must run `/aep-model` first. A UI-facing agent launched without
+the noun-first Object Map will invent ad-hoc, one-step-one-screen structure —
+exactly what the Object Map exists to prevent.
 
 ### 5. Clean up orphan worktree/branch from prior failed launches
 

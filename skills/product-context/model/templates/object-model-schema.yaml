@@ -76,7 +76,7 @@ naming_decisions:
 
 # ─── PROVENANCE ──────────────────────────────────────────────────
 provenance:
-  generated_by: aep-model
+  generated_by: aep-map # aep-map (first draft) | aep-model (refined at review)
   rounds_completed: ["O", "R"] # which ORCA rounds this file reflects
   reviewed: false # set true after the /aep-model human review gate
   reviewed_at: null

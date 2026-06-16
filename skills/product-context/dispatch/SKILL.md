@@ -10,7 +10,7 @@ Bridge between the product context (control plane) and the feature lifecycle (ex
 **Where this fits:**
 
 ```
-/aep-envision → /aep-map → /aep-scaffold
+/aep-envision → /aep-map → /aep-model (UI-facing) → /aep-scaffold
   → [ /aep-dispatch → /aep-design → /aep-launch → /aep-build → /aep-wrap ]
        ▲ you are here
   → /aep-reflect → loop
@@ -462,13 +462,21 @@ No additional context needed — decisions are already in the architecture secti
 
 #### Object Map Context (UI-facing stories)
 
-For UI-facing stories — those with `object_model_refs` set, `calibration_type` in
-{visual-design, ux-flow}, or a non-null `activity` on a UI module — inject the
-**Object Map slice**, not the whole model:
+A story is **UI-facing** when it has `object_model_refs` set, `calibration_type` in
+{visual-design, ux-flow}, or a non-null `activity` whose module has `kind: ui`
+(`architecture.modules[].kind`). For these, inject the **Object Map slice**, not the
+whole model:
 
-1. Resolve the story's capability and read `product/maps/<capability>/object-map.yaml`.
-2. **Gate:** if it is missing or `status != approved`, **do not dispatch** —
-   instruct the user to run `/aep-model` first (same posture as the calibration gate).
+1. **Resolve the capability:** use `story.capability` if set; otherwise (v1 /
+   single-journey) the default capability is the project slug. The Object Map is
+   `product/maps/<capability>/object-map.yaml`.
+2. **Gate (must pass to dispatch):** the resolved object-map must exist, have
+   `status: approved`, and its `coverage[]` must list this story id. If it is missing,
+   `status` is `draft` or `stale`, or it does not cover the story → **do not
+   dispatch**; instruct the user to run `/aep-model` first (same posture as the
+   calibration gate). If `story.capability` is unset, fall back to scanning
+   `product/maps/*/object-map.yaml` for a `coverage[].story` match — an `approved`
+   match resolves the capability.
 3. From the map's `coverage` index, select only the objects this story realizes and
    include just those entries: their attributes (core/secondary/metadata), the
    relationships among them, the CTAs (object × role) on them, and the screen(s) the

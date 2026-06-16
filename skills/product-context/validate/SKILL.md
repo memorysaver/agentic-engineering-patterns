@@ -23,7 +23,7 @@ Run a generator/evaluator pattern against any artifact produced by the AEP workf
 **Where this fits:**
 
 ```
-/aep-envision → /aep-map → /aep-validate → /aep-dispatch → /aep-design → /aep-launch → /aep-build → /aep-wrap
+/aep-envision → /aep-map → /aep-model (UI-facing) → /aep-validate → /aep-dispatch → /aep-design → /aep-launch → /aep-build → /aep-wrap
                     ▲ you are here
 
 Also usable after any phase:
@@ -114,10 +114,11 @@ Score using the story mapping dimensions from `.claude/skills/aep-gen-eval/refer
 **Pass 1 Object Map checks** (if any `product/maps/*/object-map.yaml` exists):
 
 - **CTA Coverage:** Every UI story's verbs map to a CTA on some object in its capability's object-map `coverage`. An uncovered UI story means a missing object or a hidden task-flow.
-- **Object Home:** Every `primary_object` has at least one screen (`collection` or `detail`). A primary object with no home screen is unreachable.
+- **Object Home:** Every object in `primary_objects` has at least one `screens[]` entry (`collection` or `detail`). A primary object with no home screen is unreachable.
 - **Anchor Present:** Each capability object-map declares a `navigation.anchor_object`.
 - **Task-Flow Justified:** Every `interaction_modes` entry with `mode: task_oriented` has a non-empty `reason` (object-first is the default; deviations must be justified).
-- **Approval State:** No UI-facing story is dispatch-ready while its capability object-map is still `status: draft` — it must be `approved` first (run `/aep-model`).
+- **Approval State:** No UI-facing story is dispatch-ready while its capability object-map is `status: draft` or `stale` — it must be `approved` first (run `/aep-model`).
+- **Ref Resolution:** Each `stories[].object_model_refs` entry (`<path>#<object-id>`) resolves — the path exists and `<object-id>` appears in that map's `primary_objects`/`supporting_objects` and in `object-model.yaml` `objects[]`.
 - **Noun Coverage:** Every noun foraged from `product.activities` maps to an object or is justified as implementation-only.
 
 #### Pass 2: Technical Validation ("Can we build it correctly?")

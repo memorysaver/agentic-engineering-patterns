@@ -19,13 +19,21 @@
 # See model/references/orca-process.md for derivation rules.
 
 schema: object-map/v1
-capability: <capability-id> # matches product/index.yaml capabilities[].id
+capability: <capability-id> # product/index.yaml capabilities[].id; in v1/single-journey use the default capability = project slug
+# Lifecycle: /aep-map writes `draft`; /aep-model flips to `approved`; /aep-map flips an
+# `approved` map back to `stale` when it re-decomposes stories/activities under this
+# capability. Dispatch/launch gates treat `draft` AND `stale` as "not ready" (abort → /aep-model).
 status: draft # draft | approved | stale
-generated_by: aep-model
+generated_by: aep-map # aep-map (draft) | aep-model (refined/approved)
 generated_at: <ISO 8601>
 approved_at: null
 approved_by: null # "human" — set at the /aep-model review gate
 object_model_ref: product/object-model.yaml # the shared ontology this projects from
+
+# Canonical screen-id grammar (used wherever a screen is referenced, incl. coverage):
+#   <object-id>:<view>   where <view> ∈ collection | detail | create | edit
+# e.g. "order:collection", "order:detail". screens[] below declares which views exist
+# per object; coverage[].screens references them by this composite id.
 
 # ─── ROUND O — objects in play for THIS capability ──────────────
 # Subset of product/object-model.yaml. Primary objects get home screens; support

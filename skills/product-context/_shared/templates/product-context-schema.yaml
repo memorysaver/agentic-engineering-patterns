@@ -198,6 +198,7 @@ architecture:
   technical_spec: null # optional path to standalone technical specification document (e.g., "docs/technical-spec.md")
   modules:
     - name: <module-name>
+      kind: backend # ui | backend | shared — `ui` modules render user-facing surfaces (used by /aep-model + the UI-facing story trigger)
       responsibility: "What this module does"
       does_not: "What this module does NOT do (defines the boundary)"
       owns:
@@ -301,8 +302,9 @@ stories:
     layer: 0
     module: <module-name>
     activity: null # user activity from product.activities (null for infrastructure stories)
+    capability: null # capability id (product/index.yaml capabilities[].id); /aep-map sets it. Null in v1/single-journey → resolves to the default capability (project slug). Used to locate product/maps/<capability>/object-map.yaml.
     calibration_type: null # visual-design | ux-flow | api-surface | data-model | scope-direction | copy-tone | performance-quality (null for non-calibration stories)
-    object_model_refs: [] # /aep-model: object-map slice(s) this UI story realizes, e.g. ["product/maps/dashboard/object-map.yaml#order"] (empty for non-UI stories)
+    object_model_refs: [] # /aep-model: object-map slice(s) this UI story realizes, as "<object-map-path>#<object-id>" where <object-id> ∈ object-map primary_objects/supporting_objects, e.g. ["product/maps/dashboard/object-map.yaml#order"] (empty for non-UI stories)
     slice: 1 # execution slice within layer (parallel batch)
     status: pending
     priority: critical # critical | high | medium | low
