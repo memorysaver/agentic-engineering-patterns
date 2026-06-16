@@ -282,57 +282,7 @@ bun run skills:check    # verify the copies are in sync (also runs in CI + pre-c
 
 The workflow separates **thinking** from **doing**:
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│   CONTROL PLANE  (human decides what to build)                  │
-│                                                                 │
-│   You + AI collaborate on high-leverage decisions:              │
-│   goals, decomposition, architecture, priorities, feedback      │
-│                                                                 │
-│   ┌──────────┐    ┌──────────┐    ┌──────────┐                 │
-│   │ /aep-envision │───►│  /aep-map    │───►│ /aep-reflect │──┐              │
-│   │          │    │          │    │          │  │              │
-│   │ what to  │    │ how to   │    │ what we  │  │              │
-│   │ build    │    │ break it │    │ learned  │  │              │
-│   │          │    │ down     │    │          │  │              │
-│   └──────────┘    └──────────┘    └──────────┘  │              │
-│        ▲                │              │         │              │
-│        └────────────────┼──────────────┘         │              │
-│                         │  feedback loop         │              │
-│                         ▼                        │              │
-│                  ┌────────────┐                   │              │
-│                  │ /aep-dispatch  │  picks stories    │              │
-│                  │            │  from the map,    │              │
-│                  │ what to    │  creates OpenSpec │              │
-│                  │ work on    │  changes          │              │
-│                  │ next       │                   │              │
-│                  └─────┬──────┘                   │              │
-│                        │                         │              │
-└────────────────────────┼─────────────────────────┼──────────────┘
-                         │                         │
-          story specs    │    status + cost flow up │
-          flow down      │                         │
-                         ▼                         │
-┌──────────────────────────────────────────────────┼──────────────┐
-│                                                  │              │
-│   EXECUTION PLANE  (agents build it)             │              │
-│                                                                 │
-│   Agents receive precise specs, work in isolation,              │
-│   produce PRs. They don't decide what to build.                 │
-│                                                                 │
-│   ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌─────────┐  │
-│   │ /aep-design  │───►│ /aep-launch  │───►│  /aep-build  │───►│  /aep-wrap  │  │
-│   │          │    │          │    │          │    │         │  │
-│   │ refine   │    │ spawn    │    │ implement│    │ archive │  │
-│   │ the spec │    │ agent    │    │ + test   │    │ + update│  │
-│   │          │    │          │    │ + PR     │    │ status  │  │
-│   └──────────┘    └──────────┘    └──────────┘    └─────────┘  │
-│                                                                 │
-│   (repeat per story — multiple stories run in parallel)         │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+![AEP mental model: control plane and execution plane](assets/aep-mental-model.png)
 
 > This is the conceptual split. The control plane also has **specialized steps** this view omits — `/aep-model` (noun-first Object Map, UI-facing only), `/aep-calibrate` (human alignment on `.5` layers), `/aep-validate`, and `/aep-watch`. They appear in the detailed [Product Context](#1-product-context--the-persistent-map) flow below.
 
@@ -448,42 +398,7 @@ Each plugin implements one layer of the mental model.
 
 Captures the "what and why" of the entire product in a single `product-context.yaml` — committed to git, versioned, and machine-parseable.
 
-```
-/aep-envision                 /aep-map                       /aep-reflect
-    │                            │                              │
-    ▼                            ▼                              ▼
-Opportunity Brief            System Map                     Classify feedback:
-"should we build this?"      "modules + interfaces"         bug → fix story
-    │                            │                           refinement → next layer
-    ▼                            ▼                           discovery → update map
-Context Document             Story Graph                    shift → re-envision
-"what to build, for whom"    "layered work items,               │
-    │                         waves + slices"                   │
-    │                            │                              │
-    │                            ▼                              │
-    │                        Agent Topology                     │
-    │                        "roles + contracts"                │
-    │                            │                              │
-    └──────────────┬─────────────┘                             │
-                   │                                            │
-                   ▼                                            │
-              /aep-model   (UI-facing only)                     │
-              "story map → Object Map:                          │
-               objects · relationships · CTAs ·                 │
-               attributes · screens (noun-first)"               │
-                   │                                            │
-                   ▼                                            │
-              /aep-dispatch   ◄────────────────────────────────┘
-              "pick next story,            (new stories feed
-               create OpenSpec change,      back into the
-               route to /aep-design"        dispatch queue)
-                   │
-                   ├─── integer layer ──► /aep-design → /aep-launch → /aep-build → /aep-wrap
-                   │
-                   └─── .5 alignment layer ──► /aep-calibrate → human aligns
-                                                 → /aep-calibrate capture
-                                                 → /aep-dispatch → /aep-launch → /aep-build → /aep-wrap
-```
+![AEP product context flow](assets/aep-product-context-flow.png)
 
 All sections live in one `product-context.yaml` file — opportunity, product, architecture, stories (with state machine), topology, layer gates, cost tracking, and a semantic changelog.
 
