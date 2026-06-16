@@ -67,8 +67,7 @@ vs noun-first analysis: [`docs/research/ooux-object-modeling.md`](docs/research/
 - **`/aep-dispatch`**: injects the minimal Object Map slice into a story's context
   package and refuses UI-facing stories without an approved (non-stale) map.
 - **`/aep-launch`**: aborts a UI-facing story when no approved Object Map covers it.
-- **`/aep-build`**: UI implementation obeys the injected Object Map slice (structure
-  - CTA grammar; taste still from calibration).
+- **`/aep-build`**: UI implementation obeys the injected Object Map slice (object structure and CTA grammar; taste still from calibration).
 - **`/aep-validate`**: Mode A gains Object Map completeness checks (coverage, object
   homes, anchors, task-flow justification, ref resolution).
 
