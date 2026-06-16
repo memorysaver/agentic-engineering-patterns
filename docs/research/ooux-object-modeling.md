@@ -2,7 +2,7 @@
 
 > **狀態：** 研究筆記（非實作計畫）。記錄 OOUX/OOUI（名詞優先）與 AEP（USM 動詞優先）的對照，回答「能否在所有 UI-facing design 階段先產生可審閱的 UI 結構計劃」。AEP 整合設計見 §7，**列為後續 follow-up，不在本次提交範圍**。
 > **日期：** 2026-06-16　**分支：** `docs/ooux-object-modeling-research`
-> **方法：** 以使用者既有的對抗式查證筆記《Task vs Object 設計之爭》為理論骨幹，本次再於 2026-06-16 抽查一手網址補強。逐條標註「本次實抓」vs「沿用既有查證」。
+> **方法：** 以使用者既有的對抗式查證筆記《Task vs Object 設計之爭》為理論骨幹，本次再以 `defuddle` + `WebFetch` 直接抓取一手網址補強（mgrep `--web` 本月配額用盡）。逐條標註「本次實抓」vs「沿用既有查證」。
 
 ---
 
@@ -63,10 +63,10 @@ graph TD
 整場爭論濃縮成**一個語序問題**：介面結構先呈現「**對象（名詞）**」還是先呈現「**動作（動詞）**」。
 
 > **✅ 本次實抓（ooux.com「What is OOUX」）：**
-> 該頁把 feature / user story / task flow 歸為 verbs，並用 "OOUXers slice by nouns" 概括 OOUX 的切分方式。
+> "Traditionally, digital product teams divvy up complexity by feature, user story, or task flow. In essence, teams tend to break up complexity by the _verbs_. Unfortunately, this often leads to cobbled-together, disjointed user experiences. Object-Oriented UX offers a better way... Instead of slicing up a system by _verbs_, OOUXers slice by _nouns_. As it turns out — this is how developers work too — object-orientedly."
 
 - **OOUX 立場：objects first, actions second**。先定義使用者心智模型裡的物件，動作之後才推導。
-- **對 task 派的批判：** 按 feature / **user story** / task flow 切複雜度，容易讓體驗被不同任務切片拉碎。注意這個說法**點名了 user story** —— 是目前最接近「USM 被 OOUX 陣營點評」的一手敘述（但仍非 USM vs OOUX 的正式比較，見 §8）。
+- **對 task 派的批判：** 按 feature / **user story** / task flow 切複雜度，「often leads to cobbled-together, disjointed user experiences」。注意這句**點名了 user story** —— 是目前最接近「USM 被 OOUX 陣營點評」的一手敘述（但仍非 USM vs OOUX 的正式比較，見 §8）。
 - **文法比喻（Prater 核心修辭）：** 使用者是主詞、互動是動詞，但**受詞（物件）必須先被指認**——"Sally kicked _what_?" 沒有受詞，動詞就懸空。✅（沿用既有查證，alistapart 2016）
 
 ---
@@ -78,7 +78,7 @@ graph TD
 ### 陣營 A：OOUX — Sophia Prater（英語圈）
 
 > **✅ 本次實抓（ooux.com ORCA 頁）：**
-> 該頁把 OOUX 定位成尊重 "people think in objects" 的數位系統設計哲學，重點是讓軟體貼近使用者真實世界的物件心智模型。
+> "OOUX is a philosophy for designing digital systems that respects the fact that people think in objects... It guides design and development teams in deliberately aligning their software to their user's real-world mental model of concrete objects."
 
 - **起源：** Sophia V. Prater。原典〈Object-Oriented UX〉發表於 A List Apart，2015-10-20；續篇〈OOUX: A Foundation for Interaction Design〉2016-04-19。✅（沿用既有查證）
 - **關鍵自我定位（對本研究最重要）：** OOUX **不是取代既有流程**，而是「a new ingredient to add to your current process」。本次抓到的 Medium 介紹文也用同一框架稱 OOUX 為「**上游工具**（upstream tool），在介面設計前先建立結構地基」。→ **結構上可與任何 discovery/規劃方法（含 USM）並存。**
@@ -97,7 +97,7 @@ graph TD
 
 ORCA 是 OOUX 的「how」——把研究丟進去、把結構吐出來的協定。**這是把名詞優先變成可自動化步驟的關鍵**，故完整記錄。
 
-> **✅ 本次實抓（ooux.com ORCA 頁）：** ORCA 是 15 步流程，縮寫來自 Objects / Relationships / Calls-to-Action / Attributes，並被描述為 double-diamond 之外的「第三顆鑽石（Structure）」。
+> **✅ 本次實抓（ooux.com ORCA 頁）：** "ORCA is a 15-step meat-grinder of a process... It stands for Objects, Relationships, Calls-to-Action, and Attributes." 並描述為 double-diamond 之外的「第三顆鑽石（Structure）」。
 
 ### 四支柱（先設計任何畫面前要回答的四個問題）
 
