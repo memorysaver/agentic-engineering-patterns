@@ -245,24 +245,6 @@ The `skills` CLI selects by skill name (there's no "group" flag). The groups map
 | **Setup** (project-setup)                   | `aep-onboard`, `aep-scaffold`, `aep-testing-guide`                                                     |
 | **Patterns** (patterns)                     | `aep-gen-eval`, `aep-executor`, `aep-autopilot`, `aep-workflow-feedback`                               |
 
-### Maintainer (legacy) workflow
-
-The bespoke scripts remain for the maintainer's own multi-project workflow — they predate the
-`skills` CLI and cover a few things it doesn't: **group-as-a-unit** installs, `--dry-run`,
-exact orphan `--prune`, and **batch push to many registered projects** at once.
-
-```bash
-# Pull into one project (group filter, dry-run, prune all supported)
-AEP_REPO=~/agentic-engineering-patterns bash scripts/sync.sh workflow --dry-run
-
-# Push to every project registered in .aep/config.yaml (gitignored, machine-local)
-bash scripts/sync-downstream.sh --init   # one-time: create the config
-bash scripts/sync-downstream.sh          # push to all
-bash scripts/sync-downstream.sh 91app    # push to one (name match)
-```
-
-For everyone else, `npx skills add` above is the supported path.
-
 > **Releasing:** bumping `metadata.version` in `.claude-plugin/marketplace.json` must come with a matching [CHANGELOG.md](CHANGELOG.md) entry in the same PR (move the `[Unreleased]` notes under the new `[X.Y.Z] - DATE` heading), and a `vX.Y.Z` git tag on merge to `main`.
 
 ### Contributing skills (shared resources)
@@ -450,17 +432,18 @@ story = one context window + one AEP-created worktree at
 `.feature-workspaces/<name>` + one `.dev-workflow/` plan dir, with file-based
 signals as the source of truth.
 
-| Mode               | Host / mechanism                                                | Lifetime      | Mid-flight steering                 | Watch it via                    |
-| ------------------ | --------------------------------------------------------------- | ------------- | ----------------------------------- | ------------------------------- |
-| **claude-team**    | Claude Code agent teams — one teammate per story, standing team | session-bound | `SendMessage` (push)                | teammate pane / `Shift+Down`    |
-| **claude-bg**      | Claude Code native background sessions (`claude --bg`)          | OS-bound      | `feedback.md` (pull) + stop/respawn | `claude attach` / `claude logs` |
-| **codex-subagent** | Codex multi_agent (desktop app + CLI), `aep-builder` role       | session-bound | `send_input` (push)                 | thread list / `/agent`          |
-| **codex-exec**     | headless `codex exec --cd <worktree>` workers                   | OS-bound      | `codex exec resume <id>`            | signals + PR                    |
-| **workflow**       | Claude Code dynamic-workflow fan-out (one agent per story)      | session-bound | stage boundaries + gates only       | `/workflows` view + signals     |
-| **legacy**         | tmux session (+ optional cmux tab) — pin or generic-host only   | OS-bound      | `tmux send-keys`                    | cmux tab / `tmux attach`        |
+| Mode                   | Host / mechanism                                                                                    | Lifetime      | Mid-flight steering                 | Watch it via                    |
+| ---------------------- | --------------------------------------------------------------------------------------------------- | ------------- | ----------------------------------- | ------------------------------- |
+| **native-bg-subagent** | Claude Code in-process background subagent (Agent tool, `run_in_background`, no team) — **default** | session-bound | `feedback.md` (pull)                | `TaskOutput` / JSONL output     |
+| **claude-bg**          | Claude Code native background sessions (`claude --bg`)                                              | OS-bound      | `feedback.md` (pull) + stop/respawn | `claude attach` / `claude logs` |
+| **codex-subagent**     | Codex multi_agent (desktop app + CLI), `aep-builder` role                                           | session-bound | `send_input` (push)                 | thread list / `/agent`          |
+| **codex-exec**         | headless `codex exec --cd <worktree>` workers                                                       | OS-bound      | `codex exec resume <id>`            | signals + PR                    |
+| **workflow**           | Claude Code dynamic-workflow fan-out (one agent per story)                                          | session-bound | stage boundaries + gates only       | `/workflows` view + signals     |
+| **legacy**             | tmux session (+ optional cmux tab) — pin or generic-host only                                       | OS-bound      | `tmux send-keys`                    | cmux tab / `tmux attach`        |
 
-Selection is automatic and native-first (teams flag → `claude-team`; otherwise
-`claude-bg`; Codex main thread → `codex-subagent`; cron-driven → `codex-exec`).
+Selection is automatic and native-first (Claude Code → `native-bg-subagent` by
+default, or `claude-bg` for an OS-bound/cron driver; Codex main thread →
+`codex-subagent`; cron-driven → `codex-exec`).
 The two manual levers: `git config aep.executor-backend tmux` pins legacy, and
 "…with workflow" opts into the batch fan-out. **Lifetime matters for
 orchestration:** session-bound workers die with the orchestrator session, so
@@ -480,10 +463,10 @@ there, and the answer is relayed to the worker. You never _have_ to visit a
 worker's surface — the per-mode panes/threads/attach are optional conveniences.
 How the answer travels depends on the mode:
 
-- **Block-in-place** (claude-team / codex-subagent / legacy): the worker waits
+- **Block-in-place** (codex-subagent / legacy): the worker waits
   in place; the answer arrives on the mode's push channel (`SendMessage` /
   `send_input` / tmux nudge).
-- **Gate-and-park** (workflow / headless / codex-exec / claude-bg): no push
+- **Gate-and-park** (native-bg-subagent / claude-bg / codex-exec / workflow / headless): no push
   channel reaches a running worker, so the worker **parks** — commits WIP,
   records the gate, and ends its run cleanly. The orchestrator collects the
   question, asks you, and **resumes a worker into the same worktree** with
@@ -642,24 +625,24 @@ Generate a dimension-specific brief, explore or discuss, capture decisions for a
 
 ## All Skills
 
-| Skill            | Plugin                       | Purpose                                                                                                 |
-| ---------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `/aep-envision`  | product-context              | Opportunity brief + context document                                                                    |
-| `/aep-map`       | product-context              | System map + story graph + agent topology                                                               |
-| `/aep-model`     | product-context              | Object-first UI structure (OOUX/ORCA Object Map) for UI products                                        |
-| `/aep-dispatch`  | product-context              | Pick next story + create OpenSpec change                                                                |
-| `/aep-calibrate` | product-context              | Human alignment checkpoint for any quality dimension                                                    |
-| `/aep-reflect`   | product-context              | Classify feedback + update context                                                                      |
-| `/aep-onboard`   | project-setup                | Verify tools + install plugins                                                                          |
-| `/aep-scaffold`  | project-setup                | Scaffold monorepo + initialize OpenSpec                                                                 |
-| `/aep-design`    | agentic-development-workflow | Explore + propose + review a feature                                                                    |
-| `/aep-launch`    | agentic-development-workflow | Spawn workspace (Claude teams/bg sessions; Codex subagents/exec; tmux when pinned) + optional evaluator |
-| `/aep-build`     | agentic-development-workflow | Implement → test → PR → merge                                                                           |
-| `/aep-wrap`      | agentic-development-workflow | Archive + cleanup + suggest reflect                                                                     |
-| `/aep-git-ref`   | agentic-development-workflow | AEP git + worktree conventions (on-demand)                                                              |
-| `/aep-gen-eval`  | patterns                     | Generator/evaluator separation for honest validation                                                    |
-| `/aep-executor`  | patterns                     | Host-agnostic backend for spawning/steering workspace agents                                            |
-| `/aep-autopilot` | patterns                     | Autonomous dispatch-launch-monitor-wrap loop via `/loop`                                                |
+| Skill            | Plugin                       | Purpose                                                                                                     |
+| ---------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `/aep-envision`  | product-context              | Opportunity brief + context document                                                                        |
+| `/aep-map`       | product-context              | System map + story graph + agent topology                                                                   |
+| `/aep-model`     | product-context              | Object-first UI structure (OOUX/ORCA Object Map) for UI products                                            |
+| `/aep-dispatch`  | product-context              | Pick next story + create OpenSpec change                                                                    |
+| `/aep-calibrate` | product-context              | Human alignment checkpoint for any quality dimension                                                        |
+| `/aep-reflect`   | product-context              | Classify feedback + update context                                                                          |
+| `/aep-onboard`   | project-setup                | Verify tools + install plugins                                                                              |
+| `/aep-scaffold`  | project-setup                | Scaffold monorepo + initialize OpenSpec                                                                     |
+| `/aep-design`    | agentic-development-workflow | Explore + propose + review a feature                                                                        |
+| `/aep-launch`    | agentic-development-workflow | Spawn workspace (Claude bg subagents/sessions; Codex subagents/exec; tmux when pinned) + optional evaluator |
+| `/aep-build`     | agentic-development-workflow | Implement → test → PR → merge                                                                               |
+| `/aep-wrap`      | agentic-development-workflow | Archive + cleanup + suggest reflect                                                                         |
+| `/aep-git-ref`   | agentic-development-workflow | AEP git + worktree conventions (on-demand)                                                                  |
+| `/aep-gen-eval`  | patterns                     | Generator/evaluator separation for honest validation                                                        |
+| `/aep-executor`  | patterns                     | Host-agnostic backend for spawning/steering workspace agents                                                |
+| `/aep-autopilot` | patterns                     | Autonomous dispatch-launch-monitor-wrap loop via `/loop`                                                    |
 
 Launches are **native-first** with **hub-and-spoke human gates** — see
 [Launch modes](#launch-modes--native-first-executor-backends) and
