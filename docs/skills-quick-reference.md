@@ -40,11 +40,12 @@ CONTROL PLANE (human + AI)              EXECUTION PLANE (agents build)
 
 ### Patterns (Reusable)
 
-| Skill                    | When to use                           | Input                                          | Output                                     | Session |
-| ------------------------ | ------------------------------------- | ---------------------------------------------- | ------------------------------------------ | ------- |
-| `/aep-gen-eval`          | Run honest evaluation on any artifact | Artifact to evaluate + dimension selection     | Scoring results + findings                 | Both    |
-| `/aep-autopilot`         | Hands-free autonomous orchestration   | `product-context.yaml` with ready stories      | Continuous dispatch → build → wrap cycle   | Main    |
-| `/aep-workflow-feedback` | Capture or review process learnings   | Lessons from builds, downstream feedback files | Classified feedback in standardized format | Main    |
+| Skill                    | When to use                                                                 | Input                                                              | Output                                                              | Session |
+| ------------------------ | --------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------- | ------- |
+| `/aep-gen-eval`          | Run honest evaluation on any artifact                                       | Artifact to evaluate + dimension selection                         | Scoring results + findings                                          | Both    |
+| `/aep-autopilot`         | Hands-free autonomous orchestration                                         | `product-context.yaml` with ready stories                          | Continuous dispatch → build → wrap cycle                            | Main    |
+| `/aep-workflow`          | Author a custom multi-agent harness for a large/uncertain/verify-heavy task | A task too big, drift-prone, or verification-heavy for one context | A dynamic workflow (fan-out, verify, tournament, loop) + its result | Main    |
+| `/aep-workflow-feedback` | Capture or review process learnings                                         | Lessons from builds, downstream feedback files                     | Classified feedback in standardized format                          | Main    |
 
 ### Project Setup (Run Once)
 
@@ -77,6 +78,8 @@ CONTROL PLANE (human + AI)              EXECUTION PLANE (agents build)
 "Create a new project"              → /aep-scaffold
 "Set up testing infrastructure"     → /aep-testing-guide
 "Evaluate this honestly"            → /aep-gen-eval
+"Write a custom harness / workflow" → /aep-workflow
+"This is too big for one context"   → /aep-workflow
 ```
 
 ---

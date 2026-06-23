@@ -21,6 +21,41 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 _Nothing yet._
 
+## [2.2.0] - 2026-06-23
+
+Add a **dynamic-workflow pattern** — `/aep-workflow` — that codifies "a harness for
+every task": when (and when not) to have Claude write a custom multi-agent harness
+for a task, plus the reusable sub-pattern catalog (classify-and-route,
+fan-out-and-synthesize, adversarial verification, generate-and-filter, tournament,
+loop-until-done). It frames workflows as a structural fix for three failure modes of
+long single-context work — agentic laziness, self-preferential bias, and goal drift —
+and cross-links the narrow `aep-executor` `workflow` backend, `/aep-gen-eval`
+(adversarial verification), and `/aep-autopilot` (the long-lived loop) rather than
+duplicating them. Source and rationale:
+[`docs/research/dynamic-workflows.md`](docs/research/dynamic-workflows.md).
+
+### Added
+
+- **`/aep-workflow` skill** (`patterns`): dual library + standalone skill (same shape
+  as `/aep-gen-eval`) covering the failure modes, the "should I even use a workflow"
+  judgment, invocation (`ultracode`, "…with workflow", `/loop` + `/goal`, token
+  budgets, save-as-template), and the AEP touchpoints. Registered in
+  [`marketplace.json`](.claude-plugin/marketplace.json) `patterns` plugin.
+- **Sub-pattern catalog** (`patterns/workflow/references/pattern-catalog.md`): the six
+  sub-patterns with intent, the Workflow primitive to use (`parallel` barrier vs
+  `pipeline` no-barrier vs loop), AEP examples, and skeletons; plus architectural
+  levers (per-agent model, worktree isolation, quarantine, token budgets, resumability).
+- **Research note** `docs/research/dynamic-workflows.md` (linked from the README
+  Documentation list).
+
+### Changed
+
+- **`/aep-executor`** (SKILL.md + `references/backends.md`): the narrow "Mode:
+  workflow" now points to `/aep-workflow` for the general pattern catalog and the
+  "when to reach for a workflow" judgment.
+- **`/aep-gen-eval`**: notes that adversarial verification in `/aep-workflow` is the
+  generalized, N-verifier form of generator/evaluator separation.
+
 ## [2.1.0] - 2026-06-16
 
 Add an **object-first design stage** — `/aep-model` — that turns the verb-first

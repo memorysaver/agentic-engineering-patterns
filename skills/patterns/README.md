@@ -2,11 +2,13 @@
 
 Reusable design patterns extracted from the AEP workflow. These are utility skills — both directly invokable and referenceable by other skills.
 
-| Pattern                         | What it does                                                                                                                                          | Used by                                                                |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| [gen-eval](gen-eval/SKILL.md)   | Generator/evaluator separation for honest artifact validation                                                                                         | `/aep-build` Phase 5, `/aep-launch` evaluator setup, `/aep-validate`   |
-| [executor](executor/SKILL.md)   | Host-agnostic launch modes for spawning/steering workspace agents (Claude teams/bg sessions; Codex subagents/exec; tmux when pinned; workflow opt-in) | `/aep-launch`, `/aep-build` Phase 5, `/aep-autopilot`, `/aep-dispatch` |
-| [autopilot](autopilot/SKILL.md) | Tick-based autonomous orchestration of dispatch-launch-monitor-review-wrap cycle                                                                      | `/loop`, orchestrates `/aep-dispatch`, `/aep-launch`, `/aep-wrap`      |
+| Pattern                                         | What it does                                                                                                                                                                                       | Used by                                                                          |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| [gen-eval](gen-eval/SKILL.md)                   | Generator/evaluator separation for honest artifact validation                                                                                                                                      | `/aep-build` Phase 5, `/aep-launch` evaluator setup, `/aep-validate`             |
+| [executor](executor/SKILL.md)                   | Host-agnostic launch modes for spawning/steering workspace agents (Claude teams/bg sessions; Codex subagents/exec; tmux when pinned; workflow opt-in)                                              | `/aep-launch`, `/aep-build` Phase 5, `/aep-autopilot`, `/aep-dispatch`           |
+| [autopilot](autopilot/SKILL.md)                 | Tick-based autonomous orchestration of dispatch-launch-monitor-review-wrap cycle                                                                                                                   | `/loop`, orchestrates `/aep-dispatch`, `/aep-launch`, `/aep-wrap`                |
+| [workflow](workflow/SKILL.md)                   | Dynamic workflows — when to write a custom multi-agent harness for a task, and the sub-pattern catalog (fan-out, adversarial verify, tournament, loop-until-done, classify-route, generate-filter) | `/aep-executor` workflow mode, `/aep-gen-eval`, `/aep-validate`, `/aep-dispatch` |
+| [workflow-feedback](workflow-feedback/SKILL.md) | Capture process learnings about the AEP workflow itself (distinct from product feedback)                                                                                                           | `/aep-workflow-feedback capture` / `review`                                      |
 
 ## Why Patterns Exist
 
@@ -37,6 +39,8 @@ After sync with `aep-` prefix, pattern files are at:
 .claude/skills/aep-autopilot/references/orchestration-learning.md
 
 .claude/skills/aep-executor/references/backends.md
+
+.claude/skills/aep-workflow/references/pattern-catalog.md
 ```
 
 Skills reference them via these paths in their instructions.

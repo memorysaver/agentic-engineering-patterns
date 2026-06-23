@@ -399,6 +399,12 @@ as **waiting, not stuck and not failed**.
 
 ## Mode: workflow (dynamic-workflow fan-out)
 
+> This mode is the **narrow** use of dynamic workflows — running one dispatched
+> build wave as a fan-out. For the general dynamic-workflow pattern catalog
+> (classify-route, fan-out/synthesize, adversarial verify, generate-filter,
+> tournament, loop-until-done) and the judgment of _when a task warrants a workflow
+> at all_, see [`/aep-workflow`](../../workflow/SKILL.md).
+
 Claude Code's Workflow tool builds a whole dispatched wave as one deterministic
 fan-out: one build agent per locked story, each with per-agent worktree
 isolation, with `/aep-dispatch` authoring the script (the "…with workflow"

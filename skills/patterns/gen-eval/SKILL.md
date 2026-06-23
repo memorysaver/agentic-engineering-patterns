@@ -50,6 +50,12 @@ Why:
 3. Separate evaluation catches issues the generator is blind to
 4. The cost of a second agent is trivial compared to shipping broken work
 
+> **Scaling up:** generator/evaluator is the canonical instance of _adversarial
+> verification_. When one task produces many findings/claims that each need an
+> independent check, [`/aep-workflow`](../workflow/SKILL.md) generalizes this to a
+> fan-out of N verifiers/refuters — reusing this skill's scoring framework and
+> findings format per finding.
+
 ---
 
 ## Reference Files

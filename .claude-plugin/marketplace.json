@@ -5,7 +5,7 @@
     "email": "mho@looplia.run"
   },
   "metadata": {
-    "version": "2.1.0",
+    "version": "2.2.0",
     "description": "Skills for product planning, project scaffolding, and agentic development workflows."
   },
   "plugins": [
@@ -51,13 +51,14 @@
     },
     {
       "name": "patterns",
-      "description": "Reusable design patterns: gen/eval, executor abstraction, autopilot orchestration, workflow-feedback.",
+      "description": "Reusable design patterns: gen/eval, executor abstraction, autopilot orchestration, dynamic workflows, workflow-feedback.",
       "source": "./",
       "strict": false,
       "skills": [
         "./skills/patterns/gen-eval",
         "./skills/patterns/executor",
         "./skills/patterns/autopilot",
+        "./skills/patterns/workflow",
         "./skills/patterns/workflow-feedback"
       ]
     }

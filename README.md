@@ -243,7 +243,7 @@ The `skills` CLI selects by skill name (there's no "group" flag). The groups map
 | **Workflow** (agentic-development-workflow) | `aep-design`, `aep-launch`, `aep-build`, `aep-wrap`, `aep-git-ref`                                     |
 | **Product** (product-context)               | `aep-envision`, `aep-map`, `aep-model`, `aep-dispatch`, `aep-validate`, `aep-calibrate`, `aep-reflect` |
 | **Setup** (project-setup)                   | `aep-onboard`, `aep-scaffold`, `aep-testing-guide`                                                     |
-| **Patterns** (patterns)                     | `aep-gen-eval`, `aep-executor`, `aep-autopilot`, `aep-workflow-feedback`                               |
+| **Patterns** (patterns)                     | `aep-gen-eval`, `aep-executor`, `aep-autopilot`, `aep-workflow`, `aep-workflow-feedback`               |
 
 > **Releasing:** bumping `metadata.version` in `.claude-plugin/marketplace.json` must come with a matching [CHANGELOG.md](CHANGELOG.md) entry in the same PR (move the `[Unreleased]` notes under the new `[X.Y.Z] - DATE` heading), and a `vX.Y.Z` git tag on merge to `main`.
 
@@ -571,7 +571,7 @@ These aren't rules we invented — they're patterns extracted from Anthropic's e
 
 ## Getting Started
 
-**Brand new to AEP?** Start with the [Orientation Guide](docs/orientation.md) for a 10-minute tour of the mental models, the 19 skills, and the four paths — then run `/aep-onboard`.
+**Brand new to AEP?** Start with the [Orientation Guide](docs/orientation.md) for a 10-minute tour of the mental models, the 20 skills, and the four paths — then run `/aep-onboard`.
 
 **New to this plugin?**
 
@@ -643,6 +643,7 @@ Generate a dimension-specific brief, explore or discuss, capture decisions for a
 | `/aep-gen-eval`  | patterns                     | Generator/evaluator separation for honest validation                                                        |
 | `/aep-executor`  | patterns                     | Host-agnostic backend for spawning/steering workspace agents                                                |
 | `/aep-autopilot` | patterns                     | Autonomous dispatch-launch-monitor-wrap loop via `/loop`                                                    |
+| `/aep-workflow`  | patterns                     | Dynamic workflows — author a custom multi-agent harness for a task (+ sub-pattern catalog)                  |
 
 Launches are **native-first** with **hub-and-spoke human gates** — see
 [Launch modes](#launch-modes--native-first-executor-backends) and
@@ -657,6 +658,7 @@ block-in-place / gate-and-park strategy.
 - [Skills Quick Reference](docs/skills-quick-reference.md) — when to use which skill, decision trees, common sequences
 - [Autonomous Loop](docs/autonomous-loop.md) — how `/aep-autopilot` orchestrates the full cycle
 - [Generator/Evaluator Data Flow](docs/gen-eval-data-flow.md) — the three tracking systems and signal protocol
+- [Dynamic Workflows](docs/research/dynamic-workflows.md) — the "harness for every task" idea, the failure modes it counters, and why `/aep-workflow` exists
 - [Release Line Adjustments](docs/release-line-adjustments.md) — when and how to re-slice layers
 - [Design Calibration Workflow](docs/decisions/design-calibration-workflow.md) — the original visual-design `/aep-calibrate` skill
 - [Generalized Calibration Workflow](docs/decisions/generalized-calibration-workflow.md) — multi-dimension `/aep-calibrate` and `.5` alignment layers
