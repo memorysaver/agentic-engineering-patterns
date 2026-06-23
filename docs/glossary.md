@@ -321,6 +321,14 @@ The pre-assembled directory of context files created by `/aep-dispatch` for each
 
 See also: **Context Assembly**, **Stable Prefix**, **OpenSpec Change**
 
+### Dynamic Workflow
+
+A **Harness** that Claude writes itself, on the fly, for a single task — a deterministic JS script (the Claude Code _Workflow_ tool) that spawns and coordinates context-isolated subagents, instead of running the task in the one default coding harness. Used to counter agentic laziness, self-preferential bias, and goal drift on large/unbounded work. Has a catalog of sub-patterns (classify-route, fan-out/synthesize, adversarial verify, generate-filter, tournament, loop-until-done). Distinct from **Workflow Feedback**.
+
+**Where it appears:** `/aep-workflow` skill; `/aep-executor` `workflow` backend mode; invoked via `ultracode` or "…with workflow".
+
+See also: **Harness**, **Generator/Evaluator Separation**, **Orchestrator**
+
 ### Evaluator
 
 The separate agent that reviews a **Generator**'s work. Calibrated toward skepticism because agents praise their own work. Scores across dimensions (e.g., Completeness, Correctness, UX Quality, Security, Code Quality) on a 1–5 scale with hard failure thresholds. Spawned at **Phase** 5 by the generator via `executor.spawn_evaluator()` (foreground Task subagent, `codex exec --cd`, or tmux split per launch mode), not at launch.
@@ -371,7 +379,7 @@ The infrastructure surrounding an agent to help it succeed — tracking files, s
 | No visibility into progress     | status.json               | Signal files                    |
 | No mid-flight course correction | feedback.md               | Main session sends instructions |
 
-See also: **Generator/Evaluator Separation**, **Sprint Contract**, **Feature Verification**
+See also: **Dynamic Workflow** (a harness Claude writes per-task), **Generator/Evaluator Separation**, **Sprint Contract**, **Feature Verification**
 
 ### Orchestrator
 

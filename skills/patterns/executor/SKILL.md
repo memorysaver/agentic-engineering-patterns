@@ -103,15 +103,15 @@ per mode.
 
 ## The Modes (summary)
 
-| Mode                   | Backend                                 | Lifetime      | Selected when                                                       |
-| ---------------------- | --------------------------------------- | ------------- | ------------------------------------------------------------------- |
-| **native-bg-subagent** | Agent tool `run_in_background`, no team | session-bound | **Claude Code default** + long-lived orchestrator                   |
-| **claude-bg**          | native background sessions              | OS-bound      | Claude Code, `claude --bg` present (cron driver / OS-bound need)    |
-| **codex-subagent**     | native multi_agent (`spawn_agent`)      | session-bound | Codex with a living main thread (desktop app or interactive CLI)    |
-| **codex-exec**         | headless `codex exec --cd` workers      | OS-bound      | Codex + cron driver, or hard isolation demanded                     |
-| **legacy**             | tmux session (+ optional cmux tab)      | OS-bound      | explicit pin (`aep.executor-backend tmux`), or generic host w/ tmux |
-| **workflow**           | CC dynamic-workflow fan-out             | session-bound | explicit opt-in ("…with workflow") + Claude Code                    |
-| **headless**           | one-shot native subagent                | session-bound | last resort                                                         |
+| Mode                   | Backend                                 | Lifetime      | Selected when                                                          |
+| ---------------------- | --------------------------------------- | ------------- | ---------------------------------------------------------------------- |
+| **native-bg-subagent** | Agent tool `run_in_background`, no team | session-bound | **Claude Code default** + long-lived orchestrator                      |
+| **claude-bg**          | native background sessions              | OS-bound      | Claude Code, `claude --bg` present (cron driver / OS-bound need)       |
+| **codex-subagent**     | native multi_agent (`spawn_agent`)      | session-bound | Codex with a living main thread (desktop app or interactive CLI)       |
+| **codex-exec**         | headless `codex exec --cd` workers      | OS-bound      | Codex + cron driver, or hard isolation demanded                        |
+| **legacy**             | tmux session (+ optional cmux tab)      | OS-bound      | explicit pin (`aep.executor-backend tmux`), or generic host w/ tmux    |
+| **workflow**           | CC dynamic-workflow fan-out             | session-bound | explicit opt-in ("…with workflow") + Claude Code (see `/aep-workflow`) |
+| **headless**           | one-shot native subagent                | session-bound | last resort                                                            |
 
 Read `references/backends.md` for the detection recipe, the full selection
 order, the driver × backend compatibility matrix, the human-gate protocol, and
