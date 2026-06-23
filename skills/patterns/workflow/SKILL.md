@@ -1,7 +1,7 @@
 ---
 name: aep-workflow
 description: |-
-  Reusable pattern for authoring a dynamic workflow — a custom multi-agent harness Claude writes on the fly for one task, run as a Claude Code Workflow (a deterministic JS script that spawns and coordinates context-isolated subagents). This is a utility skill — it provides the sub-pattern catalog (classify-and-route, fan-out-and-synthesize, adversarial verification, generate-and-filter, tournament, loop-until-done) and the "when to reach for a workflow" judgment used by /aep-dispatch, /aep-validate, /aep-gen-eval, and /aep-executor. Use directly when a task is large, uncertain, needs adversarial verification, or runs at scale and the default single-context harness would be lazy, biased, or drift off-goal. Triggers on "dynamic workflow", "ultracode", "write a harness", "harness for this task", "fan out agents", "orchestrate subagents", "tournament", "loop until done", "adversarial verify", "panel of agents". NOT for capturing process feedback — that is /aep-workflow-feedback.
+  Reusable pattern for authoring a dynamic workflow — a custom multi-agent harness Claude writes on the fly for one task, run as a Claude Code Workflow (a deterministic JS script that spawns and coordinates context-isolated subagents). This is a utility skill — it provides the sub-pattern catalog (classify-and-route, fan-out-and-synthesize, adversarial verification, generate-and-filter, tournament, loop-until-done) and the "when to reach for a workflow" judgment. Cross-linked from /aep-gen-eval and /aep-executor; relevant when /aep-dispatch or /aep-validate work would benefit from a per-task harness. Use directly when a task is large, uncertain, needs adversarial verification, or runs at scale and the default single-context harness would be lazy, biased, or drift off-goal. Triggers on "dynamic workflow", "ultracode", "write a harness", "harness for this task", "…with workflow", "orchestrate subagents". NOT for capturing process feedback — that is /aep-workflow-feedback.
 ---
 
 # Dynamic Workflow Pattern
@@ -55,14 +55,14 @@ Pick the shape that matches the task. Full intent, the Workflow primitive to use
 (`parallel` barrier vs `pipeline` no-barrier vs loop), AEP examples, and skeletons
 are in [`references/pattern-catalog.md`](references/pattern-catalog.md).
 
-| Sub-pattern                  | One-liner                                                                              | AEP instance                                                     |
-| ---------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **Classify-and-route**       | A classifier agent decides the task type / model tier, then routes.                    | `/aep-dispatch` story-type routing, model routing                |
-| **Fan-out-and-synthesize**   | Split into many small steps → one agent each → a barrier merges results.               | `/aep-executor` `workflow` mode (one agent per story)            |
-| **Adversarial verification** | For each output, a separate agent tries to refute it against a rubric.                 | `/aep-gen-eval` (generator/evaluator) generalized to N verifiers |
-| **Generate-and-filter**      | Generate many candidates → dedupe → keep only rubric-passing ones.                     | naming / design option generation                                |
-| **Tournament**               | N approaches compete; pairwise judging until a winner (comparative > absolute).        | taste-based decisions (naming, design direction)                 |
-| **Loop-until-done**          | Keep spawning until a stop condition (no new findings / no errors), not a fixed count. | `/aep-autopilot` tick loop is the long-lived cousin              |
+| Sub-pattern                  | One-liner                                                                              | AEP instance                                                      |
+| ---------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| **Classify-and-route**       | A classifier agent decides the task type / model tier, then routes.                    | `/aep-dispatch` readiness-score routing + "…with workflow" opt-in |
+| **Fan-out-and-synthesize**   | Split into many small steps → one agent each → a barrier merges results.               | `/aep-executor` `workflow` mode (one agent per story)             |
+| **Adversarial verification** | For each output, a separate agent tries to refute it against a rubric.                 | `/aep-gen-eval` (generator/evaluator) generalized to N verifiers  |
+| **Generate-and-filter**      | Generate many candidates → dedupe → keep only rubric-passing ones.                     | naming / design option generation                                 |
+| **Tournament**               | N approaches compete; pairwise judging until a winner (comparative > absolute).        | taste-based decisions (naming, design direction)                  |
+| **Loop-until-done**          | Keep spawning until a stop condition (no new findings / no errors), not a fixed count. | `/aep-autopilot` tick loop is the long-lived cousin               |
 
 These compose: a thorough review is _fan-out → adversarial verify → loop-until-dry_.
 
@@ -120,13 +120,13 @@ for every task.
 
 ## How This Fits AEP (touchpoints)
 
-| AEP touchpoint                                          | Sub-pattern it uses               | Relationship                                                                                                                                                     |
-| ------------------------------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`/aep-executor`](../executor/SKILL.md) `workflow` mode | fan-out / pipeline                | Runs one dispatched build wave as a Workflow script — the **narrow** use. This skill is the **general** catalog and the "should I even use a workflow" judgment. |
-| [`/aep-gen-eval`](../gen-eval/SKILL.md)                 | adversarial verification          | Generator/evaluator separation is the canonical instance; workflows generalize it to N independent verifiers/refuters per finding.                               |
-| `/aep-validate` / deep verification                     | fan-out + adversarial verify      | Extract every factual / spec claim, spawn one subagent to check each against the codebase.                                                                       |
-| `/aep-dispatch`                                         | classify-and-route, model routing | A classifier picks story type or model tier before handoff.                                                                                                      |
-| [`/aep-autopilot`](../autopilot/SKILL.md)               | loop-until-done                   | The tick loop is the long-lived, OS-driven cousin of an in-workflow loop-until-dry.                                                                              |
+| AEP touchpoint                                          | Sub-pattern it uses                | Relationship                                                                                                                                                                                                                                                    |
+| ------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`/aep-executor`](../executor/SKILL.md) `workflow` mode | fan-out / pipeline                 | Runs one dispatched build wave as a Workflow script — the **narrow** use. This skill is the **general** catalog and the "should I even use a workflow" judgment.                                                                                                |
+| [`/aep-gen-eval`](../gen-eval/SKILL.md)                 | adversarial verification           | Generator/evaluator separation is the canonical instance; workflows generalize it to N independent verifiers/refuters per finding.                                                                                                                              |
+| `/aep-validate`                                         | gen/eval today; fan-out as upgrade | Validate runs a **fixed** Generator/Evaluator(/Protocol Checker) trio and checks claims **inside** the evaluator. When there are many independent claims, a workflow upgrades that to **one verifier per claim** — a generalization validate does not do today. |
+| `/aep-dispatch`                                         | classify-and-route (score-based)   | Dispatch routes by `readiness_score` and offers the "…with workflow" batch opt-in. A classifier agent / model-tier routing is the **workflow** generalization, not what dispatch does today.                                                                    |
+| [`/aep-autopilot`](../autopilot/SKILL.md)               | loop-until-done                    | The tick loop is the long-lived, OS-driven cousin of an in-workflow loop-until-dry.                                                                                                                                                                             |
 
 ### Cross-skill reference path
 
