@@ -2,7 +2,7 @@
 
 A **journey** is a declarative, BDD-style user-story scenario set. It describes **intent** (Given / When
 / Then / **Verify**), **not** a click script — the executing agent translates each step into the right
-tool calls (resolved by [`tool-selection.md`](#) in the generated skill). This keeps the plan
+tool calls (resolved by `tool-selection.md` in the generated skill). This keeps the plan
 tool-agnostic and close to product requirements.
 
 ## Why intent, not a recipe

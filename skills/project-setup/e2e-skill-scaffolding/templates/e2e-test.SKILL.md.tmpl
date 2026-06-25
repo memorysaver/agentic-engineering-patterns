@@ -40,8 +40,11 @@ preference, with health probes and graceful degrade. Journeys themselves stay to
 ### Execution protocol (how an agent runs a journey)
 
 1. **Pick** a journey + scenario(s) from [`journeys/`](./journeys/).
-2. **Clean slate.** Run `scripts/seed.sh` (idempotent fixture/reset). Where the product has a real
-   sign-in, **auth is browser-simulated** through the UI — not an API auto-login.
+2. **Clean slate — seed the _target_ environment.** Run `scripts/seed.sh` against the **same** env the
+   journey runs on (from `policy.md` `dogfood_target`): `local` → `bash scripts/seed.sh`;
+   `deployed:<url>` → `SERVER_URL=<url> bash scripts/seed.sh` (never seed local while dogfooding a
+   deployed target — the journey would verify against stale/absent fixtures). Where the product has a
+   real sign-in, **auth is browser-simulated** through the UI — not an API auto-login.
 3. **Read intent.** You are given Given/When/Then — *intent, not a recipe*. Translate each step into tool
    calls using the tool from `tool-selection.md`.
 4. **Drive + verify.** Drive the UI with the resolved tool; assert backend state via the API. Ground

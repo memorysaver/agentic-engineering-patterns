@@ -183,9 +183,14 @@ For MVP-stage projects, start with JSON in the repo. Upgrade when the limitation
       completed_at?: ISO8601
     }
   },
+  // Conceptual run-state view (keyed by layer for inspection). The PERSISTED form
+  // in product-context.yaml is the canonical LIST-shaped `layer_gates` (see
+  // product-context-schema.yaml) — same fields, two-phase status, coverage + evidence.
   layer_gates: {
     [layer_number]: {
-      status: "not_started" | "running" | "passed" | "failed",
+      status: "not_started" | "running" | "scripted_passed" | "passed" | "failed" | "deferred",
+      coverage?: { criteria_total: number, criteria_covered: number },
+      evidence?: { scripted?: string, journeys?: string[], matrix?: string },
       test_results?: TestResult[],
       completed_at?: ISO8601
     }

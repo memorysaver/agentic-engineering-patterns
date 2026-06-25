@@ -210,10 +210,12 @@ run the journey against the `deployed:<url>` target _here_ (after merge/deploy) 
 
 1. **Tier-1 (machinery).** Run the project's scripted suite for this layer. If green, set
    `layer_gates[layer].status: scripted_passed` and record the test file under `evidence.scripted`.
-2. **Tier-2/3 (product) + regression.** Run the matching BDD journey/journeys in
+2. **Tier-2/3 (product) + regression.** _Skip this step entirely if `dogfood_target == none`_ (CLI/library
+   — Tier-2 N/A; prove criteria via Tier-1/Tier-3). Otherwise run the matching BDD journey/journeys in
    `skills/e2e-test/journeys/` (`layer: N`) via their `tool-selection.md`, plus any applicable API
-   drivers, and **replay prior-layer journeys**. Record evidence — screenshots, API JSON, PASS/FAIL per
-   Then, and the two coverage matrices — in `docs/layer-gates/<layer>.md`.
+   drivers, and **replay prior-layer journeys** — **seeding the policy's target** first (a `deployed:<url>`
+   target needs `SERVER_URL=<url> bash skills/e2e-test/scripts/seed.sh`, not local). Record evidence —
+   screenshots, API JSON, PASS/FAIL per Then, and the two coverage matrices — in `docs/layer-gates/<layer>.md`.
 3. **Check coverage.** Confirm every layer acceptance criterion maps to ≥1 proving test
    (`coverage.criteria_covered == criteria_total`). Genuine gaps were already auto-closed during
    `/aep-build` Phase 6; a _deliberate_ deferral must carry a `WAIVER: <reason>` line. Never flip to

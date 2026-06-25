@@ -219,8 +219,8 @@ Key flags:
 
    ```bash
    # Add agentic workflow directories to .gitignore if not already present
-   grep -q '.dev-workflow/' .gitignore || echo '\n# Agentic development workflow\n.dev-workflow/' >> .gitignore
-   grep -q '.feature-workspaces/' .gitignore || echo '.feature-workspaces/' >> .gitignore
+   grep -q '.dev-workflow/' .gitignore || printf '\n# Agentic development workflow\n.dev-workflow/\n' >> .gitignore
+   grep -q '.feature-workspaces/' .gitignore || printf '.feature-workspaces/\n' >> .gitignore
    ```
 
 5. **Commit the scaffold:**
@@ -414,11 +414,14 @@ Invoke `/aep-e2e-skill-scaffolding`. When it returns, the project has:
 
 ```
 skills/e2e-test/                              # REAL dir (canonical source of truth)
-├── SKILL.md  ├── journeys/{README.md, 00-walking-skeleton.md}
-├── tool-selection.md  └── scripts/seed.sh
+├── SKILL.md  ├── policy.md  └── scripts/seed.sh
+├── journeys/{README.md, 00-walking-skeleton.md} + tool-selection.md   # only when dogfood_target ≠ none
 .claude/skills/e2e-test → ../../skills/e2e-test   # symlink (Claude Code)
 .agents/skills/e2e-test → ../../skills/e2e-test   # symlink (Codex / Pi)
 ```
+
+> A `none`-target (CLI/library) project ships `policy.md` + `seed.sh` only — no `journeys/` or
+> `tool-selection.md` (Tier-2 is N/A; the gate is Tier-1 + coverage).
 
 ### Commit
 
@@ -439,7 +442,8 @@ git commit -m "feat: add workspace hook and BDD e2e-test skill"
 <project>/
 ├── skills/
 │   └── e2e-test/                # REAL dir — canonical, BDD layer-gate e2e (cross-tool)
-│       ├── SKILL.md  ├── journeys/  ├── tool-selection.md  └── scripts/seed.sh
+│       ├── SKILL.md  ├── policy.md  └── scripts/seed.sh
+│       └── journeys/ + tool-selection.md   # only when dogfood_target ≠ none (omitted for CLI/library)
 ├── .claude/
 │   ├── hooks/
 │   │   └── workspace-setup.sh    # Project-specific workspace init
@@ -557,7 +561,10 @@ for s in $( [ -d skills ] && ls skills 2>/dev/null ); do
 done
 
 echo "=== B. E2E-test skill shape ==="
-if   [ -f skills/e2e-test/journeys/README.md ]; then echo "  canonical-BDD [ok]"
+# Canonical = policy.md (the single source of truth, always emitted) OR a BDD journeys/ library.
+# A none-target (CLI/library) project legitimately has policy.md and NO journeys/ — keying on
+# journeys/README.md alone would mislabel it as DRIFT forever (breaking idempotency).
+if   [ -f skills/e2e-test/policy.md ] || [ -f skills/e2e-test/journeys/README.md ]; then echo "  canonical     [ok]"
 elif [ -d skills/e2e-test ];                     then echo "  real-non-bdd  [DRIFT → upgrade to BDD]"
 elif [ -d .claude/skills/e2e-test ] && [ ! -L .claude/skills/e2e-test ]; then echo "  thin-legacy   [DRIFT → migrate to skills/ + BDD]"
 else echo "  absent        [DRIFT → generate]"; fi

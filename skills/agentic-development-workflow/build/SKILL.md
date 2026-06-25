@@ -532,9 +532,10 @@ this target/host/mode:
 - `none` → **skip the journey dogfood** (Tier-2 N/A for this project); prove the layer's criteria via
   Tier-1 / Tier-3 and jump to "Close the coverage gap" below.
 - `local` → source `.dev-workflow/ports.env` and use `$BASE_URL` (`target_url(local)`).
-- `deployed:<url>` → use that URL (e.g. a Cloudflare preview/prod). If the policy's `journey_timing` is
-  `post-deploy`, the journey runs after merge/deploy (at the `/aep-wrap` layer gate), so Phase 6 here may
-  run only Tier-1/Tier-3 and leave the journey for that post-deploy gate.
+- `deployed:<url>` → use that URL (e.g. a Cloudflare preview/prod), and **seed that same target**
+  (`SERVER_URL=<url> bash skills/e2e-test/scripts/seed.sh`) — not local. If the policy's `journey_timing`
+  is `post-deploy`, the journey runs after merge/deploy (at the `/aep-wrap` layer gate), so Phase 6 here
+  may run only Tier-1/Tier-3 and leave the journey for that post-deploy gate.
 
 ```bash
 source .dev-workflow/ports.env   # local target → $BASE_URL  (deployed target: use the URL from policy.md)

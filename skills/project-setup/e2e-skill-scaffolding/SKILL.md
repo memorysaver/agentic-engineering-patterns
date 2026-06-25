@@ -16,7 +16,7 @@ so the actual browser/device automation tool is detected per environment or pinn
 /aep-onboard → /aep-scaffold ──delegates──► /aep-e2e-skill-scaffolding
                                                    │ emits skills/e2e-test/ (canonical)
                    [ /aep-design → /aep-launch → /aep-build → /aep-wrap ]
-                                                   ▲ Phase 6-8 run the journeys, flip layer gates
+                                  ▲ build Phase 6-8 run journeys + record evidence; wrap flips the gate
 ```
 
 `/aep-scaffold` creates the project and calls this skill for the e2e infrastructure. `/aep-build` runs
@@ -63,16 +63,22 @@ migration script and no user-level skill is required — Phase 4 creates the two
 REAL="skills/e2e-test"
 LEGACY=".claude/skills/e2e-test"   # the old Claude-only placement
 
-if [ -d "$REAL" ] && { [ -f "$REAL/policy.md" ] || [ -f "$REAL/journeys/README.md" ]; }; then echo "state: canonical (upgrade in place)";
+if   [ -d "$REAL" ] && [ -e "$LEGACY" ] && [ ! -L "$LEGACY" ]; then echo "state: shadow-legacy (resolve $LEGACY first)";
+elif [ -d "$REAL" ] && { [ -f "$REAL/policy.md" ] || [ -f "$REAL/journeys/README.md" ]; }; then echo "state: canonical (upgrade in place)";
 elif [ -d "$REAL" ]; then echo "state: real-non-bdd (upgrade)";
 elif [ -d "$LEGACY" ] && [ ! -L "$LEGACY" ]; then echo "state: thin-legacy (migrate $LEGACY → $REAL, then upgrade)";
 else echo "state: absent (create fresh)"; fi
 ```
 
 - **absent** → create fresh (Phases 2–6).
-- **thin-legacy** → `mkdir -p skills && git mv .claude/skills/e2e-test skills/e2e-test` first (preserve
-  history — `git mv` fails if the destination parent `skills/` doesn't exist yet, which is always the case
-  in this state). Never delete a real dir without moving its content.
+- **shadow-legacy** (both a real `skills/e2e-test` AND a real, non-symlink `.claude/skills/e2e-test`
+  exist) → resolve the shadow before anything else: merge any content only in `.claude/skills/e2e-test`
+  into `skills/e2e-test`, then `git rm -r .claude/skills/e2e-test` (or `rm -rf` if untracked). Phase 4
+  `expose()` will REFUSE a real `.claude` path, so this must be cleared first.
+- **thin-legacy** → `mkdir -p skills` then move the legacy dir, preserving history when possible:
+  `git mv .claude/skills/e2e-test skills/e2e-test` if it's git-tracked, else plain
+  `mv .claude/skills/e2e-test skills/e2e-test` (an untracked legacy dir makes `git mv` fail). Never delete
+  a real dir without moving its content.
 - **real-non-bdd / canonical** → upgrade in place. **Never overwrite hand-written journeys** or silently
   rewrite `policy.md` — re-confirm the policy (Phase 2), then add only the missing scaffold files
   (`policy.md`, `journeys/README.md` + `tool-selection.md` when the target ≠ `none`,
@@ -132,7 +138,11 @@ skills/e2e-test/
 
 **Conditional on the policy:** when `E2E_TARGET == none` (CLI/library, `[1]`-only), there is no UI to
 dogfood — **skip `journeys/` and `tool-selection.md`**; the gate is Tier-1 (+ Tier-3) + coverage, and
-`policy.md` records why. When journeys _are_ emitted, the walking skeleton's `target:` is `{{TARGET_TYPE}}`.
+`policy.md` records why. In that case, when rendering `SKILL.md`, **drop the Tier-2 "Journey dogfood"
+section and every `journeys/` / `tool-selection.md` link** (they would point at omitted files) — replace
+the Tier-2 row/section with one line: _"Tier-2 (journey dogfood): N/A for this project — see `policy.md`."_
+A `none`-target skill must ship with **no dead links**. When journeys _are_ emitted, the walking
+skeleton's `target:` is `{{TARGET_TYPE}}`.
 
 On **upgrade**, write only files that are absent; for `SKILL.md` present-but-thin, replace it (it's
 generated infrastructure docs, not hand-authored journeys) and tell the user. **`policy.md` is never
@@ -238,8 +248,9 @@ Report to the user: what was created vs. upgraded, the canonical symlinks, the *
 
 ## Next step
 
-| Command          | What it does                                                                |
-| ---------------- | --------------------------------------------------------------------------- |
-| `/aep-build`     | Phases 6–8 run the journey, record evidence, flip the layer gate            |
-| `/aep-dispatch`  | Blocks the next layer until the prior layer gate passes                     |
-| edit `journeys/` | Add a journey per new capability/layer (copy `journeys/README.md` template) |
+| Command          | What it does                                                                            |
+| ---------------- | --------------------------------------------------------------------------------------- |
+| `/aep-build`     | Phases 6–8 run the journey, compute coverage, record evidence (no gate flip)            |
+| `/aep-wrap`      | Performs the two-phase gate flip (`scripted_passed` → `passed`) + asks before advancing |
+| `/aep-dispatch`  | Blocks the next layer until the prior layer gate is `passed`                            |
+| edit `journeys/` | Add a journey per new capability/layer (copy `journeys/README.md` template)             |
