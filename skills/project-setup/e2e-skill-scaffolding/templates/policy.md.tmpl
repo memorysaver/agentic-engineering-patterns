@@ -23,10 +23,14 @@ and Pi all read this same file — that is what keeps behavior consistent across
   - `local` — against the local dev server (`$BASE_URL` from `.dev-workflow/ports.env`), pre-merge.
   - `deployed:<url>` — against a deployed environment (e.g. a Cloudflare prod/preview URL), typically
     after merge → deploy.
-- **Journey timing** — `pre-merge` (the journey runs in `/aep-build` Phase 6 against `local`) or
-  `post-deploy` (after merge → deploy, the layer gate runs the journey against the `deployed:<url>`
-  target). With `post-deploy`, a merge sits at **`scripted_passed`** until the deployed dogfood flips it
-  to `passed` — that intermediate state honestly says "machinery green, product not yet verified".
+- **Journey timing** — governs **only when the journey is EXECUTED**, never when it is authored. The
+  journey FILE is **always a pre-merge build deliverable**: `/aep-build` Phase 6 Step A authors it from the
+  layer's acceptance criteria and commits it with the feature, regardless of timing. `pre-merge` runs the
+  journey in `/aep-build` Phase 6 against `local`; `post-deploy` defers _execution_ to the layer gate
+  (after merge → deploy, against the `deployed:<url>` target). With `post-deploy`, a merge sits at
+  **`scripted_passed`** until the deployed dogfood flips it to `passed` — that intermediate state honestly
+  says "machinery green, product not yet verified". Either way the committed journey already exists; what
+  `journey_timing` moves is the run, not the write.
 
 ## Options reference
 
@@ -38,13 +42,16 @@ journey_timing   : pre-merge | post-deploy            # when the journey half of
 
 ## How the workflow honors it
 
-- **`/aep-build` Phase 6** — if `dogfood_target == none`, skip the journey dogfood (Tier-2 N/A) and prove
-  every criterion via Tier-1 / Tier-3 instead. Otherwise resolve the URL from `dogfood_target`
-  (`local` → `$BASE_URL`; `deployed:<url>` → that URL) and run the journey with the tool from
-  [`tool-selection.md`](./tool-selection.md).
+- **`/aep-build` Phase 6** — **journey-first**: Step A authors/extends the journey from the layer's
+  acceptance criteria and commits it pre-merge (unless `dogfood_target == none`, where there is no journey
+  and every criterion is proven via Tier-1 / Tier-3). Step B then executes it: resolve the URL from
+  `dogfood_target` (`local` → `$BASE_URL`; `deployed:<url>` → that URL) and run the journey with the tool
+  from [`tool-selection.md`](./tool-selection.md). With `journey_timing: post-deploy`, Step A still
+  authors + commits the journey now; only Step B's execution is deferred to the layer gate.
 - **`/aep-wrap` layer gate** — runs only the **applicable tiers**; with `journey_timing: post-deploy` it
-  runs the journey against the `deployed:<url>` target after the merge/deploy, then flips
-  `scripted_passed → passed`.
+  executes the journey against the `deployed:<url>` target after the merge/deploy, then flips
+  `scripted_passed → passed`. It **executes, never authors** — a layer that reaches the gate with no
+  journey file is a COVERAGE FAILURE (the build should have authored it) and stays `scripted_passed`.
 - **`/aep-dispatch`** — blocks the next layer until the gate is `passed` under this policy (a
   `scripted_passed` gate still blocks: "machinery green, dogfood pending").
 

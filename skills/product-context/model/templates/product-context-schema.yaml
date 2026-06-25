@@ -445,10 +445,17 @@ topology:
 # acceptance criterion proven by >=1 test (coverage.criteria_covered ==
 # criteria_total, waivers counted) AND prior-layer journeys still replay green.
 # "Coverage" here is acceptance/requirements coverage — NOT a line/branch %.
+# AUTHORING vs EXECUTION: the `journey` file is a PRE-MERGE build deliverable —
+# authored in /aep-build Phase 6 from this layer's acceptance_criteria, committed
+# with the feature, INDEPENDENT of policy.md `journey_timing`. `journey_timing`
+# governs only WHEN that journey is EXECUTED against the target (pre-merge here,
+# or at the post-deploy gate). A layer that reaches its gate with no journey file
+# is a COVERAGE FAILURE — /aep-wrap refuses to flip it to `passed`.
 layer_gates:
   - layer: 0
     status: not_started # not_started | running | scripted_passed | passed | failed | deferred
     test_definition: "End-to-end user journey from the Layer 0 MVP contract"
+    journey: skills/e2e-test/journeys/00-walking-skeleton.md # planned journey file (skills/e2e-test/journeys/<NN-slug>.md); authored PRE-MERGE in /aep-build Phase 6 from this layer's acceptance_criteria (one scenario per criterion, each Then → a concrete Verify, intent-level & tool-agnostic), BEFORE any dogfood; EXECUTED per policy.md journey_timing. evidence.journeys records what actually ran. Omit when dogfood_target == none (no journeys/ dir).
     coverage: # acceptance/requirements coverage (NOT line %)
       criteria_total: 0 # acceptance criteria across this layer's stories
       criteria_covered: 0 # criteria with >=1 proving test (journey Verify / scripted case / API check)

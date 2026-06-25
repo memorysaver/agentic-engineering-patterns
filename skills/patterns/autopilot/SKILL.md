@@ -230,6 +230,15 @@ layer; turning `full_auto` on removes those pauses only when the user explicitly
 opts in. See the per-flag behavior in **Design Escalation** below and in
 `aep-dispatch` (readiness-based routing).
 
+> **`full_auto` does not touch journey authoring.** The journey FILE is always a
+> pre-merge build deliverable (`/aep-build` Phase 6 Step A authors it from the
+> layer's acceptance criteria, committed with the feature). So under
+> `full_auto: false` + `journey_timing: post-deploy`, the journey must **already
+> exist** before the post-deploy layer-gate handback — the human handback is
+> **EXECUTION + flip only, never authoring**. If a layer reaches its gate with no
+> journey file, that is a `/aep-wrap` COVERAGE FAILURE (the build should have
+> authored it), not a human-authoring task at the gate.
+
 ### Start Protocol
 
 1. Create `.dev-workflow/` if it doesn't exist:

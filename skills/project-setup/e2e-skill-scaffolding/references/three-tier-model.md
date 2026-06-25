@@ -39,8 +39,9 @@ Features start with zero tests and accrue coverage through the build phases:
 ```
 Phase 4 (implement) → Tier 1: run the project's unit/integration tests (framework-level)
 Phase 5 (review)    → Tier 3: API contract checks via an API driver
-Phase 6 (dogfood)   → Tier 2: run/extend the layer's journey with the resolved tool; find gaps
-Phase 7 (e2e)       → Tier 2: codify findings as journey scenarios + Verify lines
+Phase 6 (dogfood)   → Tier 2: Step A AUTHORS the journey from acceptance criteria (pre-merge, before
+                              any dogfood); Step B runs it with the resolved tool + confirms coverage
+Phase 7 (e2e)       → Tier 2: finalize the journey (fold in execution reality) + Verify lines
 Phase 8 (review)    → Tiers 1-3: run framework tests + replay the journey before merge
 ```
 
@@ -87,10 +88,13 @@ A layer gate flips through two states, never on a single passing journey:
 - **`passed`** — `scripted_passed` **+** every applicable higher tier green **+** coverage complete **+**
   prior-layer journeys replay green.
 
-When `/aep-build` Phase 6 finds an **uncovered** acceptance criterion it **auto-authors the missing test**
-to close the gap (a Tier-2 scenario by default; a Tier-1 case where deterministic; a Tier-3 API check for
-backend/async state), then re-runs — looping until covered or a `WAIVER:` is recorded. `/aep-wrap`
-performs the two-phase flip and then asks the human before advancing. The full state machine is in
+`/aep-build` Phase 6 is **journey-first**: Step A **authors a scenario per acceptance criterion before any
+dogfood** (a Tier-2 scenario by default; a Tier-1 case where deterministic; a Tier-3 API check for
+backend/async state) and commits the journey **pre-merge**, independent of `journey_timing` — only the
+journey's _execution_ is governed by timing. Step B runs it and confirms coverage, authoring any straggler
+and re-running until covered or a `WAIVER:` is recorded. `/aep-wrap` then performs the two-phase flip and
+asks the human before advancing — it **executes, never authors**, so a layer that reaches the gate with no
+journey file is a COVERAGE FAILURE that stays `scripted_passed`. The full state machine is in
 [`layer-gate-loop.md`](layer-gate-loop.md).
 
 ## Graceful degradation

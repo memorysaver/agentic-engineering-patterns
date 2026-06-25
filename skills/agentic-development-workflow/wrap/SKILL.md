@@ -211,15 +211,20 @@ run the journey against the `deployed:<url>` target _here_ (after merge/deploy) 
 1. **Tier-1 (machinery).** Run the project's scripted suite for this layer. If green, set
    `layer_gates[layer].status: scripted_passed` and record the test file under `evidence.scripted`.
 2. **Tier-2/3 (product) + regression.** _Skip this step entirely if `dogfood_target == none`_ (CLI/library
-   — Tier-2 N/A; prove criteria via Tier-1/Tier-3). Otherwise run the matching BDD journey/journeys in
-   `skills/e2e-test/journeys/` (`layer: N`) via their `tool-selection.md`, plus any applicable API
-   drivers, and **replay prior-layer journeys** — **seeding the policy's target** first (a `deployed:<url>`
-   target needs `SERVER_URL=<url> bash skills/e2e-test/scripts/seed.sh`, not local). Record evidence —
-   screenshots, API JSON, PASS/FAIL per Then, and the two coverage matrices — in `docs/layer-gates/<layer>.md`.
+   — Tier-2 N/A; prove criteria via Tier-1/Tier-3). Otherwise locate the matching BDD journey/journeys in
+   `skills/e2e-test/journeys/` (`layer: N`). **Backstop — a missing journey file is a COVERAGE FAILURE,
+   not a pass:** the journey is a pre-merge build deliverable (`/aep-build` Phase 6 Step A authors it from
+   the layer's acceptance criteria), so if no journey file covers this layer, **do not flip to `passed`** —
+   surface it (leave the gate at `scripted_passed`, record the missing-journey gap in
+   `coverage.uncovered`), and route it back to build to author the journey. Do **not** author it here at the
+   gate. When the journey exists, run it via its `tool-selection.md`, plus any applicable API drivers, and
+   **replay prior-layer journeys** — **seeding the policy's target** first (a `deployed:<url>` target needs
+   `SERVER_URL=<url> bash skills/e2e-test/scripts/seed.sh`, not local). Record evidence — screenshots, API
+   JSON, PASS/FAIL per Then, and the two coverage matrices — in `docs/layer-gates/<layer>.md`.
 3. **Check coverage.** Confirm every layer acceptance criterion maps to ≥1 proving test
-   (`coverage.criteria_covered == criteria_total`). Genuine gaps were already auto-closed during
-   `/aep-build` Phase 6; a _deliberate_ deferral must carry a `WAIVER: <reason>` line. Never flip to
-   `passed` while criteria are silently uncovered.
+   (`coverage.criteria_covered == criteria_total`). Coverage was authored pre-merge during `/aep-build`
+   Phase 6 Step A and confirmed against execution; a _deliberate_ deferral must carry a `WAIVER: <reason>`
+   line. Never flip to `passed` while criteria are silently uncovered or the journey file is missing.
 4. **Flip to `passed`** only when all applicable tiers are green AND coverage is complete-or-waived AND
    the regression replay passed; set `completed_at`. If only Tier-1 passed, leave it `scripted_passed`.
 5. **Ask the human before advancing.** Surface the coverage summary (`criteria_covered / criteria_total`,

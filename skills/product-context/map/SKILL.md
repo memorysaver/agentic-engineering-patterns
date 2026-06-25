@@ -123,7 +123,7 @@ A dedicated agent receives all stories and produces:
 - **Story Graph:** A directed acyclic graph organized by layer, showing dependencies and parallelism opportunities.
 - **Waves (Execution Slices):** Within each layer, group stories into waves that can be dispatched as a batch. A wave is a set of stories with no mutual dependencies that can run fully in parallel. (The YAML field is `stories[].slice`; the user-facing term is "wave.")
 - **Critical path per layer:** The longest dependency chain, determining minimum time to complete that layer.
-- **Layer gates:** The integration test definition that must pass before advancing to the next layer.
+- **Layer gates:** The integration test definition that must pass before advancing to the next layer. Each gate also names its **planned `journey:` path** (`skills/e2e-test/journeys/<NN-slug>.md`, omitted when `dogfood_target == none`). That journey is a **pre-merge build deliverable** — `/aep-build` Phase 6 authors it from this layer's `acceptance_criteria` (one scenario per criterion, each `Then` → a concrete `Verify`, intent-level & tool-agnostic), committed with the feature **before any dogfood**. `journey_timing` (set in `skills/e2e-test/policy.md`) governs only **when** that journey is _executed_ (pre-merge vs at the post-deploy gate), never when it is authored.
 
 Write all stories to the `stories` section of `product-context.yaml`. Also populate the `waves` section grouping stories by layer + wave.
 
@@ -303,7 +303,7 @@ git push origin "$BASE"
 - `stories` — layered story graph with waves (all stories start `status: pending`)
 - `waves` — stories grouped by layer + wave for batch dispatch
 - `topology` — agent roles, handoff contracts, routing rules
-- `layer_gates` — integration test definitions per layer (aligned with outcome contracts if defined)
+- `layer_gates` — integration test definitions per layer (aligned with outcome contracts if defined); set each gate's planned `journey:` path (the pre-merge journey deliverable `/aep-build` authors from the layer's acceptance criteria), unless `dogfood_target == none`
 - `cost` — initial cost budgets and tracking structure
 - `changelog` — append an entry recording what was added
 

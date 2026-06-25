@@ -38,12 +38,15 @@ new capability / new layer
   run Tier-1 scripted  (the project's framework tests for the layer)  ──green──►  status: scripted_passed
         │
         ▼
-  run the journey      (/aep-build Phase 6; tool resolved by tool-selection.md; verify state, not pixels)
-        │
+  author the journey   (/aep-build Phase 6 Step A; one scenario per acceptance criterion → Then/Verify;
+        │               PRE-MERGE, before any dogfood; committed with the feature, independent of timing)
         ▼
-  compute coverage     (map each layer acceptance criterion → a proving Verify / scripted case / API check)
+  run the journey      (/aep-build Phase 6 Step B; tool resolved by tool-selection.md; verify state, not
+        │               pixels — execution deferred to the gate when journey_timing: post-deploy)
+        ▼
+  confirm coverage     (map each layer acceptance criterion → a proving Verify / scripted case / API check)
         │
-        ├─ uncovered? ─►  auto-author the missing scenario/case, re-run   (loop until covered, or WAIVER)
+        ├─ uncovered? ─►  author the missing scenario/case, re-run   (loop until covered, or WAIVER)
         ▼
   record evidence      →  docs/layer-gates/<layer>.md   (two matrices + checklist + PASS/FAIL + waivers)
         │
@@ -83,12 +86,12 @@ layer_gates:
 
 ## Where each AEP skill touches the gate
 
-| Skill           | Touch point                                                                                                                                                                    |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `/aep-dispatch` | **Precheck** — refuses to start layer N stories while `layer_gates[N-1].status != passed` (a `scripted_passed` gate still blocks — "machinery green, dogfood pending")         |
-| `/aep-build`    | Phase 6 runs the journey, **computes coverage and auto-authors the missing scenarios/cases**; Phase 7 codifies them + writes the two evidence matrices                         |
-| `/aep-wrap`     | **Two-phase flip:** `scripted_passed` (Tier-1 green) → `passed` (all applicable tiers green + coverage complete + regression replay); then **asks the human** before advancing |
-| `/aep-reflect`  | Classifies journey findings — bug → high-priority story; "feels wrong" → calibration                                                                                           |
+| Skill           | Touch point                                                                                                                                                                                                                                                                             |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/aep-dispatch` | **Precheck** — refuses to start layer N stories while `layer_gates[N-1].status != passed` (a `scripted_passed` gate still blocks — "machinery green, dogfood pending")                                                                                                                  |
+| `/aep-build`    | Phase 6 Step A **authors the journey pre-merge** (one scenario per acceptance criterion, before any dogfood), Step B runs it + confirms coverage; Phase 7 finalizes the journey + writes the two evidence matrices                                                                      |
+| `/aep-wrap`     | **Two-phase flip:** `scripted_passed` (Tier-1 green) → `passed` (all applicable tiers green + coverage complete + regression replay); **executes, never authors** — a missing journey file is a COVERAGE FAILURE that stays `scripted_passed`; then **asks the human** before advancing |
+| `/aep-reflect`  | Classifies journey findings — bug → high-priority story; "feels wrong" → calibration                                                                                                                                                                                                    |
 
 ## Coverage evidence (the two matrices)
 
