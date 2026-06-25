@@ -20,7 +20,7 @@ The canonical, copy-paste journey template ships **inside the generated skill** 
 [`templates/journeys-README.md.tmpl`](../templates/journeys-README.md.tmpl)). Edit that one template
 rather than restating the block here — that keeps this reference and the shipped artifact from drifting.
 Keep it **light Gherkin**: prose Given/When/Then/**Verify**, no step-definition binding (the executor is
-an LLM agent, not Cucumber), front-matter `target:` + `layer:`.
+an LLM agent, not Cucumber), front-matter `target:` + `layer:` + `covers:`.
 
 ## Conventions (the contract)
 
@@ -35,13 +35,19 @@ an LLM agent, not Cucumber), front-matter `target:` + `layer:`.
 - **One journey per capability area**, numbered. `00-walking-skeleton.md` proves the Layer-0 path.
 - **A journey maps to a layer gate** — record evidence in `docs/layer-gates/<layer>.md`, then flip
   `layer_gates[layer=N]` in `product-context.yaml` (see [`layer-gate-loop.md`](layer-gate-loop.md)).
+- **Traceability is the coverage hook.** Each scenario's **Verify** is what proves an acceptance
+  criterion; the journey's `covers:` front-matter (and the `**Covers:**` body line) name which criteria.
+  `/aep-build` builds the layer's **coverage matrix** from these — every layer acceptance criterion must
+  map to ≥1 scenario `Verify` (or a Tier-1 scripted case / Tier-3 API check), or the gate can't reach
+  `passed`. An uncovered criterion is auto-closed (a scenario gets authored) rather than ignored.
 
 ## Front-matter fields
 
-| Field    | Values                       | Use                                                         |
-| -------- | ---------------------------- | ----------------------------------------------------------- |
-| `target` | `web` / `mobile` / `desktop` | Tells `tool-selection.md` which automation track to resolve |
-| `layer`  | integer (`0`, `1`, …)        | The layer gate this journey proves                          |
+| Field    | Values                       | Use                                                                                                                        |
+| -------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `target` | `web` / `mobile` / `desktop` | Tells `tool-selection.md` which automation track to resolve                                                                |
+| `layer`  | integer (`0`, `1`, …)        | The layer gate this journey proves                                                                                         |
+| `covers` | list of ids                  | Acceptance-criterion / capability ids this journey proves — feeds the gate's coverage matrix (`coverage.criteria_covered`) |
 
 ## Keeping journeys current
 

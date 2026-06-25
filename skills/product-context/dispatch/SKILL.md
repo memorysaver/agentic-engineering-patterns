@@ -131,7 +131,7 @@ For each layer (0, 1, 2, ...):
     This is the active layer. Stop.
 ```
 
-**Layer gate check:** If active layer > 0, verify `layer_gates[active_layer - 1].status == passed`. If not, block and suggest running the layer gate test.
+**Layer gate check:** If active layer > 0, verify `layer_gates[active_layer - 1].status == passed`. If not, block and suggest running the layer gate. A gate at `scripted_passed` (Tier-1 machinery green, but the journey dogfood / coverage half isn't done) does **not** unblock the next layer — report it as "machinery green, dogfood pending" so the human knows the remaining half. Only `/aep-wrap`'s two-phase flip advances a gate to `passed`.
 
 ### Filter Ready Queue
 

@@ -541,6 +541,17 @@ If the selected method is `/agent-browser:dogfood`, run it against `$BASE_URL`:
 
 Whatever the method, emit the unified severity/category/repro report format (see `dogfood-validation.md` → Unified report format) so the downstream classifier stays host-agnostic. Document results in `.dev-workflow/dogfood-<feature>.md` — **write the report file, not just chat output**: that path is the ingestion contract (`dogfood-validation.md` → On issue), so `/aep-watch`'s `dogfood_report` source can auto-file bug/refinement findings. Findings left only in chat are a dead end.
 
+**Close the coverage gap (auto-remediate).** After running the journey, compute the layer's **coverage
+matrix**: list this layer's acceptance criteria (from `stories[].acceptance_criteria` in
+`product-context.yaml`) and map each to the journey scenario `Verify` / scripted case / API check that
+proves it. For every **uncovered** criterion, **author the missing test now** — a Tier-2 journey scenario
+(default), a Tier-1 scripted case where the behavior is deterministic, or a Tier-3 API check for
+backend/async state — run it, and repeat until `coverage.criteria_covered == coverage.criteria_total`. A
+criterion you deliberately defer gets a `WAIVER: <reason>` line, not silence. This is what makes the layer
+_covered_ rather than _touched_ — `/aep-wrap` refuses to flip the gate to `passed` while criteria are
+silently uncovered. (Tier applicability is per project type — a CLI/library layer may be all Tier-1; see
+the `aep-e2e-skill-scaffolding` `references/three-tier-model.md`.)
+
 > **Signal update:** Update `.dev-workflow/signals/status.json` with `"phase": 6, "phase_name": "dogfood-testing"`.
 
 ---
@@ -558,9 +569,13 @@ script. In `skills/e2e-test/journeys/`:
 - Keep it tool-agnostic; `tool-selection.md` resolves the tool. API-level assertions can use `$BASE_URL` /
   `$SERVER_URL` from `.dev-workflow/ports.env` (never hardcoded ports).
 
-**Record the layer gate.** Write the evidence (screenshots, API JSON, PASS/FAIL per Then) to
-`docs/layer-gates/<layer>.md`. The gate is flipped to `passed` in `product-context.yaml` at `/aep-wrap`
-once the journey passes — that is what lets `/aep-dispatch` advance to the next layer.
+**Record the layer gate.** Write the evidence to `docs/layer-gates/<layer>.md` (the generated `e2e-test`
+skill ships a `layer-gate-evidence` template): the two coverage matrices — **acceptance traceability**
+(criterion → proving test → Verify → PASS/FAIL) and **scripted-coverage** (case → asserts → PASS/FAIL) —
+plus the manual checklist, screenshots / API JSON, and any `WAIVER:` lines. Update `layer_gates[N].coverage`
+and `evidence.{scripted,journeys,matrix}` in `product-context.yaml`. The two-phase flip (`scripted_passed`
+→ `passed`) happens at `/aep-wrap` once all applicable tiers are green and coverage is complete — that is
+what lets `/aep-dispatch` advance to the next layer.
 
 ---
 
@@ -569,11 +584,13 @@ once the journey passes — that is what lets `/aep-dispatch` advance to the nex
 > **Light mode:** Skip this phase.
 
 1. Source `.dev-workflow/ports.env` for correct ports
-2. Run the project's framework tests (Tier 1) and replay the layer's journey (Tier 2) to verify they pass
+2. Run the project's framework tests (Tier 1), replay the layer's journey (Tier 2) **and prior-layer
+   journeys** (regression), plus any applicable Tier-3 API drivers — verify they pass and that
+   `coverage.criteria_covered == criteria_total` (or remaining gaps carry a `WAIVER:`)
 3. Present to the user (or note in progress file):
    - Code review from Phase 5
    - Dogfood report from Phase 6 (if run)
-   - Journey result + layer-gate evidence from Phase 7 (if run)
+   - Journey result + layer-gate evidence + coverage summary (`criteria_covered / criteria_total`) from Phase 7 (if run)
 4. If tests fail, loop back to the appropriate phase
 
 > **Signal update:** Update `.dev-workflow/signals/status.json` with `"phase": 8, "phase_name": "review-results"`.

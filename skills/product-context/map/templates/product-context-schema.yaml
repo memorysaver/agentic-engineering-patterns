@@ -439,11 +439,24 @@ topology:
 
 # ─── LAYER GATES ─────────────────────────────────────────────
 # Integration tests that verify a completed layer works as a whole.
-# Must pass before advancing to the next layer.
+# Quality accrues layer by layer; a gate must reach `passed` before the next
+# layer is dispatched. Two-phase: `scripted_passed` = Tier-1 machinery green;
+# `passed` = all APPLICABLE tiers green (per project type) AND every layer
+# acceptance criterion proven by >=1 test (coverage.criteria_covered ==
+# criteria_total, waivers counted) AND prior-layer journeys still replay green.
+# "Coverage" here is acceptance/requirements coverage — NOT a line/branch %.
 layer_gates:
   - layer: 0
-    status: not_started # not_started | running | passed | failed
-    test_definition: "End-to-end user journey from Layer 0 MVP contract"
+    status: not_started # not_started | running | scripted_passed | passed | failed | deferred
+    test_definition: "End-to-end user journey from the Layer 0 MVP contract"
+    coverage: # acceptance/requirements coverage (NOT line %)
+      criteria_total: 0 # acceptance criteria across this layer's stories
+      criteria_covered: 0 # criteria with >=1 proving test (journey Verify / scripted case / API check)
+      uncovered: [] # [{ criterion: "...", plan: "scenario to add" | "WAIVER: <reason>" }]
+    evidence:
+      scripted: null # Tier-1 test file(s), e.g. packages/e2e-test/src/layer0.test.ts
+      journeys: [] # journey ids/paths proving this layer, e.g. ["00-walking-skeleton"]
+      matrix: docs/layer-gates/0.md # traceability + scripted-coverage matrices
     results: # structured test results
       tests_run: 0
       tests_passed: 0

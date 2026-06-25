@@ -101,13 +101,14 @@ Render each `templates/*.tmpl` with the Phase 2 substitutions into real `skills/
 
 ```
 skills/e2e-test/
-├── SKILL.md              ← templates/e2e-test.SKILL.md.tmpl
+├── SKILL.md                        ← templates/e2e-test.SKILL.md.tmpl
 ├── journeys/
-│   ├── README.md         ← templates/journeys-README.md.tmpl
-│   └── 00-walking-skeleton.md  ← templates/journey-00-walking-skeleton.md.tmpl
-├── tool-selection.md     ← templates/tool-selection.md.tmpl
+│   ├── README.md                   ← templates/journeys-README.md.tmpl
+│   └── 00-walking-skeleton.md      ← templates/journey-00-walking-skeleton.md.tmpl
+├── tool-selection.md               ← templates/tool-selection.md.tmpl
+├── layer-gate-evidence.template.md ← templates/layer-gate-evidence.md.tmpl
 └── scripts/
-    └── seed.sh           ← templates/seed.sh.tmpl   (chmod +x)
+    └── seed.sh                     ← templates/seed.sh.tmpl   (chmod +x)
 ```
 
 On **upgrade**, write only files that are absent; for `SKILL.md` present-but-thin, replace it (it's
@@ -157,12 +158,21 @@ readlink -f .agents/skills/e2e-test   # → …/skills/e2e-test
 
 ## Phase 5: Wire layer gates
 
-- If `product-context.yaml` exists: ensure a `layer_gates` map and `docs/layer-gates/` dir exist; the
-  generated `SKILL.md` already documents the journey → `docs/layer-gates/<layer>.md` → `layer_gates[N]`
-  loop. New layers get a new journey (copy the template); see
-  [`references/layer-gate-loop.md`](references/layer-gate-loop.md).
-- If not (standalone project): journeys still organize by layer; gate-flipping is a manual note. The
-  loop still works, just without the YAML state machine.
+The gate is **two-phase + covered** — `scripted_passed` (Tier-1 green) → `passed` (all applicable tiers
+green + every acceptance criterion proven + prior-layer journeys replay). See
+[`references/layer-gate-loop.md`](references/layer-gate-loop.md) and
+[`references/three-tier-model.md`](references/three-tier-model.md).
+
+- If `product-context.yaml` exists:
+  - Ensure each `layer_gates[]` entry uses the **canonical enriched shape** — `status` (including
+    `scripted_passed`), a `coverage` block (`criteria_total` / `criteria_covered` / `uncovered`), and
+    structured `evidence` (`scripted` / `journeys` / `matrix`). Don't rewrite existing gate state; just
+    add the missing `coverage` / `evidence` keys (back-compat: older gates without them still parse).
+  - Ensure `docs/layer-gates/` exists; seed `docs/layer-gates/0.md` from
+    `skills/e2e-test/layer-gate-evidence.template.md` if absent (never overwrite a filled-in one).
+- If not (standalone project): journeys still organize by layer; the gate is a manual checkbox in
+  `docs/layer-gates/<layer>.md` (copy the evidence template). The loop works without the YAML state
+  machine — the two matrices + checklist are the record.
 
 ---
 
@@ -171,6 +181,7 @@ readlink -f .agents/skills/e2e-test   # → …/skills/e2e-test
 ```bash
 test -f skills/e2e-test/SKILL.md && test -f skills/e2e-test/journeys/README.md \
   && test -f skills/e2e-test/tool-selection.md && test -x skills/e2e-test/scripts/seed.sh \
+  && test -f skills/e2e-test/layer-gate-evidence.template.md \
   && echo "files OK"
 # Syntax-check only — do NOT run seed.sh here: at scaffold time there is no dev server, so a full run
 # would block in its wait loop. seed.sh runs for real later via the workspace hook once the server is up.

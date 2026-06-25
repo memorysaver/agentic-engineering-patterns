@@ -9,10 +9,10 @@ How to run a journey is in the **execution protocol** of [`../SKILL.md`](../SKIL
 
 ## The library
 
-| #  | Journey                                      | Covers     |
-| -- | -------------------------------------------- | ---------- |
-| 00 | [Walking skeleton](00-walking-skeleton.md)   | Layer 0    |
-| .. | _add a row per journey as the product grows_ | _layer N_  |
+| #  | Journey                                      | Covers (layer / criteria)   |
+| -- | -------------------------------------------- | --------------------------- |
+| 00 | [Walking skeleton](00-walking-skeleton.md)   | Layer 0 — MVP contract path |
+| .. | _add a row per journey as the product grows_ | _layer N / criterion ids_   |
 
 ## Journey doc template
 
@@ -23,13 +23,14 @@ binding (the executor is an LLM agent, not Cucumber).
 ---
 target: web        # web | mobile | desktop — picks the tool track in ../tool-selection.md
 layer: 0           # which layer gate this journey proves
+covers: []         # acceptance-criterion / capability ids this journey proves (feeds the gate coverage matrix)
 ---
 
 # Journey NN — <title>
 
 **Story:** As a <role>, I want <capability>, so that <value>.
 
-**Covers:** <feature/layer ids> — key endpoints/tools: `<api/tool>`, `<api/tool>`.
+**Covers:** <feature/criterion/layer ids> — key endpoints/tools: `<api/tool>`, `<api/tool>`.
 
 **Preconditions:** <clean-slate / seed / a connected service / etc.>
 
@@ -56,3 +57,7 @@ layer: 0           # which layer gate this journey proves
 - **Cost-aware:** scenarios that spend real model/compute budget stay minimal; disable any loop in cleanup.
 - A journey maps to a layer gate: record evidence in `docs/layer-gates/<layer>.md`, then flip
   `layer_gates[layer=N]` in `product-context.yaml`.
+- **Coverage, not one green test.** Every acceptance criterion in a layer must map to ≥1 scenario
+  `Verify` (or a scripted case / API check). The gate is **two-phase** — `scripted_passed` (framework
+  tests green) → `passed` (journeys + coverage complete). Uncovered criteria are auto-closed during
+  `/aep-build` Phase 6; record the criterion→test matrix in `docs/layer-gates/<layer>.md`.

@@ -79,6 +79,15 @@ Each layer has an Integration Gate — tests that verify stories work together. 
 2. New capabilities added in this layer work end-to-end.
 3. Interface contracts honored under realistic conditions (not just mocks).
 
+### Two-Phase Status & Coverage
+
+A gate is **not** green on a single passing journey. It advances through two phases, and "green" means the layer is _adequately covered_ across whichever test tiers apply to the project (full-stack → scripted + journey + API; API-only → scripted + API; CLI/library → scripted):
+
+- **`scripted_passed`** — the Tier-1 scripted suite (the project's framework tests) for this layer is green. The machinery is proven; the live product is not yet.
+- **`passed`** — `scripted_passed` AND every applicable higher tier (journey dogfood, API drivers) is green AND **coverage is complete**: each of the layer's acceptance criteria (aggregated from its stories' `acceptance_criteria`) maps to ≥1 proving test, tracked in `layer_gates[N].coverage` (`criteria_covered == criteria_total`, deliberate gaps recorded as `WAIVER:`), AND prior-layer journeys still replay green.
+
+Coverage here is **acceptance/requirements coverage**, not a line/branch percentage — the question is "is every behavior this layer promised actually proven?", not "what fraction of lines ran". When `/aep-build` (Phase 6) finds an uncovered criterion it **auto-authors the missing scenario/case** to close the gap before the gate can reach `passed`; advancing to the _next_ layer is then a human-confirmed step (`/aep-wrap`), not automatic.
+
 ### Gate Failure Protocol
 
 ```

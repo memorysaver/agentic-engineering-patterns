@@ -26,7 +26,11 @@ _Nothing yet._
 Promote the downstream **BDD layer-gate E2E pattern** into AEP and make project
 setup **idempotent**. The e2e-test skill a project gets is now a natural-language
 **journey** library (Given/When/Then/**Verify**), tool-agnostic, with each journey
-mapped to a **layer gate** so quality accrues layer by layer — and it ships in
+mapped to a **layer gate** so quality accrues layer by layer. Each gate is
+**two-phase and coverage-checked** — `scripted_passed` (framework tests green) →
+`passed` (all applicable tiers green _and_ every layer acceptance criterion proven by
+a test); `/aep-build` **auto-authors** any missing scenario to close a coverage gap
+and `/aep-wrap` asks the human before advancing. It ships in
 **canonical cross-tool form** (real `skills/e2e-test/` + `.claude/skills` /
 `.agents/skills` symlinks) so Claude Code, Codex, and Pi all see one copy. Which
 browser/device tool drives the UI is resolved by a **separate `tool-selection.md`**
@@ -48,6 +52,12 @@ the `skills` CLI). Downstreams pick this up on their next deliberate re-pin.
   journeys. Registered in `marketplace.json` `project-setup` plugin.
 - **`scaffold/references/workspace-hook.md`**: the workspace-setup hook contract +
   template (salvaged from the removed testing-guide Part 1).
+- **Coverage-checked layer gates**: the generated `e2e-test` skill ships a
+  `layer-gate-evidence.template.md` (acceptance-traceability + scripted-coverage
+  matrices + dogfood checklist + waivers), and journeys carry a `covers:` front-matter
+  field tying each to the acceptance criteria it proves. "Coverage" is
+  acceptance/requirements coverage — every layer criterion proven by ≥1 test — not a
+  line/branch %.
 
 ### Changed
 
@@ -63,6 +73,17 @@ the `skills` CLI). Downstreams pick this up on their next deliberate re-pin.
   (never auto-runs) the skills-CLI version re-pin.
 - **`/aep-build`** Phases 6–8: reference BDD **journeys** + `e2e_tool(target_type)` and
   record the layer-gate evidence, instead of generating one-off bash `<feature>-e2e.sh`.
+  Phase 6 now **computes the layer's coverage matrix and auto-authors missing tests** to
+  close gaps; Phase 8 replays prior-layer journeys (regression) and checks coverage.
+- **`layer_gates` schema** (`product-context-schema.yaml` + the generated gate loop):
+  reconciled to one canonical list shape and enriched with a two-phase `status`
+  (`scripted_passed` → `passed`), a `coverage` block (`criteria_total` /
+  `criteria_covered` / `uncovered`), and structured `evidence` (`scripted` / `journeys`
+  / `matrix`). Older gates without these keys still parse.
+- **`/aep-dispatch` + `/aep-wrap`**: dispatch reports a `scripted_passed` gate as
+  "machinery green, dogfood pending" (still blocks the next layer); wrap performs the
+  **two-phase flip** (all applicable tiers green + coverage complete-or-waived +
+  regression replay), then **asks the human before advancing** to the next layer.
 - **`/aep-workflow-feedback`**: pushes skill improvements downstream via a deliberate
   skills-CLI **re-pin** (README upgrade flow) instead of the removed `sync-downstream.sh`.
 

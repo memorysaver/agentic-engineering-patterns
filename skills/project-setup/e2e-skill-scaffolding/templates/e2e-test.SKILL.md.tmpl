@@ -43,13 +43,27 @@ preference, with health probes and graceful degrade. Journeys themselves stay to
    rules: fresh element refs each step, scroll off-screen elements into view, **verify-state-before-claiming**.
 5. **Record + report.** Screenshots + API JSON as evidence; report **PASS/FAIL per `Then`**, not "looks
    done". A `Verify` line that can't be confirmed is a FAIL.
+6. **Close coverage.** Build the layer's coverage matrix — map each layer acceptance criterion to the
+   scenario `Verify` (or a Tier-1 case / Tier-3 API check) that proves it. For any **uncovered**
+   criterion, author the missing scenario/case now and run it; loop until every criterion is covered (or
+   a `WAIVER: <reason>` is recorded). One green journey is not coverage.
 
-### Layer gate
+### Layer gate (two-phase, covered)
 
-A journey maps to a layer gate: run the matching journey, record evidence in
-`docs/layer-gates/<layer>.md`, then flip `layer_gates[layer=N]` in `product-context.yaml`. Bugs found are
-classified via `/aep-reflect` (bug → high-priority story; "works but feels wrong" → calibration). The
-full loop is documented in the `aep-e2e-skill-scaffolding` skill's `references/layer-gate-loop.md`.
+A layer gate is **two-phase**, and green means *covered* — not "one journey passed":
+
+- **`scripted_passed`** — the layer's Tier-1 framework tests are green (machinery proven).
+- **`passed`** — `scripted_passed` **+** the applicable journey / API tiers green **+** every layer
+  acceptance criterion proven (`coverage.criteria_covered == criteria_total`) **+** prior-layer journeys
+  replay green (regression).
+
+Run the matching journey, close any coverage gap (step 6), and record evidence in
+`docs/layer-gates/<layer>.md` — the two matrices (**acceptance-traceability** + **scripted-coverage**),
+the checklist, and any `WAIVER:` lines. Copy
+[`layer-gate-evidence.template.md`](./layer-gate-evidence.template.md) per layer. `/aep-wrap` then
+performs the two-phase flip and asks the human before advancing. Bugs found route through `/aep-reflect` (bug →
+high-priority story; "works but feels wrong" → calibration). The full loop is in the
+`aep-e2e-skill-scaffolding` skill's `references/layer-gate-loop.md`.
 
 ## Tier 3 — API drivers
 
