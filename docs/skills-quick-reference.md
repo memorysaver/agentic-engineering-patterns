@@ -49,12 +49,12 @@ CONTROL PLANE (human + AI)              EXECUTION PLANE (agents build)
 
 ### Project Setup (Run Once)
 
-| Skill                | When to use                                | Input             | Output                                                 | Session |
-| -------------------- | ------------------------------------------ | ----------------- | ------------------------------------------------------ | ------- |
-| `/aep-onboard`       | First-time environment setup               | (none)            | Tools verified, plugins installed                      | Main    |
-| `/aep-scaffold`      | Create new project or onboard existing one | Stack preferences | Monorepo + OpenSpec + workspace hooks + E2E skeleton   | Main    |
-| `/aep-testing-guide` | Set up quality infrastructure              | Project context   | Workspace setup hook + E2E test skill                  | Main    |
-| `/aep-git-ref`       | AEP git + worktree conventions             | (none)            | Worktree lifecycle, branch naming, recovery procedures | Main    |
+| Skill                        | When to use                                     | Input             | Output                                                 | Session |
+| ---------------------------- | ----------------------------------------------- | ----------------- | ------------------------------------------------------ | ------- |
+| `/aep-onboard`               | First-time environment setup                    | (none)            | Tools verified, plugins installed                      | Main    |
+| `/aep-scaffold`              | Create new project or onboard/converge existing | Stack preferences | Monorepo + OpenSpec + workspace hooks + BDD e2e skill  | Main    |
+| `/aep-e2e-skill-scaffolding` | Generate/upgrade the e2e-test skill             | Project stack     | Canonical BDD layer-gate e2e-test skill (cross-tool)   | Main    |
+| `/aep-git-ref`               | AEP git + worktree conventions                  | (none)            | Worktree lifecycle, branch naming, recovery procedures | Main    |
 
 ---
 
@@ -76,7 +76,7 @@ CONTROL PLANE (human + AI)              EXECUTION PLANE (agents build)
 "How do AEP worktrees work?"        → /aep-git-ref
 "Set up my environment"             → /aep-onboard
 "Create a new project"              → /aep-scaffold
-"Set up testing infrastructure"     → /aep-testing-guide
+"Set up testing infrastructure"     → /aep-e2e-skill-scaffolding
 "Evaluate this honestly"            → /aep-gen-eval
 "Write a custom harness / workflow" → /aep-workflow
 "This is too big for one context"   → /aep-workflow
@@ -125,7 +125,7 @@ CONTROL PLANE (human + AI)              EXECUTION PLANE (agents build)
 ### Pull upstream improvements
 
 ```
-/aep-workflow-feedback review → approve items → sync-downstream.sh
+/aep-workflow-feedback review → approve items → tag release → re-pin downstreams
 ```
 
 ### Full autonomous mode
@@ -140,14 +140,16 @@ Autopilot runs dispatch → launch → monitor → review → wrap → dispatch 
 
 ## Skill Groups (Plugin Names)
 
-When synced to downstream projects, skills are prefixed with `aep-`:
+Installed into projects via the [`skills` CLI](https://github.com/vercel-labs/skills) (once per agent:
+`-a claude-code`, then `-a codex`), prefixed with `aep-`. See the README "Installing Skills" section for
+the full install / pin / upgrade flow.
 
-| Group                          | Skills                                     | Sync command       |
-| ------------------------------ | ------------------------------------------ | ------------------ |
-| `product-context`              | envision, map, dispatch, validate, reflect | `sync.sh product`  |
-| `agentic-development-workflow` | design, launch, build, wrap, git-ref       | `sync.sh workflow` |
-| `patterns`                     | gen-eval, autopilot, workflow-feedback     | `sync.sh patterns` |
-| `project-setup`                | onboard, scaffold, testing-guide           | `sync.sh setup`    |
+| Group                          | Skills                                                              |
+| ------------------------------ | ------------------------------------------------------------------- |
+| `product-context`              | envision, map, model, dispatch, validate, calibrate, reflect, watch |
+| `agentic-development-workflow` | design, launch, build, wrap, git-ref                                |
+| `patterns`                     | gen-eval, executor, autopilot, workflow, workflow-feedback          |
+| `project-setup`                | onboard, scaffold, e2e-skill-scaffolding                            |
 
 ---
 

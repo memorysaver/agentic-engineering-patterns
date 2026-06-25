@@ -201,7 +201,9 @@ If `product-context.yaml` exists and this feature was a dispatched story:
 
 If all stories in the current layer are completed:
 
-- Suggest running the **layer gate integration test** (defined in `layer_gates` section of the YAML)
+- Suggest running the **layer gate integration test** — the matching BDD journey in
+  `skills/e2e-test/journeys/` (`layer: N`), driven via its `tool-selection.md`; record evidence in
+  `docs/layer-gates/<layer>.md`
 - If the gate passes, update `layer_gates[layer].status: passed` and `completed_at`
 - The next `/aep-dispatch` will advance to the next layer
 

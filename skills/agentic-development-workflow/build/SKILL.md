@@ -514,10 +514,18 @@ do not guess and do not silently stall. Raise a gate:
 
 > **Light mode:** Skip this phase. Otherwise **do not skip just because `agent-browser` is absent** — pick a host-aware method and degrade (see below).
 
-**Pick the method, host-aware.** Call `dogfood_method()` from `.claude/skills/aep-executor/references/dogfood-validation.md` to select the right **native** validation tool for this host/mode:
+**Run the layer's journey.** If the project has the `e2e-test` skill, pick the matching BDD journey from
+`skills/e2e-test/journeys/` and drive it (intent, not a click script). The journey's `target:`
+(web/mobile/desktop) plus `skills/e2e-test/tool-selection.md` resolve which automation tool to use — that
+file is the project-local projection of `e2e_tool(target_type)`. Verify state per each `Verify` line.
 
-- **Claude Code** (any mode) — `/agent-browser:dogfood` if `agent_browser_healthy()`; otherwise **degrade** (non-UI changes → API/curl checks; UI changes → human-eval) rather than skipping.
-- **Codex** — native in-app browser + computer-use (codex-subagent desktop), else a Playwright script (codex-exec headless), falling back to the agent-browser CLI, then API checks.
+**Pick the tool, host-aware.** Call `e2e_tool(target_type)` (web wrapper: `dogfood_method()`) from
+`.claude/skills/aep-executor/references/dogfood-validation.md` to select the right **native** tool for
+this target/host/mode:
+
+- **Claude Code** (web) — `/agent-browser:dogfood` if `agent_browser_healthy()`, else webwright; otherwise **degrade** (non-UI changes → API/curl checks; UI changes → human-eval) rather than skipping.
+- **Codex** (web) — native in-app browser + computer-use (codex-subagent desktop), else a Playwright script (codex-exec headless), falling back to the agent-browser CLI, then API checks.
+- **mobile / desktop** — `agent-device` (mobile) or codex computer-use / agent-browser-Electron (desktop), per the journey's `target:`.
 
 **Target URL stays local.** Resolve via `target_url(local)` from `dogfood-validation.md` — source `.dev-workflow/ports.env` and use `$BASE_URL`:
 
@@ -537,15 +545,22 @@ Whatever the method, emit the unified severity/category/repro report format (see
 
 ---
 
-## Phase 7: E2E Test Script Generation
+## Phase 7: Codify the Journey + Record the Layer Gate
 
-> Skip if E2E testing is not set up for this project. **Light mode:** Skip this phase.
+> Skip if the project has no `e2e-test` skill. **Light mode:** Skip this phase.
 
-Generate a reusable E2E test script if the project has an E2E testing setup. The script should:
+Codify what Phase 6 exercised as a durable **BDD journey** (the regression artifact), not a one-off bash
+script. In `skills/e2e-test/journeys/`:
 
-- Source `.dev-workflow/ports.env` for dynamic ports
-- Use `$BASE_URL` and `$SERVER_URL` (never hardcoded ports)
-- Cover the key user flows from the feature
+- Add/extend the journey for this feature's layer (copy the template in `journeys/README.md`); set its
+  front-matter `target:` and `layer:`.
+- Each `Then` gets a concrete **Verify** line (API response / state check) — "looks done" is not a pass.
+- Keep it tool-agnostic; `tool-selection.md` resolves the tool. API-level assertions can use `$BASE_URL` /
+  `$SERVER_URL` from `.dev-workflow/ports.env` (never hardcoded ports).
+
+**Record the layer gate.** Write the evidence (screenshots, API JSON, PASS/FAIL per Then) to
+`docs/layer-gates/<layer>.md`. The gate is flipped to `passed` in `product-context.yaml` at `/aep-wrap`
+once the journey passes — that is what lets `/aep-dispatch` advance to the next layer.
 
 ---
 
@@ -554,11 +569,11 @@ Generate a reusable E2E test script if the project has an E2E testing setup. The
 > **Light mode:** Skip this phase.
 
 1. Source `.dev-workflow/ports.env` for correct ports
-2. Run any E2E test scripts to verify they pass
+2. Run the project's framework tests (Tier 1) and replay the layer's journey (Tier 2) to verify they pass
 3. Present to the user (or note in progress file):
    - Code review from Phase 5
    - Dogfood report from Phase 6 (if run)
-   - E2E test results from Phase 7 (if run)
+   - Journey result + layer-gate evidence from Phase 7 (if run)
 4. If tests fail, loop back to the appropriate phase
 
 > **Signal update:** Update `.dev-workflow/signals/status.json` with `"phase": 8, "phase_name": "review-results"`.
