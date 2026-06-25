@@ -58,6 +58,14 @@ the `skills` CLI). Downstreams pick this up on their next deliberate re-pin.
   field tying each to the acceptance criteria it proves. "Coverage" is
   acceptance/requirements coverage — every layer criterion proven by ≥1 test — not a
   line/branch %.
+- **Per-project E2E policy** (`policy.md` in the generated skill): single source of
+  truth for _applicable tiers_, _dogfood target_ (`none` / `local` / `deployed:<url>`),
+  and _journey timing_ (`pre-merge` / `post-deploy`). The generator proposes from the
+  stack and **confirms with the user**; `/aep-build` and `/aep-wrap` read it — a
+  CLI/`none` project gets no journey tier (and no `tool-selection.md`), while a
+  pre-release app can dogfood post-deploy against a deployed (e.g. Cloudflare) URL.
+  Skill-managed, never silently overwritten, and **no `AGENTS.md` copy** — the skill is
+  canonical cross-tool, so every runtime reads the same file.
 
 ### Changed
 

@@ -63,7 +63,7 @@ migration script and no user-level skill is required — Phase 4 creates the two
 REAL="skills/e2e-test"
 LEGACY=".claude/skills/e2e-test"   # the old Claude-only placement
 
-if [ -d "$REAL" ] && [ -f "$REAL/journeys/README.md" ]; then echo "state: canonical-bdd (upgrade in place)";
+if [ -d "$REAL" ] && { [ -f "$REAL/policy.md" ] || [ -f "$REAL/journeys/README.md" ]; }; then echo "state: canonical (upgrade in place)";
 elif [ -d "$REAL" ]; then echo "state: real-non-bdd (upgrade)";
 elif [ -d "$LEGACY" ] && [ ! -L "$LEGACY" ]; then echo "state: thin-legacy (migrate $LEGACY → $REAL, then upgrade)";
 else echo "state: absent (create fresh)"; fi
@@ -73,9 +73,11 @@ else echo "state: absent (create fresh)"; fi
 - **thin-legacy** → `mkdir -p skills && git mv .claude/skills/e2e-test skills/e2e-test` first (preserve
   history — `git mv` fails if the destination parent `skills/` doesn't exist yet, which is always the case
   in this state). Never delete a real dir without moving its content.
-- **real-non-bdd / canonical-bdd** → upgrade in place. **Never overwrite hand-written journeys** — only
-  add the missing scaffold files (`journeys/README.md`, `tool-selection.md`, `00-walking-skeleton.md` if
-  no journeys exist) and reconcile `SKILL.md`.
+- **real-non-bdd / canonical** → upgrade in place. **Never overwrite hand-written journeys** or silently
+  rewrite `policy.md` — re-confirm the policy (Phase 2), then add only the missing scaffold files
+  (`policy.md`, `journeys/README.md` + `tool-selection.md` when the target ≠ `none`,
+  `00-walking-skeleton.md` if no journeys exist, `layer-gate-evidence.template.md`) and reconcile
+  `SKILL.md`.
 
 ---
 
@@ -93,6 +95,22 @@ Read the stack to fill template placeholders. Reuse the `/aep-scaffold` **Defaul
 | `{{SERVER_URL}}`   | `.dev-workflow/ports.env` contract                                   | `http://localhost:3000` |
 | `{{TARGET_TYPE}}`  | frontend (native-uniwind→mobile, tauri/electrobun→desktop, else web) | `web`                   |
 
+### E2E policy — **propose, then confirm with the user**
+
+The policy (which tiers gate a layer, where to dogfood, when) is a **per-project decision, not a default
+to assume** — a CLI tool needs no Cloudflare check; a pre-release web app may dogfood post-deploy against
+prod. Propose from the stack, **then ask the user to confirm/adjust** before rendering `policy.md`:
+
+| Placeholder              | Propose from                                                                                                             | Confirm? |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------ | -------- |
+| `{{E2E_TIERS}}`          | project type → tier table (`references/three-tier-model.md`): CLI/lib `[1]`, API `[1,3]`, web/mobile `[1,2,3]`           | **yes**  |
+| `{{E2E_TARGET}}`         | no web frontend → `none`; web frontend + deploy config (`wrangler.*`, `vercel.*`) → offer `deployed:<url>`; else `local` | **yes**  |
+| `{{E2E_JOURNEY_TIMING}}` | `local` target → `pre-merge`; `deployed:<url>` → `post-deploy`                                                           | **yes**  |
+
+Ask plainly, e.g. _"This looks like a {type}. Proposed e2e policy: tiers `{tiers}`, dogfood target
+`{target}`, timing `{timing}`. Keep, or adjust (e.g. dogfood against a deployed Cloudflare URL
+post-merge)?"_ Record the confirmed values; they fill `policy.md` and decide what Phase 3 emits.
+
 ---
 
 ## Phase 3: Emit the skill
@@ -102,17 +120,23 @@ Render each `templates/*.tmpl` with the Phase 2 substitutions into real `skills/
 ```
 skills/e2e-test/
 ├── SKILL.md                        ← templates/e2e-test.SKILL.md.tmpl
-├── journeys/
+├── policy.md                       ← templates/policy.md.tmpl  (E2E_TIERS/TARGET/TIMING from Phase 2)
+├── journeys/                       ← omit entirely when E2E_TARGET == none (Tier-2 N/A)
 │   ├── README.md                   ← templates/journeys-README.md.tmpl
 │   └── 00-walking-skeleton.md      ← templates/journey-00-walking-skeleton.md.tmpl
-├── tool-selection.md               ← templates/tool-selection.md.tmpl
+├── tool-selection.md               ← templates/tool-selection.md.tmpl  (omit when E2E_TARGET == none)
 ├── layer-gate-evidence.template.md ← templates/layer-gate-evidence.md.tmpl
 └── scripts/
     └── seed.sh                     ← templates/seed.sh.tmpl   (chmod +x)
 ```
 
+**Conditional on the policy:** when `E2E_TARGET == none` (CLI/library, `[1]`-only), there is no UI to
+dogfood — **skip `journeys/` and `tool-selection.md`**; the gate is Tier-1 (+ Tier-3) + coverage, and
+`policy.md` records why. When journeys _are_ emitted, the walking skeleton's `target:` is `{{TARGET_TYPE}}`.
+
 On **upgrade**, write only files that are absent; for `SKILL.md` present-but-thin, replace it (it's
-generated infrastructure docs, not hand-authored journeys) and tell the user.
+generated infrastructure docs, not hand-authored journeys) and tell the user. **`policy.md` is never
+silently overwritten** — read the existing one, re-confirm with the user (Phase 2), then update it.
 
 ```bash
 chmod +x skills/e2e-test/scripts/seed.sh
@@ -179,18 +203,24 @@ green + every acceptance criterion proven + prior-layer journeys replay). See
 ## Phase 6: Verify + report
 
 ```bash
-test -f skills/e2e-test/SKILL.md && test -f skills/e2e-test/journeys/README.md \
-  && test -f skills/e2e-test/tool-selection.md && test -x skills/e2e-test/scripts/seed.sh \
+# Core files (always emitted):
+test -f skills/e2e-test/SKILL.md && test -f skills/e2e-test/policy.md \
   && test -f skills/e2e-test/layer-gate-evidence.template.md \
-  && echo "files OK"
+  && test -x skills/e2e-test/scripts/seed.sh && echo "core files OK"
+# Journey tier (only when E2E_TARGET != none):
+if [ -d skills/e2e-test/journeys ]; then
+  test -f skills/e2e-test/journeys/README.md && test -f skills/e2e-test/tool-selection.md \
+    && echo "journey tier OK"
+fi
 # Syntax-check only — do NOT run seed.sh here: at scaffold time there is no dev server, so a full run
 # would block in its wait loop. seed.sh runs for real later via the workspace hook once the server is up.
 bash -n skills/e2e-test/scripts/seed.sh && echo "seed.sh syntax OK"
 ```
 
-Report to the user: what was created vs. upgraded, the canonical symlinks, the chosen default
-`{{TARGET_TYPE}}` and tool track, and the next step (write the Layer-0 journey's project specifics, then
-run it via `/aep-build` Phase 6).
+Report to the user: what was created vs. upgraded, the canonical symlinks, the **confirmed e2e policy**
+(`policy.md`: tiers / target / timing), the chosen `{{TARGET_TYPE}}` and tool track, and the next step
+(write the Layer-0 journey's project specifics, then run it via `/aep-build` Phase 6 — or, for a
+`none`-target project, prove Layer-0 criteria via Tier-1/Tier-3).
 
 ---
 
@@ -202,6 +232,9 @@ run it via `/aep-build` Phase 6).
 - **seed.sh must stay idempotent** and exit 0 on a fresh project (no project-specific seeding yet).
 - **Tool choice is never hard-coded in journeys** — journeys are tool-agnostic; the tool is resolved by
   `tool-selection.md`.
+- **`policy.md` is the single source of truth for tiers / target / timing** — propose from the stack but
+  **confirm with the user**; never silently overwrite it on re-run (re-confirm, then update). No copy goes
+  in `AGENTS.md` — the skill is canonical cross-tool, so all runtimes read this one file.
 
 ## Next step
 

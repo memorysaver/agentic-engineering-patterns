@@ -527,10 +527,17 @@ this target/host/mode:
 - **Codex** (web) — native in-app browser + computer-use (codex-subagent desktop), else a Playwright script (codex-exec headless), falling back to the agent-browser CLI, then API checks.
 - **mobile / desktop** — `agent-device` (mobile) or codex computer-use / agent-browser-Electron (desktop), per the journey's `target:`.
 
-**Target URL stays local.** Resolve via `target_url(local)` from `dogfood-validation.md` — source `.dev-workflow/ports.env` and use `$BASE_URL`:
+**Resolve the target from `skills/e2e-test/policy.md`** (`dogfood_target`) — don't assume local:
+
+- `none` → **skip the journey dogfood** (Tier-2 N/A for this project); prove the layer's criteria via
+  Tier-1 / Tier-3 and jump to "Close the coverage gap" below.
+- `local` → source `.dev-workflow/ports.env` and use `$BASE_URL` (`target_url(local)`).
+- `deployed:<url>` → use that URL (e.g. a Cloudflare preview/prod). If the policy's `journey_timing` is
+  `post-deploy`, the journey runs after merge/deploy (at the `/aep-wrap` layer gate), so Phase 6 here may
+  run only Tier-1/Tier-3 and leave the journey for that post-deploy gate.
 
 ```bash
-source .dev-workflow/ports.env   # target_url(local) → $BASE_URL
+source .dev-workflow/ports.env   # local target → $BASE_URL  (deployed target: use the URL from policy.md)
 ```
 
 If the selected method is `/agent-browser:dogfood`, run it against `$BASE_URL`:

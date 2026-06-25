@@ -52,6 +52,17 @@ agent_device_healthy()  { command -v agent-device >/dev/null 2>&1 && agent-devic
 # codex-native: not a CLI probe — available only when HOST is Codex desktop with computer-use enabled.
 ```
 
+## Target environment (from `policy.md`)
+
+This file picks the *tool*; *which environment* the journey runs against is set by the project's
+[`policy.md`](./policy.md) `dogfood_target` — don't assume local:
+
+- `local` → `$BASE_URL` from `.dev-workflow/ports.env` (pre-merge).
+- `deployed:<url>` → that URL (e.g. a Cloudflare prod/preview), typically post-deploy.
+- `none` → no UI dogfood at all (this file isn't emitted for such projects).
+
+So `target_type` (below) resolves the **tool**; `dogfood_target` (policy.md) resolves the **environment**.
+
 ## Target-type detection
 
 The journey's `target:` front-matter is authoritative. When absent, infer from the stack:

@@ -71,6 +71,13 @@ tiers (`coverage.criteria_covered == criteria_total`, deliberate gaps recorded a
 CLI/library layer with no journey still gets a meaningful gate — its `passed` is Tier-1 green **plus**
 every criterion proven by a scripted case.
 
+**The per-project choice is recorded in the generated skill's `policy.md`** (`applicable_tiers`,
+`dogfood_target` = `none`/`local`/`deployed:<url>`, `journey_timing`) — confirmed with the user at
+scaffold time, then read by `/aep-build` and `/aep-wrap`. That's the single source of truth for "which
+tiers gate _this_ project", so a CLI tool is never asked for a Cloudflare/UI check it doesn't need, and a
+pre-release web app can dogfood post-deploy against prod. No copy lives in `AGENTS.md` — the skill is
+canonical cross-tool, so every runtime reads the same `policy.md`.
+
 ## The two-phase gate (coverage, not one green test)
 
 A layer gate flips through two states, never on a single passing journey:

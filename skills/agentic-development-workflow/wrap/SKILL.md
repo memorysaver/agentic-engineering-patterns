@@ -200,7 +200,13 @@ If `product-context.yaml` exists and this feature was a dispatched story:
 ```
 
 If all stories in the current layer are completed, run the **two-phase layer gate** — a gate is green
-only when the layer is _covered_, not when one journey passes:
+only when the layer is _covered_, not when one journey passes.
+
+**Read `skills/e2e-test/policy.md` first** (if the project has the e2e-test skill): it declares the
+**applicable tiers** (run only these — a `none`-target / CLI project has no Tier-2), the **dogfood
+target** (`none` / `local` / `deployed:<url>`), and the **timing**. With `journey_timing: post-deploy`,
+run the journey against the `deployed:<url>` target _here_ (after merge/deploy) — that is what flips
+`scripted_passed → passed`.
 
 1. **Tier-1 (machinery).** Run the project's scripted suite for this layer. If green, set
    `layer_gates[layer].status: scripted_passed` and record the test file under `evidence.scripted`.

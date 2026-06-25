@@ -5,6 +5,11 @@ description: E2E testing for {{PROJECT_NAME}} — scripted gates ({{TEST_RUNNER}
 
 # E2E Testing
 
+> **Policy first.** [`policy.md`](./policy.md) is the single source of truth for *which tiers gate a
+> layer*, *what environment to dogfood against* (`none` / `local` / `deployed:<url>`), and *when*
+> (`pre-merge` / `post-deploy`). `/aep-build` and `/aep-wrap` read it. If a tier or the journey library is
+> absent from this skill, `policy.md` says why.
+
 Three tiers. Pick the one that matches the question being asked:
 
 | Tier               | Proves                                  | Where                                          |
