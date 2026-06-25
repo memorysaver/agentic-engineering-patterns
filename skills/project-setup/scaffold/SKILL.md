@@ -1,11 +1,11 @@
 ---
 name: aep-scaffold
-description: Scaffold a new project or onboard an existing one with agentic development infrastructure. Use when creating a new project ("new project", "scaffold", "create app") OR setting up an existing project ("onboard project", "set up existing project", "initialize infrastructure", "add workflow to project"). For new projects, creates a full-stack monorepo via Better-T-Stack. For existing projects, audits and fills infrastructure gaps. Both modes set up OpenSpec, workspace hook, and e2e-test skill.
+description: Scaffold a new project or onboard/converge an existing one with agentic development infrastructure. Use when creating a new project ("new project", "scaffold", "create app") OR setting up / repairing an existing project ("onboard project", "set up existing project", "initialize infrastructure", "add workflow to project", "fix the skills layout", "upgrade to canonical"). For new projects, creates a full-stack monorepo via Better-T-Stack. For existing projects, runs an idempotent audit → confirm → converge that repairs drift (canonical cross-tool skills layout, BDD e2e skill, pin). Both modes set up OpenSpec, workspace hook, and the BDD e2e-test skill.
 ---
 
 # Scaffold
 
-Set up a project for agentic development — either by scaffolding a new monorepo or by onboarding an existing project. Both paths produce a project with OpenSpec, a workspace setup hook, and an e2e-test skill skeleton.
+Set up a project for agentic development — either by scaffolding a new monorepo or by onboarding/converging an existing project. Both paths produce a project with OpenSpec, a workspace setup hook, and the canonical BDD e2e-test skill. The existing-project path is an **idempotent audit → confirm → converge** that also repairs drift on re-run.
 
 ---
 
@@ -21,7 +21,7 @@ ls package.json pyproject.toml Cargo.toml go.mod 2>/dev/null
 - **New project** — empty or near-empty directory, no project config files
   → [New Project Flow](#new-project-flow) (Phase 1-8)
 - **Existing project** — has source code and config files
-  → [Existing Project Flow](#existing-project-flow) (Phase 1E-6E)
+  → [Existing Project Flow — audit → confirm → converge](#existing-project-flow--audit--confirm--converge) (Phase 0E-6E)
 
 ---
 
@@ -219,8 +219,8 @@ Key flags:
 
    ```bash
    # Add agentic workflow directories to .gitignore if not already present
-   grep -q '.dev-workflow/' .gitignore || echo '\n# Agentic development workflow\n.dev-workflow/' >> .gitignore
-   grep -q '.feature-workspaces/' .gitignore || echo '.feature-workspaces/' >> .gitignore
+   grep -q '.dev-workflow/' .gitignore || printf '\n# Agentic development workflow\n.dev-workflow/\n' >> .gitignore
+   grep -q '.feature-workspaces/' .gitignore || printf '.feature-workspaces/\n' >> .gitignore
    ```
 
 5. **Commit the scaffold:**
@@ -392,9 +392,9 @@ Generate `.claude/hooks/workspace-setup.sh` tailored to the stack from Phase 1. 
    ```
 4. **Update `.env` files** with assigned ports (detect `.env.example` locations from scaffolded structure)
 5. **Start the dev server** if not already running
-6. **Call seed script** if `.claude/skills/e2e-test/scripts/seed.sh` exists
+6. **Call seed script** if `skills/e2e-test/scripts/seed.sh` exists
 
-Use the template from `/aep-testing-guide` Part 1, filling in project-specific values from the stack chosen in Phase 1.
+Use the template in [`references/workspace-hook.md`](references/workspace-hook.md), filling in project-specific values from the stack chosen in Phase 1.
 
 ```bash
 chmod +x .claude/hooks/workspace-setup.sh
@@ -402,88 +402,36 @@ chmod +x .claude/hooks/workspace-setup.sh
 
 ---
 
-## Phase 8: Generate E2E Test Skill Skeleton
+## Phase 8: Generate the E2E Test Skill (delegate)
 
-Create the project-level testing infrastructure that `/aep-build` Phases 5-8 use:
+Hand off to **`/aep-e2e-skill-scaffolding`** — it generates the project-level testing infrastructure that
+`/aep-build` Phases 5-8 use, in the **canonical BDD layer-gate three-tier** shape: a journey library
+(natural-language Given/When/Then/Verify), a separate `tool-selection.md` (browser/device tool resolved
+per environment), and an idempotent `seed.sh`. It reads the stack chosen in Phase 1 to fill its templates
+and places the skill in **canonical cross-tool form** (visible to Claude Code, Codex, and Pi).
 
-```bash
-mkdir -p .claude/skills/e2e-test/scripts
+Invoke `/aep-e2e-skill-scaffolding`. When it returns, the project has:
+
+```
+skills/e2e-test/                              # REAL dir (canonical source of truth)
+├── SKILL.md  ├── policy.md  └── scripts/seed.sh
+├── journeys/{README.md, 00-walking-skeleton.md} + tool-selection.md   # only when dogfood_target ≠ none
+.claude/skills/e2e-test → ../../skills/e2e-test   # symlink (Claude Code)
+.agents/skills/e2e-test → ../../skills/e2e-test   # symlink (Codex / Pi)
 ```
 
-### Generate `.claude/skills/e2e-test/SKILL.md`
-
-```markdown
----
-name: e2e-test
-description: E2E testing infrastructure for this project. Use when running tests,
-  adding test coverage, or understanding what tests exist.
----
-
-# E2E Test Infrastructure
-
-## Prerequisites
-
-- Dev server running (started by `.claude/hooks/workspace-setup.sh`)
-- `.dev-workflow/ports.env` exists
-
-## Setup
-
-Source ports before running any test:
-
-\`\`\`bash
-source .dev-workflow/ports.env
-\`\`\`
-
-## Test Scripts
-
-| Script  | What it tests           | Tools |
-| ------- | ----------------------- | ----- |
-| seed.sh | DB setup + test account | curl  |
-
-## Adding a New Test
-
-1. Create `.claude/skills/e2e-test/scripts/<feature>-e2e.sh`
-2. Follow the E2E script pattern (see `/aep-testing-guide` Part 2)
-3. Add the script to the table above
-4. Run it: `bash .claude/skills/e2e-test/scripts/<feature>-e2e.sh`
-```
-
-### Generate `.claude/skills/e2e-test/scripts/seed.sh`
-
-```bash
-#!/usr/bin/env bash
-# Seed script — DB migrations + test account creation
-# Called by workspace-setup.sh after dev server starts
-set -euo pipefail
-
-REPO_ROOT="$(git rev-parse --show-toplevel)"
-if [ -f "$REPO_ROOT/.dev-workflow/ports.env" ]; then
-  source "$REPO_ROOT/.dev-workflow/ports.env"
-fi
-SERVER_URL="${SERVER_URL:-http://localhost:3000}"
-
-# Wait for server
-echo "Waiting for server at $SERVER_URL..."
-for i in $(seq 1 30); do
-  curl -s "$SERVER_URL" >/dev/null 2>&1 && break
-  sleep 1
-done
-
-# TODO: Add project-specific DB migrations here
-# TODO: Add test account seeding here
-
-echo "Seed complete."
-```
-
-```bash
-chmod +x .claude/skills/e2e-test/scripts/seed.sh
-```
+> A `none`-target (CLI/library) project ships `policy.md` + `seed.sh` only — no `journeys/` or
+> `tool-selection.md` (Tier-2 is N/A; the gate is Tier-1 + coverage).
 
 ### Commit
 
+Verify the delegate actually produced the skill before committing (a missing path with an explicit
+`git add <path>` would abort the commit), then stage everything it created:
+
 ```bash
-git add .claude/hooks/ .claude/skills/e2e-test/
-git commit -m "feat: add workspace hook and e2e-test skill skeleton"
+test -d skills/e2e-test || { echo "ERROR: /aep-e2e-skill-scaffolding did not produce skills/e2e-test — rerun it"; exit 1; }
+git add -A   # stages skills/e2e-test/, the two discovery symlinks, and the workspace hook
+git commit -m "feat: add workspace hook and BDD e2e-test skill"
 ```
 
 ---
@@ -492,16 +440,20 @@ git commit -m "feat: add workspace hook and e2e-test skill skeleton"
 
 ```
 <project>/
+├── skills/
+│   └── e2e-test/                # REAL dir — canonical, BDD layer-gate e2e (cross-tool)
+│       ├── SKILL.md  ├── policy.md  └── scripts/seed.sh
+│       └── journeys/ + tool-selection.md   # only when dogfood_target ≠ none (omitted for CLI/library)
 ├── .claude/
 │   ├── hooks/
 │   │   └── workspace-setup.sh    # Project-specific workspace init
 │   ├── skills/
-│   │   ├── e2e-test/             # Testing infrastructure
-│   │   │   ├── SKILL.md
-│   │   │   └── scripts/
-│   │   │       └── seed.sh
+│   │   ├── e2e-test → ../../skills/e2e-test   # symlink (Claude Code)
 │   │   └── openspec-*/           # OpenSpec skills
 │   └── commands/opsx/            # OpenSpec command aliases
+├── .agents/
+│   └── skills/
+│       └── e2e-test → ../../skills/e2e-test   # symlink (Codex / Pi)
 ├── apps/
 │   ├── web/                      # Frontend (TanStack/React/Next/etc.)
 │   └── server/                   # Backend (Hono/Express/etc.)
@@ -540,176 +492,206 @@ git commit -m "feat: add workspace hook and e2e-test skill skeleton"
 - **Use `--no-git` for in-place** — the repo already has .git initialized
 - **Never overwrite existing OpenSpec config** — check if `openspec/config.yaml` exists first
 - **Commit OpenSpec artifacts to git** — they are part of the project record
-- **Existing project mode never overwrites** — only creates missing files, never replaces existing ones
+- **Existing project mode is audit → confirm → converge** — reports drift, asks per category, then
+  applies only confirmed changes; idempotent (no-op when already converged). It normalizes layout and
+  upgrades generated infra, but **never overwrites hand-authored content** (journeys, specs, prose)
+- **Version re-pin is recommend-only** — scaffold prints the `npx skills add@<newtag>` commands; the
+  user runs them in a deliberate own-PR re-pin
 
 ---
 
-# Existing Project Flow
+# Existing Project Flow — audit → confirm → converge
 
-For projects that already have source code and want to add agentic development infrastructure.
+For projects that already have source code. This flow is **idempotent**: run it to onboard an existing
+project **or** re-run it later to repair **drift** toward the current AEP standard (canonical cross-tool
+layout, BDD e2e skill, current pin). It **reports first, asks, then converges** — and **never overwrites
+hand-authored content**. Re-running a fully-converged project is a no-op ("already up to date").
 
 ---
 
-## Phase 1E: Detect Stack
-
-Scan the project to understand its technology stack:
+## Phase 0E: Status Check (stack + pin)
 
 ```bash
 echo "=== Detecting stack ==="
-
-# Language
 [ -f "package.json" ] && echo "Language: TypeScript/JavaScript"
 [ -f "pyproject.toml" ] && echo "Language: Python"
 [ -f "Cargo.toml" ] && echo "Language: Rust"
 [ -f "go.mod" ] && echo "Language: Go"
-
-# Package manager
-[ -f "bun.lockb" ] && echo "Package manager: bun"
-[ -f "pnpm-lock.yaml" ] && echo "Package manager: pnpm"
-[ -f "package-lock.json" ] && echo "Package manager: npm"
-[ -f "yarn.lock" ] && echo "Package manager: yarn"
-[ -f "uv.lock" ] && echo "Package manager: uv"
-
-# Monorepo
-[ -f "turbo.json" ] && echo "Monorepo: Turborepo"
-[ -f "nx.json" ] && echo "Monorepo: Nx"
-[ -f "pnpm-workspace.yaml" ] && echo "Monorepo: pnpm workspaces"
-
-# Framework (from package.json or pyproject.toml)
+for lk in "bun.lockb:bun" "pnpm-lock.yaml:pnpm" "package-lock.json:npm" "yarn.lock:yarn" "uv.lock:uv"; do
+  [ -f "${lk%%:*}" ] && echo "Package manager: ${lk##*:}"
+done
+[ -f "turbo.json" ] && echo "Monorepo: Turborepo"; [ -f "nx.json" ] && echo "Monorepo: Nx"
 [ -f "package.json" ] && {
-  grep -q '"hono"' package.json 2>/dev/null && echo "Backend: Hono"
-  grep -q '"express"' package.json 2>/dev/null && echo "Backend: Express"
-  grep -q '"fastify"' package.json 2>/dev/null && echo "Backend: Fastify"
-  grep -q '"next"' package.json 2>/dev/null && echo "Frontend: Next.js"
-  grep -q '"@tanstack/react-router"' package.json 2>/dev/null && echo "Frontend: TanStack Router"
-  grep -q '"nuxt"' package.json 2>/dev/null && echo "Frontend: Nuxt"
-  grep -q '"svelte"' package.json 2>/dev/null && echo "Frontend: Svelte"
+  for f in '"hono":Backend:Hono' '"express":Backend:Express' '"next":Frontend:Next.js' \
+           '"@tanstack/react-router":Frontend:TanStack Router' '"nuxt":Frontend:Nuxt' '"svelte":Frontend:Svelte' \
+           '"native-uniwind":Frontend:React Native' '"@tauri-apps/api":Frontend:Tauri' '"electrobun":Frontend:Electrobun'; do
+    grep -q "${f%%:*}" package.json 2>/dev/null && echo "${f#*:}" | tr ':' ' '
+  done
 }
+
+# AEP pin (skills CLI) + latest release
+echo "=== AEP pin ==="
+[ -f "skills-lock.json" ] && echo "skills-lock.json: present" || echo "skills-lock.json: MISSING (skills CLI not used here)"
+grep -oE 'pinned at \*\*v[0-9.]+\*\*' AGENTS.md 2>/dev/null || echo "AGENTS.md pin note: none"
+echo "latest release: https://github.com/memorysaver/agentic-engineering-patterns/releases/latest"
 ```
 
-Present findings to the user and confirm. If package manager is not detected, recommend:
-
-- TypeScript/JavaScript → **bun**
-- Python → **uv**
+If package manager is undetected, recommend bun (TS/JS) or uv (Python). The frontend signal also sets the
+default e2e `target` (React Native → mobile; Tauri/Electrobun → desktop; else web).
 
 ---
 
-## Phase 2E: Audit Checklist
+## Phase 1E: Audit (drift-aware), grouped by category
 
-Run through the infrastructure checklist and report what exists vs what's missing:
+Report **current vs target** for every category — not just "missing file" but **drift** (wrong layout,
+thin/legacy e2e, stale pin). Nothing is changed in this phase.
 
 ```bash
-echo "=== Infrastructure Audit ==="
+echo "=== A. Canonical skills layout (cross-tool) ==="
+chk() { printf "  %-52s" "$1:"; shift; "$@" && echo "[ok]" || echo "[DRIFT]"; }
+chk "skills-lock.json present"            test -f skills-lock.json
+chk ".agents/skills exists (codex install)" test -d .agents/skills
+chk "AGENTS.md present"                    test -f AGENTS.md
+chk "AGENTS.md has AEP Workflow section"   bash -c 'grep -q "AEP Workflow" AGENTS.md 2>/dev/null'
+chk "CLAUDE.md = @AGENTS.md import"        bash -c '[ "$(head -1 CLAUDE.md 2>/dev/null | tr -d "[:space:]")" = "@AGENTS.md" ]'
+# project-owned skills must be real in skills/ and symlinked into both runtimes
+for s in $( [ -d skills ] && ls skills 2>/dev/null ); do
+  chk "skills/$s exposed to .claude" bash -c "r=\$(readlink -f skills/$s 2>/dev/null); l=\$(readlink -f .claude/skills/$s 2>/dev/null); [ -n \"\$r\" ] && [ \"\$l\" = \"\$r\" ]"
+  chk "skills/$s exposed to .agents" bash -c "r=\$(readlink -f skills/$s 2>/dev/null); l=\$(readlink -f .agents/skills/$s 2>/dev/null); [ -n \"\$r\" ] && [ \"\$l\" = \"\$r\" ]"
+done
 
-# VCS
-printf "  %-45s" "git repository (.git/ exists):"
-[ -d ".git" ] && echo "[x]" || echo "[ ] MISSING"
+echo "=== B. E2E-test skill shape ==="
+# Canonical = policy.md (the single source of truth, always emitted) OR a BDD journeys/ library.
+# A none-target (CLI/library) project legitimately has policy.md and NO journeys/ — keying on
+# journeys/README.md alone would mislabel it as DRIFT forever (breaking idempotency).
+if   [ -f skills/e2e-test/policy.md ] || [ -f skills/e2e-test/journeys/README.md ]; then echo "  canonical     [ok]"
+elif [ -d skills/e2e-test ];                     then echo "  real-non-bdd  [DRIFT → upgrade to BDD]"
+elif [ -d .claude/skills/e2e-test ] && [ ! -L .claude/skills/e2e-test ]; then echo "  thin-legacy   [DRIFT → migrate to skills/ + BDD]"
+else echo "  absent        [DRIFT → generate]"; fi
 
-# OpenSpec
-printf "  %-45s" "openspec/ initialized:"
-[ -d "openspec" ] && echo "[x]" || echo "[ ] MISSING"
+echo "=== C. Infrastructure ==="
+chk "openspec/ initialized"               test -d openspec
+chk ".claude/commands/opsx/ aliases"      test -d .claude/commands/opsx
+chk ".claude/hooks/workspace-setup.sh"    test -f .claude/hooks/workspace-setup.sh
+chk ".dev-workflow/ gitignored"           bash -c 'grep -q ".dev-workflow/" .gitignore 2>/dev/null'
+chk ".feature-workspaces/ gitignored"     bash -c 'grep -q ".feature-workspaces/" .gitignore 2>/dev/null'
 
-printf "  %-45s" ".claude/commands/opsx/ aliases:"
-[ -d ".claude/commands/opsx" ] && echo "[x]" || echo "[ ] MISSING"
-
-# Workspace hook
-printf "  %-45s" ".claude/hooks/workspace-setup.sh:"
-[ -f ".claude/hooks/workspace-setup.sh" ] && echo "[x]" || echo "[ ] MISSING"
-
-# E2E test skill
-printf "  %-45s" ".claude/skills/e2e-test/SKILL.md:"
-[ -f ".claude/skills/e2e-test/SKILL.md" ] && echo "[x]" || echo "[ ] MISSING"
-
-printf "  %-45s" ".claude/skills/e2e-test/scripts/seed.sh:"
-[ -f ".claude/skills/e2e-test/scripts/seed.sh" ] && echo "[x]" || echo "[ ] MISSING"
-
-# Gitignore entries for workflow directories
-printf "  %-45s" ".dev-workflow/ in .gitignore:"
-grep -q '.dev-workflow/' .gitignore 2>/dev/null && echo "[x]" || echo "[ ] MISSING"
-
-printf "  %-45s" ".feature-workspaces/ in .gitignore:"
-grep -q '.feature-workspaces/' .gitignore 2>/dev/null && echo "[x]" || echo "[ ] MISSING"
-
-# Observability stack (candidate telemetry sources for /aep-map binding)
-echo "--- Observability (telemetry source candidates) ---"
+echo "=== D. Observability (telemetry candidates for /aep-map) ==="
 deps="$(cat package.json 2>/dev/null) $(cat pyproject.toml 2>/dev/null)"
 for probe in "sentry:error_stream" "datadog:monitoring" "posthog:analytics" "amplitude:analytics" "@opentelemetry:monitoring" "newrelic:monitoring"; do
-  tool="${probe%%:*}"; kind="${probe##*:}"
-  printf "  %-45s" "$tool ($kind):"
-  echo "$deps" | grep -qi "$tool" && echo "[detected]" || echo "[ ]"
+  printf "  %-45s" "${probe%%:*} (${probe##*:}):"; echo "$deps" | grep -qi "${probe%%:*}" && echo "[detected]" || echo "[ ]"
 done
 printf "  %-45s" "health endpoint (/healthz|/readyz|/health):"
 grep -rqiE '/(healthz|readyz|health)\b' . --include='*.ts' --include='*.js' --include='*.py' 2>/dev/null && echo "[detected]" || echo "[ ]"
 ```
 
-Show the user the results. Only proceed to fill gaps for items marked `[ ] MISSING`.
-
-**Observability → telemetry candidates.** For each `[detected]` tool, record a
-**candidate** entry under `topology.routing.telemetry_sources` (`kind` + a
-`token_env` name for its API key — never the secret; leave `endpoint`/`metric_map`
-for `/aep-map` to bind). These are just candidates: `/aep-map`'s Telemetry Binding
-step ties each needed `success_metric` / `health_signal` to one of them (coverage
-rule in `aep-reflect/references/telemetry-ingestion.md` §1.5). If nothing is
-detected, that's fine — note it so `/aep-map` knows quantitative metrics may need a
-tool added or must stay qualitative.
+**Observability → telemetry candidates.** For each `[detected]` tool, record a **candidate** entry under
+`topology.routing.telemetry_sources` (`kind` + a `token_env` name — never the secret; leave
+`endpoint`/`metric_map` for `/aep-map`). If nothing is detected, note it so `/aep-map` knows quantitative
+metrics may need a tool added or stay qualitative.
 
 ---
 
-## Phase 3E: Fill Gaps
+## Phase 2E: Report + Confirm Direction
 
-For each missing item, generate it. **Never overwrite existing files.**
+Present the audit as a **current → target** summary grouped by category (A canonical layout, B e2e shape,
+C infra, D observability, E version pin). For each category with drift/gaps, list the **proposed change**
+and ask the user which to apply. **Default = fix all drift + gaps.** Use a per-category checklist (e.g.
+the AskUserQuestion-style confirm). Only confirmed categories are converged in Phase 3E.
 
-### Git repository (if missing)
+---
+
+## Phase 3E: Converge (idempotent)
+
+Apply only the confirmed changes. Each step is a no-op when already satisfied. **Never overwrite
+hand-authored content.**
+
+### A. Canonical skills layout
+
+Normalize `.claude/skills/aep-*` to symlinks into `.agents/skills` so both runtimes share one copy (the
+README "gotcha"), and ensure `AGENTS.md` / `CLAUDE.md`:
 
 ```bash
-git init -b main
-git add -A
-git commit -m "chore: initial commit"
-# Single-branch mode: AEP auto-detects `main` — do not pin aep.integration-branch.
-# Two-branch mode is adopted later just by creating `develop` (auto-detected).
+# Share one copy of each aep-* skill across runtimes. NEVER `rm` a real dir unless the canonical
+# copy is known to exist — otherwise PROMOTE it (preserve content) before linking. A Claude-only
+# install (real dirs in .claude/skills, none in .agents/skills) is the exact case this must not destroy.
+if [ -d .claude/skills ] && [ -d .agents/skills ]; then
+  ( cd .claude/skills
+    for d in aep-*; do
+      [ -e "$d" ] || continue                 # nothing to normalize
+      [ -L "$d" ] && continue                  # already a symlink — leave it
+      if [ -e "../../.agents/skills/$d" ]; then
+        rm -rf "$d" && ln -s "../../.agents/skills/$d" "$d"          # canonical copy exists → safe to replace
+      else
+        mv "$d" "../../.agents/skills/$d" && ln -s "../../.agents/skills/$d" "$d"   # only copy → promote, don't destroy
+      fi
+    done )
+fi
+# CLAUDE.md = @AGENTS.md import — only create when ABSENT (never clobber a hand-authored CLAUDE.md).
+if [ -f AGENTS.md ] && [ ! -f CLAUDE.md ]; then printf '@AGENTS.md\n' > CLAUDE.md; fi
+# A real-content CLAUDE.md that isn't the import is flagged for manual merge — NOT overwritten.
+if [ -f CLAUDE.md ] && [ "$(head -1 CLAUDE.md | tr -d '[:space:]')" != "@AGENTS.md" ]; then
+  echo "NOTE: CLAUDE.md has hand-authored content — merge it into AGENTS.md by hand, then set CLAUDE.md to '@AGENTS.md'."
+fi
 ```
 
-### OpenSpec (if missing)
+Project-owned skill exposure (real `skills/<name>` + both symlinks) is handled by the skill's own
+generator — for e2e-test that's `/aep-e2e-skill-scaffolding` (next step).
 
-Follow the same steps as [Phase 5: Initialize OpenSpec](#phase-5-initialize-openspec) from the new project flow — `openspec init`, config, command aliases.
+### B. E2E-test skill
 
-### Workspace setup hook (if missing)
+Delegate to **`/aep-e2e-skill-scaffolding`** — it creates (absent) or upgrades (thin-legacy / real-non-bdd
+→ BDD) the skill in canonical cross-tool form, idempotently. It migrates a legacy `.claude/skills/e2e-test`
+real dir into `skills/` first and never overwrites hand-written journeys.
 
-Follow the same steps as [Phase 7: Generate Workspace Setup Hook](#phase-7-generate-workspace-setup-hook), using the detected stack from Phase 1E instead of the chosen stack.
+### C. Infrastructure (fill gaps)
 
-### E2E test skill (if missing)
+For each `[DRIFT]`/missing infra item, generate it — **never overwrite existing files**:
 
-Follow the same steps as [Phase 8: Generate E2E Test Skill Skeleton](#phase-8-generate-e2e-test-skill-skeleton).
+- **Git repo:** `git init -b main && git add -A && git commit -m "chore: initial commit"` (AEP auto-detects `main`).
+- **OpenSpec:** follow [Phase 5: Initialize OpenSpec](#phase-5-initialize-openspec).
+- **Workspace hook:** follow [Phase 7](#phase-7-generate-workspace-setup-hook) using the detected stack.
+- **Gitignore:**
+  ```bash
+  grep -q '.dev-workflow/' .gitignore || printf '\n# Agentic development workflow\n.dev-workflow/\n' >> .gitignore
+  grep -q '.feature-workspaces/' .gitignore || printf '.feature-workspaces/\n' >> .gitignore
+  ```
 
-### Workflow gitignore entries (if missing)
+### E. Version pin — detect + recommend (do NOT auto-run)
+
+Re-pinning AEP is a **deliberate, own-PR action** (README), so scaffold only **recommends** it. When the
+local pin lags the latest release, print the commands for the user to run themselves:
 
 ```bash
-grep -q '.dev-workflow/' .gitignore || echo '\n# Agentic development workflow\n.dev-workflow/' >> .gitignore
-grep -q '.feature-workspaces/' .gitignore || echo '.feature-workspaces/' >> .gitignore
+echo "Local pin lags latest. To re-pin (run yourself, in its own PR):"
+echo "  npx skills add memorysaver/agentic-engineering-patterns@<newtag> -a claude-code --skill '*' -y"
+echo "  npx skills add memorysaver/agentic-engineering-patterns@<newtag> -a codex        --skill '*' -y"
+echo "  then normalize .claude/skills/aep-* symlinks (step A), bump the AGENTS.md pin note, commit --no-verify"
 ```
 
 ---
 
 ## Phase 4E: Verify
 
-Re-run the audit checklist from Phase 2E. Everything should now be `[x]`.
+Re-run the Phase 1E audit. Every confirmed category should now read `[ok]`. A fully-converged project
+re-running this flow produces no changes — **idempotent**.
 
 ---
 
 ## Phase 5E: Commit
 
 ```bash
-git add .claude/ openspec/ .gitignore
-git commit -m "feat: initialize agentic development infrastructure"
+git add -A
+git commit -m "feat: converge agentic development infrastructure"
 ```
 
 ---
 
 ## Phase 6E: Next Steps
 
-| Command              | What it does                                                |
-| -------------------- | ----------------------------------------------------------- |
-| `/aep-design`        | Start designing a feature (standalone mode)                 |
-| `/aep-dispatch`      | Pick the next story (if product context exists)             |
-| `/aep-testing-guide` | Detailed guide for testing strategy and adding test scripts |
-| `/aep-git-ref`       | AEP git + worktree reference (worktree lifecycle, naming)   |
+| Command                      | What it does                                              |
+| ---------------------------- | --------------------------------------------------------- |
+| `/aep-design`                | Start designing a feature (standalone mode)               |
+| `/aep-dispatch`              | Pick the next story (if product context exists)           |
+| `/aep-e2e-skill-scaffolding` | Generate/upgrade the BDD layer-gate e2e-test skill        |
+| `/aep-git-ref`               | AEP git + worktree reference (worktree lifecycle, naming) |

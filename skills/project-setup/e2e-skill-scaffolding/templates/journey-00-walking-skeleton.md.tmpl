@@ -1,0 +1,37 @@
+---
+target: {{TARGET_TYPE}}
+layer: 0
+covers: [] # Layer-0 acceptance-criterion ids once the MVP contract is written (feeds the gate coverage matrix)
+---
+
+# Journey 00 — Walking skeleton
+
+**Story:** As a new user, I want to reach the app and complete the thinnest end-to-end path, so that the
+architecture is proven before any module goes deep.
+
+**Covers:** Layer 0 (walking skeleton) — the single end-to-end journey from the Layer-0 MVP contract.
+Key endpoints/tools: `<health endpoint>`, `<primary route>`. _(Fill in for {{PROJECT_NAME}}.)_
+
+**Preconditions:** dev server running (started by `.claude/hooks/workspace-setup.sh`);
+`.dev-workflow/ports.env` present; `scripts/seed.sh` has run.
+
+> This journey ships as a **seed** — replace the `<…>` placeholders with the real Layer-0 path for
+> {{PROJECT_NAME}}. One green scenario end-to-end is the goal; don't chase coverage here.
+
+## Scenario 00.1 — The app is reachable
+- **Given** the dev server is up at `{{BASE_URL}}`
+- **When** I open the app's entry route
+- **Then** the landing/home surface renders without error
+- **Verify (API/state):** `GET {{SERVER_URL}}/<health>` returns `200`; the entry route's primary element
+  is present in the UI snapshot.
+
+## Scenario 00.2 — The thinnest user path completes
+- **Given** I am on the entry surface (after 00.1)
+- **When** I perform the single most important user action of the Layer-0 contract _(e.g. sign in, create
+  the first record, submit the core form)_
+- **Then** I reach the expected next surface with the expected state
+- **Verify (API/state):** the corresponding API call returns success and the persisted state reflects the
+  action (re-fetch or reload-and-re-snapshot — not just a rendered toast).
+
+## Cleanup
+Soft reset — re-run `scripts/seed.sh` to converge the fixture for the next journey.

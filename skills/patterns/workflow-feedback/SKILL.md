@@ -24,7 +24,7 @@ DOWNSTREAM PROJECT                           AEP REPO
   (standardized + classified)                  ↓
                                              Human approves
                                                ↓
-                                             sync-downstream.sh ──→ updated skills flow back
+                                             tag release → re-pin downstreams ──→ updated skills flow back
 ```
 
 **Session:** Main, interactive with user
@@ -141,7 +141,7 @@ The human approves, modifies, or rejects each item. **Never auto-edit skill file
 
 For each approved item, create the target file following the conventions in `docs/README.md`.
 
-After writing, remind the human to run `bash scripts/sync-downstream.sh` to push any resulting skill improvements back to downstream projects.
+After writing, remind the human that skill improvements reach downstream projects via a deliberate **re-pin** (not a push script): cut a new AEP release tag, then in each downstream registered in `.aep/config.yaml` re-run `npx skills add memorysaver/agentic-engineering-patterns@<newtag>` once per agent (`-a claude-code`, then `-a codex`) and commit the updated skill files + `skills-lock.json`. See the README "Upgrading to a new release" flow.
 
 ### Guardrails (Review)
 

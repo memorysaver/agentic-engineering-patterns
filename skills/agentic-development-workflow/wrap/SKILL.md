@@ -199,11 +199,33 @@ If `product-context.yaml` exists and this feature was a dispatched story:
 # Read product-context.yaml and check if all stories in the active layer are completed
 ```
 
-If all stories in the current layer are completed:
+If all stories in the current layer are completed, run the **two-phase layer gate** — a gate is green
+only when the layer is _covered_, not when one journey passes.
 
-- Suggest running the **layer gate integration test** (defined in `layer_gates` section of the YAML)
-- If the gate passes, update `layer_gates[layer].status: passed` and `completed_at`
-- The next `/aep-dispatch` will advance to the next layer
+**Read `skills/e2e-test/policy.md` first** (if the project has the e2e-test skill): it declares the
+**applicable tiers** (run only these — a `none`-target / CLI project has no Tier-2), the **dogfood
+target** (`none` / `local` / `deployed:<url>`), and the **timing**. With `journey_timing: post-deploy`,
+run the journey against the `deployed:<url>` target _here_ (after merge/deploy) — that is what flips
+`scripted_passed → passed`.
+
+1. **Tier-1 (machinery).** Run the project's scripted suite for this layer. If green, set
+   `layer_gates[layer].status: scripted_passed` and record the test file under `evidence.scripted`.
+2. **Tier-2/3 (product) + regression.** _Skip this step entirely if `dogfood_target == none`_ (CLI/library
+   — Tier-2 N/A; prove criteria via Tier-1/Tier-3). Otherwise run the matching BDD journey/journeys in
+   `skills/e2e-test/journeys/` (`layer: N`) via their `tool-selection.md`, plus any applicable API
+   drivers, and **replay prior-layer journeys** — **seeding the policy's target** first (a `deployed:<url>`
+   target needs `SERVER_URL=<url> bash skills/e2e-test/scripts/seed.sh`, not local). Record evidence —
+   screenshots, API JSON, PASS/FAIL per Then, and the two coverage matrices — in `docs/layer-gates/<layer>.md`.
+3. **Check coverage.** Confirm every layer acceptance criterion maps to ≥1 proving test
+   (`coverage.criteria_covered == criteria_total`). Genuine gaps were already auto-closed during
+   `/aep-build` Phase 6; a _deliberate_ deferral must carry a `WAIVER: <reason>` line. Never flip to
+   `passed` while criteria are silently uncovered.
+4. **Flip to `passed`** only when all applicable tiers are green AND coverage is complete-or-waived AND
+   the regression replay passed; set `completed_at`. If only Tier-1 passed, leave it `scripted_passed`.
+5. **Ask the human before advancing.** Surface the coverage summary (`criteria_covered / criteria_total`,
+   per-tier status, any waivers) and **confirm with the user** that the next layer's design should begin.
+   The gate flip is automatic-on-evidence; the _advance_ is a human decision — the next `/aep-dispatch`
+   proceeds only after that confirmation.
 
 ### Feedback Loop
 

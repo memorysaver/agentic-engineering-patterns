@@ -1,0 +1,63 @@
+# E2E Journeys — the BDD test plan
+
+This is the **tier-2 dogfood plan** for {{PROJECT_NAME}}: a library of natural-language, BDD-style
+**user-story journeys**, one per capability area, covering the shipped surface layer by layer. They
+describe *intent* (Given / When / Then / **Verify**), not a click script — an executing agent translates
+each step into the right tool calls, with the tool resolved by [`../tool-selection.md`](../tool-selection.md).
+
+How to run a journey is in the **execution protocol** of [`../SKILL.md`](../SKILL.md).
+
+## The library
+
+| #  | Journey                                      | Covers (layer / criteria)   |
+| -- | -------------------------------------------- | --------------------------- |
+| 00 | [Walking skeleton](00-walking-skeleton.md)   | Layer 0 — MVP contract path |
+| .. | _add a row per journey as the product grows_ | _layer N / criterion ids_   |
+
+## Journey doc template
+
+Copy this when adding a journey. Keep it **light Gherkin** — prose Given/When/Then, no step-definition
+binding (the executor is an LLM agent, not Cucumber).
+
+```markdown
+---
+target: web        # web | mobile | desktop — picks the tool track in ../tool-selection.md
+layer: 0           # which layer gate this journey proves
+covers: []         # acceptance-criterion / capability ids this journey proves (feeds the gate coverage matrix)
+---
+
+# Journey NN — <title>
+
+**Story:** As a <role>, I want <capability>, so that <value>.
+
+**Covers:** <feature/criterion/layer ids> — key endpoints/tools: `<api/tool>`, `<api/tool>`.
+
+**Preconditions:** <clean-slate / seed / a connected service / etc.>
+
+## Scenario NN.1 — <name>
+- **Given** <starting state>
+- **When** <the user action, described by intent>
+- **Then** <the observable outcome>
+- **Verify (API/state):** <which API call, DB row, or inspector view confirms it>
+
+## Scenario NN.2 — <name>
+...
+
+## Cleanup
+<what to undo so the next journey starts clean — or "soft reset">
+```
+
+## Conventions
+
+- **Verify-before-claim:** every `Then` needs a **Verify** line — a concrete API response, DB/inspector
+  check, or reload-and-re-snapshot. "Looks done" is not a pass.
+- **Auth is browser-simulated** where the product has a real sign-in (drive the UI form) — not an API
+  auto-login. Backend-only fixture state may use `../scripts/seed.sh`.
+- **Report PASS/FAIL per Then**, with evidence (screenshot path + API JSON).
+- **Cost-aware:** scenarios that spend real model/compute budget stay minimal; disable any loop in cleanup.
+- A journey maps to a layer gate: record evidence in `docs/layer-gates/<layer>.md`, then flip
+  `layer_gates[layer=N]` in `product-context.yaml`.
+- **Coverage, not one green test.** Every acceptance criterion in a layer must map to ≥1 scenario
+  `Verify` (or a scripted case / API check). The gate is **two-phase** — `scripted_passed` (framework
+  tests green) → `passed` (journeys + coverage complete). Uncovered criteria are auto-closed during
+  `/aep-build` Phase 6; record the criterion→test matrix in `docs/layer-gates/<layer>.md`.

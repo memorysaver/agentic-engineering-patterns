@@ -26,7 +26,7 @@ G4 是「合併後的生產回饋閉環」。現況：AEP 的 dogfood（`/aep-bu
 
 ## 研究依據（host 原生能力）
 
-- **Claude Code：** agent-browser 是原生瀏覽器工具（CDP 驅動 Chrome、accessibility-tree `@eN` refs、screenshot `--annotate`、video、auth vault），`/agent-browser:dogfood` 已是 Phase 6 用的探索式測試流程。健康偵測 `agent_browser_healthy()`（`agent-browser navigate about:blank`）已存在於 `testing-guide`。
+- **Claude Code：** agent-browser 是原生瀏覽器工具（CDP 驅動 Chrome、accessibility-tree `@eN` refs、screenshot `--annotate`、video、auth vault），`/agent-browser:dogfood` 已是 Phase 6 用的探索式測試流程。健康偵測 `agent_browser_healthy()`（`agent-browser navigate about:blank`）自含於 `patterns/executor/references/dogfood-validation.md`。
 - **Codex：** computer-use（GPT-5.4 原生：截圖 + 滑鼠鍵盤 + 寫 Playwright）與 in-app browser（Atlas）**僅桌面 app**；`codex exec`（headless）**沒有**，只能寫並跑 Playwright 腳本或退回 agent-browser CLI。→ Codex 必須分桌面 / headless 兩條路。
 
 來源：[OpenAI Codex app](https://developers.openai.com/codex/app)、[GPT-5.4 — OpenAI](https://openai.com/index/introducing-gpt-5-4/)、[Codex superapp — MacStories](https://www.macstories.net/news/openai-unveils-codex-superapp-update-with-computer-use-automations-built-in-browser-and-more/)、[Codex for Chrome — eigent.ai](https://www.eigent.ai/blog/codex-for-chrome)。
@@ -115,14 +115,14 @@ topology:
 
 ## 實作時會動到的檔案（待展開）
 
-| 檔案                                                                     | 變更                                                                                                |
-| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
-| `agentic-development-workflow/build/SKILL.md`                            | Phase 6 改呼叫 `dogfood_method()`（host-aware），不再「沒裝就 skip」                                |
-| 新 `patterns/.../references/dogfood-validation.md`                       | `dogfood_method()` 偵測 + `target_url()` 解析 + 報告格式                                            |
-| `patterns/executor/references/codex-native.md`                           | 新增 codex-subagent 用 in-app browser / computer-use 做 dogfood 的 recipe；codex-exec 用 Playwright |
-| `patterns/autopilot/references/tick-protocol.md` + `post-merge-guard.md` | 新增 post-deploy dogfood 步驟                                                                       |
-| `product-context/reflect/SKILL.md`                                       | 接收 dogfood 報告 → 分類 → 建 story（已有分類器，補來源）                                           |
-| `project-setup/testing-guide/SKILL.md`                                   | 重用既有 `agent_browser_healthy()`；補 playwright 偵測                                              |
+| 檔案                                                                       | 變更                                                                                                   |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `agentic-development-workflow/build/SKILL.md`                              | Phase 6 改呼叫 `dogfood_method()`（host-aware），不再「沒裝就 skip」                                   |
+| 新 `patterns/.../references/dogfood-validation.md`                         | `dogfood_method()` 偵測 + `target_url()` 解析 + 報告格式                                               |
+| `patterns/executor/references/codex-native.md`                             | 新增 codex-subagent 用 in-app browser / computer-use 做 dogfood 的 recipe；codex-exec 用 Playwright    |
+| `patterns/autopilot/references/tick-protocol.md` + `post-merge-guard.md`   | 新增 post-deploy dogfood 步驟                                                                          |
+| `product-context/reflect/SKILL.md`                                         | 接收 dogfood 報告 → 分類 → 建 story（已有分類器，補來源）                                              |
+| `patterns/executor/references/dogfood-validation.md`（health probes 自含） | `agent_browser_healthy()` / `playwright_available()` 等 probe 內含；後續泛化為 `e2e_tool(target_type)` |
 
 ---
 

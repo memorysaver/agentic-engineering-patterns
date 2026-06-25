@@ -5,7 +5,7 @@
 #   - git worktree add succeeds and registers correctly
 #   - the worktree's git state is sane (branch, HEAD, log)
 #   - workspace-setup.sh's IS_WORKSPACE detection block correctly distinguishes
-#     the worktree from the main repo (mirrors testing-guide/SKILL.md)
+#     the worktree from the main repo (mirrors scaffold/references/workspace-hook.md)
 #   - .dev-workflow/signals/ paths resolve from both inside and outside the worktree
 #   - autopilot's `git -C <worktree> diff --stat` liveness check works
 #   - both launch-blocking regression scenarios (orphan branch, orphan registration)
@@ -53,7 +53,7 @@ echo "=== 3. Worktree git state ==="
 )
 
 echo "=== 4. workspace-setup.sh IS_WORKSPACE detection ==="
-# Mirror the IS_WORKSPACE detection block from testing-guide/SKILL.md
+# Mirror the IS_WORKSPACE detection block from scaffold/references/workspace-hook.md
 (
   cd "$WORKTREE_PATH"
   REPO_ROOT="$(git rev-parse --show-toplevel)"

@@ -72,8 +72,9 @@ data-model, scope-direction, copy-tone, performance-quality). A single
 `product-context.yaml` (or, in v2 split mode, `product/index.yaml` +
 per-capability maps) is the single source of truth. The surface is **narrow**
 (16 skills across four plugins) and an explicit v2 principle forbids adding
-new commands. Distribution is a local `scripts/sync.sh` / `sync-downstream.sh`
-that pushes skills into downstream projects' `.claude/skills/`.
+new commands. Distribution is the [`skills` CLI](https://github.com/vercel-labs/skills)
+(`npx skills add`), which installs skills into projects' `.claude/skills/` and
+`.agents/skills/` with a `skills-lock.json` content pin.
 
 ---
 
@@ -87,7 +88,7 @@ that pushes skills into downstream projects' `.claude/skills/`.
 | **Orchestration model**  | Task subagents of main CC session; each gets fresh ~200K                                                                                                                                                                                                                   | Separate `tmux` + `git worktree` per story (on a `feat/<name>` branch); main session never inspects workspace code directly; signal files are the only channel                  |
 | **Design refinement**    | `/gsd-discuss-phase` surfaces gray areas by feature type (visual / API / content / organization); writes `CONTEXT.md` consumed by researcher + planner; has `discuss` vs `assumptions` modes                                                                               | `/design` refines one spec interactively; `/calibrate` handles seven quality dimensions with heavy / light classes; `.5` alignment layers are structural                        |
 | **Verification**         | `/gsd-verify-work` extracts testable deliverables, walks user through each, auto-diagnoses failures, spawns fix-plans; `/gsd-audit-milestone` checks Definition of Done; `/gsd-secure-phase` anchors verification to threat model; `/gsd-review` runs cross-AI peer review | Layer gates (integration tests at layer boundaries); generator/evaluator separation (`/gen-eval`); `/validate` artifact quality gates; `/reflect` classifies post-ship feedback |
-| **Distribution**         | `npx get-shit-done-cc@latest`, 14 runtimes, `--global` / `--local`, `--uninstall` per runtime                                                                                                                                                                              | Local repo + `scripts/sync.sh` to copy skills into any project's `.claude/skills/` with `aep-` prefix                                                                           |
+| **Distribution**         | `npx get-shit-done-cc@latest`, 14 runtimes, `--global` / `--local`, `--uninstall` per runtime                                                                                                                                                                              | `npx skills add memorysaver/agentic-engineering-patterns` (skills CLI), per agent, `aep-` prefix + `skills-lock.json` pin                                                       |
 | **Session management**   | `/gsd-pause-work` writes `HANDOFF.json`; `/gsd-resume-work`; `/gsd-session-report`; `/gsd-thread`; `/gsd-plant-seed` (trigger-based future ideas); `/gsd-note`; `/gsd-add-todo`; `/gsd-forensics`; `/gsd-health --repair`                                                  | `lessons.md` per workspace, escalated to `lessons-learned/` on `/wrap`; `/workflow-feedback` classifies process learnings — no ad-hoc session artifacts                         |
 | **Quality gates**        | Tactical: schema-drift detection, scope-reduction detection, `gsd-prompt-guard` hook (injection vector scanning), path-traversal validation, centralized `security.cjs` module                                                                                             | Structural: layer gates (integration tests), generator/evaluator separation, seven-dimension calibration taxonomy                                                               |
 | **Command surface**      | ~40+ commands (rich but high cognitive load)                                                                                                                                                                                                                               | 16 skills with an explicit "no new commands" v2 principle                                                                                                                       |
@@ -230,14 +231,15 @@ blocked-on flags would close a visibility gap during long autonomous runs.
 
 ### Tier 3 — Strategic, higher cost
 
-#### 3.1 npm distribution
+#### 3.1 npm distribution — RESOLVED
 
 GSD's `npx get-shit-done-cc@latest` installer is a significant adoption lever.
-AEP currently requires cloning this repo and running `sync.sh` to push skills
-into `.claude/skills/` — fine for the author, high-friction for third-party
-adoption. If AEP is intended to spread, an `npx aep-cc` installer (with
-`--global` / `--local`, runtime selection, and `--uninstall`) is the right
-move. Tradeoff: locks the repo into a packaging + release workflow.
+This recommendation has since been **adopted**: AEP distributes through the
+[`skills` CLI](https://github.com/vercel-labs/skills) (`npx skills add
+memorysaver/agentic-engineering-patterns -a <agent> --skill '*'`), which covers
+runtime selection (`-a`), project vs `--global` install, content pinning via
+`skills-lock.json`, and removal — no clone, no copy scripts. The earlier local
+push/sync scripts were removed once the CLI landed.
 
 #### 3.2 Persistent `threads/` directory
 

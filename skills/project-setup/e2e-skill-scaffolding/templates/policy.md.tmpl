@@ -1,0 +1,52 @@
+# Project E2E Policy — {{PROJECT_NAME}}
+
+**This file is the single source of truth for how this project is tested.** `/aep-build` and `/aep-wrap`
+read it to decide *which tiers gate a layer*, *what environment to dogfood against*, and *when*. It is
+**skill-managed** — re-run `/aep-e2e-skill-scaffolding` to revisit it when the project's type or deploy
+target changes. No copy lives in `AGENTS.md`: this skill is canonical cross-tool, so Claude Code, Codex,
+and Pi all read this same file — that is what keeps behavior consistent across agents.
+
+## The policy (confirmed at scaffold; edit as the project evolves)
+
+| Decision             | This project              |
+| -------------------- | ------------------------- |
+| **Applicable tiers** | {{E2E_TIERS}}             |
+| **Dogfood target**   | {{E2E_TARGET}}            |
+| **Journey timing**   | {{E2E_JOURNEY_TIMING}}    |
+
+- **Applicable tiers** — only these tiers gate a layer (its `passed` needs them green + every acceptance
+  criterion proven). A CLI/library is usually `1` only; an API service `1 + 3`; a web/mobile app
+  `1 + 2 (+ 3)`. See the tier table in [`SKILL.md`](./SKILL.md).
+- **Dogfood target** — where the Tier-2 journeys run:
+  - `none` — no live UI verification (CLI/library, or backend-only). Tier-2 is **N/A**; a layer's gate is
+    Tier-1 (+ Tier-3) + coverage. **No agent-browser / deployed check at all.**
+  - `local` — against the local dev server (`$BASE_URL` from `.dev-workflow/ports.env`), pre-merge.
+  - `deployed:<url>` — against a deployed environment (e.g. a Cloudflare prod/preview URL), typically
+    after merge → deploy.
+- **Journey timing** — `pre-merge` (the journey runs in `/aep-build` Phase 6 against `local`) or
+  `post-deploy` (after merge → deploy, the layer gate runs the journey against the `deployed:<url>`
+  target). With `post-deploy`, a merge sits at **`scripted_passed`** until the deployed dogfood flips it
+  to `passed` — that intermediate state honestly says "machinery green, product not yet verified".
+
+## Options reference
+
+```
+applicable_tiers : [1] | [1,3] | [1,2] | [1,2,3]     # which tiers gate a layer (project-type driven)
+dogfood_target   : none | local | deployed:<url>      # where Tier-2 journeys run
+journey_timing   : pre-merge | post-deploy            # when the journey half of the gate runs
+```
+
+## How the workflow honors it
+
+- **`/aep-build` Phase 6** — if `dogfood_target == none`, skip the journey dogfood (Tier-2 N/A) and prove
+  every criterion via Tier-1 / Tier-3 instead. Otherwise resolve the URL from `dogfood_target`
+  (`local` → `$BASE_URL`; `deployed:<url>` → that URL) and run the journey with the tool from
+  [`tool-selection.md`](./tool-selection.md).
+- **`/aep-wrap` layer gate** — runs only the **applicable tiers**; with `journey_timing: post-deploy` it
+  runs the journey against the `deployed:<url>` target after the merge/deploy, then flips
+  `scripted_passed → passed`.
+- **`/aep-dispatch`** — blocks the next layer until the gate is `passed` under this policy (a
+  `scripted_passed` gate still blocks: "machinery green, dogfood pending").
+
+> Changing this policy is a deliberate act — it changes what "done" means for every layer. Re-run
+> `/aep-e2e-skill-scaffolding`; it re-confirms with you and never silently rewrites your choices.

@@ -96,28 +96,28 @@ More: [README.md "The Feature Lifecycle"](../README.md) and [skills/agentic-deve
 
 ## 3. The 20 Skills at a Glance
 
-| Skill                    | Plugin                       | Session   | Purpose                                                           |
-| ------------------------ | ---------------------------- | --------- | ----------------------------------------------------------------- |
-| `/aep-onboard`           | project-setup                | Main      | Install tools, verify env, configure plugins, orient new users    |
-| `/aep-scaffold`          | project-setup                | Main      | Scaffold a full-stack TypeScript monorepo + initialize OpenSpec   |
-| `/aep-testing-guide`     | project-setup                | Main      | Reference for workspace-level quality infrastructure              |
-| `/aep-envision`          | product-context              | Main      | Opportunity brief + context document (what to build)              |
-| `/aep-map`               | product-context              | Main      | System map + story graph + agent topology (how to decompose)      |
-| `/aep-model`             | product-context              | Main      | Object-first UI structure (OOUX/ORCA Object Map) for UI products  |
-| `/aep-validate`          | product-context              | Main      | Generator/evaluator validation of any AEP artifact                |
-| `/aep-dispatch`          | product-context              | Main      | Pick next story + create OpenSpec change + hand off               |
-| `/aep-calibrate`         | product-context              | Main      | Human alignment checkpoint for any quality dimension              |
-| `/aep-reflect`           | product-context              | Main      | Classify feedback + update context (close the loop)               |
-| `/aep-watch`             | product-context              | Main      | Ingest telemetry/errors → auto-file stories (self-feeding loop)   |
-| `/aep-design`            | agentic-development-workflow | Main      | Interactive feature design (explore + propose + review)           |
-| `/aep-launch`            | agentic-development-workflow | Main      | Spawn autonomous workspace + optional evaluator                   |
-| `/aep-build`             | agentic-development-workflow | Workspace | Implement → test → PR → merge (autonomous)                        |
-| `/aep-wrap`              | agentic-development-workflow | Main      | Post-merge archive + cleanup + update story status                |
-| `/aep-git-ref`           | agentic-development-workflow | Main      | AEP git + worktree conventions (on-demand)                        |
-| `/aep-autopilot`         | patterns                     | Main      | Hands-free dispatch → launch → monitor → wrap loop                |
-| `/aep-gen-eval`          | patterns                     | Both      | Reusable generator/evaluator pattern for honest evaluation        |
-| `/aep-workflow`          | patterns                     | Main      | Dynamic workflows — write a custom multi-agent harness for a task |
-| `/aep-workflow-feedback` | patterns                     | Main      | Capture + review process learnings from builds                    |
+| Skill                        | Plugin                       | Session   | Purpose                                                           |
+| ---------------------------- | ---------------------------- | --------- | ----------------------------------------------------------------- |
+| `/aep-onboard`               | project-setup                | Main      | Install tools, verify env, configure plugins, orient new users    |
+| `/aep-scaffold`              | project-setup                | Main      | Scaffold a full-stack TypeScript monorepo + initialize OpenSpec   |
+| `/aep-e2e-skill-scaffolding` | project-setup                | Main      | Generate/upgrade the canonical BDD layer-gate e2e-test skill      |
+| `/aep-envision`              | product-context              | Main      | Opportunity brief + context document (what to build)              |
+| `/aep-map`                   | product-context              | Main      | System map + story graph + agent topology (how to decompose)      |
+| `/aep-model`                 | product-context              | Main      | Object-first UI structure (OOUX/ORCA Object Map) for UI products  |
+| `/aep-validate`              | product-context              | Main      | Generator/evaluator validation of any AEP artifact                |
+| `/aep-dispatch`              | product-context              | Main      | Pick next story + create OpenSpec change + hand off               |
+| `/aep-calibrate`             | product-context              | Main      | Human alignment checkpoint for any quality dimension              |
+| `/aep-reflect`               | product-context              | Main      | Classify feedback + update context (close the loop)               |
+| `/aep-watch`                 | product-context              | Main      | Ingest telemetry/errors → auto-file stories (self-feeding loop)   |
+| `/aep-design`                | agentic-development-workflow | Main      | Interactive feature design (explore + propose + review)           |
+| `/aep-launch`                | agentic-development-workflow | Main      | Spawn autonomous workspace + optional evaluator                   |
+| `/aep-build`                 | agentic-development-workflow | Workspace | Implement → test → PR → merge (autonomous)                        |
+| `/aep-wrap`                  | agentic-development-workflow | Main      | Post-merge archive + cleanup + update story status                |
+| `/aep-git-ref`               | agentic-development-workflow | Main      | AEP git + worktree conventions (on-demand)                        |
+| `/aep-autopilot`             | patterns                     | Main      | Hands-free dispatch → launch → monitor → wrap loop                |
+| `/aep-gen-eval`              | patterns                     | Both      | Reusable generator/evaluator pattern for honest evaluation        |
+| `/aep-workflow`              | patterns                     | Main      | Dynamic workflows — write a custom multi-agent harness for a task |
+| `/aep-workflow-feedback`     | patterns                     | Main      | Capture + review process learnings from builds                    |
 
 For when-to-use decisions, see [docs/skills-quick-reference.md](skills-quick-reference.md).
 

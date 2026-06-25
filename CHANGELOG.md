@@ -21,6 +21,88 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 _Nothing yet._
 
+## [2.3.0] - 2026-06-25
+
+Promote the downstream **BDD layer-gate E2E pattern** into AEP and make project
+setup **idempotent**. The e2e-test skill a project gets is now a natural-language
+**journey** library (Given/When/Then/**Verify**), tool-agnostic, with each journey
+mapped to a **layer gate** so quality accrues layer by layer. Each gate is
+**two-phase and coverage-checked** — `scripted_passed` (framework tests green) →
+`passed` (all applicable tiers green _and_ every layer acceptance criterion proven by
+a test); `/aep-build` **auto-authors** any missing scenario to close a coverage gap
+and `/aep-wrap` asks the human before advancing. It ships in
+**canonical cross-tool form** (real `skills/e2e-test/` + `.claude/skills` /
+`.agents/skills` symlinks) so Claude Code, Codex, and Pi all see one copy. Which
+browser/device tool drives the UI is resolved by a **separate `tool-selection.md`**
+across four tracks (agent-browser/playwright/codex web set, webwright, agent-device
+mobile, desktop/computer-use). Also retires `/aep-testing-guide` (its content is
+redistributed, so no capability is lost) and the legacy `sync.sh` /
+`sync-downstream.sh` / `migrate-downstream-layout.sh` scripts (canonical install is
+the `skills` CLI). Downstreams pick this up on their next deliberate re-pin.
+
+### Added
+
+- **`/aep-e2e-skill-scaffolding` skill** (`project-setup`): generates/upgrades a
+  project's `e2e-test` skill into the BDD layer-gate **three-tier** shape (scripted
+  gates / journey dogfood / API drivers), in canonical cross-tool placement. Ships
+  templates (`e2e-test.SKILL.md`, `journeys/README.md`, `00-walking-skeleton.md`,
+  `tool-selection.md`, `seed.sh`) and references (`bdd-journeys.md`,
+  `three-tier-model.md`, `layer-gate-loop.md`). Idempotent; migrates a legacy
+  `.claude/skills/e2e-test` real dir into `skills/` and never overwrites hand-written
+  journeys. Registered in `marketplace.json` `project-setup` plugin.
+- **`scaffold/references/workspace-hook.md`**: the workspace-setup hook contract +
+  template (salvaged from the removed testing-guide Part 1).
+- **Coverage-checked layer gates**: the generated `e2e-test` skill ships a
+  `layer-gate-evidence.template.md` (acceptance-traceability + scripted-coverage
+  matrices + dogfood checklist + waivers), and journeys carry a `covers:` front-matter
+  field tying each to the acceptance criteria it proves. "Coverage" is
+  acceptance/requirements coverage — every layer criterion proven by ≥1 test — not a
+  line/branch %.
+- **Per-project E2E policy** (`policy.md` in the generated skill): single source of
+  truth for _applicable tiers_, _dogfood target_ (`none` / `local` / `deployed:<url>`),
+  and _journey timing_ (`pre-merge` / `post-deploy`). The generator proposes from the
+  stack and **confirms with the user**; `/aep-build` and `/aep-wrap` read it — a
+  CLI/`none` project gets no journey tier (and no `tool-selection.md`), while a
+  pre-release app can dogfood post-deploy against a deployed (e.g. Cloudflare) URL.
+  Skill-managed, never silently overwritten, and **no `AGENTS.md` copy** — the skill is
+  canonical cross-tool, so every runtime reads the same file.
+
+### Changed
+
+- **`e2e_tool(target_type)`** (`patterns/executor/references/dogfood-validation.md`):
+  generalizes the web-only `dogfood_method()` over **web / mobile / desktop** targets,
+  adding **webwright** (web) and **agent-device** (mobile) plus per-target health
+  probes and a `topology.routing.e2e.tool.*` pin. `dogfood_method()` is kept as a
+  `:= e2e_tool('web')` wrapper, so `/aep-build` Phase 6 and the post-merge guard are
+  unchanged. The generated `tool-selection.md` is a self-contained projection of it.
+- **`/aep-scaffold`**: Phase 8 now **delegates** to `/aep-e2e-skill-scaffolding`; the
+  existing-project path is an **idempotent audit → confirm → converge** flow that
+  repairs drift (canonical skills layout, e2e-test shape, infra) and **recommends**
+  (never auto-runs) the skills-CLI version re-pin.
+- **`/aep-build`** Phases 6–8: reference BDD **journeys** + `e2e_tool(target_type)` and
+  record the layer-gate evidence, instead of generating one-off bash `<feature>-e2e.sh`.
+  Phase 6 now **computes the layer's coverage matrix and auto-authors missing tests** to
+  close gaps; Phase 8 replays prior-layer journeys (regression) and checks coverage.
+- **`layer_gates` schema** (`product-context-schema.yaml` + the generated gate loop):
+  reconciled to one canonical list shape and enriched with a two-phase `status`
+  (`scripted_passed` → `passed`), a `coverage` block (`criteria_total` /
+  `criteria_covered` / `uncovered`), and structured `evidence` (`scripted` / `journeys`
+  / `matrix`). Older gates without these keys still parse.
+- **`/aep-dispatch` + `/aep-wrap`**: dispatch reports a `scripted_passed` gate as
+  "machinery green, dogfood pending" (still blocks the next layer); wrap performs the
+  **two-phase flip** (all applicable tiers green + coverage complete-or-waived +
+  regression replay), then **asks the human before advancing** to the next layer.
+- **`/aep-workflow-feedback`**: pushes skill improvements downstream via a deliberate
+  skills-CLI **re-pin** (README upgrade flow) instead of the removed `sync-downstream.sh`.
+
+### Removed
+
+- **`/aep-testing-guide` skill** — content redistributed into
+  `/aep-e2e-skill-scaffolding` references and `scaffold/references/workspace-hook.md`.
+- **Legacy maintainer scripts** `scripts/sync.sh`, `scripts/sync-downstream.sh`,
+  `scripts/migrate-downstream-layout.sh` — superseded by the `skills` CLI as the
+  canonical install/upgrade mechanism.
+
 ## [2.2.0] - 2026-06-23
 
 Add a **dynamic-workflow pattern** — `/aep-workflow` — that codifies "a harness for

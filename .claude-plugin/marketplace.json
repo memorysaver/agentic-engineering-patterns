@@ -5,7 +5,7 @@
     "email": "mho@looplia.run"
   },
   "metadata": {
-    "version": "2.2.0",
+    "version": "2.3.0",
     "description": "Skills for product planning, project scaffolding, and agentic development workflows."
   },
   "plugins": [
@@ -27,13 +27,13 @@
     },
     {
       "name": "project-setup",
-      "description": "One-time project scaffolding and environment setup: onboard, scaffold, testing-guide.",
+      "description": "One-time project scaffolding and environment setup: onboard, scaffold, e2e-skill-scaffolding.",
       "source": "./",
       "strict": false,
       "skills": [
         "./skills/project-setup/onboard",
         "./skills/project-setup/scaffold",
-        "./skills/project-setup/testing-guide"
+        "./skills/project-setup/e2e-skill-scaffolding"
       ]
     },
     {
