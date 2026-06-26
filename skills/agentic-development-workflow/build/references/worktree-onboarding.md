@@ -46,11 +46,16 @@ WS="<name>"   # your feature/story name (matches the OpenSpec change + feat/<nam
 TOP=$(git rev-parse --show-toplevel)
 BRANCH=$(git branch --show-current)
 
-if [[ "$TOP" != *"/.feature-workspaces/"* || "$BRANCH" != feat/* || "$BRANCH" == "$BASE" ]]; then
+if [[ "$TOP" != *"/.feature-workspaces/"* || "$BRANCH" != feat/* ]]; then
   echo "GUARD TRIPPED — not in a feature worktree (top=$TOP branch=$BRANCH base=$BASE)"
+  # Anchor to the MAIN repo root so .feature-workspaces/ resolves from any cwd.
+  ROOT=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); cd "$ROOT"
   if [ -d ".feature-workspaces/$WS" ]; then
     cd ".feature-workspaces/$WS"                                   # exists → enter
   elif git show-ref --verify --quiet "refs/heads/feat/$WS"; then
+    # branch exists, no worktree. If checked out in main (the bug being recovered),
+    # move main off it first so the attach succeeds.
+    git -C "$ROOT" switch "$BASE" 2>/dev/null || true
     git worktree add ".feature-workspaces/$WS" "feat/$WS" && cd ".feature-workspaces/$WS"
   else
     git worktree add -b "feat/$WS" ".feature-workspaces/$WS" "$BASE" && cd ".feature-workspaces/$WS"
@@ -167,7 +172,7 @@ If you are resuming an interrupted session (context reset, crash, manual restart
 - **Update signals** — write to `.dev-workflow/signals/status.json` at phase boundaries, check `feedback.md` for main session input
 - **Never run `/opsx:archive`** — that happens on main after merge
 - **Don't stage `openspec/specs/`** files in your commits
-- **Confirm before creating PRs or merging _only in interactive mode_** (a human is at your prompt). **In autopilot mode** (`.dev-workflow/signals/mode` reads `autopilot`, or you were launched into `.feature-workspaces/`) **do not ask — merge when the Phase 12 conditions pass.** "PR ready" is not a stop point; see `/aep-build` Phase 12.
+- **Confirm before creating PRs or merging _only in interactive mode_** (a human is at your prompt). **Autopilot mode is decided _solely_ by `.dev-workflow/signals/mode` reading `autopilot`** — not by your cwd (the Phase 0 guard puts every build in a worktree). In autopilot mode **do not ask — merge when the Phase 12 conditions pass.** "PR ready" is not a stop point; see `/aep-build` Phase 12.
 - **The `.dev-workflow/` folder is ephemeral** — never commit it
 - **Generator must not modify verification data** — never change `verification_steps` or `passes` in `feature-verification.json`. Only `commit_sha` is generator-writable.
 - **One commit per task in Phase 4** — keeps the PR review readable. Squash-merge at PR-merge cleans up main history.

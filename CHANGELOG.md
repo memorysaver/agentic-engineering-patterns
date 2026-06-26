@@ -51,19 +51,30 @@ near-deterministic.
 - **`/aep-build` self-contradiction:** the global "always confirm before merging"
   guardrail and the worker-facing onboarding Key Rule now carry the autopilot
   caveat (confirm only in **interactive** mode), no longer overriding Phase 12.
-- **Phase 12 detection** now reads the `mode` marker (cwd is a fallback hint only).
-- **"No required checks" handling:** a CLEAN PR with zero required checks is
-  mergeable now — Phase 12 no longer waits for checks that will never run; maps
-  `mergeStateStatus=CLEAN`.
+- **Phase 12 detection** uses the `mode` marker as the **sole authority** (cwd is
+  not used). Because the Phase 0 guard relocates _every_ build — including an
+  interactive one — into a worktree, "cwd under `.feature-workspaces/`" can no longer
+  distinguish autonomous from interactive; ambiguous signal defaults to interactive
+  (ask), never auto-merge.
+- **Readiness keys on `mergeStateStatus`** (CLEAN/UNSTABLE ⇒ proceed; BLOCKED/DIRTY
+  ⇒ stop) instead of counting raw checks — correctly handles "no required checks",
+  optional-only checks, and not-yet-reported checks, so a CLEAN PR no longer waits
+  for checks that will never run.
 - **Asymmetric merge contract:** the orchestrator's "main NEVER merges" is now
   paired with an equally prominent positive worker obligation ("the worker MUST
   complete Phase 12; 'PR ready' is not a worker stop point"), so the main-only
   prohibition can't leak into a shared-session Codex worker. Merge nudges
-  (`tick-protocol.md`, `autopilot/SKILL.md`) explicitly forbid stopping at ready.
+  (`tick-protocol.md`, `autopilot/SKILL.md`) enumerate the full 6-item stop-condition
+  list (including the human-approval gate and policy pause) — no half-applied subset.
+- **Post-merge boundary:** the worker ends at merge + `status.json` `completed`; it
+  must **not** run `/aep-wrap` itself (wrap's `/opsx:archive` runs on the integration
+  branch — the human in interactive mode, the orchestrator's next tick in autopilot).
 - **Codex `aep-builder` role** now verifies its worktree and points at the Phase 0
   guard as the backstop for the soft cd contract.
 - **`.gitignore`:** the unanchored `build` pattern silently ignored new files inside
-  the `build/` skill directory; anchored to `/build/` (root build output only).
+  the `build/` skill directory; replaced with root + per-workspace build-output
+  anchors (`/build/`, `apps/*/build/`, `packages/*/build/`) that don't match the
+  skill source dir.
 
 ## [2.4.0] - 2026-06-26
 

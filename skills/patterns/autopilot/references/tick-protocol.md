@@ -249,7 +249,7 @@ For workspaces where the quality gate is satisfied (eval PASS exists) AND PR is 
 
 ```
 executor.nudge(<workspace-name>,
-  "Your code review eval has PASSED. Proceed to Phase 12 now: run pre-merge checks (rebase on main, verify CI, check comments) then merge the PR. In autopilot mode you do not need user confirmation — merge when all Phase 12 checks pass. Do NOT stop at 'PR ready' — that is not a completion state. A CLEAN PR with no required checks is mergeable now; only pause for a missing required review, pending/failing required checks, a conflict, or an unresolved review thread. After merge, complete the wrap.")
+  "Your code review eval has PASSED. Proceed to Phase 12 now: run pre-merge checks (rebase on main, verify CI, check comments) then merge the PR. In autopilot mode you do not need user confirmation — merge when all Phase 12 checks pass. Do NOT stop at 'PR ready' — that is not a completion state. A CLEAN PR with no required checks is mergeable now; pause ONLY for a missing required review, pending/failing required checks, a conflict, an unresolved review thread, an active human-approval gate, or a project-policy (full_auto/strategic) pause. After merging, set status.json story_status=completed — do NOT run /aep-wrap yourself; the orchestrator wraps next tick.")
 ```
 
 Set `last_action = "merge_nudged"`, `last_action_at = now`.

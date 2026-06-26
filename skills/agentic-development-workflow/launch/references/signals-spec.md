@@ -40,11 +40,13 @@ It is the **source of truth** for the Phase 12 "Merge decision":
 - `mode` absent → **interactive mode**: a human is driving `/aep-build` directly;
   ask for confirmation before merging.
 
-This marker is **deliberately independent of the worker's cwd**. cwd-under-
-`.feature-workspaces/` is only a fallback hint: under Codex `codex-subagent`,
-`spawn_agent` has no cwd parameter, so cwd is a soft contract and must not be the
-sole mode signal. The worker must **not** delete or overwrite `mode`; its own
-Phase 0 `mkdir -p .dev-workflow/signals` is idempotent and leaves this file intact.
+This marker is the **sole** mode signal — the worker must **not** infer mode from
+its cwd. The Phase 0 worktree guard relocates _every_ build (including an interactive
+one) into `.feature-workspaces/`, so "cwd under `.feature-workspaces/`" no longer
+distinguishes autonomous from interactive; and under Codex `codex-subagent`
+(`spawn_agent` has no cwd parameter) cwd is a soft contract anyway. The worker must
+**not** delete or overwrite `mode`; its own Phase 0 `mkdir -p .dev-workflow/signals`
+is idempotent and leaves this file intact.
 
 ```bash
 # Worker — Phase 12 detection:

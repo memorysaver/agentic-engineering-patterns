@@ -492,9 +492,11 @@ The 7-step protocol below is the **content of the CHECK prompt** (steps ①②�
             checks (rebase on the integration branch, verify CI, check comments) then merge the PR.
             In autopilot mode, merge when all checks pass without waiting for user
             confirmation. Do NOT stop at 'PR ready' — a CLEAN PR with no required
-            checks is mergeable now; only pause for a missing required review,
-            pending/failing required checks, a conflict, or an unresolved thread.
-            After merge, complete the wrap."
+            checks is mergeable now; pause ONLY for a missing required review,
+            pending/failing required checks, a conflict, an unresolved thread, an
+            active human-approval gate, or a project-policy (full_auto/strategic)
+            pause. After merging, set status.json story_status=completed — do NOT
+            run /aep-wrap yourself; the orchestrator wraps next tick."
        - If phase == 12 and stuck (2+ ticks) → executor.nudge(<ws>):
            "Complete Phase 12 merge now: 1) git fetch origin && git rebase origin/\"$(git config --get aep.integration-branch 2>/dev/null || (git show-ref --verify --quiet refs/remotes/origin/develop && echo develop || echo main))\" &&
             git push --force-with-lease origin feat/<name> 2) Verify CI green
