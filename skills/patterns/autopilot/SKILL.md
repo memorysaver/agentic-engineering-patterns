@@ -137,6 +137,15 @@ action list; the orchestrator then ACTs on it (nudge / wrap / launch / escalate)
 
 **If you are about to do any of the above: STOP. Send the instruction to the workspace agent via `executor.nudge()` instead.**
 
+> **These prohibitions bind the MAIN orchestrator only — the worker's obligation is the inverse.**
+> "NEVER merge" is about _main_. The workspace worker **MUST** complete Phase 12
+> and **merge** when its conditions pass; **"PR ready" is not a worker stop point.**
+> Do not let the main-only prohibition leak into a worker prompt or nudge — never
+> tell a worker "do not merge" or "stop at ready". On shared-session backends
+> (`codex-subagent`, where the worker shares this context) this leak is the known
+> failure mode: it leaves a CLEAN, mergeable PR parked at "ready" forever. Every
+> merge nudge must say _"merge when Phase 12 passes"_, never _"do not merge"_.
+
 ### Allowed Actions (from main session)
 
 | Action                | How                                                                              |
@@ -150,14 +159,14 @@ action list; the orchestrator then ACTs on it (nudge / wrap / launch / escalate)
 
 ### Forbidden Actions (from main session)
 
-| Forbidden action     | Do this instead                                         |
-| -------------------- | ------------------------------------------------------- |
-| Read workspace code  | Trigger workspace's gen/eval via `executor.nudge()`     |
-| Spawn review agents  | Send the review trigger via `executor.nudge()`          |
-| Run tests            | Workspace handles its own test phases                   |
-| Edit workspace files | Send instructions via `executor.nudge()` or feedback.md |
-| Evaluate code        | Monitor eval-response files for results                 |
-| Merge PRs            | Workspace agent merges via Phase 12                     |
+| Forbidden action     | Do this instead                                                               |
+| -------------------- | ----------------------------------------------------------------------------- |
+| Read workspace code  | Trigger workspace's gen/eval via `executor.nudge()`                           |
+| Spawn review agents  | Send the review trigger via `executor.nudge()`                                |
+| Run tests            | Workspace handles its own test phases                                         |
+| Edit workspace files | Send instructions via `executor.nudge()` or feedback.md                       |
+| Evaluate code        | Monitor eval-response files for results                                       |
+| Merge PRs            | Workspace agent merges via Phase 12 — it MUST; "PR ready" is not a stop point |
 
 ### Two Gen/Eval Concerns — Strictly Separate
 
@@ -482,7 +491,10 @@ The 7-step protocol below is the **content of the CHECK prompt** (steps ①②�
            "Your code review eval has PASSED. Proceed to Phase 12: run pre-merge
             checks (rebase on the integration branch, verify CI, check comments) then merge the PR.
             In autopilot mode, merge when all checks pass without waiting for user
-            confirmation."
+            confirmation. Do NOT stop at 'PR ready' — a CLEAN PR with no required
+            checks is mergeable now; only pause for a missing required review,
+            pending/failing required checks, a conflict, or an unresolved thread.
+            After merge, complete the wrap."
        - If phase == 12 and stuck (2+ ticks) → executor.nudge(<ws>):
            "Complete Phase 12 merge now: 1) git fetch origin && git rebase origin/\"$(git config --get aep.integration-branch 2>/dev/null || (git show-ref --verify --quiet refs/remotes/origin/develop && echo develop || echo main))\" &&
             git push --force-with-lease origin feat/<name> 2) Verify CI green

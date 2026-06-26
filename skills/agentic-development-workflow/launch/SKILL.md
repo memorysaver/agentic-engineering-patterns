@@ -177,6 +177,14 @@ BASE=${BASE:-main}
 # Create the git worktree on a fresh feature branch (outside .claude/)
 mkdir -p .feature-workspaces
 git worktree add -b feat/<name> .feature-workspaces/<name> "$BASE"
+
+# Write the autonomy marker the worker reads in Phase 12 (robust, backend-independent).
+# A worker launched here runs autonomously — no human is at its prompt — so it must
+# merge when Phase 12 conditions pass, NOT stop to "ask for confirmation". This marker
+# is the source of truth for that decision; it does not depend on the worker's cwd
+# (which is a soft contract under Codex codex-subagent). See signals-spec.md `mode`.
+mkdir -p .feature-workspaces/<name>/.dev-workflow/signals
+printf 'autopilot\n' > .feature-workspaces/<name>/.dev-workflow/signals/mode
 ```
 
 Replace `<name>` with a short feature name (e.g., `add-auth`). The branch will be `feat/add-auth`.

@@ -12,6 +12,7 @@ Anthropic's harness design research uses file-based communication between agents
 
 ```
 .dev-workflow/signals/
+├── mode                     # /aep-launch writes — autonomy marker ("autopilot"); worker reads in Phase 12
 ├── status.json              # Workspace agent writes — current phase and progress
 ├── feedback.md              # Main session writes — mid-flight feedback
 ├── ready-for-review.flag    # Workspace agent creates — signals human eval needed
@@ -23,6 +24,32 @@ Anthropic's harness design research uses file-based communication between agents
 ---
 
 ## Signal Files
+
+### `mode` — Autonomy Marker
+
+**Written by:** `/aep-launch` (orchestrator), at worktree creation
+**Read by:** Workspace agent (in Phase 12, and any merge-confirmation decision)
+**Format:** Single line — currently `autopilot`
+
+The presence of this file (value `autopilot`) means the worker was **launched
+autonomously** — there is no human at the worker's prompt to confirm a merge.
+It is the **source of truth** for the Phase 12 "Merge decision":
+
+- `mode` reads `autopilot` → **autopilot mode**: merge when Phase 12 conditions
+  pass; never stop at "PR ready" to ask for confirmation.
+- `mode` absent → **interactive mode**: a human is driving `/aep-build` directly;
+  ask for confirmation before merging.
+
+This marker is **deliberately independent of the worker's cwd**. cwd-under-
+`.feature-workspaces/` is only a fallback hint: under Codex `codex-subagent`,
+`spawn_agent` has no cwd parameter, so cwd is a soft contract and must not be the
+sole mode signal. The worker must **not** delete or overwrite `mode`; its own
+Phase 0 `mkdir -p .dev-workflow/signals` is idempotent and leaves this file intact.
+
+```bash
+# Worker — Phase 12 detection:
+MODE=$(cat .dev-workflow/signals/mode 2>/dev/null)
+```
 
 ### `status.json` — Progress Signal
 

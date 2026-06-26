@@ -249,7 +249,7 @@ For workspaces where the quality gate is satisfied (eval PASS exists) AND PR is 
 
 ```
 executor.nudge(<workspace-name>,
-  "Your code review eval has PASSED. Proceed to Phase 12 now: run pre-merge checks (rebase on main, verify CI, check comments) then merge the PR. In autopilot mode you do not need user confirmation — merge when all Phase 12 checks pass.")
+  "Your code review eval has PASSED. Proceed to Phase 12 now: run pre-merge checks (rebase on main, verify CI, check comments) then merge the PR. In autopilot mode you do not need user confirmation — merge when all Phase 12 checks pass. Do NOT stop at 'PR ready' — that is not a completion state. A CLEAN PR with no required checks is mergeable now; only pause for a missing required review, pending/failing required checks, a conflict, or an unresolved review thread. After merge, complete the wrap.")
 ```
 
 Set `last_action = "merge_nudged"`, `last_action_at = now`.

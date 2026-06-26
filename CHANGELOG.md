@@ -21,6 +21,50 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 _Nothing yet._
 
+## [2.5.0] - 2026-06-27
+
+**Fix the autopilot "PR-ready stop" + "feat branch in the main checkout" failure
+mode (latent since v1.6.0, surfaced on the Codex backend).** An autopilot worker
+could build a story, open a CLEAN PR with no required checks, and **stop at "PR
+ready"** instead of completing Phase 12 merge + wrap — and, upstream of that, could
+build in the **main checkout** without ever creating a worktree. Root cause: the
+worktree binding and the autopilot-mode decision were both unenforced soft
+contracts inferred from cwd, `/aep-build` had no entry guard, and a global "always
+confirm before merging" guardrail contradicted Phase 12's autopilot exception. On
+Codex `codex-subagent` (`spawn_agent` has no cwd parameter) the failure was
+near-deterministic.
+
+### Added
+
+- **Worktree entry guard** in `/aep-build` Phase 0 (and `worktree-onboarding.md`):
+  verifies `git rev-parse --show-toplevel` is under `.feature-workspaces/` on a
+  `feat/*` branch and **self-heals** (enter or create the worktree) — never builds
+  or branches in the main checkout; escalates if it can't establish a clean worktree.
+- **Explicit autonomy marker** `.dev-workflow/signals/mode` written by `/aep-launch`
+  and read by Phase 12 — a robust, backend-independent source of truth for the merge
+  decision that does not depend on the worker's cwd. Documented in `signals-spec.md`.
+- **`merge-decision-cases.md`** regression fixture pinning: clean PR + no required
+  checks ⇒ merge + wrap (not stop); build outside a worktree ⇒ guard self-heals.
+
+### Fixed
+
+- **`/aep-build` self-contradiction:** the global "always confirm before merging"
+  guardrail and the worker-facing onboarding Key Rule now carry the autopilot
+  caveat (confirm only in **interactive** mode), no longer overriding Phase 12.
+- **Phase 12 detection** now reads the `mode` marker (cwd is a fallback hint only).
+- **"No required checks" handling:** a CLEAN PR with zero required checks is
+  mergeable now — Phase 12 no longer waits for checks that will never run; maps
+  `mergeStateStatus=CLEAN`.
+- **Asymmetric merge contract:** the orchestrator's "main NEVER merges" is now
+  paired with an equally prominent positive worker obligation ("the worker MUST
+  complete Phase 12; 'PR ready' is not a worker stop point"), so the main-only
+  prohibition can't leak into a shared-session Codex worker. Merge nudges
+  (`tick-protocol.md`, `autopilot/SKILL.md`) explicitly forbid stopping at ready.
+- **Codex `aep-builder` role** now verifies its worktree and points at the Phase 0
+  guard as the backstop for the soft cd contract.
+- **`.gitignore`:** the unanchored `build` pattern silently ignored new files inside
+  the `build/` skill directory; anchored to `/build/` (root build output only).
+
 ## [2.4.0] - 2026-06-26
 
 **Decouple journey AUTHORING from journey EXECUTION** so a layer's BDD journey is
