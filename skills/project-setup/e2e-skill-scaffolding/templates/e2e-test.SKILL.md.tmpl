@@ -56,10 +56,13 @@ preference, with health probes and graceful degrade. Journeys themselves stay to
 5. **Record + report.** Evidence per target — screenshots + API JSON for a UI; for a `cli` target the
    captured **command + exit code + stdout/stderr + any filesystem diff**. Report **PASS/FAIL per `Then`**,
    not "looks done". A `Verify` line that can't be confirmed is a FAIL.
-6. **Close coverage.** Build the layer's coverage matrix — map each layer acceptance criterion to the
-   scenario `Verify` (or a Tier-1 case / Tier-3 API check) that proves it. For any **uncovered**
-   criterion, author the missing scenario/case now and run it; loop until every criterion is covered (or
-   a `WAIVER: <reason>` is recorded). One green journey is not coverage.
+6. **Close coverage (build) / confirm it (gate).** Build the layer's coverage matrix — map each acceptance
+   criterion to the scenario `Verify` (or a Tier-1 case / Tier-3 API check) that proves it. **During
+   `/aep-build` (pre-merge):** for any **uncovered** criterion, author the missing scenario/case now and run
+   it; loop until every criterion is covered (or a `WAIVER: <reason>`). **At the `/aep-wrap` layer gate
+   (e.g. post-deploy execution):** you **execute and confirm only** — a missing journey or an uncovered
+   criterion is a COVERAGE FAILURE to surface (the gate stays `scripted_passed`), **never** authored at the
+   gate. One green journey is not coverage.
 
 ### Layer gate (two-phase, covered)
 
@@ -70,8 +73,9 @@ A layer gate is **two-phase**, and green means *covered* — not "one journey pa
   acceptance criterion proven (`coverage.criteria_covered == criteria_total`) **+** prior-layer journeys
   replay green (regression).
 
-Run the matching journey, close any coverage gap (step 6), and record evidence in
-`docs/layer-gates/<layer>.md` — the two matrices (**acceptance-traceability** + **scripted-coverage**),
+Run the matching journey and **confirm coverage** (step 6 — at the gate you execute and confirm; a missing
+journey or uncovered criterion is a COVERAGE FAILURE to surface, never authored here), and record evidence
+in `docs/layer-gates/<layer>.md` — the two matrices (**acceptance-traceability** + **scripted-coverage**),
 the checklist, and any `WAIVER:` lines. Copy
 [`layer-gate-evidence.template.md`](./layer-gate-evidence.template.md) per layer. `/aep-wrap` then
 performs the two-phase flip and asks the human before advancing. Bugs found route through `/aep-reflect` (bug →

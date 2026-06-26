@@ -91,15 +91,15 @@ else echo "state: absent (create fresh)"; fi
 
 Read the stack to fill template placeholders. Reuse the `/aep-scaffold` **Default Tooling** table:
 
-| Placeholder        | Source                                                                                       | Default                 |
-| ------------------ | -------------------------------------------------------------------------------------------- | ----------------------- |
-| `{{PROJECT_NAME}}` | `package.json` `name` / repo dir                                                             | repo dir name           |
-| `{{PKG_MANAGER}}`  | lockfile (`bun.lockb`/`pnpm-lock.yaml`/`uv.lock`…)                                           | `bun`                   |
-| `{{TEST_RUNNER}}`  | stack (TS→vitest, Py→pytest, Rust→cargo test, Go→go test)                                    | `vitest`                |
-| `{{DEV_SERVER}}`   | scripts (`bun run dev` / `uv run dev` …)                                                     | `bun run dev`           |
-| `{{BASE_URL}}`     | `.dev-workflow/ports.env` contract                                                           | `http://localhost:3001` |
-| `{{SERVER_URL}}`   | `.dev-workflow/ports.env` contract                                                           | `http://localhost:3000` |
-| `{{TARGET_TYPE}}`  | native-uniwind→mobile, tauri/electrobun→desktop, CLI entrypoint w/ no frontend→cli, else web | `web`                   |
+| Placeholder        | Source                                                                                                                                                             | Default                 |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------- |
+| `{{PROJECT_NAME}}` | `package.json` `name` / repo dir                                                                                                                                   | repo dir name           |
+| `{{PKG_MANAGER}}`  | lockfile (`bun.lockb`/`pnpm-lock.yaml`/`uv.lock`…)                                                                                                                 | `bun`                   |
+| `{{TEST_RUNNER}}`  | stack (TS→vitest, Py→pytest, Rust→cargo test, Go→go test)                                                                                                          | `vitest`                |
+| `{{DEV_SERVER}}`   | scripts (`bun run dev` / `uv run dev` …)                                                                                                                           | `bun run dev`           |
+| `{{BASE_URL}}`     | `.dev-workflow/ports.env` contract                                                                                                                                 | `http://localhost:3001` |
+| `{{SERVER_URL}}`   | `.dev-workflow/ports.env` contract                                                                                                                                 | `http://localhost:3000` |
+| `{{TARGET_TYPE}}`  | native-uniwind→mobile, tauri/electrobun→desktop, **no web frontend** (CLI bin OR library/package exports)→cli, else web. Must agree with `E2E_TARGET`: `cli`→`cli` | `web`                   |
 
 ### E2E policy — **propose, then confirm with the user**
 
@@ -145,7 +145,10 @@ coverage, and `policy.md` records why. In that `none` case, when rendering `SKIL
 files) — replace the Tier-2 row/section with one line: _"Tier-2 (journey dogfood): N/A for this project —
 see `policy.md`."_
 A `none`-target skill must ship with **no dead links**. When journeys _are_ emitted, the walking
-skeleton's `target:` is `{{TARGET_TYPE}}`. **For a `cli` target, adapt the skeleton body to the CLI** —
+skeleton's `target:` **must agree with the dogfood surface** — when `E2E_TARGET == cli` (any non-UI
+project: a CLI binary **or** a pure library/package with exports but no web frontend), `{{TARGET_TYPE}}`
+is `cli`, **not** `web`; otherwise a library would get `dogfood_target: cli` but a `target: web` journey
+that resolves to a browser tool, find no UI, SKIP, and deadlock the gate. **For a `cli` target, adapt the skeleton body to the CLI** —
 the web placeholders (`{{BASE_URL}}` / `{{SERVER_URL}}`, "dev server is up", `GET /<health>`) do **not**
 apply; write the scenario as a command invocation instead (e.g. **When** `$ <bin> --version` runs →
 **Then** it exits 0 and prints the version → **Verify (bash):** exit code `0`, stdout contains the version string).

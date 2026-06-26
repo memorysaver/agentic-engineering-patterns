@@ -121,8 +121,9 @@ bash_available()        { command -v bash >/dev/null 2>&1; }   # ~always true; g
 
 A journey's `target:` front-matter is authoritative. When absent, infer from the
 stack: `native-uniwind`/React Native/Expo → `mobile`; `tauri`/`electrobun`/Electron
-→ `desktop`; a CLI entrypoint with no web frontend (`bin` in package.json, Go
-`cmd/*/main.go`, Python `console_scripts`/`[project.scripts]`) → `cli`; otherwise `web`.
+→ `desktop`; **no web frontend** — a CLI entrypoint (`bin` in package.json, Go
+`cmd/*/main.go`, Python `console_scripts`/`[project.scripts]`) **or** a pure
+library/package (exports only) → `cli`; a web frontend → `web`.
 
 ---
 

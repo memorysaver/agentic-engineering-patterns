@@ -79,8 +79,8 @@ The journey's `target:` front-matter is authoritative. When absent, infer from t
 | ------------------------------------- | ----------- |
 | `native-uniwind` / React Native / Expo | `mobile`   |
 | `tauri` / `electrobun` / Electron     | `desktop`   |
-| CLI entrypoint, no web frontend (`bin` in package.json, Go `cmd/`, Python `console_scripts`) | `cli` |
-| anything else (web frontend)          | `web`       |
+| no web frontend — CLI entrypoint (`bin`, Go `cmd/`, `console_scripts`) OR a library/package (exports only) | `cli` |
+| a web frontend                        | `web`       |
 
 ## Config pin
 

@@ -638,9 +638,12 @@ what lets `/aep-dispatch` advance to the next layer.
 > **Light mode:** Skip this phase.
 
 1. Source `.dev-workflow/ports.env` for correct ports
-2. Run the project's framework tests (Tier 1), replay the layer's journey (Tier 2) **and prior-layer
-   journeys** (regression), plus any applicable Tier-3 API drivers — verify they pass and that
-   `coverage.criteria_covered == criteria_total` (or remaining gaps carry a `WAIVER:`)
+2. Run the project's framework tests (Tier 1), plus any applicable Tier-3 API drivers, and **replay
+   prior-layer journeys** (regression). For **this** layer's Tier-2 journey: replay it here only when
+   `journey_timing: pre-merge` — under `journey_timing: post-deploy` its execution is deferred to the
+   `/aep-wrap` gate (the `deployed:<url>` target isn't up pre-merge), so don't run it here. Verify
+   everything applicable passes and that `coverage.criteria_covered == criteria_total` (or remaining gaps
+   carry a `WAIVER:`)
 3. Present to the user (or note in progress file):
    - Code review from Phase 5
    - Dogfood report from Phase 6 (if run)
