@@ -203,15 +203,16 @@ If all stories in the current layer are completed, run the **two-phase layer gat
 only when the layer is _covered_, not when one journey passes.
 
 **Read `skills/e2e-test/policy.md` first** (if the project has the e2e-test skill): it declares the
-**applicable tiers** (run only these — a `none`-target / CLI project has no Tier-2), the **dogfood
-target** (`none` / `local` / `deployed:<url>`), and the **timing**. With `journey_timing: post-deploy`,
+**applicable tiers** (run only these — only a `none`-target project, i.e. no runnable surface, has no
+Tier-2; a `cli` project runs Tier-2 via **bash** against the built binary), the **dogfood target**
+(`none` / `cli` / `local` / `deployed:<url>`), and the **timing**. With `journey_timing: post-deploy`,
 run the journey against the `deployed:<url>` target _here_ (after merge/deploy) — that is what flips
 `scripted_passed → passed`.
 
 1. **Tier-1 (machinery).** Run the project's scripted suite for this layer. If green, set
    `layer_gates[layer].status: scripted_passed` and record the test file under `evidence.scripted`.
-2. **Tier-2/3 (product) + regression.** _Skip this step entirely if `dogfood_target == none`_ (CLI/library
-   — Tier-2 N/A; prove criteria via Tier-1/Tier-3). Otherwise locate the matching BDD journey/journeys in
+2. **Tier-2/3 (product) + regression.** _Skip this step entirely if `dogfood_target == none`_ (no runnable
+   surface — Tier-2 N/A; prove criteria via Tier-1/Tier-3). Otherwise locate the matching BDD journey/journeys in
    `skills/e2e-test/journeys/` (`layer: N`). **Backstop — a missing journey file is a COVERAGE FAILURE,
    not a pass:** the journey is a pre-merge build deliverable (`/aep-build` Phase 6 Step A authors it from
    the layer's acceptance criteria), so if no journey file covers this layer, **do not flip to `passed`** —
@@ -219,10 +220,12 @@ run the journey against the `deployed:<url>` target _here_ (after merge/deploy) 
    `coverage.uncovered`), and route it back to build to author the journey. Do **not** author a missing
    journey here at the gate. (Correcting selector/route drift in an _existing_ journey during execution is
    fine — that keeps it faithful to the deployed target; what's forbidden is authoring a missing journey or
-   inventing coverage at the gate.) When the journey exists, run it via its `tool-selection.md`, plus any applicable API drivers, and
+   inventing coverage at the gate.) When the journey exists, run it via its `tool-selection.md` (a `cli`
+   journey runs the built binary via **bash** locally — no URL), plus any applicable API drivers, and
    **replay prior-layer journeys** — **seeding the policy's target** first (a `deployed:<url>` target needs
-   `SERVER_URL=<url> bash skills/e2e-test/scripts/seed.sh`, not local). Record evidence — screenshots, API
-   JSON, PASS/FAIL per Then, and the two coverage matrices — in `docs/layer-gates/<layer>.md`.
+   `SERVER_URL=<url> bash skills/e2e-test/scripts/seed.sh`, not local; `cli`/`local` seed locally). Record
+   evidence — screenshots or CLI output (exit code / stdout / fs), API JSON, PASS/FAIL per Then, and the
+   two coverage matrices — in `docs/layer-gates/<layer>.md`.
 3. **Check coverage.** Confirm every layer acceptance criterion maps to ≥1 proving test
    (`coverage.criteria_covered == criteria_total`). Coverage was authored pre-merge during `/aep-build`
    Phase 6 Step A and confirmed against execution; a _deliberate_ deferral must carry a `WAIVER: <reason>`

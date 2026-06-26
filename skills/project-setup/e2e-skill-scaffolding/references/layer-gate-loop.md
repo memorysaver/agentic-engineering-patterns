@@ -21,10 +21,11 @@ the layer is _covered_ across whichever test tiers apply to the project (see
 **Coverage = acceptance/requirements coverage** — every behavior the layer promised is proven — **not** a
 line/branch percentage (that stays a Tier-1 framework concern and never gates a layer).
 
-**Which** tiers are applicable, **where** journeys dogfood (`none` / `local` / `deployed:<url>`), and
-**when** (pre-merge / post-deploy) are not assumed — they come from the generated skill's
-`skills/e2e-test/policy.md`, confirmed with the user at scaffold and read by `/aep-build` and `/aep-wrap`.
-A `none`-target (CLI/library) project has no Tier-2 at all; its gate is Tier-1 (+ Tier-3) + coverage.
+**Which** tiers are applicable, **what** journeys dogfood against (`none` / `cli` / `local` /
+`deployed:<url>`), and **when** (pre-merge / post-deploy) are not assumed — they come from the generated
+skill's `skills/e2e-test/policy.md`, confirmed with the user at scaffold and read by `/aep-build` and
+`/aep-wrap`. A `cli` project dogfoods the built binary via **bash** (Tier-2 applies); only a `none`-target
+project (no runnable surface at all) has no Tier-2 — its gate is Tier-1 (+ Tier-3) + coverage.
 
 ## The loop
 

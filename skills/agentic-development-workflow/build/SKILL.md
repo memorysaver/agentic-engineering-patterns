@@ -545,13 +545,18 @@ this journey proves, which feed the coverage matrix; see `references/bdd-journey
   (see Step B). The authored, committed journey is the deliverable; the post-deploy gate executes it, it
   never authors it.
 
-> `dogfood_target == none` (CLI/library, no `journeys/` dir): no journey to author — instead ensure every
-> acceptance criterion maps to a Tier-1 scripted case / Tier-3 API check, then jump to Step B's coverage note.
+> `dogfood_target == cli` (CLI / library): **author a `target: cli` journey** — bash drives the built
+> binary, each `Then` → a `Verify` on **exit code / stdout / stderr / filesystem**. Same authoring rules
+> as a web journey; only the tool track differs (`tool-selection.md` resolves `cli` → bash).
+>
+> `dogfood_target == none` (**no runnable surface** — config / schema / docs, no `journeys/` dir): no
+> journey to author — instead ensure every acceptance criterion maps to a Tier-1 scripted case / Tier-3
+> API check, then jump to Step B's coverage note.
 
 ### Step B — Execute the authored journey (dogfood)
 
 **Run the layer's journey.** Pick the matching BDD journey from `skills/e2e-test/journeys/` (the one Step A
-authored/extended) and drive it (intent, not a click script). The journey's `target:` (web/mobile/desktop)
+authored/extended) and drive it (intent, not a click script). The journey's `target:` (web/mobile/desktop/cli)
 plus `skills/e2e-test/tool-selection.md` resolve which automation tool to use — that file is the
 project-local projection of `e2e_tool(target_type)`. Verify state per each `Verify` line.
 
@@ -562,10 +567,13 @@ this target/host/mode:
 - **Claude Code** (web) — `/agent-browser:dogfood` if `agent_browser_healthy()`, else webwright; otherwise **degrade** (non-UI changes → API/curl checks; UI changes → human-eval) rather than skipping.
 - **Codex** (web) — native in-app browser + computer-use (codex-subagent desktop), else a Playwright script (codex-exec headless), falling back to the agent-browser CLI, then API checks.
 - **mobile / desktop** — `agent-device` (mobile) or codex computer-use / agent-browser-Electron (desktop), per the journey's `target:`.
+- **cli** — `bash`: run the built binary as a user would and assert exit code / stdout / stderr / filesystem (per the journey's `target: cli`).
 
 **Resolve the target from `skills/e2e-test/policy.md`** (`dogfood_target`) — don't assume local:
 
-- `none` → **skip the journey dogfood** (Tier-2 N/A for this project); prove the layer's criteria via
+- `cli` → run the built CLI binary **locally via bash** (no URL); seed local fixtures with
+  `bash skills/e2e-test/scripts/seed.sh` if the journey needs them.
+- `none` → **skip the journey dogfood** (Tier-2 N/A — no runnable surface); prove the layer's criteria via
   Tier-1 / Tier-3.
 - `local` → source `.dev-workflow/ports.env` and use `$BASE_URL` (`target_url(local)`).
 - `deployed:<url>` → use that URL (e.g. a Cloudflare preview/prod), and **seed that same target**

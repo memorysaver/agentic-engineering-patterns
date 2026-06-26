@@ -46,11 +46,11 @@ an LLM agent, not Cucumber), front-matter `target:` + `layer:` + `covers:`.
 
 ## Front-matter fields
 
-| Field    | Values                       | Use                                                                                                                        |
-| -------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `target` | `web` / `mobile` / `desktop` | Tells `tool-selection.md` which automation track to resolve                                                                |
-| `layer`  | integer (`0`, `1`, …)        | The layer gate this journey proves                                                                                         |
-| `covers` | list of ids                  | Acceptance-criterion / capability ids this journey proves — feeds the gate's coverage matrix (`coverage.criteria_covered`) |
+| Field    | Values                               | Use                                                                                                                                  |
+| -------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `target` | `web` / `mobile` / `desktop` / `cli` | Tells `tool-selection.md` which automation track to resolve (`cli` → **bash**: run the built binary, assert exit code / stdout / fs) |
+| `layer`  | integer (`0`, `1`, …)                | The layer gate this journey proves                                                                                                   |
+| `covers` | list of ids                          | Acceptance-criterion / capability ids this journey proves — feeds the gate's coverage matrix (`coverage.criteria_covered`)           |
 
 ## Keeping journeys current
 

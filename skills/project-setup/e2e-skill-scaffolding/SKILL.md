@@ -91,15 +91,15 @@ else echo "state: absent (create fresh)"; fi
 
 Read the stack to fill template placeholders. Reuse the `/aep-scaffold` **Default Tooling** table:
 
-| Placeholder        | Source                                                               | Default                 |
-| ------------------ | -------------------------------------------------------------------- | ----------------------- |
-| `{{PROJECT_NAME}}` | `package.json` `name` / repo dir                                     | repo dir name           |
-| `{{PKG_MANAGER}}`  | lockfile (`bun.lockb`/`pnpm-lock.yaml`/`uv.lock`…)                   | `bun`                   |
-| `{{TEST_RUNNER}}`  | stack (TS→vitest, Py→pytest, Rust→cargo test, Go→go test)            | `vitest`                |
-| `{{DEV_SERVER}}`   | scripts (`bun run dev` / `uv run dev` …)                             | `bun run dev`           |
-| `{{BASE_URL}}`     | `.dev-workflow/ports.env` contract                                   | `http://localhost:3001` |
-| `{{SERVER_URL}}`   | `.dev-workflow/ports.env` contract                                   | `http://localhost:3000` |
-| `{{TARGET_TYPE}}`  | frontend (native-uniwind→mobile, tauri/electrobun→desktop, else web) | `web`                   |
+| Placeholder        | Source                                                                                       | Default                 |
+| ------------------ | -------------------------------------------------------------------------------------------- | ----------------------- |
+| `{{PROJECT_NAME}}` | `package.json` `name` / repo dir                                                             | repo dir name           |
+| `{{PKG_MANAGER}}`  | lockfile (`bun.lockb`/`pnpm-lock.yaml`/`uv.lock`…)                                           | `bun`                   |
+| `{{TEST_RUNNER}}`  | stack (TS→vitest, Py→pytest, Rust→cargo test, Go→go test)                                    | `vitest`                |
+| `{{DEV_SERVER}}`   | scripts (`bun run dev` / `uv run dev` …)                                                     | `bun run dev`           |
+| `{{BASE_URL}}`     | `.dev-workflow/ports.env` contract                                                           | `http://localhost:3001` |
+| `{{SERVER_URL}}`   | `.dev-workflow/ports.env` contract                                                           | `http://localhost:3000` |
+| `{{TARGET_TYPE}}`  | native-uniwind→mobile, tauri/electrobun→desktop, CLI entrypoint w/ no frontend→cli, else web | `web`                   |
 
 ### E2E policy — **propose, then confirm with the user**
 
@@ -107,11 +107,11 @@ The policy (which tiers gate a layer, where to dogfood, when) is a **per-project
 to assume** — a CLI tool needs no Cloudflare check; a pre-release web app may dogfood post-deploy against
 prod. Propose from the stack, **then ask the user to confirm/adjust** before rendering `policy.md`:
 
-| Placeholder              | Propose from                                                                                                             | Confirm? |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------ | -------- |
-| `{{E2E_TIERS}}`          | project type → tier table (`references/three-tier-model.md`): CLI/lib `[1]`, API `[1,3]`, web/mobile `[1,2,3]`           | **yes**  |
-| `{{E2E_TARGET}}`         | no web frontend → `none`; web frontend + deploy config (`wrangler.*`, `vercel.*`) → offer `deployed:<url>`; else `local` | **yes**  |
-| `{{E2E_JOURNEY_TIMING}}` | `local` target → `pre-merge`; `deployed:<url>` → `post-deploy`                                                           | **yes**  |
+| Placeholder              | Propose from                                                                                                                                                                                              | Confirm? |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| `{{E2E_TIERS}}`          | project type → tier table (`references/three-tier-model.md`): CLI/lib `[1,2]` (bash journey), API `[1,3]`, web/mobile `[1,2,3]`, config-only `[1]`                                                        | **yes**  |
+| `{{E2E_TARGET}}`         | CLI tool / library → `cli` (bash); web frontend + deploy config (`wrangler.*`, `vercel.*`) → offer `deployed:<url>`; web frontend, no deploy → `local`; no runnable surface (config/schema/docs) → `none` | **yes**  |
+| `{{E2E_JOURNEY_TIMING}}` | `cli` / `local` target → `pre-merge`; `deployed:<url>` → `post-deploy`                                                                                                                                    | **yes**  |
 
 Ask plainly, e.g. _"This looks like a {type}. Proposed e2e policy: tiers `{tiers}`, dogfood target
 `{target}`, timing `{timing}`. Keep, or adjust (e.g. dogfood against a deployed Cloudflare URL
@@ -136,13 +136,19 @@ skills/e2e-test/
     └── seed.sh                     ← templates/seed.sh.tmpl   (chmod +x)
 ```
 
-**Conditional on the policy:** when `E2E_TARGET == none` (CLI/library, `[1]`-only), there is no UI to
-dogfood — **skip `journeys/` and `tool-selection.md`**; the gate is Tier-1 (+ Tier-3) + coverage, and
-`policy.md` records why. In that case, when rendering `SKILL.md`, **drop the Tier-2 "Journey dogfood"
-section and every `journeys/` / `tool-selection.md` link** (they would point at omitted files) — replace
-the Tier-2 row/section with one line: _"Tier-2 (journey dogfood): N/A for this project — see `policy.md`."_
+**Conditional on the policy:** `journeys/` + `tool-selection.md` are emitted for every dogfoodable target
+— including **`cli`** (its journeys carry `target: cli` and dogfood the built binary via bash). Only when
+`E2E_TARGET == none` (**no runnable surface at all** — config / schema / docs repo, `[1]`-only) is there
+nothing to dogfood: **skip `journeys/` and `tool-selection.md`**; the gate is Tier-1 (+ Tier-3) +
+coverage, and `policy.md` records why. In that `none` case, when rendering `SKILL.md`, **drop the Tier-2
+"Journey dogfood" section and every `journeys/` / `tool-selection.md` link** (they would point at omitted
+files) — replace the Tier-2 row/section with one line: _"Tier-2 (journey dogfood): N/A for this project —
+see `policy.md`."_
 A `none`-target skill must ship with **no dead links**. When journeys _are_ emitted, the walking
-skeleton's `target:` is `{{TARGET_TYPE}}`.
+skeleton's `target:` is `{{TARGET_TYPE}}`. **For a `cli` target, adapt the skeleton body to the CLI** —
+the web placeholders (`{{BASE_URL}}` / `{{SERVER_URL}}`, "dev server is up", `GET /<health>`) do **not**
+apply; write the scenario as a command invocation instead (e.g. **When** `$ <bin> --version` runs →
+**Then** it exits 0 → **Verify (bash):** exit code `0`, stdout matches the version, no stderr).
 
 On **upgrade**, write only files that are absent; for `SKILL.md` present-but-thin, replace it (it's
 generated infrastructure docs, not hand-authored journeys) and tell the user. **`policy.md` is never

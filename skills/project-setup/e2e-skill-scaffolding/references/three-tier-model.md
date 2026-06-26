@@ -22,8 +22,10 @@ testing — your framework's docs do. The e2e-test skill doesn't manage these; i
 
 The dogfood plan is the **journey library** ([`bdd-journeys.md`](bdd-journeys.md)) — natural-language
 Given/When/Then/Verify scenarios, one per capability area, covering the shipped surface layer by layer.
-The executing agent reads intent and drives the UI with the tool resolved by `tool-selection.md`, then
-verifies state via the API. This is the manual half of each **layer gate**.
+The executing agent reads intent and drives the surface with the tool resolved by `tool-selection.md` —
+a **browser/device** for a web/mobile/desktop app, or **bash** running the built binary for a `cli`
+target — then verifies state (API response, or exit code / stdout / filesystem for a CLI). This is the
+manual half of each **layer gate**.
 
 ## Tier 3 — API drivers
 
@@ -58,22 +60,25 @@ be green for its layer gate to reach `passed`** — so "applicable" and "gating"
 is always the project framework's job; this table covers what the **e2e-test skill** should include and
 what a gate's `passed` requires:
 
-| Project type               | Tier 1 scripted | Tier 2 journeys        | Tier 3 API drivers | Gate `passed` needs        |
-| -------------------------- | --------------- | ---------------------- | ------------------ | -------------------------- |
-| Full-stack web app         | Yes             | Yes                    | Yes                | all three green + coverage |
-| API-only service           | Yes             | Skip (or thin)         | Yes                | T1 + T3 green + coverage   |
-| CLI tool                   | Yes             | Skip                   | Skip               | T1 green + coverage        |
-| Static site / landing page | Yes             | Yes (UI only)          | Skip               | T1 + T2 green + coverage   |
-| Library / package          | Yes             | Skip                   | Skip               | T1 green + coverage        |
-| Mobile app (API backend)   | Yes             | Yes (`target: mobile`) | Yes                | all three green + coverage |
+| Project type                | Tier 1 scripted | Tier 2 journeys                  | Tier 3 API drivers | Gate `passed` needs        |
+| --------------------------- | --------------- | -------------------------------- | ------------------ | -------------------------- |
+| Full-stack web app          | Yes             | Yes (`target: web`)              | Yes                | all three green + coverage |
+| API-only service            | Yes             | Skip (or thin)                   | Yes                | T1 + T3 green + coverage   |
+| CLI tool                    | Yes             | Yes (`target: cli`, bash)        | Skip               | T1 + T2 green + coverage   |
+| Static site / landing page  | Yes             | Yes (UI only)                    | Skip               | T1 + T2 green + coverage   |
+| Library / package           | Yes             | Yes (`target: cli` usage script) | Skip               | T1 + T2 green + coverage   |
+| Mobile app (API backend)    | Yes             | Yes (`target: mobile`)           | Yes                | all three green + coverage |
+| Config / schema / docs repo | Yes (if any)    | N/A (`dogfood_target: none`)     | Skip               | T1 green + coverage        |
 
 "+ coverage" means: every acceptance criterion in the layer maps to ≥1 proving test across the applicable
-tiers (`coverage.criteria_covered == criteria_total`, deliberate gaps recorded as `WAIVER:`). A
-CLI/library layer with no journey still gets a meaningful gate — its `passed` is Tier-1 green **plus**
-every criterion proven by a scripted case.
+tiers (`coverage.criteria_covered == criteria_total`, deliberate gaps recorded as `WAIVER:`). A **CLI**
+project is no longer journey-less — its Tier-2 journey is **bash-driven** (`target: cli`: run the built
+binary, assert exit code / stdout / fs), so its gate needs T1 **+ T2** + coverage like any other surface.
+Only a genuine `none`-target layer (no runnable surface at all) is journey-less — its `passed` is Tier-1
+green **plus** every criterion proven by a scripted case / API check.
 
 **The per-project choice is recorded in the generated skill's `policy.md`** (`applicable_tiers`,
-`dogfood_target` = `none`/`local`/`deployed:<url>`, `journey_timing`) — confirmed with the user at
+`dogfood_target` = `none`/`cli`/`local`/`deployed:<url>`, `journey_timing`) — confirmed with the user at
 scaffold time, then read by `/aep-build` and `/aep-wrap`. That's the single source of truth for "which
 tiers gate _this_ project", so a CLI tool is never asked for a Cloudflare/UI check it doesn't need, and a
 pre-release web app can dogfood post-deploy against prod. No copy lives in `AGENTS.md` — the skill is

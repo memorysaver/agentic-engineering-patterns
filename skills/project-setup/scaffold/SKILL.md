@@ -443,7 +443,7 @@ git commit -m "feat: add workspace hook and BDD e2e-test skill"
 ├── skills/
 │   └── e2e-test/                # REAL dir — canonical, BDD layer-gate e2e (cross-tool)
 │       ├── SKILL.md  ├── policy.md  └── scripts/seed.sh
-│       └── journeys/ + tool-selection.md   # only when dogfood_target ≠ none (omitted for CLI/library)
+│       └── journeys/ + tool-selection.md   # only when dogfood_target ≠ none (emitted for cli too; omitted only when no runnable surface)
 ├── .claude/
 │   ├── hooks/
 │   │   └── workspace-setup.sh    # Project-specific workspace init

@@ -35,15 +35,15 @@ downstream classifier is host-agnostic.
 ## `e2e_tool(target_type)` — target × host × preference selection
 
 `executor.detect()` resolves HOST + mode; this adds a tool probe on top, now
-generalized over a **target type** (`web` | `mobile` | `desktop`) so the same
-selector covers browser, mobile, and desktop e2e. Each host uses its **native**
-capability first and degrades only when that is unavailable.
+generalized over a **target type** (`web` | `mobile` | `desktop` | `cli`) so the
+same selector covers browser, mobile, desktop, and CLI e2e. Each host uses its
+**native** capability first and degrades only when that is unavailable.
 `dogfood_method()` is preserved as a thin wrapper (`:= e2e_tool('web')`) so
 existing callers — `/aep-build` Phase 6 and the autopilot post-merge guard —
 are unchanged.
 
 ```
-e2e_tool(target_type):              # target_type ∈ {web, mobile, desktop}; default web
+e2e_tool(target_type):              # target_type ∈ {web, mobile, desktop, cli}; default web
   resolve HOST + mode via executor.detect()
   pref = topology.routing.e2e.tool.<target_type>            # optional pin; unset or 'auto' = NO pin
   if target_type == web and (pref unset or pref == 'auto'):
@@ -76,6 +76,10 @@ e2e_tool(target_type):              # target_type ∈ {web, mobile, desktop}; de
     elif agent_browser_healthy():  return "agent-browser"     # Electron via CDP
     else:                          return "degrade"
 
+  if target_type == cli:
+    if bash_available():           return "bash"              # run the built CLI; assert exit code/stdout/fs
+    else:                          return "degrade"           # no shell — Tier-1 only
+
 dogfood_method() := e2e_tool('web')   # back-compat wrapper — Phase 6 / post-merge-guard unchanged
 ```
 
@@ -87,6 +91,7 @@ dogfood_method() := e2e_tool('web')   # back-compat wrapper — Phase 6 / post-m
 | **mobile** · any host              | `agent-device` (iOS/Android native)                       | `agent_device_healthy()`       | API/contract checks               |
 | **desktop** · Codex (computer-use) | native in-app browser + computer-use                      | desktop + computer-use enabled | agent-browser (Electron/CDP)      |
 | **desktop** · other hosts          | agent-browser (Electron via CDP)                          | `agent_browser_healthy()`      | API checks                        |
+| **cli** · any host                 | `bash` (run the built CLI binary; assert exit/stdout/fs)  | `bash_available()`             | Tier-1 only (mark SKIP)           |
 
 > **Why web splits multiple ways.** Computer-use and the in-app (Atlas) browser
 > are **desktop-only**; `codex exec` (headless) has neither, so it writes and
@@ -106,6 +111,7 @@ agent_browser_healthy() { command -v agent-browser >/dev/null 2>&1 && agent-brow
 playwright_available()  { command -v npx >/dev/null 2>&1 && npx --no-install playwright --version >/dev/null 2>&1; }
 webwright_available()   { command -v webwright >/dev/null 2>&1 && webwright --version >/dev/null 2>&1; }
 agent_device_healthy()  { command -v agent-device >/dev/null 2>&1 && agent-device doctor >/tmp/ad-smoke.log 2>&1; }
+bash_available()        { command -v bash >/dev/null 2>&1; }   # ~always true; gates the cli track (run the built binary)
 # codex-native: not a CLI probe — available only on Codex desktop with computer-use enabled.
 ```
 
@@ -113,7 +119,8 @@ agent_device_healthy()  { command -v agent-device >/dev/null 2>&1 && agent-devic
 
 A journey's `target:` front-matter is authoritative. When absent, infer from the
 stack: `native-uniwind`/React Native/Expo → `mobile`; `tauri`/`electrobun`/Electron
-→ `desktop`; otherwise `web`.
+→ `desktop`; a CLI entrypoint with no web frontend (`bin` in package.json, Go
+`cmd/*/main.go`, Python `console_scripts`/`[project.scripts]`) → `cli`; otherwise `web`.
 
 ---
 
@@ -136,12 +143,14 @@ target_url(env):                 # env ∈ {local, staging, production}
   CI/deploy step printed (e.g. a Vercel/Netlify preview URL or deploy output).
 
 > **`target_url` is web-only.** It returns an HTTP URL, which suits `web` (and
-> the Electron/CDP `desktop` path that loads a URL). **Mobile** (`agent-device`)
-> and native-bundle desktop have no URL target — they need a build artifact
-> (`.ipa`/`.apk`/app bundle), which post-deploy doesn't model yet. For those
-> targets, run the journey **pre-merge/local** against a simulator/emulator;
-> post-deploy validation stays web-oriented until a per-target artifact resolver
-> exists.
+> the Electron/CDP `desktop` path that loads a URL). **Mobile** (`agent-device`),
+> native-bundle **desktop**, and **cli** have no URL target. CLI's `bash` track
+> runs the **built binary** directly (no URL) — invoke it as a user would and
+> assert exit code / stdout / filesystem effects; run it **pre-merge/local**.
+> Mobile/native-desktop need a build artifact (`.ipa`/`.apk`/app bundle), which
+> post-deploy doesn't model yet, so run those pre-merge/local against a
+> simulator/emulator; post-deploy validation stays web-oriented until a per-target
+> artifact resolver exists.
 
 ---
 
@@ -203,13 +212,14 @@ topology:
         web: auto # auto | agent-browser | playwright | webwright | codex-native
         mobile: auto # auto | agent-device
         desktop: auto # auto | codex-native | agent-browser
+        cli: auto # auto | bash
     dogfood:
       method: auto # auto | agent-browser | codex-native | playwright (alias of e2e.tool.web)
       post_deploy_env: staging # staging | production | none
       on_issue: create_story # create_story | escalate
 ```
 
-- **`e2e.tool.{web,mobile,desktop}`** — per-target pin; `auto` (default) defers
+- **`e2e.tool.{web,mobile,desktop,cli}`** — per-target pin; `auto` (default) defers
   to `e2e_tool(target_type)`. An explicit value pins the tool (still subject to
   its health probe — a pinned-but-unhealthy tool degrades).
 - **`method`** — back-compat alias of `e2e.tool.web`; `auto` defers to

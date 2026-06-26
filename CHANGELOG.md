@@ -35,6 +35,20 @@ gate is a human handback, leaving the gap invisible. Now `journey_timing` govern
 authored pre-merge in the layer's build. Downstreams pick this up on their next
 deliberate re-pin.
 
+### Added
+
+- **`cli` dogfood target — CLIs are now dogfoodable, not journey-less.** New
+  `dogfood_target: cli` and journey `target: cli`, driven by a **bash** tool track in
+  `tool-selection.md` / `e2e_tool()` — at the same level as choosing agent-browser or
+  codex-native for web. A CLI journey runs the built binary as a user would and verifies
+  **exit code / stdout / stderr / filesystem**; an agent invoking the CLI is the same as
+  a human typing it. CLI/library projects move from `applicable_tiers: [1]` to `[1,2]`
+  and get a real Tier-2 gate. `dogfood_target: none` now means **no runnable surface at
+  all** (config / schema / docs repo) — a rare case, not the CLI default. Touches the
+  canonical `e2e_tool()` (`patterns/executor/references/dogfood-validation.md`),
+  `tool-selection.md` / `policy.md` / `three-tier-model` / `bdd-journeys` templates &
+  references, and the `aep-e2e-skill-scaffolding` project-type decision.
+
 ### Changed
 
 - **`/aep-build` Phase 6 is now journey-first.** Step A **authors/extends the journey
