@@ -32,13 +32,11 @@ A `none`-target (CLI/library) project has no Tier-2 at all; its gate is Tier-1 (
 new capability / new layer
         │
         ▼
-  add a journey        (copy journeys/README.md template; front-matter layer: N, target: …, covers: […])
-        │
-        ▼
   run Tier-1 scripted  (the project's framework tests for the layer)  ──green──►  status: scripted_passed
         │
         ▼
-  author the journey   (/aep-build Phase 6 Step A; one scenario per acceptance criterion → Then/Verify;
+  author the journey   (/aep-build Phase 6 Step A; copy journeys/README.md template + front-matter
+        │               layer: N / target / covers; one scenario per acceptance criterion → Then/Verify;
         │               PRE-MERGE, before any dogfood; committed with the feature, independent of timing)
         ▼
   run the journey      (/aep-build Phase 6 Step B; tool resolved by tool-selection.md; verify state, not

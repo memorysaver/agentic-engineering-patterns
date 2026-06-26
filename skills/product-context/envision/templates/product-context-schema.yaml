@@ -455,7 +455,8 @@ layer_gates:
   - layer: 0
     status: not_started # not_started | running | scripted_passed | passed | failed | deferred
     test_definition: "End-to-end user journey from the Layer 0 MVP contract"
-    journey: skills/e2e-test/journeys/00-walking-skeleton.md # planned journey file (skills/e2e-test/journeys/<NN-slug>.md); authored PRE-MERGE in /aep-build Phase 6 from this layer's acceptance_criteria (one scenario per criterion, each Then → a concrete Verify, intent-level & tool-agnostic), BEFORE any dogfood; EXECUTED per policy.md journey_timing. evidence.journeys records what actually ran. Omit when dogfood_target == none (no journeys/ dir).
+    journeys: # planned journey file(s) for this layer (skills/e2e-test/journeys/<NN-slug>.md — one per capability area); authored PRE-MERGE in /aep-build Phase 6 from this layer's acceptance_criteria (one scenario per criterion, each Then → a concrete Verify, intent-level & tool-agnostic), BEFORE any dogfood; EXECUTED per policy.md journey_timing. This is the PLAN; evidence.journeys (below) records what actually ran. Empty when dogfood_target == none (no journeys/ dir).
+      - skills/e2e-test/journeys/00-walking-skeleton.md
     coverage: # acceptance/requirements coverage (NOT line %)
       criteria_total: 0 # acceptance criteria across this layer's stories
       criteria_covered: 0 # criteria with >=1 proving test (journey Verify / scripted case / API check)
