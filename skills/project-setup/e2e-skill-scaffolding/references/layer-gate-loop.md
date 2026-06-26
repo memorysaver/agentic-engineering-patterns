@@ -71,6 +71,8 @@ layer_gates:
   - layer: 0
     status: not_started # not_started | running | scripted_passed | passed | failed | deferred
     test_definition: "End-to-end user journey from the Layer 0 MVP contract"
+    journeys: # planned journey file(s), authored pre-merge in /aep-build Phase 6 Step A; empty when dogfood_target == none
+      - skills/e2e-test/journeys/00-walking-skeleton.md
     coverage:
       criteria_total: 0 # acceptance criteria across this layer's stories
       criteria_covered: 0 # criteria with >=1 proving test

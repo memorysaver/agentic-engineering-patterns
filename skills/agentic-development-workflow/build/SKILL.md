@@ -512,19 +512,24 @@ do not guess and do not silently stall. Raise a gate:
 
 ## Phase 6: Browser Testing (Dogfood)
 
-> **Light mode:** Skip this phase. Otherwise **do not skip just because `agent-browser` is absent** — pick a host-aware method and degrade (see below).
+> **Light mode:** skip the **dogfood execution (Step B)** — but **Step A (journey authoring) still runs**.
+> Writing the journey file from acceptance criteria is a pre-merge deliverable independent of build mode;
+> only the browser/device dogfood is skipped. Outside Light mode, **do not skip Step B just because
+> `agent-browser` is absent** — pick a host-aware method and degrade (see below).
 
 This phase is **journey-first**: AUTHOR the journey from the layer's acceptance criteria (Step A), THEN
-execute it (Step B). Authoring is unconditional and independent of `dogfood_target` / `journey_timing` —
-only _execution_ timing varies.
+execute it (Step B). **Authoring (Step A) is unconditional** — independent of build mode, `dogfood_target`,
+and `journey_timing`. Only _execution_ (Step B) varies: skipped in Light mode or when
+`dogfood_target == none`, and deferred to the `/aep-wrap` gate under `journey_timing: post-deploy`.
 
 ### Step A — Author the layer's journey (always, pre-merge)
 
 **Before any dogfood**, make sure the journey FILE exists and covers this layer. If the project has the
 `e2e-test` skill with a `journeys/` dir (i.e. `dogfood_target != none`) and no journey covers this layer —
 or new acceptance criteria lack scenarios — **author/extend the journey now** in
-`skills/e2e-test/journeys/<NN-slug>.md` (the path planned in `layer_gates[N].journey`; copy the template in
-`journeys/README.md`, set front-matter `target:` and `layer:`):
+`skills/e2e-test/journeys/<NN-slug>.md` (a path planned in `layer_gates[N].journeys`; copy the template in
+`journeys/README.md`, set front-matter `target:`, `layer:`, and `covers:` — the acceptance-criterion ids
+this journey proves, which feed the coverage matrix; see `references/bdd-journeys.md`):
 
 - **One scenario per acceptance criterion** (from `stories[].acceptance_criteria` in
   `product-context.yaml`), each `Then` → a concrete **`Verify`** (API response / DB row / inspector check)
@@ -601,8 +606,10 @@ This phase **finalizes** that durable **BDD journey** (the regression artifact) 
 during execution. In `skills/e2e-test/journeys/`:
 
 - **Refine the existing journey** for this feature's layer — fold in what execution revealed: selector /
-  route drift, extra `Verify` lines, corrected preconditions. (Only create from scratch if Step A was
-  skipped because the journey is being executed post-deploy and execution surfaced a new scenario.)
+  route drift, extra `Verify` lines, corrected preconditions. (The journey already exists from Step A; you
+  are refining, not creating. Under `journey_timing: post-deploy` the journey executes later at the
+  `/aep-wrap` gate, so this pre-merge finalize folds in only what local / Tier-3 checks revealed — the gate
+  corrects any selector/route drift it hits against the deployed target.)
 - Each `Then` keeps a concrete **Verify** line (API response / state check) — "looks done" is not a pass.
 - Keep it tool-agnostic; `tool-selection.md` resolves the tool. API-level assertions can use `$BASE_URL` /
   `$SERVER_URL` from `.dev-workflow/ports.env` (never hardcoded ports).

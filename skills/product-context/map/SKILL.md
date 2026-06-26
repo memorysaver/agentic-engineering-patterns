@@ -303,7 +303,7 @@ git push origin "$BASE"
 - `stories` — layered story graph with waves (all stories start `status: pending`)
 - `waves` — stories grouped by layer + wave for batch dispatch
 - `topology` — agent roles, handoff contracts, routing rules
-- `layer_gates` — integration test definitions per layer (aligned with outcome contracts if defined); list each gate's planned `journeys:` (the pre-merge journey deliverables `/aep-build` authors from the layer's acceptance criteria), unless `dogfood_target == none`
+- `layer_gates` — integration test definitions per layer (aligned with outcome contracts if defined); list each gate's planned `journeys:` (the pre-merge journey deliverables `/aep-build` authors from the layer's acceptance criteria; an empty list when `dogfood_target == none`)
 - `cost` — initial cost budgets and tracking structure
 - `changelog` — append an entry recording what was added
 

@@ -216,15 +216,19 @@ run the journey against the `deployed:<url>` target _here_ (after merge/deploy) 
    not a pass:** the journey is a pre-merge build deliverable (`/aep-build` Phase 6 Step A authors it from
    the layer's acceptance criteria), so if no journey file covers this layer, **do not flip to `passed`** —
    surface it (leave the gate at `scripted_passed`, record the missing-journey gap in
-   `coverage.uncovered`), and route it back to build to author the journey. Do **not** author it here at the
-   gate. When the journey exists, run it via its `tool-selection.md`, plus any applicable API drivers, and
+   `coverage.uncovered`), and route it back to build to author the journey. Do **not** author a missing
+   journey here at the gate. (Correcting selector/route drift in an _existing_ journey during execution is
+   fine — that keeps it faithful to the deployed target; what's forbidden is authoring a missing journey or
+   inventing coverage at the gate.) When the journey exists, run it via its `tool-selection.md`, plus any applicable API drivers, and
    **replay prior-layer journeys** — **seeding the policy's target** first (a `deployed:<url>` target needs
    `SERVER_URL=<url> bash skills/e2e-test/scripts/seed.sh`, not local). Record evidence — screenshots, API
    JSON, PASS/FAIL per Then, and the two coverage matrices — in `docs/layer-gates/<layer>.md`.
 3. **Check coverage.** Confirm every layer acceptance criterion maps to ≥1 proving test
    (`coverage.criteria_covered == criteria_total`). Coverage was authored pre-merge during `/aep-build`
    Phase 6 Step A and confirmed against execution; a _deliberate_ deferral must carry a `WAIVER: <reason>`
-   line. Never flip to `passed` while criteria are silently uncovered or the journey file is missing.
+   line. Never flip to `passed` while criteria are silently uncovered — or, when Tier-2 applies
+   (`dogfood_target != none`), while the layer's journey file is missing. (A `none`-target layer has no
+   journey by design; it reaches `passed` on Tier-1/Tier-3 + coverage.)
 4. **Flip to `passed`** only when all applicable tiers are green AND coverage is complete-or-waived AND
    the regression replay passed; set `completed_at`. If only Tier-1 passed, leave it `scripted_passed`.
 5. **Ask the human before advancing.** Surface the coverage summary (`criteria_covered / criteria_total`,

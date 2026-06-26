@@ -445,12 +445,13 @@ topology:
 # acceptance criterion proven by >=1 test (coverage.criteria_covered ==
 # criteria_total, waivers counted) AND prior-layer journeys still replay green.
 # "Coverage" here is acceptance/requirements coverage — NOT a line/branch %.
-# AUTHORING vs EXECUTION: the `journey` file is a PRE-MERGE build deliverable —
-# authored in /aep-build Phase 6 from this layer's acceptance_criteria, committed
-# with the feature, INDEPENDENT of policy.md `journey_timing`. `journey_timing`
-# governs only WHEN that journey is EXECUTED against the target (pre-merge here,
-# or at the post-deploy gate). A layer that reaches its gate with no journey file
-# is a COVERAGE FAILURE — /aep-wrap refuses to flip it to `passed`.
+# AUTHORING vs EXECUTION: the journey file(s) listed in journeys: below are a
+# PRE-MERGE build deliverable — authored in /aep-build Phase 6 from this layer's
+# acceptance_criteria, committed with the feature, INDEPENDENT of policy.md
+# `journey_timing`. `journey_timing` governs only WHEN those journeys are EXECUTED
+# against the target (pre-merge here, or at the post-deploy gate). A layer that
+# reaches its gate (when Tier-2 applies) with no journey file is a COVERAGE
+# FAILURE — /aep-wrap refuses to flip it to `passed`.
 layer_gates:
   - layer: 0
     status: not_started # not_started | running | scripted_passed | passed | failed | deferred

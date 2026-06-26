@@ -47,9 +47,10 @@ deliberate re-pin.
 - **`/aep-build` Phase 7 renamed** "Codify the Journey" → **"Finalize the Journey"**:
   it refines the already-authored journey with reality discovered during execution
   (selector / route drift, extra `Verify` lines), then records the gate evidence.
-- **`aep-map` records the journey as a planned deliverable.** Each `layer_gates[N]`
-  carries a new **`journey:` path** (the pre-merge journey file the build authors from
-  that layer's acceptance criteria; omitted when `dogfood_target == none`).
+- **`aep-map` records journeys as planned deliverables.** Each `layer_gates[N]`
+  carries a new **`journeys:` list** (the pre-merge journey file(s) the build authors
+  from that layer's acceptance criteria, one per capability area; an empty list when
+  `dogfood_target == none`).
 - **Docs aligned on "author pre-merge, execute per timing"** across `aep-map`,
   `aep-build` (Phase 6 & 7), `aep-wrap`, `aep-autopilot`, and the
   `aep-e2e-skill-scaffolding` `policy.md` template + `layer-gate-loop.md` /
