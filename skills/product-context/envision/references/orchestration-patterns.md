@@ -81,7 +81,7 @@ Each layer has an Integration Gate — tests that verify stories work together. 
 
 ### Two-Phase Status & Coverage
 
-A gate is **not** green on a single passing journey. It advances through two phases, and "green" means the layer is _adequately covered_ across whichever test tiers apply to the project (full-stack → scripted + journey + API; API-only → scripted + API; CLI/library → scripted):
+A gate is **not** green on a single passing journey. It advances through two phases, and "green" means the layer is _adequately covered_ across whichever test tiers apply to the project (full-stack → scripted + journey + API; API-only → scripted + API; CLI/library → scripted + a bash `target: cli` journey; config/schema/docs (no runnable surface) → scripted only):
 
 - **`scripted_passed`** — the Tier-1 scripted suite (the project's framework tests) for this layer is green. The machinery is proven; the live product is not yet.
 - **`passed`** — `scripted_passed` AND every applicable higher tier (journey dogfood, API drivers) is green AND **coverage is complete**: each of the layer's acceptance criteria (aggregated from its stories' `acceptance_criteria`) maps to ≥1 proving test, tracked in `layer_gates[N].coverage` (`criteria_covered == criteria_total`, deliberate gaps recorded as `WAIVER:`), AND prior-layer journeys still replay green.

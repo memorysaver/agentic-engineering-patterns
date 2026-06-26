@@ -53,8 +53,9 @@ preference, with health probes and graceful degrade. Journeys themselves stay to
    (fresh element refs each step, scroll off-screen elements into view). For a `cli` target: run the built
    binary via **bash** as a user would and assert **exit code / stdout / stderr / filesystem effects**.
    Always **verify-state-before-claiming**.
-5. **Record + report.** Screenshots + API JSON as evidence; report **PASS/FAIL per `Then`**, not "looks
-   done". A `Verify` line that can't be confirmed is a FAIL.
+5. **Record + report.** Evidence per target — screenshots + API JSON for a UI; for a `cli` target the
+   captured **command + exit code + stdout/stderr + any filesystem diff**. Report **PASS/FAIL per `Then`**,
+   not "looks done". A `Verify` line that can't be confirmed is a FAIL.
 6. **Close coverage.** Build the layer's coverage matrix — map each layer acceptance criterion to the
    scenario `Verify` (or a Tier-1 case / Tier-3 API check) that proves it. For any **uncovered**
    criterion, author the missing scenario/case now and run it; loop until every criterion is covered (or

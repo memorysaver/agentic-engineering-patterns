@@ -538,8 +538,9 @@ this journey proves, which feed the coverage matrix; see `references/bdd-journey
   where the behavior is deterministic, or a Tier-3 API check for backend/async state) **before it is
   executed**. A criterion you deliberately defer carries a `WAIVER: <reason>` line, not silence. This is
   what makes the layer _covered_ rather than _touched_ — `/aep-wrap` refuses to flip the gate to `passed`
-  while criteria are silently uncovered. (Tier applicability is per project type — a CLI/library layer may
-  be all Tier-1, with no journey; see the `aep-e2e-skill-scaffolding` `references/three-tier-model.md`.)
+  while criteria are silently uncovered. (Tier applicability is per project type — a CLI/library layer is
+  `[1,2]` with a bash-driven `target: cli` journey; only a genuine `none`-target layer (no runnable
+  surface) is all Tier-1 with no journey. See the `aep-e2e-skill-scaffolding` `references/three-tier-model.md`.)
 - **Commit the journey file with the feature now (pre-merge).** This holds even when
   `journey_timing: post-deploy` — only the journey's _execution_ against the deployed target is deferred
   (see Step B). The authored, committed journey is the deliverable; the post-deploy gate executes it, it

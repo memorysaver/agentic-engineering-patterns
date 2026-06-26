@@ -148,7 +148,7 @@ A `none`-target skill must ship with **no dead links**. When journeys _are_ emit
 skeleton's `target:` is `{{TARGET_TYPE}}`. **For a `cli` target, adapt the skeleton body to the CLI** —
 the web placeholders (`{{BASE_URL}}` / `{{SERVER_URL}}`, "dev server is up", `GET /<health>`) do **not**
 apply; write the scenario as a command invocation instead (e.g. **When** `$ <bin> --version` runs →
-**Then** it exits 0 → **Verify (bash):** exit code `0`, stdout matches the version, no stderr).
+**Then** it exits 0 and prints the version → **Verify (bash):** exit code `0`, stdout contains the version string).
 
 On **upgrade**, write only files that are absent; for `SKILL.md` present-but-thin, replace it (it's
 generated infrastructure docs, not hand-authored journeys) and tell the user. **`policy.md` is never
