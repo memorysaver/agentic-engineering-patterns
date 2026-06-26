@@ -420,8 +420,10 @@ skills/e2e-test/                              # REAL dir (canonical source of tr
 .agents/skills/e2e-test → ../../skills/e2e-test   # symlink (Codex / Pi)
 ```
 
-> A `none`-target (CLI/library) project ships `policy.md` + `seed.sh` only — no `journeys/` or
-> `tool-selection.md` (Tier-2 is N/A; the gate is Tier-1 + coverage).
+> A `none`-target project (**no runnable surface** — config / schema / docs) ships `policy.md` + `seed.sh`
+> only — no `journeys/` or `tool-selection.md` (Tier-2 is N/A; the gate is Tier-1 + coverage). A **`cli`**
+> project (CLI tool / library) **does** get `journeys/` + `tool-selection.md` — its Tier-2 journey is
+> bash-driven (run the built binary, assert exit code / stdout / fs).
 
 ### Commit
 
@@ -443,7 +445,7 @@ git commit -m "feat: add workspace hook and BDD e2e-test skill"
 ├── skills/
 │   └── e2e-test/                # REAL dir — canonical, BDD layer-gate e2e (cross-tool)
 │       ├── SKILL.md  ├── policy.md  └── scripts/seed.sh
-│       └── journeys/ + tool-selection.md   # only when dogfood_target ≠ none (omitted for CLI/library)
+│       └── journeys/ + tool-selection.md   # only when dogfood_target ≠ none (emitted for cli too; omitted only when no runnable surface)
 ├── .claude/
 │   ├── hooks/
 │   │   └── workspace-setup.sh    # Project-specific workspace init
@@ -562,8 +564,9 @@ done
 
 echo "=== B. E2E-test skill shape ==="
 # Canonical = policy.md (the single source of truth, always emitted) OR a BDD journeys/ library.
-# A none-target (CLI/library) project legitimately has policy.md and NO journeys/ — keying on
+# A none-target project (no runnable surface) legitimately has policy.md and NO journeys/ — keying on
 # journeys/README.md alone would mislabel it as DRIFT forever (breaking idempotency).
+# (A cli project DOES ship journeys/ — its Tier-2 is a bash journey.)
 if   [ -f skills/e2e-test/policy.md ] || [ -f skills/e2e-test/journeys/README.md ]; then echo "  canonical     [ok]"
 elif [ -d skills/e2e-test ];                     then echo "  real-non-bdd  [DRIFT → upgrade to BDD]"
 elif [ -d .claude/skills/e2e-test ] && [ ! -L .claude/skills/e2e-test ]; then echo "  thin-legacy   [DRIFT → migrate to skills/ + BDD]"

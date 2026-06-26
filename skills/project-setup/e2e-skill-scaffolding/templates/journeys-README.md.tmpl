@@ -21,7 +21,7 @@ binding (the executor is an LLM agent, not Cucumber).
 
 ```markdown
 ---
-target: web        # web | mobile | desktop — picks the tool track in ../tool-selection.md
+target: web        # web | mobile | desktop | cli — picks the tool track in ../tool-selection.md (cli → bash: run the built binary)
 layer: 0           # which layer gate this journey proves
 covers: []         # acceptance-criterion / capability ids this journey proves (feeds the gate coverage matrix)
 ---

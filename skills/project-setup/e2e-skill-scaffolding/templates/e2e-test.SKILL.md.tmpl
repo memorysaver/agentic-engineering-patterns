@@ -6,7 +6,7 @@ description: E2E testing for {{PROJECT_NAME}} — scripted gates ({{TEST_RUNNER}
 # E2E Testing
 
 > **Policy first.** [`policy.md`](./policy.md) is the single source of truth for *which tiers gate a
-> layer*, *what environment to dogfood against* (`none` / `local` / `deployed:<url>`), and *when*
+> layer*, *what to dogfood against* (`none` / `cli` / `local` / `deployed:<url>`), and *when*
 > (`pre-merge` / `post-deploy`). `/aep-build` and `/aep-wrap` read it. If a tier or the journey library is
 > absent from this skill, `policy.md` says why.
 
@@ -34,27 +34,35 @@ journey describes **intent** (Given / When / Then / **Verify**), **not** a click
 agent translates each step into the right tool calls.
 
 **Which tool drives the UI is resolved by [`tool-selection.md`](./tool-selection.md)** — it picks the
-browser/device automation tool from the journey's `target` (web/mobile/desktop), the host, and any pinned
+automation tool from the journey's `target` (web/mobile/desktop → browser/device; cli → bash), the host, and any pinned
 preference, with health probes and graceful degrade. Journeys themselves stay tool-agnostic.
 
 ### Execution protocol (how an agent runs a journey)
 
 1. **Pick** a journey + scenario(s) from [`journeys/`](./journeys/).
 2. **Clean slate — seed the _target_ environment.** Run `scripts/seed.sh` against the **same** env the
-   journey runs on (from `policy.md` `dogfood_target`): `local` → `bash scripts/seed.sh`;
-   `deployed:<url>` → `SERVER_URL=<url> bash scripts/seed.sh` (never seed local while dogfooding a
-   deployed target — the journey would verify against stale/absent fixtures). Where the product has a
-   real sign-in, **auth is browser-simulated** through the UI — not an API auto-login.
+   journey runs on (from `policy.md` `dogfood_target`): `cli` → `bash scripts/seed.sh` (local fixtures /
+   temp dirs the binary reads); `local` → `bash scripts/seed.sh`; `deployed:<url>` →
+   `SERVER_URL=<url> bash scripts/seed.sh` (never seed local while dogfooding a deployed target — the
+   journey would verify against stale/absent fixtures). Where the product has a real sign-in, **auth is
+   browser-simulated** through the UI — not an API auto-login.
 3. **Read intent.** You are given Given/When/Then — *intent, not a recipe*. Translate each step into tool
    calls using the tool from `tool-selection.md`.
-4. **Drive + verify.** Drive the UI with the resolved tool; assert backend state via the API. Ground
-   rules: fresh element refs each step, scroll off-screen elements into view, **verify-state-before-claiming**.
-5. **Record + report.** Screenshots + API JSON as evidence; report **PASS/FAIL per `Then`**, not "looks
-   done". A `Verify` line that can't be confirmed is a FAIL.
-6. **Close coverage.** Build the layer's coverage matrix — map each layer acceptance criterion to the
-   scenario `Verify` (or a Tier-1 case / Tier-3 API check) that proves it. For any **uncovered**
-   criterion, author the missing scenario/case now and run it; loop until every criterion is covered (or
-   a `WAIVER: <reason>` is recorded). One green journey is not coverage.
+4. **Drive + verify.** Drive the surface with the resolved tool and assert observable state. For a UI
+   (`web`/`mobile`/`desktop`): drive with the browser/device tool, assert backend state via the API
+   (fresh element refs each step, scroll off-screen elements into view). For a `cli` target: run the built
+   binary via **bash** as a user would and assert **exit code / stdout / stderr / filesystem effects**.
+   Always **verify-state-before-claiming**.
+5. **Record + report.** Evidence per target — screenshots + API JSON for a UI; for a `cli` target the
+   captured **command + exit code + stdout/stderr + any filesystem diff**. Report **PASS/FAIL per `Then`**,
+   not "looks done". A `Verify` line that can't be confirmed is a FAIL.
+6. **Close coverage (build) / confirm it (gate).** Build the layer's coverage matrix — map each acceptance
+   criterion to the scenario `Verify` (or a Tier-1 case / Tier-3 API check) that proves it. **During
+   `/aep-build` (pre-merge):** for any **uncovered** criterion, author the missing scenario/case now and run
+   it; loop until every criterion is covered (or a `WAIVER: <reason>`). **At the `/aep-wrap` layer gate
+   (e.g. post-deploy execution):** you **execute and confirm only** — a missing journey or an uncovered
+   criterion is a COVERAGE FAILURE to surface (the gate stays `scripted_passed`), **never** authored at the
+   gate. One green journey is not coverage.
 
 ### Layer gate (two-phase, covered)
 
@@ -65,8 +73,9 @@ A layer gate is **two-phase**, and green means *covered* — not "one journey pa
   acceptance criterion proven (`coverage.criteria_covered == criteria_total`) **+** prior-layer journeys
   replay green (regression).
 
-Run the matching journey, close any coverage gap (step 6), and record evidence in
-`docs/layer-gates/<layer>.md` — the two matrices (**acceptance-traceability** + **scripted-coverage**),
+Run the matching journey and **confirm coverage** (step 6 — at the gate you execute and confirm; a missing
+journey or uncovered criterion is a COVERAGE FAILURE to surface, never authored here), and record evidence
+in `docs/layer-gates/<layer>.md` — the two matrices (**acceptance-traceability** + **scripted-coverage**),
 the checklist, and any `WAIVER:` lines. Copy
 [`layer-gate-evidence.template.md`](./layer-gate-evidence.template.md) per layer. `/aep-wrap` then
 performs the two-phase flip and asks the human before advancing. Bugs found route through `/aep-reflect` (bug →

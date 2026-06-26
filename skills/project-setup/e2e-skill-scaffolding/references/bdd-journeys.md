@@ -37,17 +37,20 @@ an LLM agent, not Cucumber), front-matter `target:` + `layer:` + `covers:`.
   `layer_gates[layer=N]` in `product-context.yaml` (see [`layer-gate-loop.md`](layer-gate-loop.md)).
 - **Traceability is the coverage hook.** Each scenario's **Verify** is what proves an acceptance
   criterion; the journey's `covers:` front-matter (and the `**Covers:**` body line) name which criteria.
-  `/aep-build` builds the layer's **coverage matrix** from these — every layer acceptance criterion must
-  map to ≥1 scenario `Verify` (or a Tier-1 scripted case / Tier-3 API check), or the gate can't reach
-  `passed`. An uncovered criterion is auto-closed (a scenario gets authored) rather than ignored.
+  `/aep-build` Phase 6 Step A **authors the journey from these criteria pre-merge** (a scenario per
+  criterion, before any dogfood) and builds the layer's **coverage matrix** — every layer acceptance
+  criterion must map to ≥1 scenario `Verify` (or a Tier-1 scripted case / Tier-3 API check), or the gate
+  can't reach `passed`. An uncovered criterion gets a scenario authored, never ignored; a deliberate
+  deferral carries a `WAIVER:` line. Authoring is always pre-merge; `journey_timing` only governs when the
+  journey is _executed_.
 
 ## Front-matter fields
 
-| Field    | Values                       | Use                                                                                                                        |
-| -------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `target` | `web` / `mobile` / `desktop` | Tells `tool-selection.md` which automation track to resolve                                                                |
-| `layer`  | integer (`0`, `1`, …)        | The layer gate this journey proves                                                                                         |
-| `covers` | list of ids                  | Acceptance-criterion / capability ids this journey proves — feeds the gate's coverage matrix (`coverage.criteria_covered`) |
+| Field    | Values                               | Use                                                                                                                                  |
+| -------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `target` | `web` / `mobile` / `desktop` / `cli` | Tells `tool-selection.md` which automation track to resolve (`cli` → **bash**: run the built binary, assert exit code / stdout / fs) |
+| `layer`  | integer (`0`, `1`, …)                | The layer gate this journey proves                                                                                                   |
+| `covers` | list of ids                          | Acceptance-criterion / capability ids this journey proves — feeds the gate's coverage matrix (`coverage.criteria_covered`)           |
 
 ## Keeping journeys current
 

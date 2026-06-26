@@ -512,12 +512,54 @@ do not guess and do not silently stall. Raise a gate:
 
 ## Phase 6: Browser Testing (Dogfood)
 
-> **Light mode:** Skip this phase. Otherwise **do not skip just because `agent-browser` is absent** — pick a host-aware method and degrade (see below).
+> **Light mode:** skip the **dogfood execution (Step B)** — but **Step A (journey authoring) still runs**.
+> Writing the journey file from acceptance criteria is a pre-merge deliverable independent of build mode;
+> only the browser/device dogfood is skipped. Outside Light mode, **do not skip Step B just because
+> `agent-browser` is absent** — pick a host-aware method and degrade (see below).
 
-**Run the layer's journey.** If the project has the `e2e-test` skill, pick the matching BDD journey from
-`skills/e2e-test/journeys/` and drive it (intent, not a click script). The journey's `target:`
-(web/mobile/desktop) plus `skills/e2e-test/tool-selection.md` resolve which automation tool to use — that
-file is the project-local projection of `e2e_tool(target_type)`. Verify state per each `Verify` line.
+This phase is **journey-first**: AUTHOR the journey from the layer's acceptance criteria (Step A), THEN
+execute it (Step B). **Authoring (Step A) is unconditional** — independent of build mode, `dogfood_target`,
+and `journey_timing`. Only _execution_ (Step B) varies: skipped in Light mode or when
+`dogfood_target == none`, and deferred to the `/aep-wrap` gate under `journey_timing: post-deploy`.
+
+### Step A — Author the layer's journey (always, pre-merge)
+
+**Before any dogfood**, make sure the journey FILE exists and covers this layer. If the project has the
+`e2e-test` skill with a `journeys/` dir (i.e. `dogfood_target != none`) and no journey covers this layer —
+or new acceptance criteria lack scenarios — **author/extend the journey now** in
+`skills/e2e-test/journeys/<NN-slug>.md` (a path planned in `layer_gates[N].journeys`; copy the template in
+`journeys/README.md`, set front-matter `target:`, `layer:`, and `covers:` — the acceptance-criterion ids
+this journey proves, which feed the coverage matrix; see `references/bdd-journeys.md`):
+
+- **One scenario per acceptance criterion** (from `stories[].acceptance_criteria` in
+  `product-context.yaml`), each `Then` → a concrete **`Verify`** (API response / DB row / inspector check)
+  — intent-level and **tool-agnostic** (`tool-selection.md` resolves the tool later).
+- The journey **must map every acceptance criterion to a scenario `Verify`** (or a Tier-1 scripted case
+  where the behavior is deterministic, or a Tier-3 API check for backend/async state) **before it is
+  executed**. A criterion you deliberately defer carries a `WAIVER: <reason>` line, not silence. This is
+  what makes the layer _covered_ rather than _touched_ — `/aep-wrap` refuses to flip the gate to `passed`
+  while criteria are silently uncovered. (Tier applicability is per project type — a CLI/library layer is
+  `[1,2]` with a bash-driven `target: cli` journey; only a genuine `none`-target layer (no runnable
+  surface) is all Tier-1 with no journey. See the `aep-e2e-skill-scaffolding` `references/three-tier-model.md`.)
+- **Commit the journey file with the feature now (pre-merge).** This holds even when
+  `journey_timing: post-deploy` — only the journey's _execution_ against the deployed target is deferred
+  (see Step B). The authored, committed journey is the deliverable; the post-deploy gate executes it, it
+  never authors it.
+
+> `dogfood_target == cli` (CLI / library): **author a `target: cli` journey** — bash drives the built
+> binary, each `Then` → a `Verify` on **exit code / stdout / stderr / filesystem**. Same authoring rules
+> as a web journey; only the tool track differs (`tool-selection.md` resolves `cli` → bash).
+>
+> `dogfood_target == none` (**no runnable surface** — config / schema / docs, no `journeys/` dir): no
+> journey to author — instead ensure every acceptance criterion maps to a Tier-1 scripted case / Tier-3
+> API check, then jump to Step B's coverage note.
+
+### Step B — Execute the authored journey (dogfood)
+
+**Run the layer's journey.** Pick the matching BDD journey from `skills/e2e-test/journeys/` (the one Step A
+authored/extended) and drive it (intent, not a click script). The journey's `target:` (web/mobile/desktop/cli)
+plus `skills/e2e-test/tool-selection.md` resolve which automation tool to use — that file is the
+project-local projection of `e2e_tool(target_type)`. Verify state per each `Verify` line.
 
 **Pick the tool, host-aware.** Call `e2e_tool(target_type)` (web wrapper: `dogfood_method()`) from
 `.claude/skills/aep-executor/references/dogfood-validation.md` to select the right **native** tool for
@@ -526,16 +568,20 @@ this target/host/mode:
 - **Claude Code** (web) — `/agent-browser:dogfood` if `agent_browser_healthy()`, else webwright; otherwise **degrade** (non-UI changes → API/curl checks; UI changes → human-eval) rather than skipping.
 - **Codex** (web) — native in-app browser + computer-use (codex-subagent desktop), else a Playwright script (codex-exec headless), falling back to the agent-browser CLI, then API checks.
 - **mobile / desktop** — `agent-device` (mobile) or codex computer-use / agent-browser-Electron (desktop), per the journey's `target:`.
+- **cli** — `bash`: run the built binary as a user would and assert exit code / stdout / stderr / filesystem (per the journey's `target: cli`).
 
 **Resolve the target from `skills/e2e-test/policy.md`** (`dogfood_target`) — don't assume local:
 
-- `none` → **skip the journey dogfood** (Tier-2 N/A for this project); prove the layer's criteria via
-  Tier-1 / Tier-3 and jump to "Close the coverage gap" below.
+- `cli` → run the built CLI binary **locally via bash** (no URL); seed local fixtures with
+  `bash skills/e2e-test/scripts/seed.sh` if the journey needs them.
+- `none` → **skip the journey dogfood** (Tier-2 N/A — no runnable surface); prove the layer's criteria via
+  Tier-1 / Tier-3.
 - `local` → source `.dev-workflow/ports.env` and use `$BASE_URL` (`target_url(local)`).
 - `deployed:<url>` → use that URL (e.g. a Cloudflare preview/prod), and **seed that same target**
   (`SERVER_URL=<url> bash skills/e2e-test/scripts/seed.sh`) — not local. If the policy's `journey_timing`
-  is `post-deploy`, the journey runs after merge/deploy (at the `/aep-wrap` layer gate), so Phase 6 here
-  may run only Tier-1/Tier-3 and leave the journey for that post-deploy gate.
+  is `post-deploy`, the journey's **execution** is deferred to the `/aep-wrap` layer gate (after
+  merge/deploy), so Phase 6 here runs only Tier-1/Tier-3 — **but the journey file authored in Step A is
+  still committed now (pre-merge)**; what is deferred is running it, not writing it.
 
 ```bash
 source .dev-workflow/ports.env   # local target → $BASE_URL  (deployed target: use the URL from policy.md)
@@ -549,31 +595,31 @@ If the selected method is `/agent-browser:dogfood`, run it against `$BASE_URL`:
 
 Whatever the method, emit the unified severity/category/repro report format (see `dogfood-validation.md` → Unified report format) so the downstream classifier stays host-agnostic. Document results in `.dev-workflow/dogfood-<feature>.md` — **write the report file, not just chat output**: that path is the ingestion contract (`dogfood-validation.md` → On issue), so `/aep-watch`'s `dogfood_report` source can auto-file bug/refinement findings. Findings left only in chat are a dead end.
 
-**Close the coverage gap (auto-remediate).** After running the journey, compute the layer's **coverage
-matrix**: list this layer's acceptance criteria (from `stories[].acceptance_criteria` in
-`product-context.yaml`) and map each to the journey scenario `Verify` / scripted case / API check that
-proves it. For every **uncovered** criterion, **author the missing test now** — a Tier-2 journey scenario
-(default), a Tier-1 scripted case where the behavior is deterministic, or a Tier-3 API check for
-backend/async state — run it, and repeat until `coverage.criteria_covered == coverage.criteria_total`. A
-criterion you deliberately defer gets a `WAIVER: <reason>` line, not silence. This is what makes the layer
-_covered_ rather than _touched_ — `/aep-wrap` refuses to flip the gate to `passed` while criteria are
-silently uncovered. (Tier applicability is per project type — a CLI/library layer may be all Tier-1; see
-the `aep-e2e-skill-scaffolding` `references/three-tier-model.md`.)
+**Confirm the coverage matrix.** After executing, recompute the layer's **coverage matrix**: every
+acceptance criterion (from `stories[].acceptance_criteria`) maps to the journey scenario `Verify` / scripted
+case / API check that proves it. Because Step A authored a scenario per criterion before execution, this is
+a confirmation, not a scramble — any criterion that surfaces uncovered here is a Step-A miss: author the
+missing scenario/case now and re-run until `coverage.criteria_covered == coverage.criteria_total` (deferrals
+carry a `WAIVER: <reason>` line).
 
 > **Signal update:** Update `.dev-workflow/signals/status.json` with `"phase": 6, "phase_name": "dogfood-testing"`.
 
 ---
 
-## Phase 7: Codify the Journey + Record the Layer Gate
+## Phase 7: Finalize the Journey + Record the Layer Gate
 
 > Skip if the project has no `e2e-test` skill. **Light mode:** Skip this phase.
 
-Codify what Phase 6 exercised as a durable **BDD journey** (the regression artifact), not a one-off bash
-script. In `skills/e2e-test/journeys/`:
+The journey was **already authored in Phase 6 Step A** (pre-merge, from the layer's acceptance criteria).
+This phase **finalizes** that durable **BDD journey** (the regression artifact) with reality discovered
+during execution. In `skills/e2e-test/journeys/`:
 
-- Add/extend the journey for this feature's layer (copy the template in `journeys/README.md`); set its
-  front-matter `target:` and `layer:`.
-- Each `Then` gets a concrete **Verify** line (API response / state check) — "looks done" is not a pass.
+- **Refine the existing journey** for this feature's layer — fold in what execution revealed: selector /
+  route drift, extra `Verify` lines, corrected preconditions. (The journey already exists from Step A; you
+  are refining, not creating. Under `journey_timing: post-deploy` the journey executes later at the
+  `/aep-wrap` gate, so this pre-merge finalize folds in only what local / Tier-3 checks revealed — the gate
+  corrects any selector/route drift it hits against the deployed target.)
+- Each `Then` keeps a concrete **Verify** line (API response / state check) — "looks done" is not a pass.
 - Keep it tool-agnostic; `tool-selection.md` resolves the tool. API-level assertions can use `$BASE_URL` /
   `$SERVER_URL` from `.dev-workflow/ports.env` (never hardcoded ports).
 
@@ -592,9 +638,12 @@ what lets `/aep-dispatch` advance to the next layer.
 > **Light mode:** Skip this phase.
 
 1. Source `.dev-workflow/ports.env` for correct ports
-2. Run the project's framework tests (Tier 1), replay the layer's journey (Tier 2) **and prior-layer
-   journeys** (regression), plus any applicable Tier-3 API drivers — verify they pass and that
-   `coverage.criteria_covered == criteria_total` (or remaining gaps carry a `WAIVER:`)
+2. Run the project's framework tests (Tier 1), plus any applicable Tier-3 API drivers, and **replay
+   prior-layer journeys** (regression). For **this** layer's Tier-2 journey: replay it here only when
+   `journey_timing: pre-merge` — under `journey_timing: post-deploy` its execution is deferred to the
+   `/aep-wrap` gate (the `deployed:<url>` target isn't up pre-merge), so don't run it here. Verify
+   everything applicable passes and that `coverage.criteria_covered == criteria_total` (or remaining gaps
+   carry a `WAIVER:`)
 3. Present to the user (or note in progress file):
    - Code review from Phase 5
    - Dogfood report from Phase 6 (if run)

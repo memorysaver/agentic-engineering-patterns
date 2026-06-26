@@ -21,6 +21,63 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 _Nothing yet._
 
+## [2.4.0] - 2026-06-26
+
+**Decouple journey AUTHORING from journey EXECUTION** so a layer's BDD journey is
+a build-time deliverable, authored from acceptance criteria **before** dogfood and
+committed pre-merge — never silently deferred. v2.3.0 coupled the two: `/aep-build`
+Phase 6 ran the dogfood first and only "auto-remediated" coverage after, and Phase 7
+"codified what Phase 6 exercised". Under `journey_timing: post-deploy` that deferred
+**both** authoring and execution to the post-deploy gate, so a net-new layer could
+reach its gate with **no journey file at all** — and with `full_auto: false` that
+gate is a human handback, leaving the gap invisible. Now `journey_timing` governs
+**only when the journey is EXECUTED** against the target; the journey FILE is always
+authored pre-merge in the layer's build. Downstreams pick this up on their next
+deliberate re-pin.
+
+### Added
+
+- **`cli` dogfood target — CLIs are now dogfoodable, not journey-less.** New
+  `dogfood_target: cli` and journey `target: cli`, driven by a **bash** tool track in
+  `tool-selection.md` / `e2e_tool()` — at the same level as choosing agent-browser or
+  codex-native for web. A CLI journey runs the built binary as a user would and verifies
+  **exit code / stdout / stderr / filesystem**; an agent invoking the CLI is the same as
+  a human typing it. CLI/library projects move from `applicable_tiers: [1]` to `[1,2]`
+  and get a real Tier-2 gate. `dogfood_target: none` now means **no runnable surface at
+  all** (config / schema / docs repo) — a rare case, not the CLI default. Touches the
+  canonical `e2e_tool()` (`patterns/executor/references/dogfood-validation.md`),
+  `tool-selection.md` / `policy.md` / `three-tier-model` / `bdd-journeys` templates &
+  references, and the `aep-e2e-skill-scaffolding` project-type decision.
+
+### Changed
+
+- **`/aep-build` Phase 6 is now journey-first.** Step A **authors/extends the journey
+  from `stories[].acceptance_criteria`** (one scenario per criterion, each `Then` → a
+  concrete `Verify`, tool-agnostic) **before any dogfood** and commits it pre-merge —
+  unconditional and independent of `dogfood_target` / `journey_timing`. Step B then
+  **executes** the authored journey per `dogfood_target` and confirms coverage. Under
+  `journey_timing: post-deploy`, Phase 6 still authors + commits the journey now; only
+  its execution against the deployed target is deferred to the `/aep-wrap` gate.
+- **`/aep-build` Phase 7 renamed** "Codify the Journey" → **"Finalize the Journey"**:
+  it refines the already-authored journey with reality discovered during execution
+  (selector / route drift, extra `Verify` lines), then records the gate evidence.
+- **`aep-map` records journeys as planned deliverables.** Each `layer_gates[N]`
+  carries a new **`journeys:` list** (the pre-merge journey file(s) the build authors
+  from that layer's acceptance criteria, one per capability area; an empty list when
+  `dogfood_target == none`).
+- **Docs aligned on "author pre-merge, execute per timing"** across `aep-map`,
+  `aep-build` (Phase 6 & 7), `aep-wrap`, `aep-autopilot`, and the
+  `aep-e2e-skill-scaffolding` `policy.md` template + `layer-gate-loop.md` /
+  `three-tier-model.md` / `bdd-journeys.md` references.
+
+### Fixed
+
+- **`/aep-wrap` backstop:** a layer that reaches its gate with **no journey file** is
+  now a **COVERAGE FAILURE** — `/aep-wrap` surfaces it and refuses to flip the gate to
+  `passed` (it stays `scripted_passed` and routes back to build), instead of silently
+  passing or assuming a journey that was never authored. The gate **executes, never
+  authors**.
+
 ## [2.3.0] - 2026-06-25
 
 Promote the downstream **BDD layer-gate E2E pattern** into AEP and make project
