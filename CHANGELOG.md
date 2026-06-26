@@ -21,7 +21,7 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 _Nothing yet._
 
-## [2.4.0] - 2026-06-25
+## [2.4.0] - 2026-06-26
 
 **Decouple journey AUTHORING from journey EXECUTION** so a layer's BDD journey is
 a build-time deliverable, authored from acceptance criteria **before** dogfood and
