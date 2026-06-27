@@ -21,7 +21,7 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 _Nothing yet._
 
-## [2.5.0] - 2026-06-27
+## [2.5.0] - 2026-06-28
 
 **Fix the autopilot "PR-ready stop" + "feat branch in the main checkout" failure
 mode (latent since v1.6.0, surfaced on the Codex backend).** An autopilot worker
