@@ -17,37 +17,41 @@ file contradicts the canonical list — half-applying it is this repo's #1 bug c
 
 ---
 
-## Case A — clean PR, no required checks, autopilot ⇒ MERGE + WRAP
+## Case A — clean PR, no required checks, autopilot ⇒ worker MERGES (orchestrator wraps)
 
 **Inputs:** worker launched via `/aep-launch` (`.dev-workflow/signals/mode` = `autopilot`);
 PR open, non-draft; `mergeStateStatus=CLEAN`; **zero** required checks configured;
 no unresolved review threads; eval PASSED.
 
-**Required:** Phase 12 detects autopilot mode (reads `mode`), treats "no required
-checks" as mergeable (not "wait"), runs `gh pr merge --squash --delete-branch`,
-sets `story_status=completed`, then `/aep-wrap` runs.
+**Required:** Phase 12 detects autopilot mode (reads the `mode` marker), treats a
+CLEAN PR with no required checks as mergeable (not "wait"), runs
+`gh pr merge --squash --delete-branch`, sets `status.json` `story_status=completed`
+— and **stops there**. Wrap (`/aep-wrap`) runs on the integration branch (the
+orchestrator's next tick), **not** from the worktree.
 
-**Forbidden (the bug):** stopping at "PR ready" / asking for confirmation /
-reporting `mergeStateStatus=CLEAN` as a terminal state. "PR ready" is not done —
-**merged + wrapped** is done.
+**Forbidden (the bug):** stopping at "PR ready" / asking for confirmation / reporting
+`mergeStateStatus=CLEAN` as a terminal state; **or** the worker running `/aep-wrap`
+itself. "PR ready" is not done — **merged + wrapped** is done, but the worker only merges.
 
 ---
 
-## Case B — build invoked outside a worktree ⇒ guard self-heals, never branches in main
+## Case B — worker not in its worktree ⇒ guard ENTERS the launch-made worktree, else escalates
 
-**Inputs:** `/aep-build` starts with cwd = the main checkout (e.g. invoked without
-`/aep-launch`, or a Codex `codex-subagent` that didn't honor the cd contract —
-`spawn_agent` has no cwd parameter). No `.feature-workspaces/<name>` entered.
+**Inputs:** `/aep-build` starts outside `.feature-workspaces/<name>` (e.g. a Codex
+`codex-subagent` that didn't honor the cd contract — `spawn_agent` has no cwd
+parameter — so it is in the main checkout or a sibling worktree).
 
-**Required:** the Phase 0 worktree guard trips (`git rev-parse --show-toplevel`
-not under `.feature-workspaces/`, or branch ∉ `feat/*`), self-heals — `cd` into the
-existing worktree, else `git worktree add` and enter it — then proceeds. If it
-cannot establish a clean `feat/<name>` worktree, it STOPS and escalates via the
-Human-Gate Protocol.
+**Required:** the Phase 0 guard trips (`show-toplevel` ≠ `.feature-workspaces/<name>`
+or branch ≠ `feat/<name>`) and **enters the worktree `/aep-launch` already created**
+(`cd "$ROOT/.feature-workspaces/<name>"`). Worktree creation belongs to `/aep-launch`;
+if no worktree for `<name>` exists, the guard **STOPS and escalates** (Human-Gate
+Protocol) — it does **not** create a branch/worktree or touch the main checkout.
 
-**Forbidden (the bug):** creating `feat/<name>` in the main checkout and building
-there. That also poisons Case A: cwd never lands under `.feature-workspaces/`, so
-the cwd fallback for autopilot detection fails too.
+**Forbidden (the bug):** building/branching in the main checkout; mutating another
+worktree's branch (e.g. `git switch` in main, which can strand uncommitted work);
+or building in a _sibling_ feature worktree (the guard is `<name>`-specific, so this
+trips). Autopilot mode is decided by the `mode` marker only — there is **no** cwd
+fallback.
 
 ---
 

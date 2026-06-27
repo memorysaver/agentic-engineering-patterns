@@ -499,9 +499,12 @@ The 7-step protocol below is the **content of the CHECK prompt** (steps ①②�
             run /aep-wrap yourself; the orchestrator wraps next tick."
        - If phase == 12 and stuck (2+ ticks) → executor.nudge(<ws>):
            "Complete Phase 12 merge now: 1) git fetch origin && git rebase origin/\"$(git config --get aep.integration-branch 2>/dev/null || (git show-ref --verify --quiet refs/remotes/origin/develop && echo develop || echo main))\" &&
-            git push --force-with-lease origin feat/<name> 2) Verify CI green
-            3) gh pr merge <number> --squash --delete-branch.
-            Update status.json with story_status completed."
+            git push --force-with-lease origin feat/<name> 2) Read mergeStateStatus —
+            CLEAN proceeds; UNKNOWN re-read; UNSTABLE proceeds unless a check is failing;
+            stop ONLY for a required review/check (BLOCKED), a conflict (DIRTY), an
+            unresolved thread, a human-approval gate, or a policy pause. 3) gh pr merge
+            <number> --squash --delete-branch. Then set status.json story_status=completed
+            — do NOT run /aep-wrap yourself; the orchestrator wraps next tick."
        - If phase == 12 and progressing → leave alone
 
 ⑤ DETECT STUCK [CHECK detect → ACT nudge] → for each workspace:

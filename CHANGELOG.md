@@ -37,29 +37,34 @@ near-deterministic.
 ### Added
 
 - **Worktree entry guard** in `/aep-build` Phase 0 (and `worktree-onboarding.md`):
-  verifies `git rev-parse --show-toplevel` is under `.feature-workspaces/` on a
-  `feat/*` branch and **self-heals** (enter or create the worktree) — never builds
-  or branches in the main checkout; escalates if it can't establish a clean worktree.
+  verifies the worktree is exactly `.feature-workspaces/<name>` on `feat/<name>` and,
+  if not, **enters the worktree `/aep-launch` already created** (anchored to the main
+  repo root, so it works from any cwd). Worktree creation stays with `/aep-launch`;
+  the guard never creates branches/worktrees and never mutates the main checkout — if
+  no worktree exists it **escalates**. Being `<name>`-specific, it also catches a
+  worker sitting in the wrong (sibling) feature worktree.
 - **Explicit autonomy marker** `.dev-workflow/signals/mode` written by `/aep-launch`
-  and read by Phase 12 — a robust, backend-independent source of truth for the merge
-  decision that does not depend on the worker's cwd. Documented in `signals-spec.md`.
+  and read by Phase 12 (anchored to the worktree root) — a robust, backend-independent
+  source of truth for the merge decision that does not depend on the worker's cwd.
+  Documented in `signals-spec.md`.
 - **`merge-decision-cases.md`** regression fixture pinning: clean PR + no required
-  checks ⇒ merge + wrap (not stop); build outside a worktree ⇒ guard self-heals.
+  checks ⇒ worker merges (orchestrator wraps), not stop; worker outside its worktree
+  ⇒ guard enters the launch-made worktree or escalates.
 
 ### Fixed
 
 - **`/aep-build` self-contradiction:** the global "always confirm before merging"
   guardrail and the worker-facing onboarding Key Rule now carry the autopilot
   caveat (confirm only in **interactive** mode), no longer overriding Phase 12.
-- **Phase 12 detection** uses the `mode` marker as the **sole authority** (cwd is
-  not used). Because the Phase 0 guard relocates _every_ build — including an
-  interactive one — into a worktree, "cwd under `.feature-workspaces/`" can no longer
-  distinguish autonomous from interactive; ambiguous signal defaults to interactive
-  (ask), never auto-merge.
-- **Readiness keys on `mergeStateStatus`** (CLEAN/UNSTABLE ⇒ proceed; BLOCKED/DIRTY
-  ⇒ stop) instead of counting raw checks — correctly handles "no required checks",
-  optional-only checks, and not-yet-reported checks, so a CLEAN PR no longer waits
-  for checks that will never run.
+- **Phase 12 detection** uses the `mode` marker (read **anchored to the worktree
+  root**) as the **sole authority** — cwd is never a mode signal (it's a soft contract
+  under Codex `codex-subagent`, and a build phase may have `cd`'d into a subdir). A
+  missing/ambiguous marker defaults to **interactive (ask)** — never auto-merge when unsure.
+- **Readiness keys on `mergeStateStatus`**: CLEAN ⇒ proceed; UNKNOWN ⇒ re-read (the
+  normal transient right after the rebase/force-push); UNSTABLE ⇒ proceed only if no
+  check is **failing** (don't land red code even when the repo configured no _required_
+  checks); BLOCKED/DIRTY ⇒ stop. Replaces the blunt "CI green" gate while still not
+  parking a CLEAN, no-required-checks PR.
 - **Asymmetric merge contract:** the orchestrator's "main NEVER merges" is now
   paired with an equally prominent positive worker obligation ("the worker MUST
   complete Phase 12; 'PR ready' is not a worker stop point"), so the main-only

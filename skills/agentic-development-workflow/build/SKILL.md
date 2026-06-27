@@ -37,40 +37,37 @@ Before any work begins, set up the tracking infrastructure and environment. The 
 > impossible:
 >
 > ```bash
-> # Resolve $BASE (integration branch) — see git-ref "Integration Branch"
-> BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
-> [ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
->   || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
-> BASE=${BASE:-main}
->
-> WS="<name>"   # your feature/story name (matches the OpenSpec change + feat/<name>)
+> WS="<name>"   # your story/change name from the bootstrap prompt — your worktree is
+> #             .feature-workspaces/<name> on branch feat/<name>, matching the active
+> #             OpenSpec change (ls openspec/changes/). If WS is still the literal
+> #             "<name>", resolve it from the prompt/change BEFORE continuing.
 > TOP=$(git rev-parse --show-toplevel)
 > BRANCH=$(git branch --show-current)
 >
-> if [[ "$TOP" != *"/.feature-workspaces/"* || "$BRANCH" != feat/* ]]; then
->   echo "GUARD TRIPPED — not in a feature worktree (top=$TOP branch=$BRANCH base=$BASE)"
->   # Anchor to the MAIN repo root so .feature-workspaces/ resolves correctly even
->   # from a subdirectory or a stray cwd (codex-subagent inherits the parent's cwd).
->   ROOT=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); cd "$ROOT"
->   # Self-heal — NEVER build or branch in the main checkout:
->   if [ -d ".feature-workspaces/$WS" ]; then
->     cd ".feature-workspaces/$WS"                                   # worktree exists → enter it
->   elif git show-ref --verify --quiet "refs/heads/feat/$WS"; then
->     # branch exists but no worktree. If it's checked out in the main checkout
->     # (the bug being recovered), move main off it first so the attach succeeds.
->     git -C "$ROOT" switch "$BASE" 2>/dev/null || true
->     git worktree add ".feature-workspaces/$WS" "feat/$WS" && cd ".feature-workspaces/$WS"
+> if [[ "$TOP" != *"/.feature-workspaces/$WS" || "$BRANCH" != "feat/$WS" ]]; then
+>   echo "GUARD: not in worktree .feature-workspaces/$WS on feat/$WS (top=$TOP branch=$BRANCH)"
+>   # /aep-launch OWNS worktree creation. The guard's only job is to ENTER the
+>   # worktree launch already made — NEVER create a branch/worktree here and NEVER
+>   # touch the main checkout (no `git switch`, no `git worktree add -b`).
+>   ROOT=$(git worktree list --porcelain | sed -n '1s/^worktree //p')   # main worktree root
+>   if [ -n "$ROOT" ] && [ -d "$ROOT/.feature-workspaces/$WS" ]; then
+>     cd "$ROOT/.feature-workspaces/$WS"          # launch made it; just enter it
 >   else
->     git worktree add -b "feat/$WS" ".feature-workspaces/$WS" "$BASE" && cd ".feature-workspaces/$WS"  # create both
+>     # No worktree for $WS. Do NOT build here, do NOT improvise one. STOP and
+>     # escalate (Human-Gate Protocol / needs-human.md): "no worktree for $WS —
+>     # run /aep-launch first, or the launch misfired."
+>     echo "ESCALATE: no .feature-workspaces/$WS — run /aep-launch first"; exit 1
 >   fi
->   # Re-verify; if still not inside .feature-workspaces/<WS> on feat/<WS>, STOP —
->   # do not proceed. Escalate via the Human-Gate Protocol (needs-human.md).
 > fi
+> # Re-verify before doing ANY work:
+> TOP=$(git rev-parse --show-toplevel); BRANCH=$(git branch --show-current)
+> [[ "$TOP" == *"/.feature-workspaces/$WS" && "$BRANCH" == "feat/$WS" ]] \
+>   || { echo "STILL NOT IN feat/$WS WORKTREE — STOP and escalate"; exit 1; }
 > ```
 >
-> Only once `git rev-parse --show-toplevel` is under `.feature-workspaces/` and the
-> branch is `feat/<name>` (≠ `$BASE`) may you continue. **Never run Phases 4–12 in
-> the main checkout.**
+> **Never run Phases 4–12 outside `.feature-workspaces/<name>` on `feat/<name>`.**
+> Worktree creation belongs to `/aep-launch`; if yours is missing, **escalate** — do
+> not improvise one in the main checkout or mutate any other worktree's branch.
 
 1. **Read the worktree-onboarding guide** at `skills/agentic-development-workflow/build/references/worktree-onboarding.md`.
 
@@ -867,9 +864,10 @@ After PR review fixes are resolved, the human tester evaluates the feature — t
    ```
 
    - `CLEAN` → mergeable now (required checks satisfied or none; no required review missing) → **proceed**. A CLEAN PR with **zero** required checks is mergeable now — absence of checks is not a reason to wait.
-   - `UNSTABLE` → only **non-required** checks are pending/failing → **proceed** (don't block on non-required).
-   - `BLOCKED` → a required review or required check is missing/pending/failing → **stop** (conditions 1–2 below).
-   - `DIRTY` (conflict) → **stop** (condition 3). `BEHIND` → rebase (step 1) and re-check.
+   - `UNKNOWN` → GitHub is still computing mergeability (normal right after the step-1 push) → **wait briefly and re-read**; do not park, do not merge yet.
+   - `UNSTABLE` → mergeable per branch protection, but a non-required check is pending/failing. Do **not** blanket-merge: if any check is **failing**, **stop** — don't land red code, even if the repo configured no _required_ checks (`gh pr checks <number>` to see); if checks are only **pending**, wait and re-read.
+   - `BLOCKED` → a **required** review/check is missing/pending/failing, **or** a branch-protection rule blocks (conversation-resolution, signed commits, linear history, admin-only) → **stop**: maps to conditions 1–2/4, or surface the protection rule as a human-gate (condition 5) — never force past it.
+   - `DIRTY` (conflict) → **stop** (condition 3). `BEHIND` → rebase (step 1) and re-read.
 
 3. No unresolved review comments
 4. E2E tests passed (if applicable)
@@ -878,7 +876,7 @@ After PR review fixes are resolved, the human tester evaluates the feature — t
    - **Detection — the `mode` marker is the SOLE authority. Do NOT infer from cwd:**
 
      ```bash
-     MODE=$(cat .dev-workflow/signals/mode 2>/dev/null)
+     MODE=$(cat "$(git rev-parse --show-toplevel)/.dev-workflow/signals/mode" 2>/dev/null)  # anchored — a build phase may have cd'd into a subdir
      ```
 
      - `mode` reads exactly `autopilot` → **autopilot mode**.

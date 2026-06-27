@@ -36,33 +36,27 @@ soft contract (`spawn_agent` has no cwd parameter) — so verify and self-heal,
 do not assume.
 
 ```bash
-# Resolve $BASE (integration branch)
-BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
-[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
-  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
-BASE=${BASE:-main}
-
-WS="<name>"   # your feature/story name (matches the OpenSpec change + feat/<name>)
+WS="<name>"   # your story/change name from the bootstrap prompt (feat/<name>);
+#             matches the active OpenSpec change. If still literal "<name>", resolve it first.
 TOP=$(git rev-parse --show-toplevel)
 BRANCH=$(git branch --show-current)
 
-if [[ "$TOP" != *"/.feature-workspaces/"* || "$BRANCH" != feat/* ]]; then
-  echo "GUARD TRIPPED — not in a feature worktree (top=$TOP branch=$BRANCH base=$BASE)"
-  # Anchor to the MAIN repo root so .feature-workspaces/ resolves from any cwd.
-  ROOT=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); cd "$ROOT"
-  if [ -d ".feature-workspaces/$WS" ]; then
-    cd ".feature-workspaces/$WS"                                   # exists → enter
-  elif git show-ref --verify --quiet "refs/heads/feat/$WS"; then
-    # branch exists, no worktree. If checked out in main (the bug being recovered),
-    # move main off it first so the attach succeeds.
-    git -C "$ROOT" switch "$BASE" 2>/dev/null || true
-    git worktree add ".feature-workspaces/$WS" "feat/$WS" && cd ".feature-workspaces/$WS"
+if [[ "$TOP" != *"/.feature-workspaces/$WS" || "$BRANCH" != "feat/$WS" ]]; then
+  echo "GUARD: not in worktree .feature-workspaces/$WS on feat/$WS (top=$TOP branch=$BRANCH)"
+  # /aep-launch OWNS worktree creation — ENTER the one it made; never create a
+  # branch/worktree here and never touch the main checkout (no switch, no add -b).
+  ROOT=$(git worktree list --porcelain | sed -n '1s/^worktree //p')   # main worktree root
+  if [ -n "$ROOT" ] && [ -d "$ROOT/.feature-workspaces/$WS" ]; then
+    cd "$ROOT/.feature-workspaces/$WS"          # launch made it; just enter it
   else
-    git worktree add -b "feat/$WS" ".feature-workspaces/$WS" "$BASE" && cd ".feature-workspaces/$WS"
+    # No worktree for $WS → STOP and escalate (needs-human.md): run /aep-launch first.
+    echo "ESCALATE: no .feature-workspaces/$WS — run /aep-launch first"; exit 1
   fi
-  # Re-verify. If still not inside .feature-workspaces/<WS> on feat/<WS>, STOP and
-  # escalate via the Human-Gate Protocol — never build in the main checkout.
 fi
+# Re-verify before doing ANY work:
+TOP=$(git rev-parse --show-toplevel); BRANCH=$(git branch --show-current)
+[[ "$TOP" == *"/.feature-workspaces/$WS" && "$BRANCH" == "feat/$WS" ]] \
+  || { echo "STILL NOT IN feat/$WS WORKTREE — STOP and escalate"; exit 1; }
 
 # Now confirm orientation:
 pwd; git branch --show-current; git log --oneline -5
