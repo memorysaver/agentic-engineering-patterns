@@ -21,6 +21,66 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 _Nothing yet._
 
+## [2.5.0] - 2026-06-28
+
+**Fix the autopilot "PR-ready stop" + "feat branch in the main checkout" failure
+mode (latent since v1.6.0, surfaced on the Codex backend).** An autopilot worker
+could build a story, open a CLEAN PR with no required checks, and **stop at "PR
+ready"** instead of completing Phase 12 merge + wrap — and, upstream of that, could
+build in the **main checkout** without ever creating a worktree. Root cause: the
+worktree binding and the autopilot-mode decision were both unenforced soft
+contracts inferred from cwd, `/aep-build` had no entry guard, and a global "always
+confirm before merging" guardrail contradicted Phase 12's autopilot exception. On
+Codex `codex-subagent` (`spawn_agent` has no cwd parameter) the failure was
+near-deterministic.
+
+### Added
+
+- **Worktree entry guard** in `/aep-build` Phase 0 (and `worktree-onboarding.md`):
+  verifies the worktree is exactly `.feature-workspaces/<name>` on `feat/<name>` and,
+  if not, **enters the worktree `/aep-launch` already created** (anchored to the main
+  repo root, so it works from any cwd). Worktree creation stays with `/aep-launch`;
+  the guard never creates branches/worktrees and never mutates the main checkout — if
+  no worktree exists it **escalates**. Being `<name>`-specific, it also catches a
+  worker sitting in the wrong (sibling) feature worktree.
+- **Explicit autonomy marker** `.dev-workflow/signals/mode` written by `/aep-launch`
+  and read by Phase 12 (anchored to the worktree root) — a robust, backend-independent
+  source of truth for the merge decision that does not depend on the worker's cwd.
+  Documented in `signals-spec.md`.
+- **`merge-decision-cases.md`** regression fixture pinning: clean PR + no required
+  checks ⇒ worker merges (orchestrator wraps), not stop; worker outside its worktree
+  ⇒ guard enters the launch-made worktree or escalates.
+
+### Fixed
+
+- **`/aep-build` self-contradiction:** the global "always confirm before merging"
+  guardrail and the worker-facing onboarding Key Rule now carry the autopilot
+  caveat (confirm only in **interactive** mode), no longer overriding Phase 12.
+- **Phase 12 detection** uses the `mode` marker (read **anchored to the worktree
+  root**) as the **sole authority** — cwd is never a mode signal (it's a soft contract
+  under Codex `codex-subagent`, and a build phase may have `cd`'d into a subdir). A
+  missing/ambiguous marker defaults to **interactive (ask)** — never auto-merge when unsure.
+- **Readiness keys on `mergeStateStatus`**: CLEAN ⇒ proceed; UNKNOWN ⇒ re-read (the
+  normal transient right after the rebase/force-push); UNSTABLE ⇒ proceed only if no
+  check is **failing** (don't land red code even when the repo configured no _required_
+  checks); BLOCKED/DIRTY ⇒ stop. Replaces the blunt "CI green" gate while still not
+  parking a CLEAN, no-required-checks PR.
+- **Asymmetric merge contract:** the orchestrator's "main NEVER merges" is now
+  paired with an equally prominent positive worker obligation ("the worker MUST
+  complete Phase 12; 'PR ready' is not a worker stop point"), so the main-only
+  prohibition can't leak into a shared-session Codex worker. Merge nudges
+  (`tick-protocol.md`, `autopilot/SKILL.md`) enumerate the full 6-item stop-condition
+  list (including the human-approval gate and policy pause) — no half-applied subset.
+- **Post-merge boundary:** the worker ends at merge + `status.json` `completed`; it
+  must **not** run `/aep-wrap` itself (wrap's `/opsx:archive` runs on the integration
+  branch — the human in interactive mode, the orchestrator's next tick in autopilot).
+- **Codex `aep-builder` role** now verifies its worktree and points at the Phase 0
+  guard as the backstop for the soft cd contract.
+- **`.gitignore`:** the unanchored `build` pattern silently ignored new files inside
+  the `build/` skill directory; replaced with root + per-workspace build-output
+  anchors (`/build/`, `apps/*/build/`, `packages/*/build/`) that don't match the
+  skill source dir.
+
 ## [2.4.0] - 2026-06-26
 
 **Decouple journey AUTHORING from journey EXECUTION** so a layer's BDD journey is

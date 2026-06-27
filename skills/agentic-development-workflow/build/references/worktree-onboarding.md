@@ -28,16 +28,39 @@ resumed into this worktree with the answer. The human-gate steps are in
 
 ## Bootstrap Sequence
 
-### 1. Orient yourself
+### 1. Orient yourself — and enforce the worktree (hard guard)
+
+This is a **guard, not a glance**. You MUST operate inside your own feature
+worktree, never the main checkout. On Codex `codex-subagent` the binding is a
+soft contract (`spawn_agent` has no cwd parameter) — so verify and self-heal,
+do not assume.
 
 ```bash
-# Where am I? Which branch? What's the base?
-pwd
-git branch --show-current
-git log --oneline -5
+WS="<name>"   # your story/change name from the bootstrap prompt (feat/<name>);
+#             matches the active OpenSpec change. If still literal "<name>", resolve it first.
+TOP=$(git rev-parse --show-toplevel)
+BRANCH=$(git branch --show-current)
 
-# What's the OpenSpec change?
-ls openspec/changes/
+if [[ "$TOP" != *"/.feature-workspaces/$WS" || "$BRANCH" != "feat/$WS" ]]; then
+  echo "GUARD: not in worktree .feature-workspaces/$WS on feat/$WS (top=$TOP branch=$BRANCH)"
+  # /aep-launch OWNS worktree creation — ENTER the one it made; never create a
+  # branch/worktree here and never touch the main checkout (no switch, no add -b).
+  ROOT=$(git worktree list --porcelain | sed -n '1s/^worktree //p')   # main worktree root
+  if [ -n "$ROOT" ] && [ -d "$ROOT/.feature-workspaces/$WS" ]; then
+    cd "$ROOT/.feature-workspaces/$WS"          # launch made it; just enter it
+  else
+    # No worktree for $WS → STOP and escalate (needs-human.md): run /aep-launch first.
+    echo "ESCALATE: no .feature-workspaces/$WS — run /aep-launch first"; exit 1
+  fi
+fi
+# Re-verify before doing ANY work:
+TOP=$(git rev-parse --show-toplevel); BRANCH=$(git branch --show-current)
+[[ "$TOP" == *"/.feature-workspaces/$WS" && "$BRANCH" == "feat/$WS" ]] \
+  || { echo "STILL NOT IN feat/$WS WORKTREE — STOP and escalate"; exit 1; }
+
+# Now confirm orientation:
+pwd; git branch --show-current; git log --oneline -5
+ls openspec/changes/   # what's the OpenSpec change?
 ```
 
 ### 2. Read all change artifacts
@@ -143,7 +166,7 @@ If you are resuming an interrupted session (context reset, crash, manual restart
 - **Update signals** — write to `.dev-workflow/signals/status.json` at phase boundaries, check `feedback.md` for main session input
 - **Never run `/opsx:archive`** — that happens on main after merge
 - **Don't stage `openspec/specs/`** files in your commits
-- **Ask for confirmation** before creating PRs or merging
+- **Confirm before creating PRs or merging _only in interactive mode_** (a human is at your prompt). **Autopilot mode is decided _solely_ by `.dev-workflow/signals/mode` reading `autopilot`** — not by your cwd (the Phase 0 guard puts every build in a worktree). In autopilot mode **do not ask — merge when the Phase 12 conditions pass.** "PR ready" is not a stop point; see `/aep-build` Phase 12.
 - **The `.dev-workflow/` folder is ephemeral** — never commit it
 - **Generator must not modify verification data** — never change `verification_steps` or `passes` in `feature-verification.json`. Only `commit_sha` is generator-writable.
 - **One commit per task in Phase 4** — keeps the PR review readable. Squash-merge at PR-merge cleans up main history.

@@ -28,6 +28,47 @@ Autonomous feature implementation inside an isolated git worktree on a fresh `fe
 
 Before any work begins, set up the tracking infrastructure and environment. The branch is already created by `/aep-launch` (`feat/<name>`); you do not pre-create commits — implement linearly in Phase 4.
 
+> **Step 0 — Worktree guard (do this FIRST, before anything else).** You MUST run
+> inside your own feature worktree, never the main checkout. `/aep-build` does not
+> assume `/aep-launch` succeeded — it **verifies**. On Codex `codex-subagent` the
+> worktree binding is a soft prompt-contract (`spawn_agent` has no cwd parameter),
+> so a worker can silently start in the main checkout and create `feat/<name>`
+> there — which then breaks Phase 12 autopilot detection. This guard makes that
+> impossible:
+>
+> ```bash
+> WS="<name>"   # your story/change name from the bootstrap prompt — your worktree is
+> #             .feature-workspaces/<name> on branch feat/<name>, matching the active
+> #             OpenSpec change (ls openspec/changes/). If WS is still the literal
+> #             "<name>", resolve it from the prompt/change BEFORE continuing.
+> TOP=$(git rev-parse --show-toplevel)
+> BRANCH=$(git branch --show-current)
+>
+> if [[ "$TOP" != *"/.feature-workspaces/$WS" || "$BRANCH" != "feat/$WS" ]]; then
+>   echo "GUARD: not in worktree .feature-workspaces/$WS on feat/$WS (top=$TOP branch=$BRANCH)"
+>   # /aep-launch OWNS worktree creation. The guard's only job is to ENTER the
+>   # worktree launch already made — NEVER create a branch/worktree here and NEVER
+>   # touch the main checkout (no `git switch`, no `git worktree add -b`).
+>   ROOT=$(git worktree list --porcelain | sed -n '1s/^worktree //p')   # main worktree root
+>   if [ -n "$ROOT" ] && [ -d "$ROOT/.feature-workspaces/$WS" ]; then
+>     cd "$ROOT/.feature-workspaces/$WS"          # launch made it; just enter it
+>   else
+>     # No worktree for $WS. Do NOT build here, do NOT improvise one. STOP and
+>     # escalate (Human-Gate Protocol / needs-human.md): "no worktree for $WS —
+>     # run /aep-launch first, or the launch misfired."
+>     echo "ESCALATE: no .feature-workspaces/$WS — run /aep-launch first"; exit 1
+>   fi
+> fi
+> # Re-verify before doing ANY work:
+> TOP=$(git rev-parse --show-toplevel); BRANCH=$(git branch --show-current)
+> [[ "$TOP" == *"/.feature-workspaces/$WS" && "$BRANCH" == "feat/$WS" ]] \
+>   || { echo "STILL NOT IN feat/$WS WORKTREE — STOP and escalate"; exit 1; }
+> ```
+>
+> **Never run Phases 4–12 outside `.feature-workspaces/<name>` on `feat/<name>`.**
+> Worktree creation belongs to `/aep-launch`; if yours is missing, **escalate** — do
+> not improvise one in the main checkout or mutate any other worktree's branch.
+
 1. **Read the worktree-onboarding guide** at `skills/agentic-development-workflow/build/references/worktree-onboarding.md`.
 
 2. **Discover the OpenSpec change:**
@@ -813,14 +854,65 @@ After PR review fixes are resolved, the human tester evaluates the feature — t
    BASE=${BASE:-main}
    git fetch origin && git rebase origin/"$BASE" && git push --force-with-lease origin feat/<name>
    ```
-2. CI checks green
+2. **Mergeable per GitHub's own readiness — don't wait for checks that will never run.**
+   `mergeStateStatus` already accounts for _required_ checks and _required_ reviews,
+   so read it rather than counting raw checks (which can't tell required from
+   optional, nor "none configured" from "not yet reported"):
+
+   ```bash
+   gh pr view <number> --json mergeStateStatus,mergeable --jq '{state: .mergeStateStatus, mergeable}'
+   ```
+
+   - `CLEAN` → mergeable now (required checks satisfied or none; no required review missing) → **proceed**. A CLEAN PR with **zero** required checks is mergeable now — absence of checks is not a reason to wait.
+   - `UNKNOWN` → GitHub is still computing mergeability (normal right after the step-1 push) → **wait briefly and re-read**; do not park, do not merge yet.
+   - `UNSTABLE` → mergeable per branch protection, but a non-required check is pending/failing. Do **not** blanket-merge: if any check is **failing**, **stop** — don't land red code, even if the repo configured no _required_ checks (`gh pr checks <number>` to see); if checks are only **pending**, wait and re-read.
+   - `BLOCKED` → a **required** review/check is missing/pending/failing, **or** a branch-protection rule blocks (conversation-resolution, signed commits, linear history, admin-only) → **stop**: maps to conditions 1–2/4, or surface the protection rule as a human-gate (condition 5) — never force past it.
+   - `DIRTY` (conflict) → **stop** (condition 3). `BEHIND` → rebase (step 1) and re-read.
+
 3. No unresolved review comments
 4. E2E tests passed (if applicable)
 5. Present final status summary
 6. **Merge decision:**
-   - **Interactive mode** (user present in session): Ask user for confirmation before merging
-   - **Autopilot mode** (launched via `/aep-launch` into `.feature-workspaces/`): Merge immediately when all pre-merge checks pass — do not wait for user confirmation. The autopilot orchestrator monitors via signals, not interactive prompts.
-   - **Detection:** If your working directory is inside `.feature-workspaces/`, you are in autopilot mode.
+   - **Detection — the `mode` marker is the SOLE authority. Do NOT infer from cwd:**
+
+     ```bash
+     MODE=$(cat "$(git rev-parse --show-toplevel)/.dev-workflow/signals/mode" 2>/dev/null)  # anchored — a build phase may have cd'd into a subdir
+     ```
+
+     - `mode` reads exactly `autopilot` → **autopilot mode**.
+     - anything else (absent, empty, other value) → **interactive mode**.
+
+     > Why not cwd: the Phase 0 guard relocates **every** build — including an
+     > interactive, human-driven one — into a worktree, so "cwd is under
+     > `.feature-workspaces/`" no longer distinguishes autonomous from interactive.
+     > Only `/aep-launch` writes the marker, so only a launched (autonomous) worker
+     > reads `autopilot`. When the signal is ambiguous we default to **interactive
+     > (ask)** — never auto-merge when unsure. (Matches `signals-spec.md`.)
+
+   - **Interactive mode** (a human is at your prompt): ask for confirmation before merging.
+   - **Autopilot mode** (no human at your prompt): **merge immediately** when the
+     pre-merge conditions pass — do **not** wait for user confirmation. The
+     orchestrator monitors via signals, not interactive prompts.
+
+> **"PR ready" is NOT a stop condition.** A ready, mergeable PR is a _precondition
+> to merge_, not a place to stop. In autopilot mode you may stop short of merge
+> **only** when one of these is true — otherwise you MUST proceed to merge:
+>
+> 1. a **required** review is missing,
+> 2. **required** checks are pending or failing,
+> 3. a **merge conflict** / dirty branch (rebase failed),
+> 4. an **unresolved review thread** blocks the merge,
+> 5. an explicit **human-approval gate** applies (raise it via the Human-Gate Protocol),
+> 6. project **policy** (`full_auto`/strategic) says pause.
+>
+> None of the above ⇒ merge. Reporting `mergeStateStatus=CLEAN` and stopping is a
+> bug, not a safe state. After merging, set `status.json` `story_status: "completed"`
+> — **your job ends there. Do NOT run `/aep-wrap` yourself** (wrap runs `/opsx:archive`
+> on the integration branch; running it from this worktree corrupts the concurrency
+> protocol). Wrap is owned by the integration branch — the human in interactive mode,
+> the orchestrator's next tick in autopilot. The story is "done" only when **merged +
+> wrapped**, but you only do the merge. Canonical worked cases:
+> `references/merge-decision-cases.md`.
 
 Merge:
 
@@ -840,7 +932,7 @@ REMOTE_URL=$(git remote get-url origin)
 - **Never skip the tracking initialization** (Phase 0). Every workflow needs a progress file and contracts.
 - **Never run `/opsx:archive` from a workspace** — it writes to `openspec/specs/` and causes conflicts. Archive always runs on the integration branch via `/aep-wrap`.
 - **Never write to `product-context.yaml` from a workspace** — only the main session writes to the YAML. Report all status through `.dev-workflow/signals/status.json`. This is the concurrency protocol.
-- **Always confirm with the user** before creating PRs, merging, or pushing to shared branches.
+- **Confirm with the user before creating PRs, merging, or pushing to shared branches _only in interactive mode_** (a human is at your prompt). **Autopilot mode is decided _solely_ by `.dev-workflow/signals/mode` reading `autopilot`** (not by cwd) — then there is no human to confirm, so **proceed when the Phase 12 conditions pass**; "PR ready" is not a stop point (see Phase 12).
 - **The `.dev-workflow/` folder is ephemeral** — gitignored, local to each workspace.
 - **Resume support**: If returning to an in-progress workflow, run `.dev-workflow/init.sh` if it exists, then read the progress file.
 - **Phase skipping**: Users may ask to skip phases. Update progress file accordingly.

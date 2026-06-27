@@ -12,6 +12,7 @@ Anthropic's harness design research uses file-based communication between agents
 
 ```
 .dev-workflow/signals/
+├── mode                     # /aep-launch writes — autonomy marker ("autopilot"); worker reads in Phase 12
 ├── status.json              # Workspace agent writes — current phase and progress
 ├── feedback.md              # Main session writes — mid-flight feedback
 ├── ready-for-review.flag    # Workspace agent creates — signals human eval needed
@@ -23,6 +24,39 @@ Anthropic's harness design research uses file-based communication between agents
 ---
 
 ## Signal Files
+
+### `mode` — Autonomy Marker
+
+**Written by:** `/aep-launch` (orchestrator), at worktree creation
+**Read by:** Workspace agent (in Phase 12, and any merge-confirmation decision)
+**Format:** Single line — currently `autopilot`
+
+The presence of this file (value `autopilot`) means the worker was **launched
+autonomously** — there is no human at the worker's prompt to confirm a merge.
+It is the **source of truth** for the Phase 12 "Merge decision":
+
+- `mode` reads `autopilot` → **autopilot mode**: merge when Phase 12 conditions
+  pass; never stop at "PR ready" to ask for confirmation.
+- `mode` absent → **interactive mode**: a human is driving `/aep-build` directly;
+  ask for confirmation before merging.
+
+> **Staleness:** the marker has no launch-id/timestamp. Autopilot removes the
+> worktree on wrap, so a lingering `.feature-workspaces/<name>` with `mode=autopilot`
+> means a **crashed** run. A human who resumes the same `<name>` inherits its
+> autopilot mode (auto-merge) — remove the stale worktree first to build interactively.
+
+This marker is the **sole** mode signal — the worker must **not** infer mode from
+its cwd. The Phase 0 worktree guard relocates _every_ build (including an interactive
+one) into `.feature-workspaces/`, so "cwd under `.feature-workspaces/`" no longer
+distinguishes autonomous from interactive; and under Codex `codex-subagent`
+(`spawn_agent` has no cwd parameter) cwd is a soft contract anyway. The worker must
+**not** delete or overwrite `mode`; its own Phase 0 `mkdir -p .dev-workflow/signals`
+is idempotent and leaves this file intact.
+
+```bash
+# Worker — Phase 12 detection (anchored to the worktree root, not cwd):
+MODE=$(cat "$(git rev-parse --show-toplevel)/.dev-workflow/signals/mode" 2>/dev/null)
+```
 
 ### `status.json` — Progress Signal
 

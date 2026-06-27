@@ -1,9 +1,11 @@
 # Dependencies
 node_modules/
 
-# Build outputs
+# Build outputs (root + per-workspace; NOT the skills/.../build source dir)
 dist/
-build
+/build/
+apps/*/build/
+packages/*/build/
 *.tsbuildinfo
 
 # Environment variables

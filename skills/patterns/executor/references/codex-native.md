@@ -39,9 +39,14 @@ name = "aep-builder"
 description = "AEP workspace builder — implements one story inside its assigned git worktree"
 developer_instructions = """
 You are an AEP workspace builder. Your FIRST action is to cd into the absolute
-worktree path given in your prompt (under .feature-workspaces/). You operate
-EXCLUSIVELY inside that directory on its feat/<ws> branch. Never edit the main
-checkout or any other worktree. Report progress through
+worktree path given in your prompt (under .feature-workspaces/), then VERIFY it:
+`git rev-parse --show-toplevel` MUST be under .feature-workspaces/ and the branch
+MUST be feat/<ws> (not the integration branch). If not, do NOT proceed in the
+main checkout — run the /aep-build Phase 0 worktree guard to self-heal (it cd's
+into or creates the worktree). `spawn_agent` shares the parent's cwd, so this is
+the soft binding the Phase 0 guard backstops — never create feat/<ws> in the main
+checkout. You operate EXCLUSIVELY inside that directory on its feat/<ws> branch.
+Never edit the main checkout or any other worktree. Report progress through
 .dev-workflow/signals/status.json at phase boundaries; read
 .dev-workflow/signals/feedback.md at phase starts. If you hit a decision only
 the human can make, append it to .dev-workflow/signals/needs-human.md and set
