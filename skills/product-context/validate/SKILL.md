@@ -398,7 +398,7 @@ See `references/evaluator-criteria.md` for the full 5-dimension scoring framewor
 ## When NOT to Use This Skill
 
 - **During `/aep-build` Phase 5** — use the built-in evaluator loop instead (it has executor.spawn_evaluator, verification JSON, scoring framework)
-- **For subjective quality** — this skill validates factual correctness and completeness, not aesthetic judgment
+- **For subjective quality** — this skill validates factual correctness and completeness, not aesthetic judgment. For usability / design-quality review, use [`/aep-design-lens`](../../patterns/design-lens/SKILL.md) (a heuristic health-check grounded in HCI theory) — its design-quality pass complements validate's factual pass.
 - **For tiny changes** — single-file edits or typo fixes don't need a 3-agent validation
 
 ---

@@ -101,7 +101,10 @@ agent-driven — mine, don't ask yet.
    metadata.
 5. **Round 4 — Representation hints:** project primary objects into structural
    `collection` + `detail` views; pick each capability's `anchor_object`. IA only,
-   no visual design.
+   no visual design. For data-heavy or exploration-heavy capabilities, draw the
+   structural idiom (overview→zoom→detail, coordinated views, information scent) from
+   [`/aep-design-lens`](../../patterns/design-lens/SKILL.md) families C/D — it supplies
+   the HCI theory; this skill still owns the object/screen structure.
 
 Write:
 
