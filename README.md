@@ -571,7 +571,7 @@ These aren't rules we invented — they're patterns extracted from Anthropic's e
 
 ## Getting Started
 
-**Brand new to AEP?** Start with the [Orientation Guide](docs/orientation.md) for a 10-minute tour of the mental models, the 20 skills, and the four paths — then run `/aep-onboard`.
+**Brand new to AEP?** Start with the [Orientation Guide](docs/orientation.md) for a 10-minute tour of the mental models, the 22 skills, and the four paths — then run `/aep-onboard`.
 
 **New to this plugin?**
 
@@ -630,9 +630,11 @@ Generate a dimension-specific brief, explore or discuss, capture decisions for a
 | `/aep-envision`              | product-context              | Opportunity brief + context document                                                                             |
 | `/aep-map`                   | product-context              | System map + story graph + agent topology                                                                        |
 | `/aep-model`                 | product-context              | Object-first UI structure (OOUX/ORCA Object Map) for UI products                                                 |
+| `/aep-validate`              | product-context              | Generator/evaluator validation of any AEP artifact                                                               |
 | `/aep-dispatch`              | product-context              | Pick next story + create OpenSpec change                                                                         |
 | `/aep-calibrate`             | product-context              | Human alignment checkpoint for any quality dimension                                                             |
 | `/aep-reflect`               | product-context              | Classify feedback + update context                                                                               |
+| `/aep-watch`                 | product-context              | Ingest telemetry/errors → auto-file stories (self-feeding loop)                                                  |
 | `/aep-onboard`               | project-setup                | Verify tools + install plugins                                                                                   |
 | `/aep-scaffold`              | project-setup                | Scaffold monorepo + initialize OpenSpec; idempotent audit→converge for existing projects                         |
 | `/aep-e2e-skill-scaffolding` | project-setup                | Generate/upgrade the canonical BDD layer-gate e2e-test skill                                                     |
@@ -645,6 +647,7 @@ Generate a dimension-specific brief, explore or discuss, capture decisions for a
 | `/aep-executor`              | patterns                     | Host-agnostic backend for spawning/steering workspace agents                                                     |
 | `/aep-autopilot`             | patterns                     | Autonomous dispatch-launch-monitor-wrap loop via `/loop`                                                         |
 | `/aep-workflow`              | patterns                     | Dynamic workflows — author a custom multi-agent harness for a task (+ sub-pattern catalog)                       |
+| `/aep-workflow-feedback`     | patterns                     | Capture + review process learnings between downstream projects and AEP                                           |
 | `/aep-design-lens`           | patterns                     | Theory-grounded design guideline + heuristic health-check (HCI/design-theory catalog + task/data lens selection) |
 
 Launches are **native-first** with **hub-and-spoke human gates** — see

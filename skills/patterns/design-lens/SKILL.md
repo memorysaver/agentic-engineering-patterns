@@ -1,7 +1,7 @@
 ---
 name: aep-design-lens
 description: |-
-  Theory-grounded design guidance and heuristic health-check for any product's UI/UX. This is a utility skill — it provides an extensible catalog of established HCI/design theory (Nielsen's heuristics, Norman's gulfs + design principles, Shneiderman's mantra + Eight Golden Rules, Cognitive Load, Information Foraging, Gestalt, Fitts's/Hick's laws, Munzner's Nested Model, Graphical Perception, Heer & Shneiderman's interactive dynamics, plus Human-AI / agent-UX guidelines) and a Munzner-style method that selects the lenses that apply to a product, then emits (1) design suggestions, (2) a design guideline to build against, and (3) a severity-scored health-check table auditing whether the design meets human expectations. Product-agnostic — it classifies the user's tasks + data instead of matching a fixed product type. Use directly when the user says "design review", "design guideline", "usability check", "heuristic evaluation", "design health check", "is this good UX", "apply Nielsen/Norman/Shneiderman", "audit my dashboard/agent UI", or when planning or auditing a UI. Cross-linked from /aep-model, /aep-calibrate, and /aep-validate. NOT for capturing human taste decisions (that is /aep-calibrate) or object/screen IA structure (that is /aep-model) — this skill brings the external, evidence-based theory those skills apply.
+  Theory-grounded design guidance and heuristic health-check for any product's UI/UX. This is a utility skill — an extensible catalog of established HCI/design theory in seven families (Nielsen/Norman/Shneiderman heuristics, cognitive & perceptual laws, information seeking, data-viz encoding, Human-AI & agent UX, accessibility, evaluation methods) plus a method that classifies the user's tasks + data (not a fixed product type) to select the lenses that apply, then emits design suggestions, a design guideline to build against, and a Nielsen 0–4 severity-scored health-check. Two depths: quick check (Baseline Ten) or deep audit. Use on "design review", "design guideline", "usability check", "heuristic evaluation", "design health check", "is this good UX", "accessibility check", "apply Nielsen/Norman", "audit my dashboard/agent UI", or when planning or auditing a UI. Cross-linked from /aep-model, /aep-calibrate, /aep-validate. NOT for capturing human taste (/aep-calibrate) or object/screen IA (/aep-model).
 ---
 
 # Design Lens
@@ -43,6 +43,22 @@ structural fix for four failure modes that appear when agents design and build U
 The mechanism in every case is the same: **a shared theory catalog + a selection
 method** instead of per-product guesswork.
 
+### Design goals
+
+Every output this skill produces is held to five goals — use them to judge whether
+a run did its job:
+
+1. **Relevant, not boilerplate** — lenses are selected by the product's task+data
+   profile; families that didn't fire don't appear in the output.
+2. **Traceable** — every suggestion and health-check row carries a `(→ lens id)`
+   back to a citable source, so the guidance is defensible, not vibes.
+3. **Honest** — Nielsen 0–4 severity forces triage; passing designs get short
+   tables, and findings cite observed evidence, not assumptions.
+4. **Actionable** — ranked by severity, closed with a cross-family "Top 5", and
+   phrased specifically to the characterized product.
+5. **Cheap to invoke** — a quick check (the Baseline Ten) answers "is this OK?"
+   in minutes; the full audit is reserved for when depth is warranted.
+
 ---
 
 ## The Method (summary)
@@ -50,6 +66,12 @@ method** instead of per-product guesswork.
 Product-agnostic, because it classifies **tasks and data**, not a product type.
 Full step detail, the lens-selection rules, and the output templates are in
 [`references/method-and-templates.md`](references/method-and-templates.md).
+
+**Two depths.** A **quick check** scores just the **Baseline Ten** — a distilled
+cross-family checklist — and answers "is this OK?" in minutes; any major/catastrophe
+finding escalates to the full audit. A **deep audit** runs all seven steps below.
+Default to quick check when the user asks a lightweight question ("is this good
+UX?"), deep audit when they ask for a guideline or a review.
 
 1. **Characterize** — what is the product, who uses it, what are they trying to do?
 2. **Abstract** — classify the primary user **tasks** (monitor / compare / look-up /
@@ -73,6 +95,7 @@ Full step detail, the lens-selection rules, and the output templates are in
 | **Data-dense** (charts, dashboards, BI, observability) | + D (Munzner, Graphical Perception, Heer & Shneiderman, Tufte)    |
 | **LLM / agent / chat / prompt / workflow composer**    | + E (Gulf of Envisioning, Human-AI guidelines, trust calibration) |
 | **Always**                                             | + F (evaluation method + Nielsen 0–4 severity scoring)            |
+| **Always** (any human-perceived UI, incl. terminal)    | + G (accessibility & inclusive design — WCAG POUR)                |
 
 ---
 
@@ -91,6 +114,7 @@ are in [`references/theory-catalog.md`](references/theory-catalog.md), which is
 | **D. Data visualization & encoding**      | Munzner's Nested Model + task typology · Graphical Perception · Grammar of Graphics / Bertin · Heer & Shneiderman · Tufte                                  |
 | **E. Human-AI & agent-specific UX**       | Gulf of Envisioning · Microsoft's 18 HAI Guidelines · Google PAIR · trust calibration · observability · steerability/reversibility · Grice's maxims · CASA |
 | **F. Evaluation & process methods**       | Heuristic Evaluation · Cognitive Walkthrough · Nielsen 0–4 severity scale · GOMS/KLM · Norman's stages-of-action as a lens                                 |
+| **G. Accessibility & inclusive design**   | WCAG 2.2 POUR · keyboard & focus · contrast & legibility (never color alone) · inclusive design (permanent/temporary/situational impairments)              |
 
 ---
 
@@ -112,8 +136,9 @@ are in [`references/theory-catalog.md`](references/theory-catalog.md), which is
   supplies the theory a calibration can lean on; it does not decide taste.
 - You need the **object/screen IA structure** (which objects, what fields, which
   screens) — that is [`/aep-model`](../../product-context/model/SKILL.md).
-- It's a **backend/CLI-only** surface with no human-perceived UI — though a CLI that
-  wraps an agent still benefits from family E (Gulf of Envisioning).
+- It's a **backend-only** surface with no human-perceived UI — though a CLI that
+  wraps an agent still benefits from family E (Gulf of Envisioning), and any terminal
+  output is still a human-perceived UI for family G (color-alone signals, contrast).
 - You want it to **replace real user testing.** Heuristics predict where users will
   struggle; they do not observe actual users. Treat the health-check as evidence, not proof.
 
@@ -142,14 +167,18 @@ After sync with the `aep-` prefix, the catalog is at:
 
 1. **Describe the product.** A sentence or two is enough: what it is, who uses it,
    what they do with it. If a running UI or spec exists, point to it.
-2. **Run the method** (`references/method-and-templates.md`): characterize → abstract
+2. **Pick the depth.** Quick question ("is this good UX?") → **quick check**: score
+   the Baseline Ten (`references/method-and-templates.md#the-baseline-ten-quick-check`)
+   and stop unless something major surfaces. Guideline or review request → **deep
+   audit**: continue with the full method.
+3. **Run the method** (`references/method-and-templates.md`): characterize → abstract
    the tasks + data → select the lens families that fire.
-3. **Produce the guideline** — the prescriptive "the product should…" statements,
+4. **Produce the guideline** — the prescriptive "the product should…" statements,
    grouped by family, using the guideline template.
-4. **Produce the health-check table** — one row per checkable expectation, each traced
+5. **Produce the health-check table** — one row per checkable expectation, each traced
    to a theory and scored 0–4 (Nielsen severity). Sum to an overall read on whether the
    design meets human expectations.
-5. **Present the report** in the conversation (default). **Opt-in persist:** if the
+6. **Present the report** in the conversation (default). **Opt-in persist:** if the
    user asks ("save this", "write it to a file"), write a standalone markdown file
    (default `docs/design-review/<scope>-<date>.md`). Never write to `product-context.yaml`
    or any AEP schema file — this skill is advisory and adds no taxonomy.
@@ -185,6 +214,18 @@ leaf skill.
 invites "everything is minor." Nielsen's scale (0 = not a problem … 4 = usability
 catastrophe) forces triage and makes "does it meet human expectations?" answerable
 rather than vibes-based.
+
+**Why two depths (quick check vs deep audit).** Tesler's Law applied to this skill
+itself: forcing the full 7-step audit on every "is this OK?" question pushes the
+method's cost onto the user, so the cheap path would get skipped. The Baseline Ten
+gives a minutes-scale sweep with an honest escalation rule — any major/catastrophe
+finding upgrades to a deep audit — so speed never silently trades away rigor.
+
+**Why accessibility always fires (family G).** The other families assume the user can
+perceive and operate the UI at all; accessibility is that precondition, not a
+nice-to-have. WCAG criteria are checkable and severity-scorable exactly like heuristic
+failures, and impairments are situational as often as permanent (glare, one hand,
+noise), so G applies to every human-perceived surface — including terminal output.
 
 ---
 

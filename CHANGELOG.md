@@ -21,7 +21,7 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 _Nothing yet._
 
-## [2.6.0] - 2026-07-08
+## [2.6.0] - 2026-07-10
 
 **Add `/aep-design-lens` — a `patterns/` skill that grounds UI/UX design in
 established HCI/design theory.** AEP had skills for UI _structure_ (`/aep-model`,
@@ -36,22 +36,39 @@ gap without touching any schema.
   referenceable). Given any product, it runs a **Munzner-style, product-agnostic method**
   (characterize → abstract the user's tasks + data → select lenses → synthesize) and emits
   three things: design suggestions, a **design guideline** to build against, and a
-  **severity-scored (Nielsen 0–4) health-check table**. Output is **hybrid** — an advisory
+  **severity-scored (Nielsen 0–4) health-check table**. Two depths: a **quick check**
+  (the Baseline Ten — ten distilled cross-family rows, with an escalation rule on any
+  major finding) and the full **deep audit**. Output is **hybrid** — an advisory
   report by default, an opt-in standalone markdown file on request. It writes **no**
-  `product-context.yaml` / schema fields (zero-drift leaf skill).
-- **`references/theory-catalog.md`** — an extensible catalog of ~35 established lenses in
-  six families: A usability heuristics (Nielsen, Shneiderman's golden rules, Norman) ·
+  `product-context.yaml` / schema fields (zero-drift leaf skill). SKILL.md states five
+  explicit design goals: relevant (lens selection), traceable (`→ lens id` on every
+  statement), honest (severity triage, observed evidence), actionable (Top 5), cheap
+  to invoke (quick check).
+- **`references/theory-catalog.md`** — an extensible catalog of ~40 established lenses in
+  seven families: A usability heuristics (Nielsen, Shneiderman's golden rules, Norman) ·
   B cognitive/perceptual laws (Cognitive Load, Fitts, Hick, Gestalt, …) · C information
   seeking (Shneiderman's mantra, Information Foraging, Focus+Context) · D data
   visualization (Munzner, Graphical Perception, Heer & Shneiderman, Tufte) · E human-AI /
   agent UX (Gulf of Envisioning, Microsoft's 18 HAI guidelines, trust calibration,
   steerability) · F evaluation methods (heuristic evaluation, cognitive walkthrough,
-  0–4 severity). Documents how to add a lens.
+  0–4 severity) · G accessibility & inclusive design (WCAG 2.2 POUR, keyboard & focus,
+  contrast/color independence, the impairment spectrum — always fires, incl. terminal
+  output). Documents how to add a lens.
 - **`references/method-and-templates.md`** — the 7-step method, the family-selection rules,
+  the Baseline Ten quick check, a live-UI evidence-gathering protocol (walk top tasks,
+  evidence per finding, unhappy paths, cheap G probes; agent-browser for deployed UIs),
   worked selection examples, and the guideline / health-check / persisted-file templates.
 - **Prose cross-links** (no schema/enum changes) from `/aep-model`, `/aep-calibrate`
   (ux-flow), and `/aep-validate` pointing to the new skill as the design-theory /
-  design-quality complement.
+  design-quality complement. Glossary entries for **Design Lens** and **Heuristic
+  Health-Check**.
+
+### Fixed
+
+- **Doc-listing drift (pre-existing):** README "All Skills" was missing `/aep-validate`,
+  `/aep-watch`, and `/aep-workflow-feedback`; orientation and the quick reference were
+  missing `/aep-executor`; stale skill counts ("17"/"20") corrected to 22. All listings
+  now enumerate the same 22 skills.
 
 ## [2.5.0] - 2026-06-28
 

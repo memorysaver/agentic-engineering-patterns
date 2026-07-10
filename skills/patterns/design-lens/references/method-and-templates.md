@@ -44,8 +44,8 @@ media · records/entities · logs/traces · conversational/free-text.
 
 ### 3. Select lenses
 
-Apply the selection rules to the task+data profile. Families A, B, F always fire; C, D,
-E fire on triggers.
+Apply the selection rules to the task+data profile. Families A, B, F, G always fire;
+C, D, E fire on triggers.
 
 | If the product…                                                                                                  | Add family                               |
 | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
@@ -55,6 +55,7 @@ E fire on triggers.
 | shows **quantitative/metric/time-series/graph data** or **compare/monitor/diagnose** tasks                       | **D** Data visualization & encoding      |
 | is an **LLM/agent/chat/prompt/workflow-composer**, or **converse** tasks, or the system takes autonomous actions | **E** Human-AI & agent-specific UX       |
 | always (to run and score the review)                                                                             | **F** Evaluation & process methods       |
+| has any human-perceived UI, incl. terminal output (always)                                                       | **G** Accessibility & inclusive design   |
 
 Within each selected family, pull the lenses whose **When** matches. Note _why_ each
 family fired — that traceability is what makes the output defensible, not generic.
@@ -86,25 +87,75 @@ standalone markdown file — see [Persisted-file layout](#opt-in-persisted-file-
 
 ---
 
+## The Baseline Ten (quick check)
+
+The fast path for "is this OK?" questions: skip steps 3–5 and score only these ten
+distilled, cross-family checks (0–4 each, same scale as the full table). Skip a row
+only if its family genuinely doesn't apply (8 needs data, 9 needs an agent).
+
+| #   | Lens  | Check (does the design…?)                                                   |
+| --- | ----- | --------------------------------------------------------------------------- |
+| 1   | A1    | …show status for every async action?                                        |
+| 2   | A1/A2 | …offer undo/exit for destructive or wrong-turn actions?                     |
+| 3   | A1    | …phrase errors in plain language with a recovery path?                      |
+| 4   | B1/C1 | …default to a summary, with detail on demand?                               |
+| 5   | B3    | …keep choice sets small/grouped, with a recommended default?                |
+| 6   | B5    | …acknowledge every action fast (~400ms), with progress for longer waits?    |
+| 7   | C2    | …give each list/card item enough scent to decide whether to open it?        |
+| 8   | D2    | …encode precise comparisons by position/length, not area/angle/color?       |
+| 9   | E5/E6 | …make agent actions legible (summary→detail) and reversible/interruptible?  |
+| 10  | G2/G3 | …work keyboard-only, meet contrast minima, and never signal by color alone? |
+
+**Escalation rule:** any row scoring 3–4, or the user asking "why" / "what should we
+do about it", upgrades the run to the full deep audit. Report the ten rows + a
+two-sentence verdict; don't pad.
+
+---
+
+## Auditing a live UI (evidence gathering)
+
+When a running product exists, score against **what you observe, not what the spec
+claims**. Before scoring:
+
+1. **Walk the top 1–3 tasks as a first-time user** (F2's four questions per step),
+   from entry to completion — not just the screens in isolation.
+2. **Capture evidence per finding** — a screenshot, the exact copy string, or the
+   step where the walkthrough broke. The Evidence column must cite something
+   observed; "probably fails" is not a finding.
+3. **Exercise the unhappy paths** — submit an empty form, kill the network mid-run,
+   stop an in-flight agent action. Most 4s live there.
+4. **Probe G cheaply** — tab through the primary flow, check contrast on the worst
+   text/background pair, squint-test whether state survives without color.
+
+If the product is deployed, drive it with the agent browser (same tooling as
+post-deploy e2e verification) and screenshot each primary screen. If it's pre-build,
+audit the spec/wireframes and mark rows `target` instead of scoring.
+
+---
+
 ## Worked selection examples
 
 These show the abstraction → selection step; they are illustrations, not a lookup table.
 
 **Agent observability console** — _monitor + diagnose + reconstruct-provenance_ over
-_logs/traces + metrics_. Fires **A + B + C + D + E + F** (nearly everything): overview→
-filter→detail for runs (C1), scent on run cards (C2), preattentive error spotting (B7),
-position/length for cost/latency (D2), coordinated linked views + provenance (D4),
-progressive disclosure of agent reasoning + steerability (E5, E6). The richest case.
+_logs/traces + metrics_. Fires **all of A–G**: overview→filter→detail for runs (C1),
+scent on run cards (C2), preattentive error spotting (B7), position/length for
+cost/latency (D2), coordinated linked views + provenance (D4), progressive disclosure
+of agent reasoning + steerability (E5, E6), status never encoded by color alone (G3).
+The richest case.
 
-**Marketing landing page** — _look-up + decide_ over _text/media_. Fires **A + B (+ minimal
-C) + F**; **not D** (no data), **not E** (no agent). Emphasis: Gulf of Execution for the
-CTA (A3), visual hierarchy & Gestalt (B6), aesthetic-usability (B8), scent toward the
-single conversion action (C2). Applying data-viz rules here would be noise.
+**Marketing landing page** — _look-up + decide_ over _text/media_. Fires **A + B
+(+ minimal C) + F + G**; **not D** (no data), **not E** (no agent). Emphasis: Gulf of
+Execution for the CTA (A3), visual hierarchy & Gestalt (B6), aesthetic-usability (B8),
+scent toward the single conversion action (C2), contrast + alt text + captions (G1, G3).
+Applying data-viz rules here would be noise.
 
 **CLI tool that wraps an agent** — _create/author + converse_ over _conversational/text_.
-Fires **A + B + E + F**; **not D**. Even without a GUI: Gulf of Envisioning (does the user
-know what the agent can do and how to instruct it, E1), conversational maxims for output
-(E7), steerability/reversibility of actions (E6), feedback & error recovery (A1).
+Fires **A + B + E + F + G**; **not D**. Even without a GUI: Gulf of Envisioning (does the
+user know what the agent can do and how to instruct it, E1), conversational maxims for
+output (E7), steerability/reversibility of actions (E6), feedback & error recovery (A1),
+and terminal accessibility — meaning must survive without color, output must read well
+in a screen reader or plain pipe (G3).
 
 ---
 
@@ -115,7 +166,7 @@ know what the agent can do and how to instruct it, E1), conversational maxims fo
 
 **Characterization:** <1–2 sentences: what it is, who uses it, what they do.>
 **Primary tasks:** <e.g. monitor, diagnose> **Data:** <e.g. logs/traces, metrics>
-**Lenses selected:** A, B, C, D, E, F — <one clause on why C/D/E fired (or didn't)>
+**Lenses selected:** A, B, C, D, E, F, G — <one clause on why C/D/E fired (or didn't)>
 
 ## A. Usability & interaction
 
@@ -138,6 +189,10 @@ know what the agent can do and how to instruct it, E1), conversational maxims fo
 
 - ...
 
+## G. Accessibility & inclusion
+
+- The product should <…>. _(→ G3 color independence)_
+
 ## Top 5 (do these first)
 
 1. <highest-leverage guideline, cross-family>
@@ -159,7 +214,7 @@ the **Status** column value `target` instead of a severity.
 # Design Health-Check — <product> (<date>)
 
 **Scope:** <what was reviewed — a running URL, a spec, a set of screens>
-**Lenses:** A, B, C, D, E, F
+**Lenses:** A, B, C, D, E, F, G
 
 | #   | Lens | Check (does the design…?)                       | Status  | Severity | Evidence / fix                                                     |
 | --- | ---- | ----------------------------------------------- | ------- | -------- | ------------------------------------------------------------------ |
@@ -168,6 +223,7 @@ the **Status** column value `target` instead of a severity.
 | 3   | C2   | …give each run card enough scent to triage?     | partial | 3        | Cards show name only; add status, cost, last tool call.            |
 | 4   | D2   | …encode precise comparisons by position/length? | fail    | 3        | Cost shown as donut; switch to bars.                               |
 | 5   | E6   | …make pause/rollback consequences predictable?  | fail    | 4        | "Stop" gives no confirmation of effect on in-flight work.          |
+| 6   | G3   | …signal run state by more than color alone?     | fail    | 3        | Red/green dots only; add icon or label per state.                  |
 
 ## Summary
 

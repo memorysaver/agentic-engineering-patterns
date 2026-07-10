@@ -465,12 +465,72 @@ _Fires: always._ How to run the design review and score the health-check.
 
 ---
 
+## Family G — Accessibility & inclusive design
+
+_Fires: always (any human-perceived UI, including terminal output)._ The other
+families assume the user can perceive and operate the interface at all; this family
+checks that precondition. Score failures with the same 0–4 scale — a
+keyboard-unreachable primary action is a catastrophe for the user it excludes.
+
+### G1. WCAG POUR principles
+
+- **Q:** Is the interface Perceivable, Operable, Understandable, and Robust for users
+  with differing abilities?
+- **When:** Any human-facing UI. This is the accessibility baseline checklist.
+- **Apply:** Design to the four principles: **Perceivable** (text alternatives,
+  captions, content distinguishable), **Operable** (keyboard access, enough time, no
+  seizure triggers, navigable), **Understandable** (readable, predictable, input
+  assistance), **Robust** (works with assistive technologies — semantic markup,
+  ARIA only where semantics fall short).
+- **Check:** "Does every non-text element have a text alternative?", "Is every function
+  reachable and operable without a pointer?", "Do form errors identify the field and
+  suggest a fix?"
+- **Source:** W3C, Web Content Accessibility Guidelines (WCAG) 2.2.
+
+### G2. Keyboard & focus
+
+- **Q:** Can the whole product be driven from the keyboard, with the focus always visible?
+- **When:** Any UI with interactive controls; critical for expert/ops tools (overlaps F4).
+- **Apply:** Every interactive element is focusable in a logical order; focus is clearly
+  visible; no keyboard traps; provide skip links past repeated chrome; keep shortcuts
+  discoverable and non-conflicting.
+- **Check:** "Can a user complete the primary task keyboard-only?", "Is the focus
+  indicator visible at every step?", "Does tab order match visual order?"
+- **Source:** WCAG 2.2 (2.1 Keyboard Accessible, 2.4 Navigable); WAI-ARIA Authoring Practices.
+
+### G3. Contrast, legibility & color independence
+
+- **Q:** Can the content be read, and does meaning survive without color?
+- **When:** All text, icons, states, charts — anywhere meaning is visually encoded.
+- **Apply:** Meet contrast minima (≥4.5:1 body text, ≥3:1 large text/UI components);
+  never encode a state by **color alone** — pair hue with shape, icon, or label
+  (color-blind users, mono displays, terminals); keep text resizable without breakage.
+- **Check:** "Do text and essential icons meet contrast ratios?", "Is every
+  color-encoded state (error/success, chart series) also distinguishable by a
+  non-color channel?"
+- **Source:** WCAG 2.2 (1.4 Distinguishable); Okabe & Ito color-universal-design palette.
+
+### G4. Inclusive design (the impairment spectrum)
+
+- **Q:** Who is excluded by this design — permanently, temporarily, or situationally?
+- **When:** Any product; strongest when "our users don't need accessibility" is claimed.
+- **Apply:** Design for the spectrum: one-armed / arm-injury / carrying-a-child is one
+  interaction profile; deaf / ear-infection / loud-bar is one auditory profile. Fixes for
+  the permanent case (captions, large targets, keyboard paths) serve everyone in the
+  situational case — accessibility work compounds into general usability.
+- **Check:** "Does the primary task survive one-handed use, bright glare, and muted
+  audio?", "Are 'accessibility' features (captions, zoom, keyboard paths) first-class
+  rather than bolted on?"
+- **Source:** Microsoft Inclusive Design toolkit; Holmes, _Mismatch_.
+
+---
+
 ## Extending the catalog
 
 To add a lens:
 
-1. **Place it in the family that matches its selection trigger** (A/B always fire; C = info
-   spaces; D = data viz; E = AI/agents; F = evaluation). If it introduces a genuinely new
+1. **Place it in the family that matches its selection trigger** (A/B/F/G always fire;
+   C = info spaces; D = data viz; E = AI/agents). If it introduces a genuinely new
    trigger, add a family here _and_ a selection rule in `method-and-templates.md` — keep the
    two in sync.
 2. **Use the entry shape** — `Q / When / Apply / Check / Source`. The **Check** line is
@@ -482,5 +542,4 @@ To add a lens:
 
 Candidate lenses noted for future addition (not yet written up): Emotional Design
 (visceral/behavioral/reflective), Distributed Cognition, Activity Theory, Diátaxis (for
-doc-heavy products), Dark-Patterns / ethical-design checklist, Accessibility (WCAG POUR)
-as its own family.
+doc-heavy products), Dark-Patterns / ethical-design checklist.

@@ -321,6 +321,14 @@ The pre-assembled directory of context files created by `/aep-dispatch` for each
 
 See also: **Context Assembly**, **Stable Prefix**, **OpenSpec Change**
 
+### Design Lens
+
+The pattern skill (`/aep-design-lens`) that grounds UI/UX design in established HCI/design theory instead of gut feel. Maintains an extensible theory catalog (seven families: usability heuristics, cognitive/perceptual laws, information seeking, data-viz encoding, human-AI/agent UX, evaluation methods, accessibility) plus a product-agnostic method that classifies the user's **tasks + data** to select which lenses apply, then emits design suggestions, a design guideline to build against, and a **Heuristic Health-Check**. Advisory leaf skill — reports by default, persists a standalone markdown file only on request, never writes `product-context.yaml`.
+
+**Where it appears:** `/aep-design-lens` skill; referenced by `/aep-model` (Round 4), `/aep-calibrate` (ux-flow/visual-design), `/aep-validate` (design-quality complement).
+
+See also: **Heuristic Health-Check**, **Calibration**
+
 ### Dynamic Workflow
 
 A **Harness** that Claude writes itself, on the fly, for a single task — a deterministic JS script (the Claude Code _Workflow_ tool) that spawns and coordinates context-isolated subagents, instead of running the task in the one default coding harness. Used to counter agentic laziness, self-preferential bias, and goal drift on large/unbounded work. Has a catalog of sub-patterns (classify-route, fan-out/synthesize, adversarial verify, generate-filter, tournament, loop-until-done). Distinct from **Workflow Feedback**.
@@ -380,6 +388,14 @@ The infrastructure surrounding an agent to help it succeed — tracking files, s
 | No mid-flight course correction | feedback.md               | Main session sends instructions |
 
 See also: **Dynamic Workflow** (a harness Claude writes per-task), **Generator/Evaluator Separation**, **Sprint Contract**, **Feature Verification**
+
+### Heuristic Health-Check
+
+The severity-scored audit table produced by the **Design Lens** skill: one row per checkable design expectation, each traced to a theory lens (e.g. `A1` visibility of status, `G3` color independence) and scored on Nielsen's 0–4 severity scale, summarized into an honest verdict on whether the design meets human expectations. Pre-build products get `target` rows instead of scores. A quick-check variant (the Baseline Ten) scores ten distilled cross-family rows and escalates to the full audit on any major finding.
+
+**Where it appears:** `/aep-design-lens` health-check template; opt-in persisted files under `docs/design-review/` (downstream projects).
+
+See also: **Design Lens**, **Generator/Evaluator Separation**
 
 ### Orchestrator
 
