@@ -62,6 +62,41 @@ lsof -ti :$SERVER_PORT | xargs kill 2>/dev/null
 lsof -ti :$WEB_PORT | xargs kill 2>/dev/null
 ```
 
+### 2.5. Convergence Gather — gather execution records (before archive)
+
+Converge the workspace's build-time runtime signal into the **pre-archive change
+dir** so the archive move in step 3 carries it — see
+[references/convergence.md](references/convergence.md) for the full producer
+contract (manifest, schema, rules):
+
+```bash
+CONV="openspec/changes/<change-name>/convergence"
+mkdir -p "$CONV"
+WS=".feature-workspaces/<name>/.dev-workflow"
+
+# Copy the raw artifacts that exist (each copy is best-effort — skip what's missing):
+cp "$WS/lessons.md" "$CONV/" 2>/dev/null
+cp "$WS"/signals/eval-response-*.md "$CONV/" 2>/dev/null
+cp "$WS"/code-review-*.md "$CONV/" 2>/dev/null
+cp "$WS"/dogfood-*.md "$CONV/" 2>/dev/null
+
+# Write the manifest (see references/convergence.md → execution-record.yaml schema).
+# Identity fields come from signals/status.json; every field degrades to null.
+```
+
+Write `"$CONV"/execution-record.yaml` per the schema in
+`references/convergence.md`: `story_id` (required), `generated_at`, and
+best-effort `merge_commit` / `pr_url` / `cost_usd` (from `signals/status.json`),
+`lessons_present`, `gathered_files` (sorted), `gen_eval` round summaries,
+`review_findings`.
+
+> **Why before step 3 (ordering invariant — gather before archive):** files
+> placed in `openspec/changes/<change-name>/` before the archive ride the
+> archive `mv` and its commit in one shot. Gathering after step 3 needs a
+> separate commit and races teardown — a silent-loss window. The gather is
+> **best-effort**: a missing source becomes an explicit `null` or an absent
+> copy, never a failed wrap.
+
 ### 3. Run archive
 
 ```
@@ -77,6 +112,9 @@ git commit -m "chore: archive <change-name>"
 git pull --ff-only origin "$BASE"
 git push origin "$BASE"
 ```
+
+> `git add openspec/` already stages the `convergence/` records gathered in
+> step 2.5 — the archive commit carries them; no extra commit needed.
 
 ### 5. Sync story status from workspace signals (Product-Cycle Mode Only)
 
@@ -149,6 +187,10 @@ fi
 
 If the lessons file contains only the template header (no Solutions, Errors, Missing, or Summary entries), skip — don't archive empty ceremony.
 
+> This copy is kept **additive** alongside the step 2.5 convergence record: the
+> archived `convergence/` dir is the full per-change record; `lessons-learned/`
+> stays the fast-path index `/aep-reflect` Step 1 already reads.
+
 ### 6. Tear down the worker + worktree (`executor.teardown()`)
 
 Stop the workspace's worker **before** removing the worktree — otherwise an
@@ -181,6 +223,20 @@ If `git branch -d` warns the branch isn't fully merged (e.g., the PR was squash-
 - **Verify OpenSpec changes exist before archiving** — if `openspec/changes/<name>/` is missing, the dispatch commit may have been lost. Recover from the original dispatch commit using `git restore --source=<sha>` before running archive.
 - **Cross-check signals against PR state** — workspace signals can be stale (e.g., showing `in_review` after PR is merged). Always verify via `gh pr view` before updating `product-context.yaml`.
 - **Read signals AND lessons before removing worktrees** — once `git worktree remove` runs, the worktree directory, signal files, and `lessons.md` are gone. Extract all needed data (status, lessons) first.
+- **Gather before archive** — the step 2.5 convergence dir must exist in `openspec/changes/<change-name>/` before `/opsx:archive` runs, so the archive move carries it. Gathering later is a silent-loss race.
+- **Layer Distillation is idempotent** — `lessons-learned/retrospectives/layer-<N>.md` existing means the layer is already distilled; skip, never re-distill (see Reflect and Advance below).
+
+> **Ordering invariant (world-derived postconditions).** The wrap step chain is
+> mechanical — each step's completion is observable from the world, so an
+> interrupted wrap resumes by checking, not re-doing: **gathered** =
+> `convergence/execution-record.yaml` exists (pre- or post-archive location) →
+> **archived** = `openspec/changes/<name>/` gone AND an `archive/*<name>*` dir
+> exists → **committed** = `git status --porcelain` clean over `openspec/` →
+> **status-flipped** = story shows `completed` with its completion fields set →
+> **lessons-copied** = `lessons-learned/<change-name>.md` exists → **torn down** =
+> worktree path gone (cross-check `git worktree list`). Steps whose postcondition
+> already holds are skipped, never repeated. This is the pattern
+> `aep-autopilot/references/deterministic-orchestration.md` generalizes.
 
 ---
 
@@ -240,6 +296,34 @@ run the journey against the `deployed:<url>` target _here_ (after merge/deploy) 
    per-tier status, any waivers) and **confirm with the user** that the next layer's design should begin.
    The gate flip is automatic-on-evidence; the _advance_ is a human decision — the next `/aep-dispatch`
    proceeds only after that confirmation.
+
+### Layer Distillation
+
+When the layer completes, distill what it taught before moving on. **Trigger rule
+(world-derived, idempotent — shared verbatim with autopilot's tick-protocol Layer
+Completion):** fire iff the layer has ≥1 story, every story is
+`completed`/`deferred`, at least one is `completed`, **and
+`lessons-learned/retrospectives/layer-<N>.md` does not exist**. The file's
+existence is the dedupe — no state file; an interrupted distillation heals by
+re-running.
+
+When the trigger fires, spawn an **isolated subagent** (independent context;
+reads only committed files — the layer's archived
+`openspec/changes/archive/*/convergence/` records plus `lessons-learned/*.md`;
+never a live worktree) per the distiller protocol in
+[references/convergence.md](references/convergence.md). It writes two artifacts:
+
+- `lessons-learned/retrospectives/layer-<N>.md` — the prose retrospective
+- `lessons-learned/distillations/layer-<N>.yaml` — the structured,
+  **proposal-only** distillation (`refinements` / `skill_amendments` /
+  `weak_areas`)
+
+Shape-validate the YAML against the schema in `references/convergence.md` before
+committing both files. `skill_amendments` are proposals with rationale — **the
+distiller never edits a skill file**; a human reviews and applies (the same rule
+as `/aep-reflect`'s process feedback). The next `/aep-reflect` ingests the
+distillation via the `distillation` adapter (`aep-reflect`
+`references/telemetry-ingestion.md` → Distillation adapter).
 
 ### Feedback Loop
 

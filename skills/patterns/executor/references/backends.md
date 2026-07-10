@@ -465,6 +465,18 @@ authored it.
 > Workflow tool's own `isolation: 'worktree'` puts agents in host-managed
 > paths — acceptable for ad-hoc batches, but then signals live outside
 > `.feature-workspaces/` and `/aep-wrap` does not apply.
+>
+> **Named hazard [stale-base]:** host-managed `isolation: 'worktree'` bases the
+> agent's worktree on a **stale `origin/<base>`**, not the local
+> integration-branch HEAD — which in a dispatch flow already carries the
+> dispatch-lock commit, so the worker starts from a base that predates its own
+> dispatch and the drift surfaces only at merge time (observed downstream:
+> every dispatch of a layer needed a hand-run rebase; `worktree.baseRef=head`
+> did not fix it). If you must use host isolation, the dispatch brief MUST
+> carry a machine-assembled STEP-0 rebase line — post-lock
+> `SHA=$(git rev-parse "$BASE")`, then `git checkout -B story/<id> <sha>` in
+> the brief — never a recalled SHA. See `aep-autopilot`
+> `references/deterministic-orchestration.md`.
 
 ---
 

@@ -46,6 +46,7 @@ Collect observations from all sources. Read product definition (from `product/in
 - **Product instincts:** After seeing the thing work, what does the user's gut say? What feels right, what feels off?
 - **Dogfood reports:** Read `.dev-workflow/dogfood-*.md` (the unified severity/category/repro format). Normalize each `##` finding via the `dogfood_report` adapter (`references/telemetry-ingestion.md` → Dogfood-report adapter) into the same observation record Step 2 classifies — the same source `/aep-watch` ingests headlessly.
 - **Lessons learned:** Read `lessons-learned/*.md` for observations captured by workspace agents during builds. Summarize patterns across recent lessons — recurring errors, solutions that worked, missing documentation.
+- **Layer distillations:** Read `lessons-learned/distillations/*.yaml` — the proposal-only synthesis Layer Distillation writes when a layer completes (producer: `aep-wrap` → Reflect and Advance). Normalize each item via the `distillation` adapter (`references/telemetry-ingestion.md` → Distillation adapter): `refinements` → refinement (with `target_layer`), `skill_amendments` → process (proposed amendments — never auto-applied), `weak_areas` → discovery/refinement. One converged source per layer instead of re-deriving patterns from N raw lessons files.
 
 Ask the user one source at a time. Don't rush — the quality of classification depends on the quality of input.
 

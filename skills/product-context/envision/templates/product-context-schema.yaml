@@ -423,7 +423,7 @@ topology:
     telemetry_sources: [] # G5 — read-only signal sources. Detected by /aep-scaffold audit (or set by hand); /aep-map binds each needed quantitative success_metric + health_signal via metric_map (coverage rule: reflect/references/telemetry-ingestion.md §1.5). token_env only — never embed secrets.
     #   - { kind: error_stream, endpoint: "https://…?since={since}", token_env: SENTRY_TOKEN, metric_map: { error_rate: "<query>" } }
     watch: # G6 /aep-watch self-feeding discovery
-      sources: []
+      sources: [] # bug_tracker | error_stream | telemetry | dogfood_report | distillation (file-glob adapters: reflect/references/telemetry-ingestion.md)
       interval: 30m
       auto_create: false # surface proposed stories for confirmation; true (or full_auto) = auto-create + dispatch
   handoffs:

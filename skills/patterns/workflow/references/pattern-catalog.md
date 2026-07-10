@@ -223,7 +223,13 @@ Independent of which sub-pattern you pick, a workflow can tune:
 - **Worktree isolation.** Use `isolation: 'worktree'` only when agents mutate files
   in parallel and would otherwise conflict (it has real setup cost). In AEP, prefer
   AEP-created `.feature-workspaces/<ws>` worktrees so `monitor()` / `/aep-wrap` paths
-  stay standard — see `../../executor/references/backends.md`.
+  stay standard — see `../../executor/references/backends.md`. **Caveat
+  [stale-base]:** host-managed `isolation: 'worktree'` bases on stale
+  `origin/<base>`, not local HEAD — a dispatched agent misses the dispatch-lock
+  commit unless its brief carries a machine-assembled STEP-0 rebase line
+  (post-lock `git rev-parse "$BASE"` → `git checkout -B story/<id> <sha>`); see
+  `backends.md` → [stale-base] and the `aep-autopilot`
+  `references/deterministic-orchestration.md` pattern.
 - **Quarantine.** In triage workflows, agents that read **untrusted public content**
   must be barred from high-privilege actions — keep read-untrusted and act-with-
   privilege in separate agents.

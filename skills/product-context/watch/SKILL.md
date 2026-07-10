@@ -87,6 +87,8 @@ topology:
           threshold: 0.02
         - type: dogfood_report # ingest dogfood findings (local / post-deploy / standalone)
           glob: ".dev-workflow/dogfood-*.md" # default; see telemetry-ingestion.md adapter
+        - type: distillation # ingest layer distillations (proposal-only synthesis from /aep-wrap)
+          glob: "lessons-learned/distillations/*.yaml" # default; see telemetry-ingestion.md adapter
       interval: 30m # poll cadence for the /loop or cron driver
       auto_create: false # write stories directly vs. surface proposals
       since: null # high-water mark — last ingested timestamp (watch maintains this)
@@ -163,12 +165,17 @@ A `dogfood_report` source is a self-describing file glob, so Step 0's
 
 Advance `watch.since` to the newest `last_seen` only **after** the tick completes
 successfully (so a failed tick re-pulls rather than dropping findings).
-**Exception — `dogfood_report`:** the unified report carries no per-finding
-timestamp, so `count`/`first_seen`/`last_seen` are unset and `watch.since` does
-**not** advance for this source; re-scanning the glob each tick is harmless because
-Step 3 dedupes on the adapter's stable `external_id` (priority comes from the
-finding's Severity, not `count`). See `references/telemetry-ingestion.md` →
-Dogfood-report adapter.
+**Exception — `dogfood_report` and `distillation`:** these file-glob sources
+carry no per-item timestamp, so `count`/`first_seen`/`last_seen` are unset and
+`watch.since` does **not** advance for them; re-scanning the glob each tick is
+harmless because Step 3 dedupes on each adapter's stable `external_id`
+(`dogfood:<report>:<hash>` / `distillation:<layer>:<hash>`; dogfood priority
+comes from the finding's Severity, not `count`). Being self-describing globs,
+neither is gated by Step 0's `coverage_check`. See
+`references/telemetry-ingestion.md` → Dogfood-report adapter / Distillation
+adapter. **`distillation` extra rule:** items mapped to `process`
+(`skill_amendments`) are **never** auto-created as stories — they surface to a
+human as proposed amendments regardless of `full_auto`/`auto_create`.
 
 ### Step 2: Classify Each Finding
 

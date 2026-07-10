@@ -18,7 +18,7 @@ Pull from read-only sources with `bash`/`curl`/`jq` and reduce each to the
 
 ```json
 {
-  "source": "error_stream | analytics | monitoring | bug_tracker | dogfood",
+  "source": "error_stream | analytics | monitoring | bug_tracker | dogfood | distillation",
   "signal": "one-line description of what was observed",
   "evidence": "url | query | sample (no secrets)",
   "story_ref": "<story-id if attributable, else null>",
@@ -96,6 +96,46 @@ findings no-op, and a genuinely new finding (new title/category) yields a new id
 and a new story. The autopilot post-merge guard Path 1 stamps the **same**
 `external_id` on the story it files, so whichever path ingests a given report first
 wins and the other no-ops — no double-filing.
+
+### Distillation adapter (`distillation` source)
+
+Layer Distillation — the isolated, proposal-only synthesis `/aep-wrap` (Reflect
+and Advance → Layer Distillation) or `aep-autopilot` (tick-protocol → Layer
+Completion) runs when a layer completes — writes
+`lessons-learned/distillations/layer-<N>.yaml` (producer contract:
+`aep-wrap` `references/convergence.md`). This adapter normalizes each item into
+the same observation record Step 2 classifies. Like `dogfood_report`, it is a
+**file glob**, not a network source: self-describing, so `coverage_check` (§1.5)
+does not gate it.
+
+Source config:
+
+```yaml
+watch:
+  sources:
+    - type: distillation
+      glob: "lessons-learned/distillations/*.yaml" # default
+```
+
+Per-item mapping (distillation field → observation record):
+
+| Distillation item    | Mapping                                                                                                                                                                                                                                                                        |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `refinements[]`      | `suggested_class: refinement`; `signal` = the `description`; the item's `target_layer` rides along so the refinement slots into the right layer                                                                                                                                |
+| `skill_amendments[]` | `suggested_class: process`; `signal` = `"<skill>: <change>"`; `rationale` → evidence. **Never auto-filed as a story and never auto-applied** — routed to the changelog as a proposed amendment for human review (same rule as `/aep-reflect`'s "do not auto-edit skill files") |
+| `weak_areas[]`       | `suggested_class: refinement` (or `discovery` when it invalidates a stated assumption); `signal` = the string                                                                                                                                                                  |
+| —                    | every record: `source: distillation`, `story_ref: null`, evidence anchored to `retrospectives/layer-<N>.md` + the `.yaml`; `count`/timestamps **unset**                                                                                                                        |
+
+`suggested_class` is a **hint only** — the human confirms every classification,
+exactly as for `dogfood_report`.
+
+**No high-water mark — dedupe-only.** Distillation items carry no per-item
+timestamp, so this source does **not** advance `watch.since`; idempotency rests
+on the stable dedupe key
+`external_id = "distillation:" + layer + ":" + shorthash(slug(item))`
+(dedupe on `(layer, item)`): re-scanning the glob is harmless, already-ingested
+items no-op, and a re-distilled layer would need a changed item to produce a new
+id.
 
 ---
 
@@ -188,4 +228,7 @@ qualitative pause.
 - `/aep-reflect` Step 1 (Gather Feedback) and Step 2.75 (Evaluate Outcome Contracts)
 - `/aep-watch` (reuses the normalized observation record for its ingest step)
 - `aep-autopilot` `references/tick-protocol.md` — Step ⑥ Layer Completion (what the
-  auto-eval lets advance without a pause)
+  auto-eval lets advance without a pause; also the autopilot firing site for the
+  Layer Distillation the `distillation` adapter ingests)
+- `aep-wrap` `references/convergence.md` — the producer contract for the
+  `distillation` source (execution records + distiller protocol + schemas)
