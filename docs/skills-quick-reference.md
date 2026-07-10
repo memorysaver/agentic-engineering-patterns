@@ -1,6 +1,6 @@
 # AEP Skills — Quick Reference
 
-A cheat sheet for all 17 AEP skills. For precise term definitions, see the [Glossary](glossary.md). For a guided first-hour introduction to the mental models behind these skills, see the [Orientation Guide](orientation.md).
+A cheat sheet for all 22 AEP skills. For precise term definitions, see the [Glossary](glossary.md). For a guided first-hour introduction to the mental models behind these skills, see the [Orientation Guide](orientation.md).
 
 ---
 
@@ -46,6 +46,8 @@ CONTROL PLANE (human + AI)              EXECUTION PLANE (agents build)
 | `/aep-autopilot`         | Hands-free autonomous orchestration                                         | `product-context.yaml` with ready stories                          | Continuous dispatch → build → wrap cycle                            | Main    |
 | `/aep-workflow`          | Author a custom multi-agent harness for a large/uncertain/verify-heavy task | A task too big, drift-prone, or verification-heavy for one context | A dynamic workflow (fan-out, verify, tournament, loop) + its result | Main    |
 | `/aep-workflow-feedback` | Capture or review process learnings                                         | Lessons from builds, downstream feedback files                     | Classified feedback in standardized format                          | Main    |
+| `/aep-executor`          | Pick/operate a launch backend for workspace agents                          | Host capabilities + launch context                                 | Backend selection + spawn/steer/collect recipes                     | Both    |
+| `/aep-design-lens`       | Design guideline or usability/heuristic health-check for any UI             | Product description, spec, or running UI                           | Design suggestions + guideline + severity-scored health-check       | Both    |
 
 ### Project Setup (Run Once)
 
@@ -80,6 +82,8 @@ CONTROL PLANE (human + AI)              EXECUTION PLANE (agents build)
 "Evaluate this honestly"            → /aep-gen-eval
 "Write a custom harness / workflow" → /aep-workflow
 "This is too big for one context"   → /aep-workflow
+"Is this good UX? / design review"  → /aep-design-lens
+"Give me a design guideline"        → /aep-design-lens
 ```
 
 ---
@@ -144,12 +148,12 @@ Installed into projects via the [`skills` CLI](https://github.com/vercel-labs/sk
 `-a claude-code`, then `-a codex`), prefixed with `aep-`. See the README "Installing Skills" section for
 the full install / pin / upgrade flow.
 
-| Group                          | Skills                                                              |
-| ------------------------------ | ------------------------------------------------------------------- |
-| `product-context`              | envision, map, model, dispatch, validate, calibrate, reflect, watch |
-| `agentic-development-workflow` | design, launch, build, wrap, git-ref                                |
-| `patterns`                     | gen-eval, executor, autopilot, workflow, workflow-feedback          |
-| `project-setup`                | onboard, scaffold, e2e-skill-scaffolding                            |
+| Group                          | Skills                                                                  |
+| ------------------------------ | ----------------------------------------------------------------------- |
+| `product-context`              | envision, map, model, dispatch, validate, calibrate, reflect, watch     |
+| `agentic-development-workflow` | design, launch, build, wrap, git-ref                                    |
+| `patterns`                     | gen-eval, executor, autopilot, workflow, workflow-feedback, design-lens |
+| `project-setup`                | onboard, scaffold, e2e-skill-scaffolding                                |
 
 ---
 

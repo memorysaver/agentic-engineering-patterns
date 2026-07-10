@@ -1,6 +1,6 @@
 # AEP Orientation Guide
 
-**A 10-minute first-hour tour for new users.** Read this before (or right after) running `/aep-onboard`. When you finish, you'll know what AEP is, the three mental models that drive every skill, what each of the 20 skills does, and which of four concrete paths matches your situation.
+**A 10-minute first-hour tour for new users.** Read this before (or right after) running `/aep-onboard`. When you finish, you'll know what AEP is, the three mental models that drive every skill, what each of the 22 skills does, and which of four concrete paths matches your situation.
 
 For precise definitions of every term used here, see the [Glossary](glossary.md). For a one-page decision tree, see the [Skills Quick Reference](skills-quick-reference.md).
 
@@ -94,7 +94,7 @@ More: [README.md "The Feature Lifecycle"](../README.md) and [skills/agentic-deve
 
 ---
 
-## 3. The 20 Skills at a Glance
+## 3. The 22 Skills at a Glance
 
 | Skill                        | Plugin                       | Session   | Purpose                                                           |
 | ---------------------------- | ---------------------------- | --------- | ----------------------------------------------------------------- |
@@ -118,6 +118,8 @@ More: [README.md "The Feature Lifecycle"](../README.md) and [skills/agentic-deve
 | `/aep-gen-eval`              | patterns                     | Both      | Reusable generator/evaluator pattern for honest evaluation        |
 | `/aep-workflow`              | patterns                     | Main      | Dynamic workflows — write a custom multi-agent harness for a task |
 | `/aep-workflow-feedback`     | patterns                     | Main      | Capture + review process learnings from builds                    |
+| `/aep-executor`              | patterns                     | Both      | Host-agnostic backend for spawning/steering workspace agents      |
+| `/aep-design-lens`           | patterns                     | Both      | Theory-grounded design guideline + heuristic health-check         |
 
 For when-to-use decisions, see [docs/skills-quick-reference.md](skills-quick-reference.md).
 

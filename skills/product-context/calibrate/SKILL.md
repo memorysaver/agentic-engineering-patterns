@@ -80,6 +80,12 @@ External exploration required. The human uses tools outside the agent workflow (
 | ux-flow       | `references/briefs/ux-flow.md`       | Conversation + optional wireframe tool | 30–60 min  | `calibration/ux-flow.yaml`       |
 | copy-tone     | `references/briefs/copy-tone.md`     | Conversation + copy doc                | 1–2 hours  | `calibration/copy-tone.yaml`     |
 
+> **Theory before taste (ux-flow / visual-design).** A [`/aep-design-lens`](../../patterns/design-lens/SKILL.md)
+> report can seed a heavy-calibration brief and pre-audit the flow against established HCI
+> theory (families A/B/C/E) with a severity-scored health-check. Design-lens supplies the
+> _evidence_; this skill captures the human's _decision_. They compose — run design-lens
+> first when you want the brief grounded in theory rather than a blank page.
+
 ### Light Calibrations
 
 Conversational. The human reviews current state and makes decisions through structured Q&A. Updates existing sections of `product-context.yaml` directly. May or may not create `.5` layer stories.
