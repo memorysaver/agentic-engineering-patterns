@@ -2,7 +2,7 @@
 
 An empirical law from running AEP's orchestration loop at scale: **every orchestration step that lives only as prose an LLM must recall eventually gets skipped; no step behind a typed gate ever was.** This document upstreams what to do about it in a methodology repo that ships prose skills and no runtime: name the mechanical/judgment boundary in AEP's own lifecycle skills, teach downstream projects to move their mechanical steps behind typed gates, and fix the specific prose invariants (stale worktree base, hand-recalled dispatch briefs) that the evidence showed failing. Companion to [build-convergence-pipeline.md](build-convergence-pipeline.md), whose gather-before-archive ordering invariant is one instance of the class this document generalizes.
 
-> **Status:** Proposal (not yet implemented). This document records the design precisely so the implementation PR (target: v2.8.0) can be made and reviewed against it. It changes how AEP works, so it lives in `decisions/` per the [docs routing guide](../README.md).
+> **Status:** Proposal (not yet implemented). This document records the design precisely so the implementation PR (target: v2.7.0, shared with build-convergence-pipeline.md) can be made and reviewed against it. It changes how AEP works, so it lives in `decisions/` per the [docs routing guide](../README.md).
 
 > **Sourcing note:** Sourced from SIBYL layers 15–21 (`SIBYL/docs/AEP-improvement-suggestion/2026-07-10-deterministic-orchestration-upstream-notes.md` and the full reflection in `SIBYL/docs/design/2026-07-10-deterministic-orchestration.md`: phenomena inventory, three-way design comparison, the L21 verb slice). SIBYL's concrete machinery — its `story dispatch` / `story land` TypeScript CLI verbs and control-plane splice transactions — stays downstream; what upstreams here is the boundary, the gate pattern, and the prose-invariant fixes.
 
@@ -77,7 +77,7 @@ Anything an LLM re-types drifts. The deterministic layer — not the orchestrato
 
 ---
 
-## What upstream changes now (v2.8.0) vs future
+## What upstream changes now (v2.7.0) vs future
 
 **Now — a pattern reference plus prose-invariant fixes; no new commands, no runtime:**
 
@@ -88,7 +88,7 @@ Anything an LLM re-types drifts. The deterministic layer — not the orchestrato
 5. **`skills/agentic-development-workflow/wrap/SKILL.md`** — Guardrails: annotate the step chain as an ordering invariant with its world-derived postcondition per step (one line each, per the probe catalog).
 6. **`skills/patterns/autopilot/SKILL.md`** (Guardrails `:679-694`) + **`references/tick-protocol.md`** — annotate wrap-before-dispatch and one-launch-per-tick (`tick-protocol.md:456`) as named ordering invariants; recommend downstream typed gates for tick CHECK preconditions.
 7. **`docs/glossary.md`** — new entries: **Typed Gate (Typed Verb)**, **Named Refusal**, **World-Derived Resumability**, **Machine-Assembled Dispatch Brief**, **Mechanical/Judgment Split**.
-8. `CHANGELOG.md` `[2.8.0]`; `.claude-plugin/marketplace.json` + `package.json` → `2.8.0`. No `_shared/` files change.
+8. `CHANGELOG.md` `[2.7.0]` (one release shared with the convergence pipeline); `.claude-plugin/marketplace.json` + `package.json` → `2.7.0`. No `_shared/` files change.
 
 **Future — explicit non-goals of this proposal, recorded as horizon:**
 
@@ -115,11 +115,11 @@ All changes are prose-additive — annotations, warnings, and one new reference 
 | **P0 — this decision doc** | Record the law, the split, the pattern                                        | No        |
 | **P1 — pattern reference** | Ship `autopilot/references/deterministic-orchestration.md`                    | No        |
 | **P2 — prose invariants**  | Stale-base + brief-assembly + ordering-invariant edits across the four skills | No        |
-| **P3 — glossary + bump**   | Taxonomy entries; v2.8.0                                                      | No        |
+| **P3 — glossary + bump**   | Taxonomy entries; v2.7.0 (shared release)                                     | No        |
 
 **Exact change sites:** the numbered list under "What upstream changes now" is the implementation PR's review contract.
 
-**Propagation discipline:** this proposal introduces net-new taxonomy — _typed gate_, _named refusal_, _world-derived resumability_, _machine-assembled dispatch brief_, _mechanical/judgment split_ (none of these terms exist in the repo today). Every skill that names one must say it identically and the glossary must define it; audit with `grep -rn "typed gate\|named refusal\|world-derived" skills/ docs/` after implementation. No `_shared/` enum is touched, so no `build-skills.sh` diff is expected — `skills:check` must come back clean. Downstream consumers go live only after the v2.8.0 tag is cut and each consumer re-pins via the skills CLI.
+**Propagation discipline:** this proposal introduces net-new taxonomy — _typed gate_, _named refusal_, _world-derived resumability_, _machine-assembled dispatch brief_, _mechanical/judgment split_ (none of these terms exist in the repo today). Every skill that names one must say it identically and the glossary must define it; audit with `grep -rn "typed gate\|named refusal\|world-derived" skills/ docs/` after implementation. No `_shared/` enum is touched, so no `build-skills.sh` diff is expected — `skills:check` must come back clean. Downstream consumers go live only after the v2.7.0 tag is cut and each consumer re-pins via the skills CLI.
 
 ---
 
