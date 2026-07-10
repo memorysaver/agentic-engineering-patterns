@@ -455,19 +455,36 @@ If no escalation:
 
 **Max ONE launch per tick.** Launching involves creating a git worktree, spawning a worker (bg subagent / bg session / subagent / exec / tmux), running the post-spawn liveness probe, and delivering a bootstrap prompt — too slow for multiple per tick.
 
+> **Named ordering invariants (mechanical — not judgment calls):**
+> **[wrap-before-dispatch]** Step ③ runs before Step ⑥ within a tick — wrapping
+> frees WIP slots and lands story-status flips the dispatch gating must read.
+> **[one-wrap-per-tick]** / **[one-launch-per-tick]** — wraps serialize git
+> operations; launches keep tick duration bounded. These are deterministic
+> WHEN+SHAPE rules of the class `references/deterministic-orchestration.md`
+> describes — a downstream project scaling this loop should put them behind
+> typed gates rather than trusting tick-by-tick recall.
+
 ### Layer Completion
 
 If all stories in the active layer are completed (after wraps):
 
 1. Suggest running the layer gate integration test
 2. If gate passes: update `layer_gates[layer].status: passed`
-3. **Outcome contract check:** If `product.layers[active_layer].outcome_contract` exists, decide whether to auto-evaluate or pause:
+3. **Layer Distillation (idempotent):** run the Layer Distillation step exactly as
+   `/aep-wrap` → Reflect and Advance → Layer Distillation defines it (producer
+   contract: `aep-wrap` `references/convergence.md`) — **skip if
+   `lessons-learned/retrospectives/layer-<N>.md` exists** (the shared
+   world-derived dedupe; wrap and autopilot cannot double-fire). Spawn the
+   isolated distiller subagent, shape-validate its
+   `lessons-learned/distillations/layer-<N>.yaml`, commit both artifacts. The
+   distillation also feeds the Orchestration Learning Checkpoint below.
+4. **Outcome contract check:** If `product.layers[active_layer].outcome_contract` exists, decide whether to auto-evaluate or pause:
    - **Quantitative auto-eval:** If `topology.routing.auto_outcome_eval: quantitative` **and** the contract's metric is quantitative (a measurable threshold) → first run `coverage_check([metric])` (`../../../product-context/reflect/references/telemetry-ingestion.md` §1.5); if the metric isn't bound to a telemetry source (the `/aep-map` Telemetry Binding step wasn't done) → **pause** and escalate "run /aep-map observability step" (do not claim auto-coverage). If covered → auto-evaluate via the telemetry-ingestion recipe (ingest the telemetry, compare against the threshold) and **advance without pausing** when it passes. If the metric is qualitative, fall through to the pause rule below.
    - **Qualitative / default pause:** Otherwise (no `auto_outcome_eval`, a qualitative metric, etc.) → **pause** and add an escalation requesting the user to evaluate the outcome contract before advancing — **UNLESS** `topology.routing.full_auto: true`, in which case auto-evaluate via the telemetry-ingestion recipe and advance without pause. Outcome evaluation otherwise requires human judgment (user testing, analytics, qualitative assessment). The user runs `/aep-reflect` which evaluates outcome contracts in Step 2.75. After `/aep-reflect` completes, resume autopilot.
    - Default (no `auto_outcome_eval` / `full_auto` false) preserves the current human pause.
-4. If no outcome contract or outcome evaluation passes: advance to next layer
-5. If gate fails: add escalation, pause autopilot (layer gate failures require human judgment)
-6. If all layers complete: stop autopilot, notify human
+5. If no outcome contract or outcome evaluation passes: advance to next layer
+6. If gate fails: add escalation, pause autopilot (layer gate failures require human judgment)
+7. If all layers complete: stop autopilot, notify human
 
 ### Orchestration Learning Checkpoint
 

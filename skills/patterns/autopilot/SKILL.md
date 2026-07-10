@@ -687,11 +687,20 @@ under the loop driver it restarts the `/loop` — then resumes ticking.
 - **Never treat SKIP-only test results as PASS** — at least 1 PASS required for test/integration stories
 - **Never treat "no checks" as passing** — for integration/test stories, require at least one passing check OR explicit eval-response PASS
 - **Never write eval-response files** — that's the workspace evaluator's job
-- **One wrap per tick** — wraps involve git operations that must serialize
-- **One launch per tick** — keeps tick duration under 60 seconds
+- **One wrap per tick** `[one-wrap-per-tick]` — wraps involve git operations that must serialize
+- **One launch per tick** `[one-launch-per-tick]` — keeps tick duration under 60 seconds
+- **Wrap before dispatch** `[wrap-before-dispatch]` — Step ③ before Step ⑥ within a tick: wraps free WIP slots and land the status flips dispatch gating reads
 - **Respect WIP limits** — never exceed `topology.routing.concurrency_limit`
 - **Atomic state writes** — write to `.tmp` then rename to prevent corruption
 - **Tick lock** — prevent overlapping ticks via `tick_in_progress` timestamp
+
+> The tagged guardrails above are **mechanical ordering invariants**
+> (deterministic WHEN+SHAPE — the class that drifts under prose recall and
+> holds behind typed gates). A project running this loop at scale should
+> migrate them behind its own typed verbs: see
+> `references/deterministic-orchestration.md` (named refusals, world-derived
+> resumability, machine-assembled briefs).
+
 - **Goal driver is scoped to ONE layer** — the goal condition completes (or
   pauses) at the current layer boundary; never widen it to the whole backlog
 - **Goal evaluator sees signals only** — the per-tick surfaced status line MUST

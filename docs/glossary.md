@@ -155,6 +155,14 @@ The "thinking" half of the AEP workflow — where humans and AI collaborate on h
 
 See also: **Execution Plane**, **Two-Session Model**
 
+### Convergence Pipeline
+
+The three-phase pipeline that carries build-time runtime signal past worktree teardown and back into the feedback loop: **Convergence Gather** (deterministic, per story — `/aep-wrap` step 2.5 writes an **Execution Record** into the pre-archive change dir so the archive move carries it), **Layer Distillation** (judgment, per layer, isolated, proposal-only), and reflect ingestion (the `distillation` adapter). Determinism boundary: mechanism decides WHEN and validates SHAPE; an isolated agent owns the judgment; skill amendments are proposal-only.
+
+**Where it appears:** `/aep-wrap` step 2.5 + Reflect and Advance; `aep-wrap` `references/convergence.md` (producer contract); `docs/decisions/build-convergence-pipeline.md`.
+
+See also: **Execution Record**, **Layer Distillation**
+
 ### Critical Path
 
 The longest dependency chain through the **Story Graph** within the active **Layer**. A critical-path story delayed by one hour delays the entire layer by one hour. Stories on the critical path receive maximum urgency in the **Dispatch Score** formula.
@@ -204,6 +212,22 @@ The "doing" half of the AEP workflow — where agents receive precise specs and 
 **Where it appears:** README mental model.
 
 See also: **Control Plane**, **Two-Session Model**
+
+### Execution Record
+
+The deterministic per-story manifest the **Convergence Pipeline**'s gather phase writes to `openspec/changes/<name>/convergence/execution-record.yaml` before the OpenSpec archive: story identity (`story_id`, `merge_commit`, `pr_url`, `cost_usd`), `lessons_present`, `gathered_files`, gen-eval round summaries, review findings. Every field is best-effort — a missing source degrades to explicit `null`; the gather never fails a wrap.
+
+**Where it appears:** `/aep-wrap` step 2.5; schema in `aep-wrap` `references/convergence.md`.
+
+See also: **Convergence Pipeline**, **Layer Distillation**
+
+### Layer Distillation
+
+The judgment phase of the **Convergence Pipeline**: when a layer completes (≥1 story, all `completed`/`deferred`, ≥1 `completed`) and no `lessons-learned/retrospectives/layer-<N>.md` exists (the world-derived, idempotent trigger — shared verbatim by `/aep-wrap` and autopilot so they cannot double-fire), an isolated subagent reads the layer's archived **Execution Records** and writes a prose retrospective plus a shape-validated, **proposal-only** distillation (`refinements` / `skill_amendments` / `weak_areas`). The distiller never edits skill files; `/aep-reflect` ingests the output via the `distillation` adapter and a human confirms every classification.
+
+**Where it appears:** `/aep-wrap` → Reflect and Advance → Layer Distillation; `aep-autopilot` `references/tick-protocol.md` → Layer Completion; `references/telemetry-ingestion.md` → Distillation adapter.
+
+See also: **Convergence Pipeline**, **Execution Record**, **World-Derived Resumability**
 
 ### Main Session
 
@@ -397,6 +421,30 @@ The severity-scored audit table produced by the **Design Lens** skill: one row p
 
 See also: **Design Lens**, **Generator/Evaluator Separation**
 
+### Machine-Assembled Dispatch Brief
+
+A worker's bootstrap brief whose load-bearing content — the post-lock base SHA (with its STEP-0 rebase line), the worktree self-check, the untrusted-output guard, the verbatim story spec block — is assembled by commands and file reads at dispatch time, never recalled or re-typed by the orchestrating LLM. Anything an LLM re-types drifts; the brief closes the stale-base hazard of host-managed worktree isolation structurally.
+
+**Where it appears:** `/aep-dispatch` (Dynamic Workflow stale-base note); `/aep-launch` Step 3; `aep-autopilot` `references/deterministic-orchestration.md`.
+
+See also: **Typed Gate**, **Mechanical/Judgment Split**
+
+### Mechanical/Judgment Split
+
+The classification underlying deterministic orchestration: **mechanical** steps have a deterministic WHEN and SHAPE (preconditions, state flips, ordering invariants, prompt assembly) and belong behind mechanism — typed gates — because they drift under prose recall; **judgment** steps (implementation, scoring, grouping, prose, diagnosis) belong to agents and skills. The empirical law: every orchestration step living only as recallable prose eventually gets skipped; no step behind a typed gate ever was.
+
+**Where it appears:** `aep-autopilot` `references/deterministic-orchestration.md`; `docs/decisions/deterministic-orchestration.md`.
+
+See also: **Typed Gate**, **Named Refusal**, **World-Derived Resumability**
+
+### Named Refusal
+
+The failure contract of a **Typed Gate**: on unmet preconditions it refuses with named tags (`REFUSING [dependencies-completed]: …`), collecting **every** unmet precondition into one refusal, with an exit-code contract (0 success / 1 refusal / 2 bad invocation). A refusal is a success mode of the gate — the orchestrator fixes the named things and re-runs — never an error to route around.
+
+**Where it appears:** `aep-autopilot` `references/deterministic-orchestration.md` (Pillar 1); `/aep-dispatch` dispatch-lock annotation.
+
+See also: **Typed Gate**, **Mechanical/Judgment Split**
+
 ### Orchestrator
 
 The main session agent (or **Autopilot**) that coordinates work across **Workspace Sessions**. Decides what to build, dispatches stories, monitors progress, and triggers wraps. Operates strictly within **Orchestrator Boundaries**.
@@ -443,6 +491,22 @@ The shared portion of **Context Assembly** (~10K tokens) that is identical acros
 **Where it appears:** `/aep-dispatch` Step 6 → `openspec/changes/<id>/.context/stable-prefix.md`.
 
 See also: **Context Assembly**, **Context Package**
+
+### Typed Gate (Typed Verb)
+
+A mechanical lifecycle step moved out of prose and behind mechanism a project owns — a CLI verb, script, or hook — that checks preconditions and refuses with **Named Refusals** instead of trusting the orchestrating LLM to remember instructions. The proven cure for orchestration drift: schema-validated submits, validate-then-write transactions, and exit-code gates held under load where prose checklists did not. AEP ships the pattern, not a runtime — the verbs belong to the project.
+
+**Where it appears:** `aep-autopilot` `references/deterministic-orchestration.md`; `docs/decisions/deterministic-orchestration.md`.
+
+See also: **Named Refusal**, **World-Derived Resumability**, **Mechanical/Judgment Split**
+
+### World-Derived Resumability
+
+Deriving a step's completion from observable world state (git, filesystem) instead of a state file: merged = `git merge-base --is-ancestor`, archived = change dir gone + archive dir exists, torn down = worktree gone. Effectful steps skip when their postcondition already holds — an interrupted run heals by re-running the same command; **gates always re-run** (a gate that can be bypassed by crashing is no gate). State files record intent; the world records fact; they diverge exactly when a run dies mid-step. The **Layer Distillation** trigger (retrospective-file-exists → skip) is an instance.
+
+**Where it appears:** `aep-autopilot` `references/deterministic-orchestration.md` (Pillar 2); `/aep-wrap` guardrails (step-chain postconditions).
+
+See also: **Typed Gate**, **Layer Distillation**
 
 ---
 

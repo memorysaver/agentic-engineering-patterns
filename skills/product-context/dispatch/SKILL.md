@@ -326,6 +326,19 @@ Then: one dynamic workflow, one agent per locked story (build → verify), each 
 After the run: collect `gated` results → ask the human → resume gated stories with the answers
 ```
 
+> **Stale-base hazard (why AEP-created worktrees are required here):** the
+> Workflow/Agent tool's own `isolation: "worktree"` bases agents on a **stale
+> `origin/<base>`**, not your local integration-branch HEAD — which by this
+> point carries the dispatch-lock commit itself, so a host-isolated worker
+> would start from a base that predates the very lock that dispatched it, and
+> the drift surfaces only at merge time. If host-managed isolation is ever
+> unavoidable, the brief must be **machine-assembled**: after the lock commit,
+> read the base by command — `SHA=$(git rev-parse "$BASE")` — and print an
+> explicit STEP-0 line into every agent brief:
+> `git checkout -B story/<id> <sha>`. Never let an agent recall or re-type the
+> base. See `aep-autopilot` `references/deterministic-orchestration.md` →
+> Machine-assembled dispatch briefs.
+
 **Respect the WIP limit.** Workflow mode does not exempt the wave from the WIP cap below:
 each workflow agent still opens a PR, so the integration/merge bottleneck is the
 same as Wave Batch. Lock at most `available_slots` stories into the workflow
@@ -379,6 +392,14 @@ For each selected story, dispatch atomically:
 ```
 
 The commit happens BEFORE the workspace is created. Two consecutive `/aep-dispatch` runs: Run 1 writes `in_progress` and commits. Run 2 reads `in_progress`, skips. No double dispatch.
+
+> **Mechanical ordering invariant [lock-before-workspace].** This step is
+> deterministic WHEN+SHAPE — a precondition re-read, a state flip, a commit,
+> in that order. It is exactly the class of step that drifts when left to
+> recall and holds when owned by mechanism; a project scaling dispatch should
+> put it behind a typed gate (a verb that refuses `[story-not-ready]` /
+> `[dependencies-completed]` by name). See `aep-autopilot`
+> `references/deterministic-orchestration.md`.
 
 ---
 

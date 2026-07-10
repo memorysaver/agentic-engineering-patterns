@@ -20,23 +20,23 @@ CONTROL PLANE (human + AI)              EXECUTION PLANE (agents build)
 
 ### Product Discovery (Control Plane)
 
-| Skill           | When to use                                              | Input                                                          | Output                                                           | Session |
-| --------------- | -------------------------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------- | ------- |
-| `/aep-envision` | New product idea, revisit direction                      | Product idea (vague or refined)                                | `product-context.yaml` with `opportunity` + `product`            | Main    |
-| `/aep-map`      | After `/aep-envision` — decompose into stories           | `product-context.yaml` with product section                    | Architecture, stories, topology, layer gates, cost added to YAML | Main    |
-| `/aep-validate` | Check quality of any artifact before proceeding          | Any artifact (product context, design, code, document)         | Scoring dimensions + findings                                    | Main    |
-| `/aep-dispatch` | Pick what to build next                                  | `product-context.yaml` with stories                            | OpenSpec change + story status updated + handoff                 | Main    |
-| `/aep-reflect`  | After shipping — close the feedback loop                 | Observations from user testing, errors, cost data              | Classified feedback + updated YAML                               | Main    |
-| `/aep-watch`    | Continuously ingest errors/telemetry → auto-file stories | Telemetry/bug-tracker/error sources (`topology.routing.watch`) | New bug/refinement stories in YAML → dispatch                    | Main    |
+| Skill           | When to use                                              | Input                                                                  | Output                                                           | Session |
+| --------------- | -------------------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------- | ------- |
+| `/aep-envision` | New product idea, revisit direction                      | Product idea (vague or refined)                                        | `product-context.yaml` with `opportunity` + `product`            | Main    |
+| `/aep-map`      | After `/aep-envision` — decompose into stories           | `product-context.yaml` with product section                            | Architecture, stories, topology, layer gates, cost added to YAML | Main    |
+| `/aep-validate` | Check quality of any artifact before proceeding          | Any artifact (product context, design, code, document)                 | Scoring dimensions + findings                                    | Main    |
+| `/aep-dispatch` | Pick what to build next                                  | `product-context.yaml` with stories                                    | OpenSpec change + story status updated + handoff                 | Main    |
+| `/aep-reflect`  | After shipping — close the feedback loop                 | Observations from user testing, errors, cost data, layer distillations | Classified feedback + updated YAML                               | Main    |
+| `/aep-watch`    | Continuously ingest errors/telemetry → auto-file stories | Telemetry/bug-tracker/error sources (`topology.routing.watch`)         | New bug/refinement stories in YAML → dispatch                    | Main    |
 
 ### Feature Execution (Execution Plane)
 
-| Skill         | When to use                           | Input                                      | Output                                                                                                   | Session   |
-| ------------- | ------------------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------- | --------- |
-| `/aep-design` | Refine an ambiguous story spec        | Dispatched story (OpenSpec change on main) | Refined OpenSpec artifacts (proposal, design, specs, tasks)                                              | Main      |
-| `/aep-launch` | Spawn autonomous agent for a story    | Well-specified story with OpenSpec change  | git worktree + native worker (bg subagent/codex subagent; tmux when pinned) + running `/aep-build` agent | Main      |
-| `/aep-build`  | Agent implements a feature end-to-end | OpenSpec artifacts on disk                 | Merged PR                                                                                                | Workspace |
-| `/aep-wrap`   | Archive after PR merges               | Completed workspace with merged PR         | Archived OpenSpec, updated story status, cleaned workspace                                               | Main      |
+| Skill         | When to use                           | Input                                      | Output                                                                                                                            | Session   |
+| ------------- | ------------------------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| `/aep-design` | Refine an ambiguous story spec        | Dispatched story (OpenSpec change on main) | Refined OpenSpec artifacts (proposal, design, specs, tasks)                                                                       | Main      |
+| `/aep-launch` | Spawn autonomous agent for a story    | Well-specified story with OpenSpec change  | git worktree + native worker (bg subagent/codex subagent; tmux when pinned) + running `/aep-build` agent                          | Main      |
+| `/aep-build`  | Agent implements a feature end-to-end | OpenSpec artifacts on disk                 | Merged PR                                                                                                                         | Workspace |
+| `/aep-wrap`   | Archive after PR merges               | Completed workspace with merged PR         | Execution record gathered + archived OpenSpec, updated story status, cleaned workspace (+ layer distillation at layer completion) | Main      |
 
 ### Patterns (Reusable)
 

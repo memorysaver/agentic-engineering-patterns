@@ -21,6 +21,81 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 _Nothing yet._
 
+## [2.7.0] - 2026-07-10
+
+**Build-convergence pipeline + deterministic orchestration** — one release
+implementing both decision docs upstreamed from SIBYL's 21-layer run:
+[`docs/decisions/build-convergence-pipeline.md`](docs/decisions/build-convergence-pipeline.md)
+and
+[`docs/decisions/deterministic-orchestration.md`](docs/decisions/deterministic-orchestration.md).
+Build-time runtime signal (lessons, gen-eval rounds, review findings, cost/PR
+identity) no longer dies at `git worktree remove`, and the mechanical/judgment
+boundary of the orchestration loop is now named, with its invariants annotated
+and a pattern reference for moving them behind project-owned typed gates.
+
+### Added
+
+- **Convergence Gather — `/aep-wrap` step 2.5** (`agentic-development-workflow/wrap/SKILL.md`):
+  before `/opsx:archive`, converge the workspace's runtime signal into the
+  pre-archive change dir (`openspec/changes/<name>/convergence/` +
+  `execution-record.yaml`) so the archive move carries it in one commit. Every
+  field best-effort → explicit `null`; the step 5.5 `lessons-learned/` copy
+  stays additive. New guardrails: **gather before archive**, **distill is
+  idempotent**, and world-derived postcondition annotations on the step chain.
+- **Layer Distillation — `/aep-wrap` → Reflect and Advance** + the same trigger
+  in `patterns/autopilot/references/tick-protocol.md` → Layer Completion
+  (autonomous-path parity): when a layer completes and
+  `lessons-learned/retrospectives/layer-<N>.md` doesn't exist (world-derived,
+  idempotent — both sites share the rule verbatim), an isolated subagent writes
+  the retrospective + a shape-validated, **proposal-only**
+  `lessons-learned/distillations/layer-<N>.yaml` (`refinements` /
+  `skill_amendments` / `weak_areas`). The distiller never edits skill files.
+- **NEW `agentic-development-workflow/wrap/references/convergence.md`** — the
+  producer contract: parameterized gather manifest, `execution-record.yaml` +
+  `distillation.yaml` schemas, distiller subagent protocol, shape-validation
+  checklist. (Authored in wrap — `build-skills.sh` materializes `_shared/` only
+  into `product-context/*`.)
+- **`distillation` source adapter**
+  (`product-context/_shared/references/telemetry-ingestion.md`, propagated to
+  the 5 generated copies): file glob `lessons-learned/distillations/*.yaml`,
+  dedupe-only (`external_id = distillation:<layer>:<hash>`, no high-water
+  mark), per-item `suggested_class` hints — `refinements` → refinement,
+  `skill_amendments` → process (**never auto-filed, never auto-applied**),
+  `weak_areas` → discovery/refinement. Wired into `/aep-reflect` Step 1 (new
+  "Layer distillations" source) and `/aep-watch` (source listing + no-high-water
+  exception + never-auto-file rule; schema comment under `watch.sources`).
+- **NEW `patterns/autopilot/references/deterministic-orchestration.md`** — the
+  typed-gate pattern reference: the empirical law (prose steps drift; typed
+  gates hold), the mechanical/judgment split table, named refusals
+  (`REFUSING [tag]` + exit-code contract), world-derived resumability
+  (postcondition probe catalog; effectful steps skip, gates always re-run),
+  machine-assembled dispatch briefs, and an incremental path for projects to
+  grow their own verbs.
+- **Glossary** — eight new entries: Convergence Pipeline, Execution Record,
+  Layer Distillation, Typed Gate (Typed Verb), Named Refusal, World-Derived
+  Resumability, Machine-Assembled Dispatch Brief, Mechanical/Judgment Split.
+
+### Changed
+
+- **`product-context/dispatch/SKILL.md`** — Dynamic Workflow mode: named
+  **[stale-base]** hazard (host `isolation: "worktree"` bases on stale
+  `origin/<base>`, missing the dispatch-lock commit) + machine-assembled STEP-0
+  brief requirement; Dispatch Lock annotated as the **[lock-before-workspace]**
+  mechanical ordering invariant.
+- **`agentic-development-workflow/launch/SKILL.md`** — the unpushed-commit
+  ABORT tied to the base-freshness invariant class; Step 3 bootstrap declared
+  machine-assembled (worktree self-check, verbatim spec block,
+  untrusted-output guard).
+- **`patterns/executor/references/backends.md`** + **`patterns/workflow/references/pattern-catalog.md`** —
+  the AEP-worktrees-vs-host-isolation notes now name **[stale-base]** and
+  mandate the STEP-0 rebase line for host-managed worktrees.
+- **`patterns/autopilot/SKILL.md`** guardrails +
+  `references/tick-protocol.md` — tick ordering invariants named
+  (**[wrap-before-dispatch]**, **[one-wrap-per-tick]**,
+  **[one-launch-per-tick]**) and pointed at the pattern reference.
+- `docs/skills-quick-reference.md` — `/aep-wrap` and `/aep-reflect` rows
+  reflect gathered execution records and layer distillations.
+
 ## [2.6.0] - 2026-07-10
 
 **Add `/aep-design-lens` — a `patterns/` skill that grounds UI/UX design in
