@@ -59,7 +59,7 @@ Each step is a no-op when already satisfied. **Never overwrite hand-authored con
   existing files:
   - **Git repo:** `git init -b main && git add -A && git commit -m "chore: initial commit"`. AEP
     auto-detects the integration branch (`main` in single-branch mode) — see `/aep-git-ref`
-    "Integration Branch"; do not pin `aep.integration-branch` for the standard case.
+    "Integration Branch"; the standard case needs no config override.
   - **OpenSpec:** follow `/aep-scaffold` **Phase 5: Initialize OpenSpec**.
   - **Workspace hook:** follow `/aep-scaffold` **Phase 7** using the detected stack.
   - **Gitignore:** applied by `scripts/converge.sh` (`.dev-workflow/`, `.feature-workspaces/`).

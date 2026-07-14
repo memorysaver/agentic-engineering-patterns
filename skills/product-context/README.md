@@ -85,7 +85,9 @@ This plugin implements the **control plane** — goal-setting, decomposition, ag
 
 **References:**
 
-- `references/orchestration-patterns.md` — Orchestrator design, state management, failure handling patterns
+- `references/file-resolution.md` — SPLIT/V1 mode probe and semantics (canonical; every product-context skill points here)
+- `references/telemetry-ingestion.md` — Telemetry source config, adapters, the `/aep-watch` finding record, coverage rule
+- `references/yaml-guardrails.md` — YAML validation checklist and common fixes
 
 ## Inspired By
 

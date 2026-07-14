@@ -1,31 +1,23 @@
 ---
 name: aep-onboard
-description: Full environment onboarding and first-hour orientation for Agentic Engineering Patterns (AEP). Use when setting up a new machine, joining the project, installing the plugin, or when the user says "get started", "onboard", "setup environment", "install prerequisites", "what is this plugin", "help me understand AEP", "I'm new to agentic engineering", "introduce me to this workflow", or wants to prepare their dev environment AND learn the mental model. Always use this first when a user mentions AEP, agentic-engineering-patterns, or this plugin for the first time.
+description: Environment setup and first-time orientation for Agentic Engineering Patterns (AEP). Use to install the plugin, verify tools, and configure project plugins, or to get the mental model when new to AEP. Always use this first when a user mentions AEP or this plugin for the first time.
 ---
 
 # Onboard
 
-Set up your environment for agentic TypeScript development AND get oriented to how AEP thinks. Phase 0 gives you the 5-minute mental model; Phases 1–5 install the plugin, verify tools, and configure recommended plugins. Run once on first setup — returning users running for environment verification can skip Phase 0 and jump straight to Phase 1.
+Set up your environment for agentic TypeScript development and get oriented to how AEP thinks. Phase 0 points you to the mental-model tour; Phases 1–5 install the plugin, verify tools, and configure recommended plugins. Run once on first setup — returning users re-verifying their environment can skip Phase 0 and start at Phase 1.
 
 ---
 
-## Phase 0 — Orient Yourself (5 minutes, first-timers only)
+## Phase 0 — Orient Yourself (first-timers only)
 
-> **Returning user?** If you've run `/aep-onboard` before and you're just re-verifying your environment, skip to Phase 1.
+> **Returning user?** If you've run `/aep-onboard` before and are just re-verifying your environment, skip to Phase 1.
 
-Before installing tools, get the mental model. AEP is not a "command runner" — it's a workflow that separates _thinking_ (what to build) from _doing_ (building it). Installing the tools without understanding this will leave you staring at a blank terminal wondering which of 17 skills to run first.
+AEP is not a command runner — it's a workflow that separates _thinking_ (what to build, decided with the AI on the **control plane**) from _doing_ (agents building to precise specs on the **execution plane**), communicating only through structured artifacts (`product-context.yaml`, signal files in `.dev-workflow/signals/`) rather than shared code context. Installing the tools without that model leaves you staring at a blank terminal unsure which skill to run first.
 
-**The three mental models you need:**
+Read **[docs/orientation.md](../../../docs/orientation.md)** — the canonical 10-minute first-hour tour: the three mental models (control vs execution plane, the Jeff Patton story map, the two-session main/workspace model), what every skill does, and the four concrete paths (new product / existing project / single feature / hands-free).
 
-1. **Control plane vs execution plane.** You + AI make high-leverage decisions on the **control plane** (goals, decomposition, architecture, priorities). Agents receive precise specs and build on the **execution plane**. They never share code context directly — only structured artifacts like `product-context.yaml` and signal files. See [README.md "The Mental Model"](../../../README.md#the-mental-model).
-
-2. **The story map.** Your product is organized as a [Jeff Patton story map](https://www.jpattonassociates.com/user-story-mapping/) — a grid with activities (columns, user journey left→right), layers (rows, enrichment top→down), waves (parallel batches within a layer), and release lines (what's shippable). Layer 0 is the **walking skeleton** — the thinnest end-to-end path. See [README.md "The Story Map"](../../../README.md#the-story-map).
-
-3. **Two-session model.** The **main session** runs on your **integration branch** (`main` in single-branch mode, or `develop` in two-branch mode — see Phase 5) where you + AI plan (`/aep-envision`, `/aep-map`, `/aep-dispatch`, `/aep-design`, `/aep-wrap`, `/aep-reflect`). The **workspace session** runs autonomously in an isolated git worktree on a `feat/<name>` branch where one agent implements a feature (`/aep-build`). They communicate only through signal files in `.dev-workflow/signals/`. See [skills/product-context/README.md](../../product-context/README.md#single-source-of-truth-product-contextyaml).
-
-**v2 split-mode (good to know):** Some projects store product context in two files — `product/index.yaml` (stable intent: opportunity, personas, capabilities, constraints) + `product-context.yaml` (mutable state: architecture, stories, cost, changelog). All skills auto-detect which mode a project uses. If you see only `product-context.yaml`, that's v1 single-file mode and it works exactly the same way. See [docs/aep-v2-improvement-guideline.md](../../../docs/aep-v2-improvement-guideline.md).
-
-**Next step:** for the full 10-minute first-hour guide — including a table of all 17 skills, four concrete paths (new product / existing project / single feature / hands-free), and a glossary shortlist — read **[docs/orientation.md](../../../docs/orientation.md)**. Then come back to Phase 1.
+**Done when:** you've read orientation.md and can name which of the four paths in "Next Steps — Pick Your Path" (below) matches your situation. Then continue to Phase 1.
 
 ---
 
@@ -59,7 +51,7 @@ npx skills add memorysaver/skills@<latest-tag> -a claude-code \
 
 ## Phase 2 — Verify Required Tools
 
-Each tool below earns its place in the agentic workflow — `git` provides version control and worktrees (one isolated working tree per parallel agent), `bun` runs the TypeScript monorepo, `openspec` powers spec-driven development, an **executor** (`claude` _or_ `codex`) runs the implementation agents, and `gh` publishes PRs. `tmux` is **optional**: launches are native-first (Claude Code native background subagents / background sessions, Codex subagents — see `aep-executor`); tmux only hosts the pinned **legacy** mode and the generic-host fallback.
+Each tool below earns its place in the agentic workflow — `git` provides version control and worktrees (one isolated working tree per parallel agent), `bun` runs the TypeScript monorepo, `openspec` powers spec-driven development, an **executor** (`claude` _or_ `codex`) runs the implementation agents, and `gh` publishes PRs. `tmux` is **optional**: launches are native-first (see `/aep-executor`); tmux only hosts the pinned **legacy** mode and the generic-host fallback.
 
 Run this check:
 
@@ -95,12 +87,7 @@ All **required** tools (executor + `bun`/`git`/`gh`/`openspec`) must show OK
 before proceeding. You need **at least one executor** (claude or codex) — not
 both. `tmux` may be MISSING; that's fine — launches are native-first.
 
-> **Native-first launches:** the executor abstraction picks the host's native
-> mode automatically — Claude Code background subagents (`native-bg-subagent`) or
-> background sessions (`claude-bg`); Codex native subagents (`codex-subagent`) or
-> exec workers (`codex-exec`). All include live monitoring and steering without
-> tmux. See `aep-executor` and the "Enable the native launch modes" step in
-> Phase 5.
+> **Native-first launches:** the executor abstraction picks the host's native mode automatically (Claude Code background subagents/sessions, or Codex native subagents/exec workers) with live monitoring and steering, no tmux required — which is why `tmux` may show MISSING. See `/aep-executor`.
 
 > **Note on parallelism:** Each parallel feature agent runs in its own `git worktree` at `.feature-workspaces/<name>/` on its own `feat/<name>` branch. Worktrees share the underlying `.git/objects` (no history duplication) but each adds one full working-tree copy on disk — budget accordingly when running many agents in parallel.
 
@@ -125,7 +112,7 @@ done
 > watching legacy-mode tmux sessions (when `aep.executor-backend tmux` is
 > pinned). Without it, pinned workspaces still run in tmux with the full
 > monitor + mid-flight-feedback loop — attach with `tmux attach -t <name>`.
-> Skills auto-detect cmux and never abort when it's absent. See `aep-executor`.
+> Skills auto-detect cmux and never abort when it's absent. See `/aep-executor`.
 
 These are optional — the workflow works without them but is enhanced by them. On macOS, do not enable `agent-browser` until a one-command smoke test can launch a page without crashing Chrome:
 
@@ -139,64 +126,24 @@ If macOS shows a Google Chrome crash report with `_RegisterApplication`, `Transf
 
 ## Phase 4 — Configure Project Plugins
 
-Configure recommended plugins at the project level. These plugins are not optional cosmetics — `superpowers` provides the planning/TDD skills that `/aep-design` assumes exist, `mgrep` powers deeper search, `frontend-design` is assumed by visual calibration work, `code-review` is used by `/aep-build`, and the hooks enforce the concurrency protocol that keeps parallel workspace agents from corrupting `product-context.yaml`.
+Configure recommended plugins at the project level. These are not cosmetic — `superpowers` provides the planning/TDD skills that `/aep-design` assumes exist, `mgrep` powers deeper search, `frontend-design` is assumed by visual calibration work, `code-review` is used by `/aep-build`, and the hooks enforce the concurrency protocol that keeps parallel workspace agents from corrupting `product-context.yaml`. Plugin roles are summarized in [references/plugins.md](references/plugins.md).
 
 ### What to write
 
-Read `.claude/settings.json` if it exists. Merge the following keys into it (or create the file if missing):
+Read `.claude/settings.json` if it exists, then merge **[references/settings-template.json](references/settings-template.json)** into it (create the file from the template if it's missing). The template carries three keys — `extraKnownMarketplaces`, `enabledPlugins`, and the two concurrency-protocol `hooks`.
 
-```json
-{
-  "extraKnownMarketplaces": {
-    "claude-plugins-official": {
-      "source": { "source": "github", "repo": "anthropics/claude-plugins-official" }
-    },
-    "superpowers-marketplace": {
-      "source": { "source": "github", "repo": "obra/superpowers-marketplace" }
-    },
-    "Mixedbread-Grep": {
-      "source": { "source": "github", "repo": "mixedbread-ai/mgrep" }
-    }
-  },
-  "enabledPlugins": {
-    "superpowers@superpowers-marketplace": true,
-    "frontend-design@claude-plugins-official": true,
-    "code-review@claude-plugins-official": true,
-    "mgrep@Mixedbread-Grep": true,
-    "skill-creator@claude-plugins-official": true
-  },
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "jq -r '.tool_input.file_path // \"\"' | { read -r f; case \"$f\" in *product-context.yaml) if [[ \"$PWD\" == */.feature-workspaces/* ]]; then echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"CONCURRENCY PROTOCOL: Workspace sessions must not write to product-context.yaml. Write to .dev-workflow/signals/status.json instead. Only the main session (via /aep-wrap, /aep-dispatch, /aep-reflect) updates the YAML.\"}}'; fi ;; esac; }",
-            "statusMessage": "Checking concurrency protocol..."
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "jq -r '.tool_input.command // \"\"' | { read -r cmd; if [[ \"$PWD\" == */.feature-workspaces/* ]] && echo \"$cmd\" | grep -qE 'git\\s+(add|commit).*product-context\\.yaml'; then echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"CONCURRENCY PROTOCOL: Workspace sessions must not commit product-context.yaml. Write to .dev-workflow/signals/status.json instead.\"}}'; fi; }",
-            "statusMessage": "Checking concurrency protocol..."
-          }
-        ]
-      }
-    ]
-  }
-}
+**Verify** the two hooks landed:
+
+```bash
+jq '[.hooks.PreToolUse[].matcher]' .claude/settings.json
+# expect an array containing both "Edit|Write" and "Bash"
 ```
 
-> **Concurrency protocol hooks:** The `hooks` section enforces the rule that only the main session writes to `product-context.yaml`. When a workspace agent attempts to edit, write, or commit `product-context.yaml`, the hook blocks the action and explains how to use signals instead. This is defense-in-depth — the skill instructions also direct agents to use signals, but the hook catches any model drift.
+> **Concurrency protocol hooks:** they block a workspace agent from editing, writing, or committing `product-context.yaml` and redirect it to signal files. This is defense-in-depth — the skill instructions also direct agents to use signals, but the hook catches model drift. Only the main session (`/aep-wrap`, `/aep-dispatch`, `/aep-reflect`) updates the YAML.
 
 ### Optional browser automation
 
-Only add `agent-browser` after the Phase 3 smoke test succeeds. It launches a local Chrome process, and some macOS/Chrome combinations crash during application registration before the test can run.
+Add `agent-browser` only after the Phase 3 smoke test succeeds — it launches a local Chrome that some macOS/Chrome combinations crash during application registration. Merge this extra block into `.claude/settings.json`:
 
 ```json
 {
@@ -211,23 +158,11 @@ Only add `agent-browser` after the Phase 3 smoke test succeeds. It launches a lo
 }
 ```
 
-### Plugin reference
-
-| Plugin            | Marketplace               | Purpose                                         |
-| ----------------- | ------------------------- | ----------------------------------------------- |
-| `superpowers`     | `superpowers-marketplace` | Planning, debugging, TDD, code review workflows |
-| `agent-browser`   | `agent-browser`           | Optional browser automation for testing         |
-| `frontend-design` | `claude-plugins-official` | High-quality UI generation                      |
-| `code-review`     | `claude-plugins-official` | PR code review                                  |
-| `mgrep`           | `Mixedbread-Grep`         | Semantic search (local + web)                   |
-| `skill-creator`   | `claude-plugins-official` | Create and test new skills                      |
-
 ### Merging rules
 
-- If `.claude/settings.json` already has these keys, merge new entries — do not overwrite other keys
-- Preserve any existing settings (permissions, env, etc.)
-- If `.claude/settings.json` already has a `hooks.PreToolUse` array, append these hook entries — do not replace existing hooks
-- If the file doesn't exist, create it with all three keys (`extraKnownMarketplaces`, `enabledPlugins`, `hooks`)
+- Merge new entries into existing keys — preserve any other settings (`permissions`, `env`, etc.); do not overwrite them.
+- If `hooks.PreToolUse` already exists, **append** these hook entries rather than replacing existing hooks.
+- If the file doesn't exist, create it from the template (all three keys).
 
 ---
 
@@ -257,7 +192,7 @@ If all core tools show OK, the environment is ready.
 
 ### Integration branch (single- vs two-branch mode)
 
-AEP integrates all feature work into one **integration branch** (`$BASE` across the skills). The standard cases are **auto-detected** — you do not configure anything. Report which mode this repo is in:
+AEP integrates all feature work into one **integration branch** (`$BASE` across the skills). The standard cases are **auto-detected** — you configure nothing. Report which mode this repo is in:
 
 ```bash
 # Auto-detect (same logic every skill uses): develop → two-branch; otherwise single-branch
@@ -269,36 +204,11 @@ else
 fi
 ```
 
-- **single-branch mode** (no `develop`): AEP integrates into `main`. The default; matches a brand-new repo — **don't create `develop` just for AEP**.
-- **two-branch mode** (`develop` exists): AEP integrates into `develop` (staging); production `main` is **promote-only** and AEP never touches it. Promotion `develop` → `main` is your CI/CD or PR step — exactly like deployment, which AEP leaves to you.
-- **No pinning, no reconfiguration.** Because the standard cases are auto-detected, a project grows from single- to two-branch mode simply by creating `develop` — every skill picks it up automatically on the next run. Do **not** run `git config aep.integration-branch main`; pinning the default would suppress that upgrade.
-- **Non-standard name only:** if your integration branch is neither `main` nor `develop` (e.g. `staging`, `integration`), set the override once: `git config aep.integration-branch <name>`. It lives in `.git/config`, shared across all worktrees. See [git-ref](../../agentic-development-workflow/git-ref/SKILL.md) → "Integration Branch".
+For a **non-standard** integration branch name (not `main`/`develop`, e.g. `staging` or `integration`), set the repo-local override once — see `/aep-git-ref` → "Integration Branch" for the config command and why the standard `main`/`develop` cases stay unpinned (so a repo can grow from single- to two-branch mode with no reconfiguration).
 
 ### Enable the native launch modes (recommended)
 
-`/aep-launch` and `/aep-autopilot` pick the launch mode automatically (see
-`aep-executor`): native first, tmux only when pinned. The native modes need no
-flag; one one-time setup step unlocks the best Codex mode:
-
-**Claude Code — background subagents (`native-bg-subagent` mode).** This is the
-Claude Code default — the Agent tool with `run_in_background: true`, no
-`team_name`, spawned with no active team. **No flag or settings change is
-required** (agent teams has been removed). If the host can't run a background
-subagent, launches fall back to `claude-bg` (native background sessions, GA) —
-fully functional, with pull-based steering.
-
-**Codex — custom agent roles (`codex-subagent` mode).** Commit the two AEP
-role files into the project's `.codex/agents/` so both the desktop app and the
-CLI discover them (the TOML contents are in
-`aep-executor/references/codex-native.md`):
-
-```bash
-mkdir -p .codex/agents
-# write aep-builder.toml and aep-evaluator.toml from the codex-native.md templates
-git add .codex/agents && git commit -m "chore: add AEP codex agent roles"
-```
-
-**Prefer the old tmux+cmux workflow?** Pin it: `git config aep.executor-backend tmux`.
+`/aep-launch` and `/aep-autopilot` pick the launch mode automatically — native first, tmux only when pinned. **Claude Code needs no setup** (background subagents by default, falling back to background sessions). To unlock the best **Codex** mode, commit the two AEP role files (`aep-builder.toml`, `aep-evaluator.toml`) into the project's `.codex/agents/` — the TOML templates and the full launch-mode explainer live in `/aep-executor` (`references/codex-native.md`). Prefer the legacy tmux+cmux workflow instead? Pin it: `git config aep.executor-backend tmux`.
 
 ---
 
@@ -352,19 +262,19 @@ One command. Pauses only for design escalations or layer gate failures. Deep div
 
 ## Guardrails
 
-- **Run from the project root** — tools and plugins are verified relative to the current environment
-- **Re-run anytime** — safe to re-run to verify environment is still complete. Returning users can skip Phase 0 (orientation) and jump to Phase 1.
-- **Checks only** — this skill verifies and installs tools, it does not scaffold projects or modify code
+- **Run from the project root** — tools and plugins are verified relative to the current environment.
+- **Re-run anytime** — safe to re-run to verify the environment is still complete. Returning users can skip Phase 0 (orientation) and jump to Phase 1.
+- **Checks only** — this skill verifies and installs tools; it does not scaffold projects or modify code.
 
 ---
 
 ## Learn More
 
-Pointers for going deeper. None of these are required reading — check what's relevant when you need it.
+Pointers for going deeper — check what's relevant when you need it.
 
 **Mental models & concepts**
 
-- [docs/orientation.md](../../../docs/orientation.md) — the canonical first-hour guide (mental models + 17 skills + four paths)
+- [docs/orientation.md](../../../docs/orientation.md) — the canonical first-hour guide (mental models + every skill + four paths)
 - [README.md "Why This Exists"](../../../README.md#why-this-exists) — the full argument for spec-precision-over-execution-speed
 - [docs/glossary.md](../../../docs/glossary.md) — precise definitions for every AEP term (ubiquitous language)
 
@@ -382,4 +292,4 @@ Pointers for going deeper. None of these are required reading — check what's r
 
 **Git + worktree conventions**
 
-- [skills/agentic-development-workflow/git-ref/SKILL.md](../../agentic-development-workflow/git-ref/SKILL.md) — AEP git + worktree reference (worktree lifecycle, branch naming, commit-per-task pattern, recovery), accessed on-demand via `/aep-git-ref`
+- `/aep-git-ref` — AEP git + worktree reference (worktree lifecycle, branch naming, commit-per-task pattern, `$BASE` resolution, recovery), accessed on-demand.

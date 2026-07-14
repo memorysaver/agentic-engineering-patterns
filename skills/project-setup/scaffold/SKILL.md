@@ -155,9 +155,9 @@ Hono; Polar needs Better Auth; pick one of turborepo/nx; Convex needs no DB/ORM)
    git add -A && git commit -m "feat: scaffold monorepo via Better-T-Stack"
    ```
 
-   A fresh repo is single-branch mode — AEP auto-detects `main` as the integration branch, so leave
-   `aep.integration-branch` unset. For the two-branch model, config override, and how `$BASE` resolves,
-   see `/aep-git-ref` "Integration Branch".
+   A fresh repo is single-branch mode — AEP auto-detects `main` as the integration branch, so set
+   no override. For the two-branch model, the override key, and how `$BASE` resolves, see
+   `/aep-git-ref` "Integration Branch".
 
 ---
 
