@@ -1,14 +1,18 @@
 ---
 name: aep-e2e-skill-scaffolding
-description: Generate (or upgrade) a project's e2e-test skill into the BDD layer-gate three-tier shape. Use when setting up E2E testing for a project, scaffolding the e2e-test skill, adding a BDD journey library, migrating a thin/bash e2e-test skill to BDD, or when the user says "scaffold e2e", "set up e2e testing", "add BDD journeys", "upgrade the e2e-test skill". Delegated to by /aep-scaffold. Emits a canonical, cross-tool skill (Claude Code + Codex + Pi) with a separate test-tool-selection guide.
+description: >-
+  Generates or upgrades a project's e2e-test skill to the three-tier BDD
+  layer-gate shape. Use for "scaffold e2e", "set up e2e testing", "add BDD
+  journeys", or thin/bash migration; normally delegated by /aep-scaffold.
 ---
 
 # E2E Skill Scaffolding
 
-Generate a project-local **`e2e-test` skill** in the BDD + layer-gate **three-tier** shape — the pattern
-proven in production downstream. The generated skill documents tests in natural-language **journeys**
-(intent, not click scripts), maps each to a **layer gate**, and ships a **separate tool-selection guide**
-so the actual browser/device automation tool is detected per environment or pinned by preference.
+Generate a project-local **`e2e-test` skill** in the BDD + layer-gate **three-tier** shape. The generated
+skill documents tests as natural-language **journeys** (intent, not click scripts), maps each to a **layer
+gate**, and ships a **separate tool-selection guide** so the browser/device automation tool is resolved
+per environment or pinned by preference. **Idempotent** — re-run to upgrade a project or refresh after the
+standard evolves.
 
 **Where this fits:**
 
@@ -19,32 +23,21 @@ so the actual browser/device automation tool is detected per environment or pinn
                                   ▲ build Phase 6-8 run journeys + record evidence; wrap flips the gate
 ```
 
-`/aep-scaffold` creates the project and calls this skill for the e2e infrastructure. `/aep-build` runs
-the journeys (the manual half of each layer gate). This skill is **idempotent** — re-run it to upgrade a
-project or refresh after the standard evolves.
-
 **Input:** the project's stack (`package.json` / `bts.jsonc`), optional `product-context.yaml`.
 **Output:** real `skills/e2e-test/` + `.claude/skills/e2e-test` + `.agents/skills/e2e-test` symlinks.
 
----
-
-## When this skill applies
-
-- A new project needs its e2e-test skill (called by `/aep-scaffold` Phase 8).
-- An existing project has **no** e2e-test skill, or a **thin/bash** one to upgrade to BDD.
-- The user wants to add a BDD journey library or the separate tool-selection guidance.
-
-For the conceptual model (why three tiers, how journeys map to gates), read
+For the conceptual model (why three tiers, how journeys map to gates) read
 [`references/three-tier-model.md`](references/three-tier-model.md) and
-[`references/layer-gate-loop.md`](references/layer-gate-loop.md). For journey authoring conventions, read
+[`references/layer-gate-loop.md`](references/layer-gate-loop.md); for journey authoring conventions,
 [`references/bdd-journeys.md`](references/bdd-journeys.md).
 
 ---
 
 ## Canonical cross-tool placement
 
-The generated skill is **project-owned** (not installed from the AEP marketplace), so it must be placed
-canonically by hand. The verified layout that makes one skill visible to **Claude Code, Codex, and Pi**:
+The generated skill is **project-owned** (not from the AEP marketplace), so it is placed canonically by
+hand. The verified layout that makes one skill visible to **Claude Code, Codex, and Pi** (Phase 4 creates
+the two symlinks directly — no migration script, no user-level skill):
 
 ```
 skills/e2e-test/                              # REAL dir — source of truth, tracked in git as itself
@@ -52,8 +45,7 @@ skills/e2e-test/                              # REAL dir — source of truth, tr
 .agents/skills/e2e-test → ../../skills/e2e-test   # symlink (Codex / Pi discovery)
 ```
 
-This is independent of how the AEP `aep-*` packages are installed (the skills CLI manages those). No
-migration script and no user-level skill is required — Phase 4 creates the two symlinks directly.
+This is independent of how the AEP `aep-*` packages are installed (the skills CLI manages those).
 
 ---
 
@@ -104,8 +96,7 @@ Read the stack to fill template placeholders. Reuse the `/aep-scaffold` **Defaul
 ### E2E policy — **propose, then confirm with the user**
 
 The policy (which tiers gate a layer, where to dogfood, when) is a **per-project decision, not a default
-to assume** — a CLI tool needs no Cloudflare check; a pre-release web app may dogfood post-deploy against
-prod. Propose from the stack, **then ask the user to confirm/adjust** before rendering `policy.md`:
+to assume**. Propose from the stack, **then ask the user to confirm/adjust** before rendering `policy.md`:
 
 | Placeholder              | Propose from                                                                                                                                                                                              | Confirm? |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
@@ -136,22 +127,17 @@ skills/e2e-test/
     └── seed.sh                     ← templates/seed.sh.tmpl   (chmod +x)
 ```
 
-**Conditional on the policy:** `journeys/` + `tool-selection.md` are emitted for every dogfoodable target
-— including **`cli`** (its journeys carry `target: cli` and dogfood the built binary via bash). Only when
-`E2E_TARGET == none` (**no runnable surface at all** — config / schema / docs repo, `[1]`-only) is there
-nothing to dogfood: **skip `journeys/` and `tool-selection.md`**; the gate is Tier-1 (+ Tier-3) +
-coverage, and `policy.md` records why. In that `none` case, when rendering `SKILL.md`, **drop the Tier-2
-"Journey dogfood" section and every `journeys/` / `tool-selection.md` link** (they would point at omitted
-files) — replace the Tier-2 row/section with one line: _"Tier-2 (journey dogfood): N/A for this project —
-see `policy.md`."_
-A `none`-target skill must ship with **no dead links**. When journeys _are_ emitted, the walking
-skeleton's `target:` **must agree with the dogfood surface** — when `E2E_TARGET == cli` (any non-UI
-project: a CLI binary **or** a pure library/package with exports but no web frontend), `{{TARGET_TYPE}}`
-is `cli`, **not** `web`; otherwise a library would get `dogfood_target: cli` but a `target: web` journey
-that resolves to a browser tool, find no UI, SKIP, and deadlock the gate. **For a `cli` target, adapt the skeleton body to the CLI** —
-the web placeholders (`{{BASE_URL}}` / `{{SERVER_URL}}`, "dev server is up", `GET /<health>`) do **not**
-apply; write the scenario as a command invocation instead (e.g. **When** `$ <bin> --version` runs →
-**Then** it exits 0 and prints the version → **Verify (bash):** exit code `0`, stdout contains the version string).
+**Conditional on the policy** — `journeys/` + `tool-selection.md` are emitted for **every dogfoodable
+target**, including `cli` (its journeys carry `target: cli` and dogfood the built binary via bash). Skip
+both **only** when `E2E_TARGET == none` (no runnable surface). Two branch-specific emit rules:
+
+- When `E2E_TARGET == cli` (a CLI binary **or** a library/package with exports but no web frontend), set
+  `{{TARGET_TYPE}}` = `cli` (not `web`) and adapt the skeleton to a command invocation — read
+  [`references/three-tier-model.md`](references/three-tier-model.md) "`cli`-target skeleton" for the recipe
+  and why a `target: web` journey would deadlock the gate.
+- When `E2E_TARGET == none`, render the generated `SKILL.md` without its Tier-2 section and with no dead
+  links — read [`references/three-tier-model.md`](references/three-tier-model.md) "`none`-target rendering"
+  for the exact substitution.
 
 On **upgrade**, write only files that are absent; for `SKILL.md` present-but-thin, replace it (it's
 generated infrastructure docs, not hand-authored journeys) and tell the user. **`policy.md` is never
@@ -245,15 +231,15 @@ Report to the user: what was created vs. upgraded, the canonical symlinks, the *
 
 ## Guardrails
 
-- **Never overwrite hand-written journeys.** Upgrades add missing scaffold; they don't replace authored content.
-- **Never clobber a real `.claude/skills/e2e-test` dir** — migrate it into `skills/` (git mv) first.
 - **Real dir is the source of truth**; `.claude/skills` and `.agents/skills` entries are symlinks only.
-- **seed.sh must stay idempotent** and exit 0 on a fresh project (no project-specific seeding yet).
-- **Tool choice is never hard-coded in journeys** — journeys are tool-agnostic; the tool is resolved by
-  `tool-selection.md`.
-- **`policy.md` is the single source of truth for tiers / target / timing** — propose from the stack but
-  **confirm with the user**; never silently overwrite it on re-run (re-confirm, then update). No copy goes
-  in `AGENTS.md` — the skill is canonical cross-tool, so all runtimes read this one file.
+- **Upgrades add only missing scaffold** — hand-written journeys and a filled-in `policy.md` stay untouched;
+  re-confirm the policy with the user, then update it (never silently overwrite). To replace a real
+  `.claude/skills/e2e-test` dir, migrate it into `skills/` (git mv) first — Phase 4 `expose()` refuses a
+  real path.
+- **Journeys are tool-agnostic** — the tool is resolved by `tool-selection.md`, never hard-coded in a journey.
+- **seed.sh stays idempotent** and exits 0 on a fresh project (no project-specific seeding yet).
+- **`policy.md` is the single source of truth for tiers / target / timing** — no copy goes in `AGENTS.md`;
+  the skill is canonical cross-tool, so every runtime reads this one file.
 
 ## Next step
 

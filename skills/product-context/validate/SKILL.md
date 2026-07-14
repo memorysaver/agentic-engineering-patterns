@@ -1,24 +1,17 @@
 ---
 name: aep-validate
-description: |-
-  Generator/evaluator validation for any AEP artifact — product context, architecture, stories, code, or documents. Use after any generation phase (/aep-envision, /aep-map, /aep-design, /aep-build) or when the user says "validate", "verify", "check the design", "dry-run", "evaluate", "gen/eval", "generator evaluator". Spawns parallel agents: a Generator (dry-run the artifact), an Evaluator (check against reality), and optionally a Protocol Checker (verify downstream compatibility). Modifies only the artifact being validated — never implements code.
+description: >-
+  Validates an AEP artifact with separate generator, evaluator, and optional
+  protocol-checker roles. Use for code review, implementation validation,
+  document or RFC validation, after /aep-envision, /aep-map, or /aep-design,
+  or for "validate", "verify", "dry-run", "evaluate", and "gen/eval".
 ---
 
 # Validate
 
 Run a generator/evaluator pattern against any artifact produced by the AEP workflow. The generator attempts to use the artifact (dry-run), the evaluator checks it against reality (codebase, constraints, downstream protocols), and the results are consolidated into fixes applied to the artifact itself.
 
-> "When asked to evaluate work they've produced, agents tend to respond by confidently praising the work — even when, to a human observer, the quality is obviously mediocre."
-> — Anthropic, "Harness Design for Long-Running Application Development"
-
-**Why separate agents:** The agent that produced an artifact cannot honestly evaluate it. The generator/evaluator separation is the single most impactful quality improvement in agentic workflows. This skill applies the gen/eval pattern to product artifacts.
-
-**Uses the gen/eval utility pattern.** Read these reference files for the underlying framework:
-
-- **Scoring:** `.claude/skills/aep-gen-eval/references/scoring-framework.md`
-- **Agent contracts:** `.claude/skills/aep-gen-eval/references/agent-contracts.md`
-- **Eval protocol:** `.claude/skills/aep-gen-eval/references/eval-protocol.md`
-- **Findings format:** `.claude/skills/aep-gen-eval/references/findings-format.md`
+**Core principle:** the agent that produced an artifact cannot honestly evaluate it — agents praise their own work. The generator/evaluator separation fixes this and is the single most impactful quality lever in agentic workflows. The role-separation contract, scoring framework, agent prompt templates, eval protocol, and findings format are canonical in `/aep-gen-eval` references — read them for the underlying mechanics; this skill applies the pattern to product artifacts.
 
 **Where this fits:**
 
@@ -44,32 +37,20 @@ Also usable after any phase:
 Identify what is being validated:
 
 ```bash
-# Check for product context
-ls product-context.yaml 2>/dev/null
-
-# Check for OpenSpec changes
-ls openspec/changes/ 2>/dev/null
-
-# Check for design artifacts
-ls .dev-workflow/ 2>/dev/null
+ls product-context.yaml 2>/dev/null   # product context
+ls openspec/changes/ 2>/dev/null      # OpenSpec changes
+ls .dev-workflow/ 2>/dev/null          # design artifacts
 ```
 
-If the user doesn't specify what to validate, auto-detect based on the most recently modified artifact.
+When the user names the target, validate it. When they don't: if exactly one of the probes above returns a hit, validate that artifact; if more than one is present, ask which to validate rather than guessing. **Postcondition:** the artifact (a concrete path) and its mode (A/B/C/D) are fixed before spawning agents.
 
-**File Resolution:**
-
-```bash
-ls product/index.yaml 2>/dev/null && echo "SPLIT MODE" || echo "V1 MODE"
-```
-
-- **Split mode**: Validate both files. Check cross-file consistency.
-- **V1 mode**: Validate `product-context.yaml` only.
+For product context, resolve split vs v1 mode with the probe in [references/file-resolution.md](references/file-resolution.md) (canonical for mode semantics). Split mode: validate both files and check cross-file consistency. V1 mode: validate `product-context.yaml` only.
 
 ---
 
 ## Step 1: Determine Validation Mode
 
-The skill operates in one of four modes based on the artifact type. Each mode configures which agents to spawn and what they check.
+The skill operates in one of four modes based on the artifact type. Each mode configures which agents to spawn and what they check. **Mode A (Product Context) is detailed below.** For Mode B (Design), Mode C (Code), or Mode D (Document) — agent roles, the Phase-5 code branch, and agent-count customization — read [references/modes.md](references/modes.md).
 
 ### Mode A: Product Context Validation
 
@@ -84,7 +65,7 @@ The skill operates in one of four modes based on the artifact type. Each mode co
 - `product/index.yaml` must have `personas`, `capabilities`, and `product` sections
 - If `object-model` is a declared quality dimension: every UI-facing capability has a `product/maps/<capability>/object-map.yaml`; each `stories[].object_model_refs` entry points to an existing object-map path + object id; object names are consistent with `architecture.domain_model` and `docs/glossary.md`
 
-Mode A runs **two passes** — product design quality first, then technical correctness:
+Mode A runs **two passes** — product design quality first, then technical correctness.
 
 #### Pass 1: Product Design Evaluation ("Are we building the right thing?")
 
@@ -95,8 +76,7 @@ Mode A runs **two passes** — product design quality first, then technical corr
 | Product Design Evaluator | Review against user story mapping principles | Walking skeleton validity, layer ordering, INVEST compliance, dependency graph quality, activity coverage, narrative coherence |
 | Vision Alignment Checker | Trace stories to opportunity brief           | Every story maps to a stated user need, no scope creep, JTBD coverage                                                          |
 
-Read the Product Design Evaluator prompt from `.claude/skills/aep-gen-eval/references/agent-contracts.md`.
-Score using the story mapping dimensions from `.claude/skills/aep-gen-eval/references/scoring-framework.md` (Walking Skeleton Validity, Layer Ordering, Vision Alignment, INVEST Compliance).
+Use the Product Design Evaluator prompt from `/aep-gen-eval` `agent-contracts.md`, and the story-mapping scoring dimensions (Walking Skeleton Validity, Layer Ordering, Vision Alignment, INVEST Compliance) from `/aep-gen-eval` `scoring-framework.md`.
 
 **Pass 1 hard failures:**
 
@@ -131,157 +111,21 @@ Score using the story mapping dimensions from `.claude/skills/aep-gen-eval/refer
 | Evaluator        | Compare design vs codebase      | Package versions, import paths, existing patterns, file existence, API compatibility   |
 | Protocol Checker | Verify downstream compatibility | Dispatch-required fields, DAG validity, scoring compatibility, file conflict detection |
 
-**Why two passes:** Pass 1 catches product design problems (wrong stories, bad layering, vision drift). Pass 2 catches technical problems (missing fields, broken references, codebase mismatches). Both are required before dispatching to autonomous agents — the agents will faithfully build whatever you give them, right or wrong.
-
-### Mode B: Design Validation
-
-**When:** After `/aep-design` — validating OpenSpec artifacts (proposal, design, specs, tasks)
-**Agents:** Generator + Evaluator
-
-| Agent     | Role                                 | What it checks                                                                  |
-| --------- | ------------------------------------ | ------------------------------------------------------------------------------- |
-| Generator | Walk through implementation mentally | Are tasks implementable? Missing technical details, unclear acceptance criteria |
-| Evaluator | Check specs against codebase         | Do referenced files exist? Are API assumptions correct? Do types match?         |
-
-### Mode C: Code Validation
-
-**When:** After implementation — validating code changes
-**Agents:** Generator + Evaluator (same as `/aep-build` Phase 5)
-
-| Agent     | Role                         | What it checks                                                             |
-| --------- | ---------------------------- | -------------------------------------------------------------------------- |
-| Generator | Review code against spec     | Does the code match what was specified? Missing features, incomplete flows |
-| Evaluator | Test the running application | Functional testing, edge cases, security, performance                      |
-
-> **Note:** For code validation in a workspace, prefer `/aep-build` Phase 5 which has the full evaluator loop (spawned worktree-bound via executor.spawn_evaluator). Use this skill for code review on the integration branch or for lighter validation.
-
-### Mode D: Document Validation
-
-**When:** Validating any structured document (architecture doc, RFC, migration plan)
-**Agents:** Generator + Evaluator
-
-| Agent     | Role                               | What it checks                                                           |
-| --------- | ---------------------------------- | ------------------------------------------------------------------------ |
-| Generator | Follow the document's instructions | Can someone execute this document? Missing steps, ambiguous instructions |
-| Evaluator | Check claims against reality       | Do referenced tools/files/APIs exist? Are version numbers correct?       |
+**Why two passes:** Pass 1 catches product design problems (wrong stories, bad layering, vision drift); Pass 2 catches technical problems (missing fields, broken references, codebase mismatches). Both are required before dispatching to autonomous agents — the agents will faithfully build whatever you give them, right or wrong.
 
 ---
 
 ## Step 2: Assemble Validation Context
 
-For each agent, prepare a focused context package. Irrelevant context degrades evaluation quality.
+For each agent, prepare a focused context package — its scope determines evaluation quality. The generic Generator and Evaluator context recipes (what to include, what to exclude) are canonical in `/aep-gen-eval` `agent-contracts.md` ("Context Assembly Rules").
 
-### Generator Context
-
-The generator needs:
-
-1. **The artifact being validated** — full content
-2. **The artifact's purpose** — what downstream consumer will use it (e.g., "dispatch will read stories", "an implementer agent will follow these tasks")
-3. **Constraints** — technical stack, project conventions, existing patterns
-
-The generator does NOT need:
-
-- The full codebase (that's the evaluator's job)
-- History of how the artifact was created
-- Other artifacts not directly consumed
-
-### Evaluator Context
-
-The evaluator needs:
-
-1. **The artifact being validated** — full content
-2. **Read access to the codebase** — package.json files, existing schemas, config files, source code
-3. **The specific claims to verify** — file paths, import statements, version numbers, API signatures
-
-The evaluator does NOT need:
-
-- Product vision or business context
-- The generator's findings (agents work independently)
-
-### Protocol Checker Context (Mode A only)
-
-The protocol checker needs:
-
-1. **The artifact being validated** — specifically the stories section
-2. **The downstream protocol specification** — e.g., the dispatch skill's requirements for story fields, scoring formula, DAG validation rules
-3. **The topology and layer gate definitions**
+**Protocol Checker context (Mode A only):** give it the stories section of the artifact, the downstream protocol specification it must satisfy, and the topology + layer-gate definitions. The downstream protocol requirements (dispatch story fields, scoring formula, DAG rules, design/build handoff contracts) are specified in [references/protocol-specs.md](references/protocol-specs.md).
 
 ---
 
 ## Step 3: Spawn Agents
 
-Launch all agents in parallel. Each agent works independently — they do not see each other's output.
-
-### Generator Agent Prompt Template
-
-```
-You are a GENERATOR agent performing a dry-run validation. Your job is to mentally
-walk through using this artifact and identify gaps that would cause problems.
-
-## The Artifact
-{artifact_content}
-
-## Your Task
-For each item in this artifact, attempt to mentally execute it and report:
-1. Can it be done? Yes/No
-2. Missing details — anything vague or ambiguous that would cause guesswork
-3. Dependency gaps — does this item have everything it needs?
-4. Assumption mismatches — any implicit assumptions that could be wrong?
-
-## Constraints
-{technical_constraints}
-
-## Output Format
-For each item, output a brief assessment. Focus on PROBLEMS ONLY — don't describe
-what's fine. At the end, produce a consolidated list of ALL changes needed.
-```
-
-### Evaluator Agent Prompt Template
-
-```
-You are an EVALUATOR agent. Your job is to compare this artifact against the
-ACTUAL state of the codebase and find mismatches. Read real files and verify claims.
-
-## The Artifact
-{artifact_content}
-
-## What to Verify
-{verification_checklist}
-
-## Your Task
-Read the actual files referenced in this artifact. For each claim, check:
-1. Does the referenced file/function/type exist?
-2. Does it have the signature/shape the artifact assumes?
-3. Are version numbers and dependency versions correct?
-4. Do import paths resolve correctly?
-
-## Output Format
-Report ALL mismatches between the artifact and reality. Be specific — include
-file paths and line numbers. End with a severity-ranked list of required fixes.
-```
-
-### Protocol Checker Agent Prompt Template (Mode A)
-
-```
-You are a PROTOCOL CHECKER. Your job is to verify this artifact is compatible
-with the downstream protocol that will consume it.
-
-## The Artifact
-{artifact_content}
-
-## The Downstream Protocol
-{protocol_specification}
-
-## Your Task
-1. Are all required fields present on every item?
-2. Is the dependency graph a valid DAG (no cycles, no missing references)?
-3. Can the scoring/ranking algorithm be computed with the available fields?
-4. Are there file-level conflicts between parallel items?
-5. Can the downstream system create its required artifacts from this data?
-
-## Output Format
-Produce a compatibility report with specific fixes needed in the artifact.
-```
+Launch all agents in parallel. Each works independently — they do not see each other's output. Use the prompt templates from `/aep-gen-eval` `agent-contracts.md`: Generator (Artifact Validation), Evaluator (Codebase Verification), Protocol Checker, and — for Mode A Pass 1 — Product Design Evaluator. **Postcondition:** one findings report returned per spawned agent.
 
 ---
 
@@ -291,11 +135,11 @@ After all agents return, consolidate their findings into a single action list.
 
 ### Categorize by severity
 
-| Category      | Description                                           | Action                |
-| ------------- | ----------------------------------------------------- | --------------------- |
-| **Blocking**  | Would stop downstream consumers from working          | Fix immediately       |
-| **Important** | Would cause friction, confusion, or rework            | Fix before proceeding |
-| **Minor**     | Cosmetic, missing optional fields, documentation gaps | Fix if time permits   |
+| Category      | Description                                           | Action                 |
+| ------------- | ----------------------------------------------------- | ---------------------- |
+| **Blocking**  | Would stop downstream consumers from working          | Fix immediately        |
+| **Important** | Would cause friction, confusion, or rework            | Fix before proceeding  |
+| **Minor**     | Cosmetic, missing optional fields, documentation gaps | Record; fix if trivial |
 
 ### Deduplicate
 
@@ -303,7 +147,7 @@ Multiple agents may find the same issue from different angles. Merge these into 
 
 ### Present to user
 
-Show the consolidated findings with counts:
+Show the consolidated findings with counts **before applying any fix** — the user may reprioritize or reject findings:
 
 ```
 Validation complete: {N} blocking, {M} important, {K} minor issues found.
@@ -317,129 +161,50 @@ Important:
   ...
 ```
 
+**Postcondition:** the counted, deduplicated findings list has been shown to the user.
+
 ---
 
 ## Step 5: Apply Fixes
 
-Apply all blocking and important fixes to the artifact. Minor fixes are optional.
+Read the current on-disk state of the artifact (not a cached copy), then fix every **blocking** and **important** finding; record **minor** findings in the changelog and fix them if trivial. The artifact is not validated while any blocking finding remains.
 
 **Rules for fixes:**
 
-- Only modify the artifact being validated — never create new files or modify other artifacts
-- Preserve the artifact's existing structure and conventions
-- Add a changelog entry recording what was validated and what changed
-- If a fix requires a decision the agent can't make (architectural choice, business priority), mark it as an `open_question` with a default assumption
+- Modify only the artifact being validated — never create new files, edit other artifacts, or implement code. (This is the one hard guardrail: fixes land in the validated artifact and nowhere else.)
+- Preserve the artifact's existing structure and conventions.
+- If a fix requires a decision the agent can't make (architectural choice, business priority), mark it as an `open_question` with a default assumption rather than guessing silently.
+- Append a changelog entry (`date`, `author: aep-validate`, `summary`) per the product-context schema, recording what was validated and the blocking/important/minor counts fixed.
 
-### Changelog entry format
-
-```yaml
-- date: <today>
-  author: aep-validate
-  summary: >
-    Generator/evaluator validation. Found {N} blocking, {M} important, {K} minor issues.
-    Fixed: [brief list of key fixes].
-```
+When the artifact is `product-context.yaml`, confirm it still parses before committing — run the validation command in [references/yaml-guardrails.md](references/yaml-guardrails.md). **Postcondition:** `npx js-yaml product-context.yaml` exits 0.
 
 ---
 
 ## Step 6: Commit
 
 ```bash
-# Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
-BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
-[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
-  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
-BASE=${BASE:-main}
-
+# Resolve $BASE (integration branch) per /aep-git-ref "Integration Branch".
 git pull --ff-only origin "$BASE"
 git add <validated-files>
 git commit -m "fix: validate {artifact-name} — {N} issues found and fixed"
 git push origin "$BASE"
 ```
 
+**Postcondition:** the fixes are committed and pushed to `$BASE`.
+
 ---
 
 ## Validation Dimensions
 
-When the agents evaluate, they should consider these dimensions (adapted from the evaluator criteria in `/aep-build`). Not all dimensions apply to every mode.
-
-### For Product Context (Mode A)
-
-| Dimension                    | What to check                                                                                 |
-| ---------------------------- | --------------------------------------------------------------------------------------------- |
-| **Completeness**             | Are all required sections present? Are enums listed explicitly? Are defaults specified?       |
-| **Consistency**              | Do field names match across sections? Do stories reference valid module IDs?                  |
-| **Implementability**         | Can each story be implemented with the information given? Missing technical details?          |
-| **Security**                 | Are there security implications in the design that aren't addressed? (auth, data access, PII) |
-| **Downstream compatibility** | Does the artifact work with its consumers? (dispatch, design, build)                          |
-
-### For Design Artifacts (Mode B)
-
-| Dimension         | What to check                                                                      |
-| ----------------- | ---------------------------------------------------------------------------------- |
-| **Completeness**  | Do specs cover all capabilities in the proposal? Are acceptance criteria testable? |
-| **Feasibility**   | Can the tasks be implemented with the stated approach? Are file paths correct?     |
-| **Scope control** | Are tasks properly bounded? Any scope creep beyond the proposal?                   |
-
-### For Code (Mode C)
-
-See `references/evaluator-criteria.md` for the full 5-dimension scoring framework (Completeness, Correctness, UX Quality, Security, Code Quality).
-
-### For Documents (Mode D)
-
-| Dimension         | What to check                                                        |
-| ----------------- | -------------------------------------------------------------------- |
-| **Accuracy**      | Are all factual claims correct? Do referenced resources exist?       |
-| **Executability** | Can someone follow this document step by step? Are commands correct? |
-| **Completeness**  | Are there missing steps or assumptions?                              |
+When the agents evaluate, they weigh mode-specific dimensions (Completeness, Consistency, Security, Feasibility, Accuracy, and more). The per-mode dimension tables — and the pointer to the full 5-dimension code-scoring framework — are in [references/validation-dimensions.md](references/validation-dimensions.md).
 
 ---
 
 ## When NOT to Use This Skill
 
-- **During `/aep-build` Phase 5** — use the built-in evaluator loop instead (it has executor.spawn_evaluator, verification JSON, scoring framework)
-- **For subjective quality** — this skill validates factual correctness and completeness, not aesthetic judgment. For usability / design-quality review, use [`/aep-design-lens`](../../patterns/design-lens/SKILL.md) (a heuristic health-check grounded in HCI theory) — its design-quality pass complements validate's factual pass.
-- **For tiny changes** — single-file edits or typo fixes don't need a 3-agent validation
-
----
-
-## Customization
-
-### Adding domain-specific checks
-
-Create a `validation-criteria.md` file in your project's `.dev-workflow/` directory to add project-specific validation checks. The agents will read this file if it exists.
-
-```markdown
-# Project Validation Criteria
-
-## Additional checks for Mode A (Product Context)
-
-- All stories must have `business_value` field (required by our dispatch)
-- Complexity must use S/M/L format (not small/medium/large)
-- All file paths must be verified against the actual filesystem
-
-## Additional checks for Mode B (Design)
-
-- All API endpoints must include Zod validation schemas
-- Database schema changes must include migration plan
-```
-
-### Adjusting agent count
-
-By default, Mode A spawns 3 agents, Modes B-D spawn 2. You can adjust:
-
-- **Lighter validation** (1 agent): Use when the artifact is small or low-risk. The single agent combines generator + evaluator roles.
-- **Heavier validation** (4+ agents): Add domain-specific agents for complex artifacts. Examples: a "security reviewer" for auth-related designs, a "performance reviewer" for data pipeline architectures.
-
----
-
-## Anti-Patterns
-
-- **Generator evaluating its own work** — The agent that created an artifact must never be the one validating it. Use separate agent invocations.
-- **Evaluator without codebase access** — An evaluator that can't read the actual code is just guessing. Always give the evaluator read access to relevant files.
-- **Applying fixes without presenting findings** — Always show the user what was found before applying fixes. They may disagree with some findings or want to prioritize differently.
-- **Validating against stale state** — Always read the current file/codebase state, not cached versions. Files may have changed since the artifact was created.
-- **Over-validating** — Not every artifact needs 3-agent validation. Use judgment about the artifact's risk and complexity.
+- **During `/aep-build` Phase 5** — use the built-in evaluator loop instead (it has `executor.spawn_evaluator`, verification JSON, scoring framework).
+- **For subjective quality** — this skill validates factual correctness and completeness, not aesthetic judgment. For usability / design-quality review, use `/aep-design-lens` (a heuristic health-check grounded in HCI theory) — its design-quality pass complements validate's factual pass.
+- **For tiny changes** — single-file edits or typo fixes don't need a 3-agent validation.
 
 ---
 

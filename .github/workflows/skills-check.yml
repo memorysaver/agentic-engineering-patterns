@@ -1,19 +1,29 @@
 name: skills-check
 
-# Verify the published skills stay self-contained and installable via the open
-# Agent Skills format (https://skills.sh). Runs on changes to the skills tree.
+# Verify every published skill carries its direct resources, the complete suite
+# installs, and installed units satisfy the open Agent Skills format.
 on:
   push:
     paths:
       - "skills/**"
+      - "evals/**"
       - ".claude-plugin/marketplace.json"
       - "scripts/build-skills.sh"
+      - "scripts/test-build-skills.sh"
+      - "scripts/check-skills-package.sh"
+      - "scripts/test-scaffold-audit.sh"
+      - "scripts/test-scaffold-converge.sh"
       - ".github/workflows/skills-check.yml"
   pull_request:
     paths:
       - "skills/**"
+      - "evals/**"
       - ".claude-plugin/marketplace.json"
       - "scripts/build-skills.sh"
+      - "scripts/test-build-skills.sh"
+      - "scripts/check-skills-package.sh"
+      - "scripts/test-scaffold-audit.sh"
+      - "scripts/test-scaffold-converge.sh"
       - ".github/workflows/skills-check.yml"
 
 jobs:
@@ -25,20 +35,51 @@ jobs:
       - name: Shared skill resources are in sync
         run: bash scripts/build-skills.sh --check
 
-      - name: marketplace.json is valid and declared skills exist
-        run: |
-          node -e '
-            const fs = require("fs");
-            const m = require("./.claude-plugin/marketplace.json");
-            const paths = m.plugins.flatMap(p => p.skills);
-            let bad = 0;
-            for (const p of paths) {
-              const f = p.replace(/^\.\//, "") + "/SKILL.md";
-              if (!fs.existsSync(f)) { console.error("Missing:", f); bad++; }
-            }
-            if (bad) process.exit(1);
-            console.log(`marketplace.json v${m.metadata.version}: ${paths.length} skills OK`);
-          '
+      - name: Generated-resource security fixtures
+        run: bash scripts/test-build-skills.sh
 
-      - name: Skills are discoverable by the skills CLI
-        run: npx -y skills@latest add ./ --list
+      - name: Skill package is complete, bounded, and officially valid
+        run: bash scripts/check-skills-package.sh
+
+      - name: Scaffold converge regression fixtures
+        run: bash scripts/test-scaffold-converge.sh
+
+      - name: Scaffold audit regression fixtures
+        run: bash scripts/test-scaffold-audit.sh
+
+      # R7/R8 of docs/decisions/skill-authoring-standard.md: one corpus-wide
+      # line budget for every SKILL.md — warn above 400, fail above 500.
+      - name: SKILL.md line budget (warn >400, fail >500)
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            n=$(wc -l < "$f")
+            if [ "$n" -gt 500 ]; then
+              echo "FAIL (>500): $n  $f"; fail=1
+            elif [ "$n" -gt 400 ]; then
+              echo "::warning file=$f::SKILL.md is $n lines (budget 400)"
+            fi
+          done < <(find skills -name SKILL.md -not -path '*/node_modules/*')
+          exit $fail
+
+      # R8(b): the $BASE resolver block has exactly one canonical home —
+      # git-ref's SKILL.md. The raw `aep.integration-branch` literal is
+      # allowlisted in the three reference files that read the config key for
+      # their own bash (executor backends probe, autopilot tick nudge prompt,
+      # build harness-artifacts init.sh recovery script).
+      - name: $BASE resolver lives only in git-ref
+        run: |
+          # Two signatures: the config-key literal AND the develop-probe bash
+          # (a resolver copy that omits the config override still probes
+          # refs/heads/develop — that spelling must not reappear either).
+          bad=0
+          while IFS= read -r f; do
+            case "$f" in
+              skills/agentic-development-workflow/git-ref/SKILL.md) ;;
+              skills/patterns/executor/references/backends.md) ;;
+              skills/patterns/autopilot/references/tick-protocol.md) ;;
+              skills/agentic-development-workflow/build/references/harness-artifacts.md) ;;
+              *) echo "FAIL: integration-branch resolver leaked into $f"; bad=1 ;;
+            esac
+          done < <({ grep -rl 'aep\.integration-branch' skills/ || true; grep -rlE 'refs/(heads|remotes/origin)/develop' skills/ || true; } | sort -u)
+          exit $bad

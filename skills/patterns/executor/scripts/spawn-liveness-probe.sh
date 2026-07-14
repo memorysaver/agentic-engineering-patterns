@@ -18,13 +18,14 @@
 #   (2) the worktree shows ACTIVITY — this script verifies the host-agnostic
 #       half below.
 #
-# Usage: spawn-liveness-probe.sh <ws> <agent_id> [timeout_secs]
+# Usage: spawn-liveness-probe.sh <ws> <worker_handle> [timeout_secs]
 # Exit 0 = worktree active within timeout; 1 = dead spawn (tear down + fall back
-#          to native-bg-subagent). The caller still confirms (1) above.
+#          using the current host's fallback pair). The caller still confirms
+#          (1) above.
 set -uo pipefail
 
-WS="${1:?usage: spawn-liveness-probe.sh <ws> <agent_id> [timeout_secs]}"
-AGENT_ID="${2:?missing agent_id}"
+WS="${1:?usage: spawn-liveness-probe.sh <ws> <worker_handle> [timeout_secs]}"
+WORKER_HANDLE="${2:?missing worker_handle}"
 TIMEOUT="${3:-90}"
 
 WT=".feature-workspaces/$WS"
@@ -40,14 +41,14 @@ worktree_active() {
 deadline=$(( SECONDS + TIMEOUT ))
 while [ "$SECONDS" -lt "$deadline" ]; do
   if worktree_active; then
-    echo "LIVE: worktree '$WS' shows activity (agent_id=$AGENT_ID). Caller must still confirm the process/agent exists via the host tool."
+    echo "LIVE: worktree '$WS' shows activity (worker_handle=$WORKER_HANDLE). Caller must still confirm the process/agent exists via the host tool."
     exit 0
   fi
   sleep 5
 done
 
-echo "DEAD: no worktree activity for '$WS' within ${TIMEOUT}s (agent_id=$AGENT_ID)." >&2
+echo "DEAD: no worktree activity for '$WS' within ${TIMEOUT}s (worker_handle=$WORKER_HANDLE)." >&2
 echo "  → Treat as a failed spawn: tear down the dead remnant (TeamDelete any team that got created)," >&2
-echo "    then auto-fall-back to native-bg-subagent into the SAME worktree and probe again." >&2
+echo "    then use the current host's fallback mode in the SAME worktree and probe once." >&2
 echo "  → NEVER accept 'roster/state says active' as liveness." >&2
 exit 1

@@ -1,0 +1,227 @@
+{
+  "schema_version": 1,
+  "run": {
+    "date": "2026-07-14",
+    "model_class": "front-tier Codex reasoning model",
+    "input": "Only the 22 skill names and frontmatter descriptions after the metadata diet",
+    "method": "For each prompt, select the single best skill without opening any SKILL.md body. Boundary probes intentionally resemble a neighboring skill. Observed values record this review run and must be rerun when routing metadata changes."
+  },
+  "cases": [
+    {
+      "id": "build-direct",
+      "kind": "direct",
+      "prompt": "The feature workspace and tasks already exist. Implement every task autonomously, test it, open the PR, handle feedback, and merge.",
+      "expected": "aep-build"
+    },
+    {
+      "id": "design-direct",
+      "kind": "direct",
+      "prompt": "Let's explore and design a feature, turn the tradeoffs into an OpenSpec proposal, and review it together before coding.",
+      "expected": "aep-design"
+    },
+    {
+      "id": "git-ref-direct",
+      "kind": "direct",
+      "prompt": "How does AEP resolve the integration branch, name worktrees, and recover a broken feature worktree?",
+      "expected": "aep-git-ref"
+    },
+    {
+      "id": "launch-direct",
+      "kind": "direct",
+      "prompt": "The design is approved. Create its isolated worktree and spawn a Codex implementation agent with an evaluator.",
+      "expected": "aep-launch"
+    },
+    {
+      "id": "wrap-direct",
+      "kind": "direct",
+      "prompt": "The PR merged; archive the OpenSpec change, converge the records, and remove the feature workspace.",
+      "expected": "aep-wrap"
+    },
+    {
+      "id": "autopilot-direct",
+      "kind": "direct",
+      "prompt": "Run the entire remaining layer hands-free, dispatching and monitoring multiple stories through merge and cleanup.",
+      "expected": "aep-autopilot"
+    },
+    {
+      "id": "design-lens-direct",
+      "kind": "direct",
+      "prompt": "Audit this product UI for usability, accessibility, and heuristic issues and assign severity scores.",
+      "expected": "aep-design-lens"
+    },
+    {
+      "id": "executor-direct",
+      "kind": "direct",
+      "prompt": "Which executor backend should launch this workspace agent under Codex, and how do I check that the spawn is alive?",
+      "expected": "aep-executor"
+    },
+    {
+      "id": "gen-eval-direct",
+      "kind": "direct",
+      "prompt": "Define a reusable generator/evaluator contract, scoring framework, findings format, and recovery ladder for artifacts.",
+      "expected": "aep-gen-eval"
+    },
+    {
+      "id": "workflow-feedback-direct",
+      "kind": "direct",
+      "prompt": "Capture the process lessons from this downstream build and route them upstream into AEP.",
+      "expected": "aep-workflow-feedback"
+    },
+    {
+      "id": "workflow-direct",
+      "kind": "direct",
+      "prompt": "This task is too large for one context; author a deterministic multi-agent harness to execute and verify it.",
+      "expected": "aep-workflow"
+    },
+    {
+      "id": "calibrate-direct",
+      "kind": "direct",
+      "prompt": "Agents cannot judge our visual quality bar. Capture my decisions in a design-dimension brief before the alignment layer.",
+      "expected": "aep-calibrate"
+    },
+    {
+      "id": "dispatch-direct",
+      "kind": "direct",
+      "prompt": "Sync the signals, score the ready queue, and pick the single next story for the feature lifecycle.",
+      "expected": "aep-dispatch"
+    },
+    {
+      "id": "envision-direct",
+      "kind": "direct",
+      "prompt": "Validate whether this product idea is worth pursuing and frame the opportunity for downstream planning.",
+      "expected": "aep-envision"
+    },
+    {
+      "id": "map-direct",
+      "kind": "direct",
+      "prompt": "Decompose the product context into modules, a layered story graph, dependencies, and an agent topology.",
+      "expected": "aep-map"
+    },
+    {
+      "id": "model-direct",
+      "kind": "direct",
+      "prompt": "Before UI stories start, create an OOUX object map and noun-first information architecture.",
+      "expected": "aep-model"
+    },
+    {
+      "id": "reflect-direct",
+      "kind": "direct",
+      "prompt": "Classify what we learned after shipping and route it back to the story graph, architecture, or opportunity hypothesis.",
+      "expected": "aep-reflect"
+    },
+    {
+      "id": "validate-direct",
+      "kind": "direct",
+      "prompt": "Run a generator/evaluator dry-run against this completed product-context artifact and fix only that artifact.",
+      "expected": "aep-validate"
+    },
+    {
+      "id": "watch-direct",
+      "kind": "direct",
+      "prompt": "Continuously ingest telemetry and error streams, deduplicate findings, and create refinement stories in the backlog.",
+      "expected": "aep-watch"
+    },
+    {
+      "id": "e2e-scaffolding-direct",
+      "kind": "direct",
+      "prompt": "Upgrade our thin bash e2e-test skill into a three-tier BDD journey and layer-gate structure.",
+      "expected": "aep-e2e-skill-scaffolding"
+    },
+    {
+      "id": "onboard-direct",
+      "kind": "direct",
+      "prompt": "I'm new to AEP. Install the plugin, verify the required tools, configure it, and explain the mental model.",
+      "expected": "aep-onboard"
+    },
+    {
+      "id": "scaffold-direct",
+      "kind": "direct",
+      "prompt": "Create a new AEP application with OpenSpec, workspace hooks, and the canonical testing infrastructure.",
+      "expected": "aep-scaffold"
+    },
+    {
+      "id": "onboard-vs-scaffold-zh",
+      "kind": "boundary",
+      "prompt": "我第一次接觸 AEP，先幫我安裝、檢查工具並解釋整體工作方式，不要建立新專案。",
+      "expected": "aep-onboard"
+    },
+    {
+      "id": "scaffold-vs-onboard-zh",
+      "kind": "boundary",
+      "prompt": "AEP 已經裝好了，請修復這個既有專案分裂的 .claude/.agents skills layout。",
+      "expected": "aep-scaffold"
+    },
+    {
+      "id": "dispatch-vs-autopilot-zh",
+      "kind": "boundary",
+      "prompt": "只挑一個現在最適合做的 story，交給下一個 feature 階段，不要持續跑。",
+      "expected": "aep-dispatch"
+    },
+    {
+      "id": "autopilot-vs-dispatch-zh",
+      "kind": "boundary",
+      "prompt": "不用再問我，連續把這一層的多個 stories 從派工一路監控到收尾。",
+      "expected": "aep-autopilot"
+    },
+    {
+      "id": "design-lens-vs-calibrate-zh",
+      "kind": "boundary",
+      "prompt": "請依可用性與 accessibility heuristics 審查這個現有介面並標嚴重度。",
+      "expected": "aep-design-lens"
+    },
+    {
+      "id": "calibrate-vs-design-lens-zh",
+      "kind": "boundary",
+      "prompt": "這不是要做 usability audit；請把我對品牌視覺好壞的主觀判斷整理成 agents 能用的標準。",
+      "expected": "aep-calibrate"
+    },
+    {
+      "id": "validate-vs-gen-eval",
+      "kind": "boundary",
+      "prompt": "Use the existing gen/eval protocol now to validate this specific architecture document.",
+      "expected": "aep-validate"
+    },
+    {
+      "id": "validate-code-review",
+      "kind": "boundary",
+      "prompt": "Review this completed implementation against its spec, run focused checks, and report concrete code defects; do not design a reusable evaluation framework.",
+      "expected": "aep-validate"
+    },
+    {
+      "id": "validate-document-review",
+      "kind": "boundary",
+      "prompt": "Validate this RFC as an executable document: check its claims against the repository and identify missing migration steps.",
+      "expected": "aep-validate"
+    },
+    {
+      "id": "gen-eval-vs-validate",
+      "kind": "boundary",
+      "prompt": "Design the reusable scoring and agent-contract pattern that other validation workflows should consult.",
+      "expected": "aep-gen-eval"
+    },
+    {
+      "id": "workflow-vs-feedback-zh",
+      "kind": "boundary",
+      "prompt": "請為這個超出單一 context 的任務寫一個可重跑的 multi-agent workflow。",
+      "expected": "aep-workflow"
+    },
+    {
+      "id": "feedback-vs-workflow-zh",
+      "kind": "boundary",
+      "prompt": "workflow 已經跑完了，現在把這次流程上的教訓整理並回送到 AEP。",
+      "expected": "aep-workflow-feedback"
+    },
+    {
+      "id": "model-vs-map",
+      "kind": "boundary",
+      "prompt": "The story graph exists; derive the UI nouns, relationships, and object map before dispatching its screens.",
+      "expected": "aep-model"
+    },
+    {
+      "id": "reflect-vs-watch",
+      "kind": "boundary",
+      "prompt": "Monitoring already produced one concrete observation; classify that learning and decide which product phase changes.",
+      "expected": "aep-reflect"
+    }
+  ]
+}

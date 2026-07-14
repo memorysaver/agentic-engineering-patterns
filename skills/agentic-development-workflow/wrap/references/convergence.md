@@ -29,6 +29,24 @@ openspec/changes/<change-name>/convergence/
   dogfood-*.md
 ```
 
+### Gather commands (wrap step 2.5)
+
+```bash
+CONV="openspec/changes/<change-name>/convergence"
+mkdir -p "$CONV"
+WS=".feature-workspaces/<name>/.dev-workflow"
+
+# Best-effort copies — skip whatever is missing (never fail the wrap):
+cp "$WS/lessons.md"                  "$CONV/" 2>/dev/null
+cp "$WS"/signals/eval-response-*.md  "$CONV/" 2>/dev/null
+cp "$WS"/code-review-*.md            "$CONV/" 2>/dev/null
+cp "$WS"/dogfood-*.md                "$CONV/" 2>/dev/null
+```
+
+Then write `"$CONV"/execution-record.yaml` per the schema below — identity fields
+(`story_id`, `merge_commit`, `pr_url`, `cost_usd`, timestamps) come from
+`signals/status.json`; every field degrades to `null`.
+
 ### The gather manifest (parameterized)
 
 **Minimum set** (all present in AEP's standard `.dev-workflow/` workspace layout):

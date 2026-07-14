@@ -125,3 +125,29 @@ with fallback defaults, handle missing tools gracefully (SKIP not FAIL), exit 1 
 In full mode (`/aep-launch` with an evaluator), the evaluator reads
 `.dev-workflow/feature-verification.json`; each verification step should map to a journey `Verify` line
 or an API-driver assertion, so the same checks that gate the build also gate the layer.
+
+## Scaffolding: `cli`-target skeleton (Phase 3 emit)
+
+When `E2E_TARGET == cli` — any non-UI project: a CLI binary **or** a pure library/package with exports but
+no web frontend — set `{{TARGET_TYPE}}` to `cli`, **not** `web`, so the walking-skeleton journey's
+`target:` agrees with the dogfood surface. A `target: web` journey on a `dogfood_target: cli` project
+resolves to a browser tool, finds no UI, SKIPs, and **deadlocks the gate** — coverage never completes.
+
+Adapt the skeleton body to the CLI: the web placeholders (`{{BASE_URL}}` / `{{SERVER_URL}}`, "dev server
+is up", `GET /<health>`) do **not** apply. Write the scenario as a command invocation instead, e.g.:
+
+- **When** `$ <bin> --version` runs
+- **Then** it exits 0 and prints the version
+- **Verify (bash):** exit code `0`, stdout contains the version string
+
+## Scaffolding: `none`-target rendering (Phase 3 emit)
+
+`E2E_TARGET == none` means **no runnable surface at all** (config / schema / docs repo, `[1]`-only) — there
+is nothing to dogfood. Emit-time rules:
+
+- **Skip `journeys/` and `tool-selection.md`** entirely (Tier-2 N/A).
+- When rendering the generated `SKILL.md`, **drop the Tier-2 "Journey dogfood" section and every
+  `journeys/` / `tool-selection.md` link** (they would point at omitted files). Replace the Tier-2
+  row/section with one line: _"Tier-2 (journey dogfood): N/A for this project — see `policy.md`."_
+- The gate is **Tier-1 (+ Tier-3) + coverage**; `policy.md` records why.
+- A `none`-target skill must ship with **no dead links.**

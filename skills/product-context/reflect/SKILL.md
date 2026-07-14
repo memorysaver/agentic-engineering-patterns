@@ -1,6 +1,9 @@
 ---
 name: aep-reflect
-description: Classify feedback and update product context after shipping features. Use after /aep-wrap, after user testing, or when the user says "reflect", "what did we learn", "update the product context", "classify feedback", "replan". Closes the feedback loop by routing observations back to the right phase.
+description: >-
+  Classifies post-ship feedback and routes it to the story graph, architecture,
+  or opportunity hypothesis. Use after /aep-wrap or user testing, or for
+  "reflect", "what did we learn", "update product context", and "replan".
 ---
 
 # Reflect
@@ -22,109 +25,84 @@ Close the feedback loop. Transform real-world observations into actionable chang
 
 ## Before Starting
 
-**File Resolution:**
-
-```bash
-ls product/index.yaml 2>/dev/null && echo "SPLIT MODE" || echo "V1 MODE"
-cat product-context.yaml
-```
-
-- **Split mode** (`product/index.yaml` exists): Read product definition from `product/index.yaml` (what was intended). Read operational state from `product-context.yaml` (what happened).
-- **V1 mode**: Read everything from `product-context.yaml`.
-
-If `product-context.yaml` does not exist, there is nothing to reflect on — run `/aep-envision` and `/aep-map` first.
+Mode semantics (split vs v1 vs new-project) are canonical in `references/file-resolution.md` — run the probe there. Reflect reads the product definition from `product/index.yaml` (split) or `product-context.yaml` (v1) for what was intended, and reads operational state (`cost`, `stories`, `changelog`) from `product-context.yaml` for what happened. It writes operational changes to `product-context.yaml`; product-intent changes go to `product/index.yaml` (split) or `product-context.yaml` (v1). If neither file exists there is nothing to reflect on — run `/aep-envision` then `/aep-map` first.
 
 ---
 
 ## Step 1: Gather Feedback
 
-Collect observations from all sources. Read product definition (from `product/index.yaml` in split mode, `product-context.yaml` in v1 mode) for what was intended, and `product-context.yaml` `cost` section for execution data.
+Collect observations from all sources:
 
 - **User testing:** What worked? What confused people? What was missing?
 - **Error logs / monitoring:** Runtime failures, performance issues, unexpected behavior
 - **Cost data:** Review the `cost` section of `product-context.yaml`. If agent execution traces exist, review per-story costs. Which story types were expensive? Where did retries concentrate?
 - **Product instincts:** After seeing the thing work, what does the user's gut say? What feels right, what feels off?
-- **Dogfood reports:** Read `.dev-workflow/dogfood-*.md` (the unified severity/category/repro format). Normalize each `##` finding via the `dogfood_report` adapter (`references/telemetry-ingestion.md` → Dogfood-report adapter) into the same observation record Step 2 classifies — the same source `/aep-watch` ingests headlessly.
-- **Lessons learned:** Read `lessons-learned/*.md` for observations captured by workspace agents during builds. Summarize patterns across recent lessons — recurring errors, solutions that worked, missing documentation.
-- **Layer distillations:** Read `lessons-learned/distillations/*.yaml` — the proposal-only synthesis Layer Distillation writes when a layer completes (producer: `aep-wrap` → Reflect and Advance). Normalize each item via the `distillation` adapter (`references/telemetry-ingestion.md` → Distillation adapter): `refinements` → refinement (with `target_layer`), `skill_amendments` → process (proposed amendments — never auto-applied), `weak_areas` → discovery/refinement. One converged source per layer instead of re-deriving patterns from N raw lessons files.
+- **Dogfood reports:** Read `.dev-workflow/dogfood-*.md`. Normalize each `##` finding via the `dogfood_report` adapter (`references/telemetry-ingestion.md` → Dogfood-report adapter) into the same observation record Step 2 classifies — the same source `/aep-watch` ingests headlessly.
+- **Lessons learned:** Read `lessons-learned/*.md` (observations captured by workspace agents during builds); summarize recurring errors, solutions that worked, missing documentation.
+- **Layer distillations:** Read `lessons-learned/distillations/*.yaml` — the proposal-only synthesis written by `/aep-wrap` Reflect and Advance when a layer completes. Normalize each item via the `distillation` adapter (`references/telemetry-ingestion.md` → Distillation adapter): `refinements` → refinement (with `target_layer`), `skill_amendments` → process (proposed, never auto-applied), `weak_areas` → discovery/refinement.
 
-Ask the user one source at a time. Don't rush — the quality of classification depends on the quality of input.
+**Automated ingestion (optional):** Error logs, analytics, and monitoring can be pulled in directly per `references/telemetry-ingestion.md`, normalized into the same observation format Step 2 classifies. Configure endpoints under `topology.routing.telemetry_sources`. Automation augments the interactive sources; ingested records merge with human input before classification, and the human still reviews each classification.
 
-**Automated ingestion (optional):** Automated sources — error logs, analytics, monitoring — can be pulled in directly per `references/telemetry-ingestion.md`, normalized into the same observation format Step 2 classifies. Configure endpoints under `topology.routing.telemetry_sources`. Automation **augments** the interactive sources above; it does not replace them — ingested records are merged with the human input before classification, and the human still reviews each classification.
+**Postcondition:** every source above is reviewed and its findings normalized into observation records for Step 2 (or the source is explicitly empty this cycle).
 
 ---
 
 ## Step 2: Classify Each Observation
 
-Every piece of feedback becomes one of:
+Every piece of feedback becomes exactly one of the five categories below. Present each classification to the user and let them override — they know their product better than any framework. This section is the canonical classifier; `/aep-watch` applies it headlessly.
 
 ### Bug
 
 Specified behavior that does not work.
 
-- **Action:** Create a new story in `product-context.yaml` with `priority: high` and `status: pending` in the current layer, route to `/aep-dispatch`
-- **Update:** Add the story directly to the `stories` section of the YAML
+- **Action:** Add a new story directly to the `stories` section of `product-context.yaml` with `priority: high` and `status: pending` in the current layer; route to `/aep-dispatch`.
 
 ### Refinement
 
 Working behavior that needs improvement — or existing stories that need to move between layers.
 
-- **Action:** Create a new story in the next layer with `status: pending`, add to the `stories` section of `product-context.yaml`. Alternatively, promote an existing story from a later layer to an earlier one if learning shows it's needed sooner.
-- **Update:** Include appropriate layer assignment and dependencies
+- **Action:** Add a new story to the `stories` section in the next layer with `status: pending` (include layer assignment and dependencies). Alternatively, promote an existing story from a later layer to an earlier one if learning shows it is needed sooner.
 
-**Sub-type — Calibration:** A gap between "works correctly" and "feels right" in any quality dimension. The code works as specified and the spec was correct, but the result doesn't match what the human actually wanted.
+**Sub-type — Calibration:** a gap between "works correctly" and "feels right." The code works as specified and the spec was correct, but the result doesn't match what the human wanted. Confirm: does the code work as specified (yes → not a bug)? Was the spec correct (yes → not a discovery)? Does the result feel right (no → calibration)? Which dimension is off (visual-design / ux-flow / api-surface / data-model / scope-direction / copy-tone / performance-quality)?
 
-Classification questions for calibration observations:
+Route by the dimension's weight — the heavy/light split is canonical in `/aep-map` `references/alignment-layers.md`:
 
-1. Does the code work as specified? (Yes → not a bug)
-2. Was the spec correct? (Yes → not a discovery)
-3. Does the result feel right? (No → calibration need)
-4. What dimension feels off? (visual-design / ux-flow / api-surface / data-model / scope-direction / copy-tone / performance-quality)
-
-For **heavy** dimensions (visual-design, ux-flow, copy-tone): create stories in the next `.5` alignment layer with `calibration_type: <dimension>`. Run `/aep-calibrate <dimension>` before dispatching.
-
-For **light** dimensions (api-surface, data-model, scope-direction, performance-quality): route to `/aep-calibrate <dimension>` directly — may create stories in next integer layer or update product context inline. No `.5` layer needed.
+- **Heavy** dimensions: create stories in the next `.5` alignment layer with `calibration_type: <dimension>`; run `/aep-calibrate <dimension>` before dispatching.
+- **Light** dimensions: route to `/aep-calibrate <dimension>` directly — it may create stories in the next integer layer or update product context inline. No `.5` layer needed.
 
 ### Discovery
 
 New requirement or invalidated assumption.
 
-- **Action:** Revisit product context
-  - If it's a product assumption → update `product` section via `/aep-envision`
-  - If it's an architecture issue → update `architecture` section via `/aep-map`
-- **Update:** Mark the affected assumption in the `product` section as revised
+- **Action:** Revisit product context. A product assumption → update the `product` section via `/aep-envision` (mark the affected assumption as revised). An architecture issue → update the `architecture` section via `/aep-map`.
 
 ### Opportunity Shift
 
 Fundamentally changes the bet — the original opportunity hypothesis is wrong or has shifted.
 
-- **Action:** Back to `/aep-envision` Phase 0
-- **This is rare** but critical to recognize. Signs: the problem you're solving isn't the problem users actually have, or a market shift made the opportunity moot.
+- **Action:** Back to `/aep-envision` Phase 0. This is rare but critical to recognize. Signs: the problem you're solving isn't the problem users actually have, or a market shift made the opportunity moot.
 
 ### Process
 
-Observations about the workflow itself, not the product. Examples: permission stalls, signal staleness, missing tooling, agent configuration gaps.
+Observations about the workflow itself, not the product (permission stalls, signal staleness, missing tooling, agent-config gaps).
 
-- **Action:** Document the pattern in `lessons-learned/process/<observation>.md`. Add a `process_learnings` entry to the `topology.routing` section of `product-context.yaml`.
-- **Important:** If the pattern warrants a skill file change, record it as a proposed amendment in the changelog — **do not auto-edit skill files**. Skill changes are reviewed and applied by a human.
-- **For systematic capture and upstream routing** of process and tech-stack observations — especially when reviewing multiple downstream project runs — use `/aep-workflow-feedback` which provides a standardized format and downstream→AEP routing.
+- **Action:** Document the pattern in `lessons-learned/process/<observation>.md` (what happened — description, frequency, impact; root cause if known; proposed mitigation). Add a `process_learnings` entry (`pattern`, `mitigation`, `discovered_at`) to `topology.routing` in `product-context.yaml`.
+- **Skill amendments:** If the pattern warrants a skill-file change, record it as a proposed amendment in the `changelog` — `type: process-improvement`, `summary`, and `proposed_changes` (`skill`, `change`, `rationale`). Skill files are reviewed and applied by a human; the classifier proposes amendments, never edits skill files.
+- **Upstream routing:** For systematic capture of process and tech-stack observations across multiple downstream runs, use `/aep-workflow-feedback` (standardized format + downstream→AEP routing).
 
-Present the classification to the user for each observation. Let them override — they know their product better than any framework.
+**Postcondition:** every observation carries exactly one user-confirmed category and its routing action is recorded — a story appended to `stories`, a `product`/`architecture` update queued, or a `process_learnings`/amendment entry written.
 
 ---
 
 ## Step 2.5: Re-slice the Map
 
-After classifying all feedback, review the current layer assignments. Release lines are pencil marks — they should shift based on what you learned. This is normal iteration, not a sign that something went wrong.
+After classifying all feedback, review the current layer assignments. Release lines are pencil marks — they shift based on what you learned. This is normal iteration.
 
-For each layer that has not yet been built:
+For each layer not yet built: review story priorities against the classified feedback; promote stories from later layers when learning shows they're needed sooner and demote ones that turned out less critical; add new stories from classified Refinements to the appropriate layer; update the `layer` assignments in the `stories` section of `product-context.yaml`.
 
-1. **Review story priorities** in light of classified feedback. Do any stories need to move to an earlier layer? Are any stories in the next layer no longer relevant?
-2. **Promote stories** from later layers to earlier ones when learning shows they're needed sooner. Demote stories that turned out to be less critical.
-3. **Add new stories** from classified Refinements to the appropriate layer and activity.
-4. **Update `product-context.yaml`** — change `layer` assignments in the `stories` section.
+**Key rule:** Re-slicing does NOT require going back to `/aep-envision` — you route there only when the backbone (user activities) or product framing changes, not when layer assignments shift. See `docs/decisions/release-line-adjustments.md` for the full framework.
 
-**Key rule:** Re-slicing does NOT require going back to `/aep-envision`. You only route there when the backbone (user activities) or product framing changes — not when layer assignments shift. See `docs/decisions/release-line-adjustments.md` for the full decision framework.
+**Postcondition:** `layer` assignments in `stories` reflect the classified feedback (or are unchanged because nothing moved).
 
 ---
 
@@ -133,24 +111,15 @@ For each layer that has not yet been built:
 If the completed layer has an `outcome_contract` defined in `product.layers[]`:
 
 1. **Present the hypothesis** to the user: "The hypothesis was: [hypothesis]. The success metric was: [type] [target]."
-2. **Ask for evaluation** — outcome contracts are not automated tests. They may require user testing, analytics review, or qualitative assessment.
-3. **Apply the decision rule:**
-   - If `keep_if` condition met → record as passed, advance to next layer
-   - If `otherwise` triggered → record as failed, recommend re-slicing: promote stories from later layers, adjust backbone if needed
-4. **Record the result** in the changelog:
-   ```yaml
-   - date: YYYY-MM-DD
-     type: outcome_evaluation
-     summary: "Layer N outcome contract: [passed/failed] — [metric] was [actual] vs target [target]"
-   ```
+2. **Ask for evaluation** — outcome contracts are not automated tests; they may require user testing, analytics review, or qualitative assessment.
+3. **Apply the decision rule:** `keep_if` condition met → record as passed, advance to the next layer; `otherwise` triggered → record as failed, recommend re-slicing (promote stories from later layers, adjust backbone if needed).
+4. **Record the result** in the `changelog` — `type: outcome_evaluation`, `summary` noting passed/failed with the metric, actual value, and target.
 
-**Auto-evaluation (optional, opt-in):** The pause above can be skipped per `references/telemetry-ingestion.md`:
-
-- If `topology.routing.auto_outcome_eval: quantitative` **and** the success metric is quantitative (a numeric target measurable from analytics/monitoring) → first run `coverage_check([metric])` (`references/telemetry-ingestion.md` §1.5): if the metric isn't bound to a telemetry source (the `/aep-map` Telemetry Binding step wasn't done), **fall back to the human pause** and note "run /aep-map observability step". If covered → fetch the actual value per `references/telemetry-ingestion.md`, apply `keep_if`/`otherwise` mechanically, and record the result in the changelog — no pause. (A fetch failure also falls back to the human pause.)
-- **Qualitative** metrics still pause for the human as described above — **unless** `topology.routing.full_auto: true`, in which case the agent evaluates the qualitative metric by its own judgment and applies the decision rule with no pause.
-- Default (`auto_outcome_eval: none`, `full_auto: false`) preserves the current human-in-the-loop behavior exactly.
+**Auto-evaluation (optional, opt-in):** the pause can be skipped when the metric is telemetry-bound. See `references/telemetry-ingestion.md` for the `topology.routing.auto_outcome_eval` modes: `quantitative` runs the `coverage_check` gate (§1.5) and, if the metric is bound to a source, fetches the actual value and applies `keep_if`/`otherwise` mechanically; an unbound metric or a failed fetch falls back to the human pause. Qualitative metrics still pause — unless `topology.routing.full_auto: true`, where the agent evaluates by its own judgment. Default (`auto_outcome_eval: none`, `full_auto: false`) preserves the human-in-the-loop pause exactly.
 
 If no outcome contract exists for the completed layer, skip this step.
+
+**Postcondition:** the outcome result is recorded in the `changelog` as passed or failed, or the step was skipped because `product.layers[]` had no `outcome_contract`.
 
 ---
 
@@ -162,67 +131,36 @@ Review the `cost` section of `product-context.yaml` along with any execution tra
 - **Where did retries concentrate?** Patterns in failure suggest either ambiguous specs or incorrect module boundaries.
 - **Is the agent topology efficient?** Does the routing policy need adjustment?
 
-Record cost observations and any topology adjustment recommendations.
+**Postcondition:** cost observations and any topology-adjustment recommendations are captured for Step 4 (as `cost_observations` in the reflection `changelog` entry and/or `topology` edits) — or recorded as an explicit "none this cycle."
 
 ---
 
 ## Step 4: Update Product Context
 
-Based on the classified feedback, update the appropriate file:
+Based on the classified feedback, update the appropriate file: operational changes (new stories, architecture amendments, topology, cost, changelog) → `product-context.yaml`; product-intent changes (opportunity shift, persona change, goals, mvp_boundary, layers, activities) → `product/index.yaml` (split mode) or `product-context.yaml` (v1 mode).
 
-- **Operational changes** (new stories, architecture amendments, topology, cost, changelog) → `product-context.yaml`
-- **Product intent changes** (opportunity shift, persona change, goals, mvp_boundary, layers, activities) → `product/index.yaml` (split mode) or `product-context.yaml` (v1 mode)
-
-1. **Append to the `changelog` section** with a full feedback classification entry:
-
-   ```yaml
-   - date: YYYY-MM-DD
-     type: reflection
-     summary: "Post-[feature/layer] reflection"
-     feedback:
-       bugs:
-         - description: "..."
-           story_id: "fix-xxx"
-       refinements:
-         - description: "..."
-           story_id: "ref-xxx"
-           target_layer: N
-       discoveries:
-         - description: "..."
-           affected_section: "product|architecture"
-       opportunity_shifts:
-         - description: "..."
-     cost_observations: "..."
-   ```
-
-2. **Update `stories` section** with new stories (bug fixes get `priority: high`, refinements go to next layer)
-
-3. **Update `product` section** if assumptions changed (version the changes)
-
-4. **Update `topology` section** if routing adjustments are needed
-
-5. **Validate YAML** (see `references/yaml-guardrails.md`):
+1. **Append a `changelog` entry** per the product-context schema — `date`, `type: reflection`, `summary`, and a `feedback` map holding `bugs` (`description`, `story_id`), `refinements` (`description`, `story_id`, `target_layer`), `discoveries` (`description`, `affected_section`), and `opportunity_shifts` (`description`), plus `cost_observations`.
+2. **Update the `stories` section** with new stories (bug fixes get `priority: high`, refinements go to the next layer).
+3. **Update the `product` section** if assumptions changed (version the changes).
+4. **Update the `topology` section** if routing adjustments are needed.
+5. **Validate YAML** (see `references/yaml-guardrails.md` for the full checklist and common fixes):
 
    ```bash
    npx js-yaml product-context.yaml > /dev/null && echo "YAML OK"
    ```
 
-   If this fails, fix the YAML before committing. Common fixes: quote list items containing colons, flatten nested sub-lists, escape embedded double quotes.
+   Fix any error before committing.
 
-6. **Commit updates:**
+6. **Commit** per `/aep-git-ref` "Control-Plane Commits" (resolve `$BASE` per `/aep-git-ref` "Resolving `$BASE`"):
 
    ```bash
-   # Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
-   BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
-   [ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
-     || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
-   BASE=${BASE:-main}
-
    git pull --ff-only origin "$BASE"
    git add product-context.yaml product/
    git commit -m "chore: reflect — classify feedback and update product context"
    git push origin "$BASE"
    ```
+
+**Postcondition:** `npx js-yaml` printed `YAML OK` and `git push` exited 0.
 
 ---
 
@@ -241,57 +179,4 @@ Based on the reflection, recommend the next step:
 | Calibration (light)      | `/aep-calibrate <dimension>` (inline) → stories may update → `/aep-dispatch`      |
 | All clear                | Next layer or ship to production                                                  |
 
----
-
-## Step 5.5: Workflow Improvement
-
-Review any observations classified as **Process** in Step 2. For each:
-
-1. **Document the pattern** in `lessons-learned/process/<observation>.md` with:
-   - What happened (description, frequency, impact)
-   - Root cause (if known)
-   - Proposed mitigation
-
-2. **Update product context** — add a `process_learnings` entry to `topology.routing` in `product-context.yaml`:
-
-   ```yaml
-   process_learnings:
-     - pattern: "<description>"
-       mitigation: "<what to do differently>"
-       discovered_at: "<date>"
-   ```
-
-3. **Propose skill amendments** — if the pattern warrants changes to skill files (e.g., adding a guardrail, changing a phase step), record the proposed amendment in the `changelog` section:
-
-   ```yaml
-   - date: YYYY-MM-DD
-     type: process-improvement
-     summary: "Proposed skill amendment: <description>"
-     proposed_changes:
-       - skill: "<skill name>"
-         change: "<what to add/modify>"
-         rationale: "<why>"
-   ```
-
-   **Do not auto-edit skill files.** Skill changes are sensitive — the human reviews and applies proposed amendments.
-
----
-
-## Key Principles
-
-- **Without structured feedback ingestion, the system is open-loop** — you ship and hope. This phase makes the loop explicit.
-- **Feedback classification is the decision** — the category determines where the feedback routes. Get the classification right and the routing follows.
-- **Cost data matters from day one** — invisible spending is uncontrollable spending. Track it, review it, act on it.
-- **Version the product context** — the history of changes is itself valuable. It shows how understanding evolved.
-
----
-
-## Next Step
-
-Based on the reflection outcome, proceed to one of:
-
-- `/aep-dispatch` — pick and execute new stories (bugs or refinements enter the dispatch queue)
-- `/aep-envision` — update product assumptions
-- `/aep-map` — update system architecture
-- `/aep-calibrate` — recalibrate a specific quality dimension (visual design, UX flow, API surface, etc.)
-- Next layer execution cycle
+**Postcondition:** a next action from the table is recommended to the user.

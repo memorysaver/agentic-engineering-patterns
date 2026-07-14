@@ -173,7 +173,7 @@ back pin it: `git config aep.executor-backend tmux`.
 > Selecting a mode does NOT mean its spawn worked. After ANY spawn, before
 > declaring the worker "running", run the probe in
 > [Post-Spawn Liveness Probe](#post-spawn-liveness-probe). On failure, tear the
-> dead spawn down and **auto-fall-back to `native-bg-subagent`**.
+> dead spawn down and use the current host's fallback pair exactly once.
 
 ---
 
@@ -275,7 +275,10 @@ A worker is **live** only if BOTH hold within `N` seconds (default 90):
    **OR** `git -C .feature-workspaces/<ws> diff --stat` is non-empty.
 
 ```bash
-bash .claude/skills/aep-executor/scripts/spawn-liveness-probe.sh <ws> <agent_id> [N]
+AEP_EXECUTOR_DIR=.agents/skills/aep-executor
+[ -f "$AEP_EXECUTOR_DIR/scripts/spawn-liveness-probe.sh" ] || AEP_EXECUTOR_DIR=.claude/skills/aep-executor
+[ -f "$AEP_EXECUTOR_DIR/scripts/spawn-liveness-probe.sh" ] || { echo "aep-executor liveness probe not installed" >&2; exit 1; }
+bash "$AEP_EXECUTOR_DIR/scripts/spawn-liveness-probe.sh" <ws> <worker_handle> [N]
 # exit 0 = live; exit 1 = dead spawn (probe failed)
 ```
 
@@ -285,9 +288,10 @@ bash .claude/skills/aep-executor/scripts/spawn-liveness-probe.sh <ws> <agent_id>
    created during the attempt, `TeamDelete` it (a live team poisons the fallback).
 2. Do **not** mark the story failed and do **not** leave the worktree for the
    autopilot to time-out on later.
-3. **Auto-fall-back to `native-bg-subagent`** (Agent tool, `run_in_background`,
-   no team) into the **existing** worktree, then probe again. native-bg-subagent
-   is the terminal fallback — if it also fails the probe, only then escalate.
+3. Use one **host-compatible fallback** in the existing worktree: switch
+   `native-bg-subagent` ↔ `claude-bg` on Claude, switch `codex-subagent` ↔
+   `codex-exec` on Codex, or re-run selection without the tmux pin after a
+   `legacy` failure. Probe that fallback once; if it fails, escalate.
 
 This contract is what `/aep-launch` Step 4 and the autopilot orphan/stuck checks
 both consume — "roster/state says active" is never accepted as liveness.
@@ -403,7 +407,7 @@ as **waiting, not stuck and not failed**.
 > build wave as a fan-out. For the general dynamic-workflow pattern catalog
 > (classify-route, fan-out/synthesize, adversarial verify, generate-filter,
 > tournament, loop-until-done) and the judgment of _when a task warrants a workflow
-> at all_, see [`/aep-workflow`](../../workflow/SKILL.md).
+> at all_, see `/aep-workflow`.
 
 Claude Code's Workflow tool builds a whole dispatched wave as one deterministic
 fan-out: one build agent per locked story, each with per-agent worktree

@@ -741,6 +741,58 @@ See also: **cmux**, **Orchestrator Boundaries**, **Workspace Session**
 
 ---
 
+## Skill Authoring (v3)
+
+The vocabulary of the Lean Skills standard — [docs/decisions/skill-authoring-standard.md](decisions/skill-authoring-standard.md) (adopted from [mattpocock/skills](https://github.com/mattpocock/skills) `writing-great-skills`). Every skill that names one of these terms says it identically.
+
+### Context Load
+
+The always-loaded cost a skill's frontmatter `description` imposes on every session — it sits in the context window every turn, in every downstream repo. The budget R7 exists to protect: descriptions ≤ 50 words, one trigger per branch.
+
+See also: **Leading Word**, **Progressive Disclosure**
+
+### Leading Word
+
+A compact concept already in the model's pretraining (e.g. _walking skeleton_, _gen/eval_, _layer gate_) that anchors a whole region of behavior in few tokens. In a skill body it stabilizes execution; in a description it stabilizes invocation. AEP's canonical leading words are this glossary's headings.
+
+See also: **Context Load**
+
+### Lean Skill
+
+A SKILL.md that is steps every run executes — each ending in a checkable, world-derived postcondition — plus only the reference every branch needs, with everything else disclosed to `references/*.md`. The shape rules R1–R9 in the skill-authoring standard define it; the CI line check (warn > 400, fail > 500) enforces its outer bound.
+
+**Where it appears:** every SKILL.md since v3.0.0; enforced by `.github/workflows/skills-check.yml`.
+
+See also: **Progressive Disclosure**, **Single Source of Truth (skills)**
+
+### Negation Steering
+
+_Failure mode._ Steering an agent by prohibition ("do NOT X") — which names the banned behavior into context and makes it more available, not less. The cure is stating the target behavior positively; a prohibition survives only as a hard guardrail that cannot be phrased positively, stated once, paired with its positive action.
+
+See also: **No-Op Line**
+
+### No-Op Line
+
+_Failure mode._ An instruction the model already follows by default ("be thorough", "don't rush") — it spends context load to change nothing. The test: does the line change behavior versus the default? Deleted on sight during skill authoring.
+
+See also: **Negation Steering**, **Context Load**
+
+### Progressive Disclosure
+
+Moving branch-specific reference out of SKILL.md into a `references/*.md` file behind a pointer whose wording states _when_ to load it. Protects the step spine's legibility; licensed by branching — inline what every run needs, disclose what only some runs reach.
+
+See also: **Lean Skill**, **Single Source of Truth (skills)**
+
+### Single Source of Truth (skills)
+
+The R2 rule: each meaning has exactly one canonical home (e.g. `$BASE` resolution lives in `/aep-git-ref`; tick nudge prompts in `autopilot/references/tick-protocol.md`); every other site is a one-line pointer. Duplication is the propagation surface behind half-applied taxonomy changes — AEP's #1 historical bug class.
+
+**Where it appears:** the canonical-home table in [skill-authoring-standard.md](decisions/skill-authoring-standard.md) R2.
+
+See also: **Lean Skill**, **Progressive Disclosure**
+
+---
+
 ## v2 Roadmap (Proposed)
 
 > The following terms are defined in the [v2 Improvement Roadmap](aep-v2-improvement-guideline.md) and are **not yet implemented**. When shipped, these terms will move to their proper sections above.

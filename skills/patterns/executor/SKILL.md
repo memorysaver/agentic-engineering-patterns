@@ -1,7 +1,9 @@
 ---
 name: aep-executor
-description: |-
-  Host-agnostic executor abstraction for spawning and steering implementation agents. This is a utility skill — it defines how /aep-launch, /aep-build, and /aep-autopilot start a worktree-bound agent, send it mid-flight instructions, check liveness, surface human gates, present it for review, and tear it down, across Claude Code (native background subagents / background sessions) or Codex (native subagents / exec workers), with tmux+cmux as the legacy pinned fallback. Reference its files from any skill that needs to run work in an isolated workspace. Triggers on "executor", "which backend", "launch mode", "spawn workspace", "run under codex", "native-bg-subagent", "agent teams", "claude-team", "no tmux", "with tmux", "run as a workflow", "host detection".
+description: >-
+  Spawns and steers workspace agents across Claude Code and Codex backends.
+  Used by /aep-launch, /aep-build, and /aep-autopilot; invoke directly for
+  backend choice, launch mode, host/tmux detection, or workflow execution.
 ---
 
 # Executor Abstraction
@@ -9,8 +11,11 @@ description: |-
 A reusable abstraction for **running implementation work in an isolated
 workspace**, independent of which agent host (Claude Code, Codex) or which
 mechanism (native background subagents, background sessions, native subagents,
-exec workers, tmux, dynamic workflows) is available. Lifecycle skills speak one vocabulary of
-operations; this skill maps each operation to a concrete recipe per mode.
+exec workers, tmux, dynamic workflows) is available. Lifecycle skills speak one
+vocabulary of operations; this skill maps each operation to a concrete recipe
+per mode. It is consumed as a library by `/aep-launch`, `/aep-build`, and
+`/aep-autopilot`, and can be invoked standalone to dry-run detection (see
+[Standalone Usage](#standalone-usage)).
 
 **Native-first:** Claude Code launches use a native in-process background subagent
 (`native-bg-subagent`, the default) or — where the `claude --bg` flag exists —
@@ -25,29 +30,6 @@ worker in an AEP-created git worktree at `.feature-workspaces/<ws>`.
 > still shows the worker "active"). Replaced by `native-bg-subagent` + a mandatory
 > post-spawn liveness probe. See `docs/decisions/remove-claude-team.md`.
 
-**This skill is both a utility library and a standalone skill:**
-
-- **As a library:** `/aep-launch`, `/aep-build`, and `/aep-autopilot` reference its
-  `references/` files for detection, mode selection, and per-operation recipes.
-- **As a standalone skill:** Invoke directly to detect the current host and
-  report which mode would be selected (useful when debugging "why did it pick
-  X").
-
----
-
-## Why This Exists
-
-The control plane (`/aep-dispatch` scoring, the `.dev-workflow/signals/` protocol)
-is host-independent. The coupling lived in the execution plane — historically a
-`claude` process hosted in tmux, presented through cmux. This abstraction
-isolates that coupling so the same workflow runs under Claude Code or the Codex
-desktop app/CLI, using each host's **native** parallel-agent machinery, with
-tmux as a pinned fallback rather than a default.
-
-See [`docs/decisions/native-first-executor.md`](../../../docs/decisions/native-first-executor.md)
-(and the earlier [`host-agnostic-executor.md`](../../../docs/decisions/host-agnostic-executor.md))
-for the decision records.
-
 ---
 
 ## How Other Skills Use This
@@ -60,19 +42,6 @@ for the decision records.
 | `/aep-autopilot`     | Run the periodic tick check cheaply; steer workspaces | `detect`, `check`, `nudge`, `liveness`, `gate` |
 | `/aep-wrap`          | Tear down the worker + worktree after merge           | `teardown`                                     |
 | `/aep-dispatch`      | Resolve the handoff mode; route "…with workflow" runs | `detect`                                       |
-
-### Cross-skill reference path
-
-After sync with the `aep-` prefix, the references are at:
-
-```
-.claude/skills/aep-executor/references/backends.md       # detection, selection, cross-mode protocols
-.claude/skills/aep-executor/references/claude-native.md  # native-bg-subagent, claude-bg recipes
-.claude/skills/aep-executor/references/codex-native.md   # codex-subagent, codex-exec recipes + role TOMLs
-.claude/skills/aep-executor/references/tmux-session.md   # legacy recipes
-```
-
-Read `backends.md` first, then the recipe file for the selected mode.
 
 ---
 
@@ -121,12 +90,17 @@ orphan re-adoption.
 
 ## Reference Files
 
-| File                                                         | Contents                                                                                                    | When to read                                  |
-| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| [`references/backends.md`](references/backends.md)           | Mode matrix, detection, selection order, driver compatibility, gate protocol, orphan re-adoption, `check()` | Always, before spawning or steering           |
-| [`references/claude-native.md`](references/claude-native.md) | `native-bg-subagent` (default) + `claude-bg` recipes, `--bg` availability note                              | When the selected mode is a Claude native one |
-| [`references/codex-native.md`](references/codex-native.md)   | `codex-subagent` + `codex-exec` recipes, `aep-builder`/`aep-evaluator` role TOMLs, desktop app mapping      | When the selected mode is a Codex one         |
-| [`references/tmux-session.md`](references/tmux-session.md)   | `legacy` recipes (tmux spawn/nudge/liveness, cmux tab ladder)                                               | When `legacy` is pinned or selected           |
+| File                                                                   | Contents                                                                                                    | When to read                                                                                                            |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| [`references/backends.md`](references/backends.md)                     | Mode matrix, detection, selection order, driver compatibility, gate protocol, orphan re-adoption, `check()` | Always, before spawning or steering                                                                                     |
+| [`references/claude-native.md`](references/claude-native.md)           | `native-bg-subagent` (default) + `claude-bg` recipes, `--bg` availability note                              | When the selected mode is a Claude native one                                                                           |
+| [`references/codex-native.md`](references/codex-native.md)             | `codex-subagent` + `codex-exec` recipes, `aep-builder`/`aep-evaluator` role TOMLs, desktop app mapping      | When the selected mode is a Codex one                                                                                   |
+| [`references/tmux-session.md`](references/tmux-session.md)             | `legacy` recipes (tmux spawn/nudge/liveness, cmux tab ladder)                                               | When `legacy` is pinned or selected                                                                                     |
+| [`references/dogfood-validation.md`](references/dogfood-validation.md) | `dogfood_method()` host × mode detection, `e2e_tool()`, `target_url()` resolution                           | When running dogfood validation (consumed by `/aep-build`, `/aep-launch`, `/aep-watch`, the autopilot post-merge guard) |
+
+The skill also ships `scripts/spawn-liveness-probe.sh <name> <agent_id>` — the
+post-spawn liveness probe every spawner runs (recipe in `references/backends.md`
+§ Post-Spawn Liveness Probe).
 
 ---
 
@@ -139,73 +113,20 @@ Invoked directly, this skill reports what would happen:
    (`BG_AVAILABLE`, `MULTI_AGENT_AVAILABLE`), pin, tmux/cmux presence,
    orchestrator lifetime, and the **selected mode** with the reason.
 3. If the user asked "why not workflow / why not tmux", explain the opt-in/pin
-   gates. (There is no agent-teams mode — `claude-team` was removed; see
-   `docs/decisions/remove-claude-team.md`.)
+   gates.
 
 This does not spawn anything — it is a dry-run of `detect()`.
 
 ---
 
-## Design Decisions
+## Rationale
 
-**Why native-first, tmux demoted:**
-
-- Claude Code's native in-process background subagent (Agent tool,
-  `run_in_background`, no team) gives each story its own context window,
-  re-activation steering (`SendMessage(to: agentId)`), task-output visibility
-  (`TaskOutput`), and auto-notify on completion — without tmux, cmux, or the
-  agent-teams machinery (whose spawn path is broken; see `remove-claude-team.md`).
-  Native background sessions (`claude --bg`/`attach`/`logs`/`stop`/`respawn`),
-  where the flag exists, add an OS-bound option for cron drivers. Codex
-  multi_agent gives push steering (`send_input`) and a native approval overlay in
-  both the CLI and the desktop app.
-
-**Why AEP still owns the worktree:**
-
-- Host-managed worktrees pin their paths (`.claude/worktrees/`,
-  `$CODEX_HOME/worktrees`) and hide them from the orchestrator's `monitor()`
-  path. AEP's `git worktree add .feature-workspaces/<ws>` keeps the location
-  stable and main-visible; native workers are pointed at it by process cwd
-  (enforced) or prompt contract (no hooks — see backends.md).
-
-**Why the single `legacy` pin exists (a narrow exception to "no pins"):**
-
-- Detection can't distinguish "tmux is installed" from "the user wants the
-  tmux+cmux workflow". Since native modes now outrank tmux on Claude Code, the
-  users who _prefer_ cmux's clickable tabs need one explicit lever:
-  `git config aep.executor-backend tmux` (or "…with tmux"). Everything else
-  remains automatic.
-
-**Why session-bound vs OS-bound is a first-class axis:**
-
-- native-bg-subagents and Codex subagents die with their parent session; bg
-  sessions, exec workers, and tmux sessions don't. An orchestrator's periodic
-  driver (long-lived `/loop` vs cron one-shots) therefore constrains the mode —
-  the compatibility matrix in `backends.md` makes that explicit, and orphan
-  re-adoption (via the real-liveness probe, not roster membership) makes lead
-  restarts non-fatal.
-
-**Why human gates are hub-and-spoke (main agent as the console):**
-
-- The human shouldn't have to chase worker surfaces. Every mode records the
-  gate in `needs-human.md`; the question flows to the **main agent**, which
-  asks the human and relays the answer. Steerable modes deliver the answer by
-  push (**block-in-place**); batch/pull modes (`native-bg-subagent`, `workflow`,
-  `headless`, `codex-exec`, `claude-bg`) use **gate-and-park** — the worker
-  commits WIP, returns cleanly, and is resumed into the same worktree with the
-  answer. Parking is cheap because all worker state lives in the worktree +
-  `.dev-workflow/`, never only in agent context. Direct surfaces (`TaskOutput`,
-  attach, threads) remain optional conveniences.
-
-**Why autopilot needs a steerable, driver-compatible mode:**
-
-- `nudge()` presupposes a worker you can reach mid-flight. `workflow` and
-  `headless` collapse a build into one autonomous unit with no mid-stage
-  surface — autopilot does not drive them (the workflow is its own
-  orchestrator; gate-and-park still gives both a human-gate path through the
-  main agent that launched them). All other modes are steerable —
-  native-bg-subagent via `SendMessage(to: agentId)` + `feedback.md`, claude-bg
-  degraded to pull-based nudging.
+Why native-first (tmux demoted to a pinned `legacy` mode), why AEP still owns the
+worktree, why session-bound vs OS-bound is a first-class axis, why human gates are
+hub-and-spoke, and why autopilot drives only steerable modes are recorded in
+`docs/decisions/native-first-executor.md`,
+`docs/decisions/host-agnostic-executor.md`, and
+`docs/decisions/remove-claude-team.md`.
 
 ---
 

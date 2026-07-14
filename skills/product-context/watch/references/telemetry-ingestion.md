@@ -46,13 +46,35 @@ telemetry_sources:
 **Safety:** access is **read-only**; reference credentials by env-var / secret-store
 name only — **never embed secrets in the repo or in `product-context.yaml`**.
 
+### The `/aep-watch` finding record
+
+`/aep-watch` Step 1 reduces every source item to this **finding record** — the
+operative shape Step 3 dedupes and Step 4 turns into a story (distinct from the
+5-field observation record above, which is the classifier's conceptual input):
+
+```yaml
+- source: "sentry" # which configured source produced it
+  external_id: "ISSUE-4821" # stable id — the dedupe key (Step 3)
+  title: "TypeError in checkout flow"
+  detail: "..." # stack / message / metric summary (no secrets)
+  signal: error_stream # bug_tracker | error_stream | telemetry | dogfood
+  count: 142 # occurrences / affected users (priority input)
+  first_seen: "<ISO8601>"
+  last_seen: "<ISO8601>"
+```
+
+`external_id` is the dedupe key for every source. The two file-glob adapters
+(`dogfood_report`, `distillation`) carry no occurrence count or timestamp, so
+they leave `count`/`first_seen`/`last_seen` unset and supply the deterministic
+`external_id` defined in their adapter sections below.
+
 ### Dogfood-report adapter (`dogfood_report` source)
 
 Dogfood runs — local (`/aep-build` Phase 6), post-deploy (autopilot post-merge
 guard), **or a standalone / ad-hoc live exercise** — emit the **unified markdown
 report** (`## <title>` / `**Severity:**` / `**Category:**` / `**Repro:**` /
 `**Observed:**` / `**Expected:**` / `**Evidence:**`) to `.dev-workflow/dogfood-*.md`
-(see `patterns/executor/references/dogfood-validation.md` → Unified report format).
+(see `/aep-executor` → `references/dogfood-validation.md`, Unified report format).
 This adapter parses each `##` finding into the **`/aep-watch` Step 1 finding
 record** (the operative shape Step 3 dedupes and Step 4 turns into a story — _not_
 the 5-field telemetry record above, which is the classifier's conceptual input)

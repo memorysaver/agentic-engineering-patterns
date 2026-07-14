@@ -8,14 +8,14 @@ turn then waits the per-tick floor — step ⑦ — before ending)
 this tick each turn until the layer completes; loop driver (fallback) —
 `/loop 5m /aep-autopilot tick`; or manual `/aep-autopilot tick`
 
-> **BOUNDARY REMINDER:** The autopilot is an orchestrator. Every action on a workspace is `executor.nudge()` / `executor.liveness()` — autopilot runs only on **steerable, driver-compatible modes** (native-bg-subagent / claude-bg / codex-subagent / codex-exec / legacy; see the per-mode transport table in SKILL.md and `aep-executor/references/backends.md`). The nudge texts in this file are mode-independent — deliver each through the workspace's `backend` transport (`SendMessage(to: agentId)` / `feedback.md` / `send_input` / `codex exec resume` / `tmux send-keys`). Liveness is the [post-spawn liveness probe](../../executor/references/backends.md#post-spawn-liveness-probe) (process exists AND worktree active) — **never** roster/state membership. Never spawn code reviewers from main, never read workspace source code, never call `gh pr merge`. See SKILL.md "STOP — Orchestrator Boundaries".
+> **BOUNDARY REMINDER:** The autopilot is an orchestrator. Every action on a workspace is `executor.nudge()` / `executor.liveness()` — autopilot runs only on **steerable, driver-compatible modes** (native-bg-subagent / claude-bg / codex-subagent / codex-exec / legacy; see the Executor transport summary in SKILL.md and the full per-mode table in `/aep-executor` → `references/backends.md`). The nudge texts in this file are mode-independent — deliver each through the workspace's `backend` transport (`SendMessage(to: agentId)` / `feedback.md` / `send_input` / `codex exec resume` / `tmux send-keys`). Liveness is the **post-spawn liveness probe** (`/aep-executor` → `references/backends.md` § Post-Spawn Liveness Probe — process exists AND worktree active) — **never** roster/state membership. Never spawn code reviewers from main, never read workspace source code, never call `gh pr merge`. See SKILL.md "STOP — Orchestrator Boundaries".
 
 **EXECUTION MODEL — CHECK → ACT** (see SKILL.md "Execution model"). A tick is two halves:
 
 - **CHECK** — steps ①②⑤, the read-only/scoring parts of ④⑥, and the ⑦ state write. These run in a cheap, context-isolated agent via `executor.check()` (Claude Code Haiku subagent / Codex `codex exec`) and produce an **action list**. The CHECK reads signals only — never workspace code.
 - **ACT** — the orchestrator performs the emitted actions: ③ wrap, ③.5 post-merge guard (dogfood / reflect / revert), ④/⑤ nudges, ⑥ launch, escalations.
 
-The action-list schema is `{summary, state_written, actions[]}`, each action `{type, workspace, story_id, message, reason}` (full schema in `aep-executor/references/backends.md`). The step recipes below are both the content of the CHECK prompt and the templates the ACT executes.
+The action-list schema is `{summary, state_written, actions[]}`, each action `{type, workspace, story_id, message, reason}` (full schema in `/aep-executor` → `references/backends.md`). The step recipes below are both the content of the CHECK prompt and the templates the ACT executes.
 
 ---
 
@@ -89,7 +89,7 @@ For each workspace in `state.workspaces`:
 
 **Orphan check (session-bound modes — native-bg-subagent, codex-subagent) — by real liveness, not roster:**
 
-- Apply the [post-spawn liveness probe](../../executor/references/backends.md#post-spawn-liveness-probe):
+- Apply the **post-spawn liveness probe** (`/aep-executor` → `references/backends.md` § Post-Spawn Liveness Probe):
   the workspace is an **orphan** when its `agent_id` no longer appears in TaskList
   / `list_agents` (lead restarted, worker crashed, **or the spawn never actually
   started** — e.g. the removed claude-team's truncated-launch failure) **and/or**
@@ -237,7 +237,7 @@ executor.nudge(<workspace-name>,
   "Code has changed since your last evaluation. Re-run Phase 5 code review on the current state before proceeding with the PR. Write a new eval-request.md and spawn a fresh evaluator.")
 ```
 
-**Escalation:** No eval-response after 6 ticks (30 min) post-trigger → before escalating, the workspace must climb the **recovery ladder** (`../../gen-eval/references/recovery-ladder.md`): nudge it to work the ladder's rungs (re-scope, decompose, relax non-essential criteria, etc.) first. Only emit the `"eval_not_converging"` escalation **after the ladder is exhausted** — i.e. the workspace has reported the ladder spent without a PASS.
+**Escalation:** No eval-response after 6 ticks (30 min) post-trigger → before escalating, the workspace must climb the **recovery ladder** (`/aep-gen-eval` `references/recovery-ladder.md`): nudge it to work the ladder's rungs (re-scope, decompose, relax non-essential criteria, etc.) first. Only emit the `"eval_not_converging"` escalation **after the ladder is exhausted** — i.e. the workspace has reported the ladder spent without a PASS.
 
 ### Sub-step ④c: Guide to Merge
 
@@ -338,7 +338,7 @@ executor.nudge(<workspace-name>,
 
 > **claude-bg:** 6 stuck ticks is the stop+respawn threshold — `claude stop
 <agent_id>`, then respawn in the worktree with the recovery bootstrap and
-> record the new `agent_id` (recipe in `aep-executor/references/claude-native.md`).
+> record the new `agent_id` (recipe in `/aep-executor` → `references/claude-native.md`).
 
 ### Escalation (60 min stuck)
 
@@ -381,39 +381,28 @@ Reuse the dispatch scoring logic from `/aep-dispatch` steps 1-3:
 2. **Layer gate check** — if active layer > 0, verify previous layer gate passed
 3. **Wave ordering** — consult the `waves` section from `product-context.yaml`. Within the active layer, dispatch Wave 1 stories before Wave 2, etc. Only advance to the next wave when all stories in the current wave are completed or in_progress.
 4. **Filter ready queue** — stories with `status: ready` in active layer and current wave, excluding file-conflict stories
-5. **Compute readiness_score** per story (see `/aep-dispatch` Step 3):
-   ```
-   readiness_score = (min(3, acceptance_criteria_count) + interfaces_defined*2 + files_identified*1 + verification_defined*2 + no_open_questions*2) / 10
-   ```
-6. **Compute dispatch_score** per story:
-   ```
-   dispatch_score = (business_value + unblock_potential + critical_path_urgency + reuse_leverage) / (complexity_cost + ambiguity_penalty + interface_risk)
-   ```
-   Where `business_value` uses `story.business_value` if set, otherwise derived from priority (critical=10, high=7, medium=4, low=1).
-
-### Grouped Change Handling
-
-Before scoring individual stories, check for `compile_mode: grouped_change`:
-
-1. Identify stories sharing the same `change_group`
-2. Score the group as one unit: sum `business_value` and `unblock_potential` across the group; use max `critical_path_urgency` and max `reuse_leverage`; divide by sum of `complexity_cost` + max `ambiguity_penalty` + max `interface_risk`
-3. Use **min readiness_score** of any story in the group as the group's readiness gate
-4. Dispatch the entire group as one unit — one `/aep-launch`, one workspace, one OpenSpec change containing all grouped stories
+5. **Compute `readiness_score` + `dispatch_score`** per story and apply **Grouped Change Handling** (`compile_mode: grouped_change` groups score, gate, and dispatch as one unit — one `/aep-launch`, one workspace, one OpenSpec change). Formulas, grouping rules, and the routing bands are canonical in `/aep-dispatch` `references/scoring.md` — when assembling the CHECK prompt, **include that file's contents verbatim** (the context-isolated CHECK agent must never chase cross-skill pointers).
 
 ### Check Routing
 
-For the top-scored story (or group), use `readiness_score` for routing:
+Route the top-scored story (or group) on the canonical `readiness_score` bands (`/aep-dispatch` `references/scoring.md` § Routing Thresholds). Autopilot's action per band:
 
-- **readiness_score >= 0.7** → dispatch to `/aep-launch`
-- **readiness_score 0.5–0.7** → check `topology.routing.full_auto` / `auto_design`:
+- **dispatch-ready** → dispatch to `/aep-launch`
+- **borderline or under-specified** → check `topology.routing.full_auto` / `auto_design`:
   - If `full_auto: true` (master switch) **or** `auto_design: true` → auto-route through the **non-interactive design resolver** (`/aep-design`, no pause), then `/aep-launch`
   - Otherwise → **ESCALATE** (pause for human design input)
-- **readiness_score < 0.5** → check `topology.routing.full_auto` / `auto_design`:
-  - If `full_auto: true` (master switch) **or** `auto_design: true` → auto-route through the **non-interactive design resolver** (`/aep-design`, no pause), then `/aep-launch`
-  - Otherwise → **ESCALATE** (pause for human design input)
-- **`attempt_count >= 2`** → always **ESCALATE** regardless of readiness (repeated failures need human attention)
+- **repeated-attempt override** → always **ESCALATE** regardless of readiness
 
-If escalation triggers: follow the pause protocol from the main SKILL.md. Do not dispatch.
+### Pause Protocol (when an escalation triggers)
+
+Do **not** dispatch. Pause autopilot for the human:
+
+1. Set `status: "paused"` in `.dev-workflow/autopilot-state.json`.
+2. Append an escalation entry (shape + `type` enum in [state-schema.md](./state-schema.md) → Escalation Entry) with `story_id`, `reason`, `details`, and a concrete `expected_human_action` — e.g. for a design escalation: _"Run /aep-design PROJ-010 to refine the spec (it has 1 acceptance criterion for a UI-heavy activity that needs visual-design judgment), then /aep-autopilot to resume."_
+3. Write the **PAUSED** sections of `.dev-workflow/autopilot-status.md` — why paused, what needs human judgment, current state, how to resume (template in [state-schema.md](./state-schema.md)).
+4. Log the pause to `.dev-workflow/autopilot-history.jsonl`.
+
+**Resuming:** the human resolves the issue and re-runs `/aep-autopilot`, which re-reads the (now refined) product context and re-initializes the driver — the goal driver sets a fresh goal for the current layer, the loop driver restarts `/loop` — then resumes ticking. Step ⑤'s stuck detection still runs every tick, so a stalled layer escalates → `paused` → the goal stops for the human.
 
 ### Dispatch
 
@@ -479,7 +468,7 @@ If all stories in the active layer are completed (after wraps):
    `lessons-learned/distillations/layer-<N>.yaml`, commit both artifacts. The
    distillation also feeds the Orchestration Learning Checkpoint below.
 4. **Outcome contract check:** If `product.layers[active_layer].outcome_contract` exists, decide whether to auto-evaluate or pause:
-   - **Quantitative auto-eval:** If `topology.routing.auto_outcome_eval: quantitative` **and** the contract's metric is quantitative (a measurable threshold) → first run `coverage_check([metric])` (`../../../product-context/reflect/references/telemetry-ingestion.md` §1.5); if the metric isn't bound to a telemetry source (the `/aep-map` Telemetry Binding step wasn't done) → **pause** and escalate "run /aep-map observability step" (do not claim auto-coverage). If covered → auto-evaluate via the telemetry-ingestion recipe (ingest the telemetry, compare against the threshold) and **advance without pausing** when it passes. If the metric is qualitative, fall through to the pause rule below.
+   - **Quantitative auto-eval:** If `topology.routing.auto_outcome_eval: quantitative` **and** the contract's metric is quantitative (a measurable threshold) → first run `coverage_check([metric])` (`/aep-reflect` `references/telemetry-ingestion.md` §1.5); if the metric isn't bound to a telemetry source (the `/aep-map` Telemetry Binding step wasn't done) → **pause** and escalate "run /aep-map observability step" (do not claim auto-coverage). If covered → auto-evaluate via the telemetry-ingestion recipe (ingest the telemetry, compare against the threshold) and **advance without pausing** when it passes. If the metric is qualitative, fall through to the pause rule below.
    - **Qualitative / default pause:** Otherwise (no `auto_outcome_eval`, a qualitative metric, etc.) → **pause** and add an escalation requesting the user to evaluate the outcome contract before advancing — **UNLESS** `topology.routing.full_auto: true`, in which case auto-evaluate via the telemetry-ingestion recipe and advance without pause. Outcome evaluation otherwise requires human judgment (user testing, analytics, qualitative assessment). The user runs `/aep-reflect` which evaluates outcome contracts in Step 2.75. After `/aep-reflect` completes, resume autopilot.
    - Default (no `auto_outcome_eval` / `full_auto` false) preserves the current human pause.
 5. If no outcome contract or outcome evaluation passes: advance to next layer

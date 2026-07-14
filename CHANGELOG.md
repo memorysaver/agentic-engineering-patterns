@@ -17,9 +17,158 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 > `/envision`, `/dispatch`, `/reflect`, …), which records product-state history
 > for that project. See [`docs/glossary.md`](docs/glossary.md).
 
-## [Unreleased]
+## [3.0.0] - 2026-07-14
 
-_Nothing yet._
+### Changed
+
+- Skill routing metadata reduced from 6,711 to 4,697 characters (652 words,
+  max 35 per skill), with a 5,000-character corpus budget and 36 recorded
+  front-tier direct/boundary selections bound to the exact description digest.
+- Selective-install documentation now states the `/aep-*` dependency-closure
+  requirement; the product group list includes `aep-watch`.
+
+### Fixed
+
+- `/aep-scaffold` frontmatter is valid YAML and is again discoverable, taking
+  the skills CLI from 21/22 to 22/22 installed skills.
+- Scaffold converge now propagates write failures, repairs Claude-only and
+  Codex-only layouts, collapses only content-and-mode-identical duplicates,
+  rejects symlinked parent escapes, preserves divergent copies, resolves its
+  scripts from the installed skill directory, and honors confirmed A/C/E categories.
+- Scaffold audit safely handles arbitrary skill directory names, detects
+  divergent AEP copies, requires exact gitignore entries, and prunes dependency
+  and metadata trees from health-endpoint discovery.
+- Generated-resource markers reject traversal, symlink, and directory targets
+  before the first mutation; dedicated fixtures prove outside files survive.
+- `/aep-onboard` ships its mandatory orientation, `/aep-build` resolves its
+  progress template from the installed package, and launch/liveness preserves
+  backend-specific handles and host-compatible fallbacks.
+- CI now performs a real copied install, asserts the exact marketplace/source
+  set, validates all installed units with the official Agent Skills validator,
+  checks installed-link containment, enforces metadata/evidence budgets, and
+  runs 11 converge, 4 audit, and 3 generated-resource regression fixtures.
+- The upgrade guide no longer recommends deleting real Claude skill
+  directories blindly; it routes normalization through scaffold's fail-closed
+  converge.
+
+### Lean Skills refactor
+
+**Lean Skills** — the full corpus restructured to the authoring standard in
+[`docs/decisions/skill-authoring-standard.md`](docs/decisions/skill-authoring-standard.md)
+(per-skill moves in
+[`docs/plans/2026-07-14-lean-skills-refactor.md`](docs/plans/2026-07-14-lean-skills-refactor.md)).
+Major bump: every SKILL.md changed shape and several reference files moved or
+became canonical. Signal files and schema fields are unchanged. One structural
+exception is recorded: `/aep-reflect` Step 5.5 was folded into Step 2's Process
+branch while retaining its actions. Final 22/22 scenario dry-runs and their
+loaded-reference/postcondition evidence live in `evals/skill-behavior-parity.json`.
+
+#### Corpus changes
+
+- **All 22 SKILL.md files leaned**: 8,209 → 4,873 lines (-41%); largest file
+  955 → 398; every file now under the 400-line budget. Steps stay inline and
+  end in world-derived postconditions; branch-specific reference is disclosed
+  to `references/*.md`; every duplicated meaning collapsed to a one-line
+  pointer at its canonical home (the `$BASE` resolver alone was inlined ~21×
+  in two spellings — it now lives only in `/aep-git-ref`).
+- **Descriptions dieted**: 1,687 → 652 always-loaded words (-61%), one trigger
+  per branch, every description ≤ 50 words.
+- **Canonical homes established** (R2): git conventions → `/aep-git-ref`;
+  gen/eval contracts → `/aep-gen-eval`; full/light mode criteria →
+  `/aep-design` `references/workflow-modes.md`; tick machinery →
+  `autopilot/references/tick-protocol.md`; merge taxonomy →
+  `build/references/merge-decision-cases.md` (ownership flipped);
+  `.5`-alignment-layer concept → `map/references/alignment-layers.md`;
+  SPLIT/V1 file resolution → `_shared/references/file-resolution.md` (new).
+- **`scripts/build-skills.sh` rewritten to per-file materialization**: the
+  `.aep-generated` marker is now a managed-file manifest, so skill-owned
+  disclosure files coexist with build-managed shared copies in the same
+  `references/` dir, shared files materialize into authored dirs, and name
+  collisions fail loudly. References are selected per-file (a consumer ships
+  exactly the shared files its SKILL.md names).
+- **Rationale left the hot path** (R5): inline "Design Decisions" essays moved
+  to `docs/decisions/` (`gen-eval-rationale.md`, `workflow-rationale.md`,
+  `design-lens-rationale.md` new; executor's essays folded into its existing
+  decision docs).
+- **Cross-skill links standardized** to `/aep-x` prose invocations (R3),
+  killing the dual-path breakage class (`../../patterns/…` vs
+  `.claude/skills/aep-…`).
+- **CI**: `skills-check.yml` gains a SKILL.md line-budget check
+  (warn > 400, fail > 500) and a `$BASE`-resolver single-home check with a
+  three-file runtime-bash allowlist.
+- **Glossary**: new "Skill Authoring (v3)" section (Lean Skill, Progressive
+  Disclosure, Single Source of Truth (skills), No-Op Line, Negation Steering,
+  Context Load, Leading Word).
+
+### Removed
+
+- `_shared/references/orchestration-patterns.md` (zero consumers; superseded
+  by autopilot's tick-protocol / state-schema / deterministic-orchestration
+  references).
+- `build/references/worktree-onboarding.md` removed — the launch-assembled
+  bootstrap prompt and `/aep-build` Phase 0 carry the onboarding; after the
+  lean pass the file had no remaining consumers.
+- `calibrate/references/design-brief-template.md` removed — orphaned since the
+  per-dimension `references/briefs/<type>.md` templates superseded it (see
+  `docs/decisions/generalized-calibration-workflow.md`).
+
+### Fixed
+
+- Dangling `references/evaluator-criteria.md` pointer in `/aep-validate`
+  (file never existed) — repointed to `/aep-gen-eval` `scoring-framework.md`.
+- Broken `specs/**/*.md` glob in the scaffolded OpenSpec `propose` command
+  body (markdown-escape leak).
+- Stale "Phase 7: E2E Test Scripts" name in `build/references/progress-template.md`.
+- Watch's YAML validation pointed at `../reflect/…` instead of its own
+  materialized `yaml-guardrails.md`.
+- The evaluator bootstrap brief now receives the launch run's resolved `$BASE`
+  instead of re-deriving it (machine-assembled-brief discipline).
+- `/aep-design` added to git-ref's control-plane-commits enumeration; the
+  integration-branch override set/unset commands documented at the canonical
+  home.
+
+Post-review hardening (adversarially verified review round, 16/16 findings
+confirmed and fixed):
+
+- `scripts/build-skills.sh` write mode no longer overwrites a skill-owned file
+  on a `_shared` name conflict, nor adopts it into the manifest — the conflict
+  stays in place and the error repeats until one side is renamed (previously
+  the first pre-commit retry silently committed the clobber).
+- Legacy dir-level marker migration no longer dies silently (`set -e` +
+  `pipefail`) when the dir holds files that don't mirror `_shared/`.
+- `_shared/references/` selection is recursive — nested shared files
+  materialize instead of silently never shipping while `--check` stayed green.
+- The pre-commit `skills-build` job now runs `--stage`, staging exactly the
+  files the build changed (lefthook's `stage_fixed` cannot stage newly
+  materialized copies or removals, so commits landed with a stale tree).
+- The `$BASE` auto-detect bash surviving in `/aep-onboard` — a second resolver
+  spelling that also skipped the config override, reporting the wrong branch
+  under `aep.integration-branch` overrides — replaced with the `/aep-git-ref`
+  pointer; the CI resolver check now also greps the develop-probe signature so
+  literal-free copies can't evade it.
+- Remaining cross-skill relative links in reference files (tick-protocol ×4,
+  post-merge-guard ×2, backends, theory-catalog) converted to `/aep-x` prose
+  invocations (R3 — they broke in flattened `.claude/skills/aep-*` installs).
+- Dispatch scoring formulas, grouped-change rules, and routing bands
+  single-homed in `/aep-dispatch` `references/scoring.md` (new § Routing
+  Thresholds); autopilot tick Step ⑥ and validate `protocol-specs.md` point
+  there, and CHECK prompts include the file verbatim at assembly time.
+- Heavy/light calibration-dimension membership single-homed in `/aep-map`
+  `references/alignment-layers.md`; reflect, calibrate, dispatch, and envision
+  now point there (the file's consumer claim was previously false).
+- `merge-decision-cases.md` no longer claims `worktree-onboarding.md` carries
+  the autopilot-vs-interactive mode rule (`signals-spec.md` is the home).
+- Watch's liveness probe is `/aep-executor`-qualified with a non-circular
+  fallback (retry once, then inline for the tick — previously "fall back" named
+  the mode that had just failed).
+- YAML validation standardized on `npx js-yaml` everywhere (envision and model
+  used PyYAML — a second spelling with YAML 1.1/1.2 edge-case divergence).
+- Executor's Reference Files index now lists `references/dogfood-validation.md`
+  and the `spawn-liveness-probe.sh` script; the CI allowlist comment corrected
+  (three reference files, not two).
+- R7 implementation note added to the decision doc recording the accepted
+  per-skill target deviations (corpus 4,873 vs ~4,455; CI budget is the
+  enforceable ceiling).
 
 ## [2.7.0] - 2026-07-10
 
@@ -884,7 +1033,7 @@ First stable baseline after the Jujutsu → git migration. Decision record:
 
 - Jujutsu (one-shot migration, no dual-mode period) and the `/jj-ref` skill.
 
-[Unreleased]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.5.0...HEAD
+[3.0.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.5.0...v3.0.0
 [1.5.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.3.2...v1.4.0
 [1.3.2]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.3.1...v1.3.2

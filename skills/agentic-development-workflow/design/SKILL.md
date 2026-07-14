@@ -1,11 +1,14 @@
 ---
 name: aep-design
-description: Interactive feature design on the integration branch (main, or develop in two-branch mode). Use when starting a new feature, or when the user says "design a feature", "let's design", "explore and propose". Runs OpenSpec explore, propose, and design review phases interactively with the user, then commits artifacts to the integration branch. The first step in the feature lifecycle — followed by /aep-launch.
+description: >-
+  Designs a feature interactively on the integration branch with OpenSpec
+  exploration, proposal, review, and committed artifacts. Use for "design a
+  feature" or "explore and propose"; next run /aep-launch.
 ---
 
 # Design
 
-Interactive feature design on the **integration branch** (`$BASE` — `main` in single-branch mode, `develop` in two-branch mode; see [git-ref](../git-ref/SKILL.md) → "Integration Branch"). Explore the problem, propose a solution, review the design, and commit artifacts — all in conversation with the user.
+Interactive feature design on the **integration branch** (`$BASE` — resolve per /aep-git-ref "Resolving $BASE"). Explore the problem, propose a solution, review the design, and commit artifacts — all in conversation with the user.
 
 **Where this fits:**
 
@@ -22,166 +25,83 @@ Interactive feature design on the **integration branch** (`$BASE` — `main` in 
 
 ## Operating Mode
 
-This skill works in two modes, auto-detected at startup:
+Auto-detect at startup:
 
 ```bash
 ls product-context.yaml 2>/dev/null
 ```
 
-**Standalone mode** _(no `product-context.yaml`)_ — Feature lifecycle runs independently. Proceed directly to prerequisites and design phases.
-
-**Product-cycle mode** _(has `product-context.yaml`)_ — Feature is part of a larger product lifecycle (`/aep-envision` → `/aep-map` → `/aep-dispatch` → `/aep-design`):
-
-- Read from `product-context.yaml` for project-wide context
-- If a story was dispatched (has `openspec_change` set in the YAML), load that story's acceptance criteria, interface obligations, and relevant architecture module
-- When dispatched from `/aep-dispatch`, the OpenSpec change already exists — `/opsx:propose` refines it rather than starting from scratch
+- **Standalone** (no `product-context.yaml`) — the feature lifecycle runs independently; proceed to Prerequisites.
+- **Product-cycle** (has `product-context.yaml`) — the feature is a story in `/aep-envision` → `/aep-map` → `/aep-dispatch` → `/aep-design`. Read references/modes.md for how a dispatched story's context (acceptance criteria, interface obligations, existing change) loads before the phases.
 
 ---
 
 ## Prerequisites
 
-Before starting, verify dependencies are available.
-
-### CLI Tools
-
-Run this check:
+Two one-line checks — `/aep-onboard` installs missing tools, `/aep-scaffold` installs missing OpenSpec skills:
 
 ```bash
-for cmd in git openspec; do
-  printf "%-15s" "$cmd:"
-  which $cmd >/dev/null 2>&1 && echo "OK ($(which $cmd))" || echo "MISSING"
-done
-# PR/MR tool (need at least one):
-printf "%-15s" "gh or glab:"
-(which gh >/dev/null 2>&1 || which glab >/dev/null 2>&1) && echo "OK" || echo "MISSING"
+which git openspec >/dev/null 2>&1 && { which gh >/dev/null 2>&1 || which glab >/dev/null 2>&1; } || echo "MISSING cli tool → run /aep-onboard"
+ls .claude/skills/openspec-{explore,propose,apply-change,archive-change}/SKILL.md >/dev/null 2>&1 || echo "MISSING openspec skill → run /aep-scaffold"
 ```
-
-If any required tool is missing, run `/aep-onboard` first.
-
-### Required Skills
-
-Check that OpenSpec skills exist:
-
-```bash
-for skill in openspec-explore openspec-propose openspec-apply-change openspec-archive-change; do
-  printf "%-35s" "$skill:"
-  [ -f ".claude/skills/$skill/SKILL.md" ] && echo "OK" || echo "MISSING"
-done
-```
-
-If OpenSpec skills are missing, run `/aep-scaffold` first.
 
 ---
 
 ## Workflow Mode Selection
 
-Before starting design, decide on the workflow mode. This choice carries through to `/aep-launch` and `/aep-build`.
-
-### Full mode (default)
-
-All phases + separate evaluator agent. Use for:
-
-- Complex features with 3+ tasks
-- UI-heavy work
-- Security-sensitive features
-- Anything at the edge of model capability
-
-### Light mode
-
-Simplified flow, no evaluator. Use for:
-
-- Simple CRUD
-- Config changes
-- Small bug fixes
-
-### Tuning principle
-
-> "Every component in a harness encodes an assumption about what the model can't do on its own. Those assumptions deserve stress-testing."
-> — Anthropic, ["Harness Design for Long-Running Application Development"](https://www.anthropic.com/engineering/harness-design-long-running-apps)
-
-With each model upgrade, re-evaluate which phases provide value.
+Pick a workflow mode — **full** or **light** — before designing. It governs Phase 3 below and carries through to `/aep-launch` and `/aep-build`. Read references/workflow-modes.md for the two modes, the selection criteria, and how the choice is recorded so launch and build honor it.
 
 ---
 
 ## Phase 1: OpenSpec Explore
 
-Invoke the explore skill to think through the feature:
-
 ```
 /opsx:explore
 ```
 
-Use this phase to:
+Clarify requirements and scope with the user, investigate the codebase for relevant patterns, identify risks and unknowns, and create a `docs/` architecture note if the feature warrants it.
 
-- Clarify requirements and scope with the user
-- Investigate the codebase for relevant patterns
-- Identify risks or unknowns
-- Build shared understanding
-- Create architecture documentation in `docs/` if the feature warrants it
+**Postcondition:** requirements, scope, and risks are captured in the change directory (`openspec/changes/<change-name>/`).
 
 ---
 
 ## Phase 2: OpenSpec Propose
 
-Invoke the propose skill to generate a full proposal:
-
 ```
 /opsx:propose
 ```
 
-This creates the OpenSpec change with all artifacts:
+Generates the full OpenSpec change: `proposal.md` (what/why), `design.md` (how, key decisions, risks), `specs/**/*.md` (requirements and scenarios), `tasks.md` (implementation checklist). When a story was dispatched, the change already exists — `/opsx:propose` refines it.
 
-- `proposal.md` — what and why
-- `design.md` — how, key decisions, risks
-- `specs/**/*.md` — detailed requirements and scenarios
-- `tasks.md` — implementation checklist
+**Postcondition:** `openspec/changes/<change-name>/proposal.md` exists (alongside `design.md`, `specs/`, `tasks.md`).
 
 ---
 
 ## Phase 3: Design Review
 
-Before implementation, review the proposal from non-functional angles:
+Review scope — architecture, interfaces, task decomposition — from non-functional angles:
 
-1. **Security** — Auth gaps, injection surfaces, data exposure?
+1. **Security** — auth gaps, injection surfaces, data exposure?
 2. **Performance** — N+1 queries, large payloads, blocking operations?
-3. **Existing patterns** — Does it follow codebase conventions?
-4. **Edge cases** — Concurrency issues, race conditions, failure modes?
+3. **Existing patterns** — does it follow codebase conventions?
+4. **Edge cases** — concurrency, race conditions, failure modes?
 
-**What NOT to review:** Business logic (decided in Phase 1), cosmetic preferences.
+Update the OpenSpec change files directly if adjustments are needed.
 
-If adjustments are needed, update the OpenSpec change files directly.
+> **Light mode:** skip Phase 3 entirely.
 
-> **Light mode:** Skip Phase 3 entirely.
+**Postcondition:** the user has approved the design, recorded in `proposal.md` (an approval note or checked box).
 
 ---
 
 ## Commit to the Integration Branch
 
-After design is complete, commit all artifacts to the integration branch (`$BASE`):
+Commit the change directory and any architecture docs to `$BASE` as a control-plane commit — per /aep-git-ref "Control-Plane Commits" (resolve `$BASE` per /aep-git-ref "Resolving $BASE"). Stage explicitly with `git add openspec/changes/<change-name>/ docs/` and message `feat: add <change-name> architecture doc and OpenSpec change`. This ensures the workspace has all artifacts when it is created from `$BASE`.
 
-```bash
-# Resolve $BASE — see git-ref "Integration Branch" (override → develop → main)
-BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
-[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
-  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
-BASE=${BASE:-main}
-
-git pull --ff-only origin "$BASE"
-git add openspec/changes/<change-name>/ docs/
-git commit -m "feat: add <change-name> architecture doc and OpenSpec change"
-git push origin "$BASE"
-```
-
-This ensures the workspace will have all artifacts when it's created from `$BASE`. The `--ff-only` pull avoids overwriting concurrent pushes.
+**Postcondition:** the change directory is committed and pushed to `$BASE`.
 
 ---
 
 ## Next Step
 
-Design is complete. Proceed to:
-
-```
-/aep-launch
-```
-
-This spawns an autonomous workspace session to implement the feature.
+Design is complete. Proceed to `/aep-launch`, which spawns an autonomous workspace session to implement the feature.

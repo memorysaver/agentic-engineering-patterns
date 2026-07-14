@@ -1,6 +1,9 @@
 ---
 name: aep-model
-description: Object-first UI structure modeling (OOUX/ORCA) for UI-facing products. Use after /aep-map and before dispatching UI-facing stories, or when the user says "object model", "object map", "objectify", "OOUX", "ORCA", "noun-first IA", "what objects/screens". Mines a draft Object Map (objects → relationships → CTAs → attributes → screens) from the story map, presents it for a short human review gate, and on approval writes the noun-first blueprint that build agents follow. Bridges the verb-first story map to the UI so agents stop inventing task-wizard screens per story.
+description: >-
+  Builds a human-reviewed OOUX/ORCA object map and noun-first UI blueprint. Use
+  after /aep-map, before UI stories, or for "object model", "object map",
+  "OOUX", "ORCA", and "noun-first IA".
 ---
 
 # Model
@@ -8,12 +11,12 @@ description: Object-first UI structure modeling (OOUX/ORCA) for UI-facing produc
 Turn the verb-first story map into a noun-first **Object Map** before UI gets
 built. AEP's spine (`/aep-envision` → `/aep-map`) plans what the user _does_;
 this skill plans the _objects_ the user acts on — which objects appear, what their
-fields are, how they nest, and what actions hang off each. Without it, build
-agents invent screen structure per story, which drifts into disjointed
-task-wizard UIs. With it, they inherit one consistent object-oriented blueprint.
+fields are, how they nest, and what actions hang off each. Structure only: look,
+voice, and journey stay in `/aep-calibrate` (visual-design, copy-tone, ux-flow).
 
-> **The one rule:** a story-map slice cuts _scope_, not _interface type_. Never
-> translate the backbone one-step-one-screen into a wizard. MVP slice ≠ wizard.
+> **The one rule:** a story-map slice cuts _scope_, not _interface type_. Keep the
+> backbone's one-step-one-screen as object-first structure; translating it into a
+> wizard is the deepest trap this skill exists to prevent. MVP slice ≠ wizard.
 
 **Where this fits:**
 
@@ -27,7 +30,9 @@ task-wizard UIs. With it, they inherit one consistent object-oriented blueprint.
 **Output:** `product/object-model.yaml` (cross-capability ontology) + one `product/maps/<capability>/object-map.yaml` per UI-facing capability (`status: approved`); thin `calibration.history` entry + `changelog` in `product-context.yaml`
 
 **Schemas:** `templates/object-model-schema.yaml`, `templates/object-map-schema.yaml`.
-**Process detail:** `references/orca-process.md` (ORCA round-by-round derivation + the object-first/task-oriented decision framework).
+**Process detail:** the four ORCA rounds + the object-first/task-oriented decision
+framework are canonical in `references/orca-process.md` — read it before mining in
+Step 1.
 
 ---
 
@@ -45,21 +50,14 @@ If nothing is UI-facing, say so and route the user straight to `/aep-dispatch`.
 
 ## Before Starting
 
-**File Resolution:**
-
-```bash
-ls product/index.yaml 2>/dev/null && echo "SPLIT MODE" || echo "V1 MODE"
-cat product-context.yaml
-```
-
-- **Split mode** (`product/index.yaml` exists): read product definition,
-  `personas`, `capabilities`, `activities`, `quality_dimensions` from
-  `product/index.yaml`; read `stories`, `architecture.domain_model` from
-  `product-context.yaml`. Write `product/object-model.yaml` and
-  `product/maps/<capability>/object-map.yaml`.
-- **V1 mode**: read everything from `product-context.yaml`. Still write the
-  standalone artifacts under `product/` (create the directory) — the object model
-  is a stable design file, never inlined into operational YAML.
+**File resolution:** the split-vs-V1 probe and mode semantics are canonical in
+`references/file-resolution.md` — read it when the active mode is unclear. In
+**split mode** model reads the product definition (`personas`, `capabilities`,
+`activities`, `quality_dimensions`) from `product/index.yaml` and `stories`,
+`architecture.domain_model` from `product-context.yaml`; in **V1 mode** it reads
+everything from `product-context.yaml`. In both modes it writes the standalone
+artifacts under `product/` (create the directory in V1) — the object model is a
+stable design file, never inlined into operational YAML.
 
 If `stories` is empty, run `/aep-map` first. If no product definition exists, run
 `/aep-envision` first.
@@ -83,28 +81,18 @@ fill gaps, and fix obvious errors. Generate fresh only when no draft exists. (Se
 `provenance.generated_by`/`status` to reflect reality — `aep-map` for an untouched
 draft, refined in place here.)
 
-Run the four ORCA rounds per `references/orca-process.md`. This step is
-agent-driven — mine, don't ask yet.
+Run the four ORCA rounds per `references/orca-process.md`, then the representation
+pass — this step is agent-driven, so mine, don't ask yet:
 
-1. **Round O — Objects (Noun Foraging):** forage nouns from `product.activities`,
-   `stories[].description`, `product.problem`, `personas`, and
-   `architecture.domain_model`. Promote user-perceived things to objects; demote
-   implementation nouns. Cross-link `backs_onto` to domain entities. Record
-   `source_evidence` + `confidence`.
-2. **Round R — Relationships (Nested Object Matrix):** for each object pair, set
-   cardinality + whether nested/navigable. Cross-capability links → object-model;
-   capability-local → object-map.
+1. **Round O — Objects (Noun Foraging):** forage nouns, promote user-perceived
+   things, demote implementation nouns, record `source_evidence` + `confidence`.
+2. **Round R — Relationships (Nested Object Matrix):** set cardinality + nesting
+   per object pair; cross-capability → object-model, capability-local → object-map.
 3. **Round C — CTAs (object × role matrix):** hang every story/activity verb onto
-   the object it acts on, tagged by persona, with placement + priority + the
-   `from_story` it came from.
-4. **Round A — Attributes:** rank each object's fields core / secondary /
-   metadata.
-5. **Round 4 — Representation hints:** project primary objects into structural
-   `collection` + `detail` views; pick each capability's `anchor_object`. IA only,
-   no visual design. For data-heavy or exploration-heavy capabilities, draw the
-   structural idiom (overview→zoom→detail, coordinated views, information scent) from
-   [`/aep-design-lens`](../../patterns/design-lens/SKILL.md) families C/D — it supplies
-   the HCI theory; this skill still owns the object/screen structure.
+   its object, tagged by persona, with `placement`, `priority`, and `from_story`.
+4. **Round A — Attributes:** rank each object's fields core / secondary / metadata.
+5. **Representation hints:** project primary objects into `collection` + `detail`
+   views and pick each capability's `anchor_object`. IA only, no visual design.
 
 Write:
 
@@ -118,6 +106,11 @@ Write:
 
 Default every flow to `object_first`. Only add an `interaction_modes` entry to
 mark a flow `task_oriented`, with a reason grounded in the decision framework.
+
+**Postcondition:** `product/object-model.yaml` and one draft `object-map.yaml` per
+UI-facing capability exist; every noun foraged from an activity maps to an object
+(or is justified implementation-only) and every UI story's verbs map to a CTA
+(`coverage` complete). Nothing has been asked of the user yet.
 
 ---
 
@@ -137,9 +130,7 @@ of high-leverage questions, one at a time:
    checkout / one-shot) instead of object-first? Capture the reason.
 
 Apply the answers to the draft. Keep the questions few — this is a gate, not a
-redesign workshop. Heavy taste decisions (look, voice) are NOT this skill's job;
-they stay in `/aep-calibrate` (visual-design, copy-tone) and journey/page/
-transition stays in ux-flow.
+redesign workshop; taste decisions stay in `/aep-calibrate` (see the intro).
 
 ---
 
@@ -172,54 +163,23 @@ On approval:
 ## Step 4: Validate YAML & Commit
 
 ```bash
-# Validate every YAML touched
-python3 -c "import yaml,glob; [yaml.safe_load(open(f)) for f in ['product/object-model.yaml','product-context.yaml']+glob.glob('product/maps/*/object-map.yaml')]; print('YAML OK')"
+# Validate every YAML touched (globs that match nothing are skipped)
+ok=1; for f in product/object-model.yaml product-context.yaml product/maps/*/object-map.yaml; do
+  [ -f "$f" ] || continue
+  npx js-yaml "$f" > /dev/null || { echo "YAML FAIL: $f"; ok=0; }
+done; [ "$ok" = 1 ] && echo "YAML OK"
 ```
 
-If it fails, fix before committing (see `templates/product-context-schema.yaml`
-guidance: quote list items with colons, flatten nested sub-lists, escape quotes).
+If it fails, fix before committing — see `references/yaml-guardrails.md` for the
+common `product-context.yaml` pitfalls (colons in list items, embedded quotes,
+`@`/`{`/`}`, nested sub-lists).
 
-```bash
-# Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
-BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
-[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
-  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
-BASE=${BASE:-main}
+Then commit the design artifacts directly to the integration branch per
+`/aep-git-ref` "Control-Plane Commits" (resolve `$BASE` per `/aep-git-ref`
+"Resolving `$BASE`"): `git add product/ product-context.yaml`, commit
+`feat: object model — approved object-first IA for <capabilities>`, push to `$BASE`.
 
-git pull --ff-only origin "$BASE"
-git add product/ product-context.yaml
-git commit -m "feat: object model — approved object-first IA for <capabilities>"
-git push origin "$BASE"
-```
-
----
-
-## How downstream consumes the Object Map
-
-- **`/aep-dispatch`** injects only the **slice** for the objects a story touches
-  (from `coverage`) into the story's context package — not the whole model — and
-  **refuses** to dispatch a UI-facing story whose capability lacks an `approved`
-  object-map (run `/aep-model` first), mirroring the calibration gate.
-- **`/aep-launch`** aborts a UI-facing story with no approved object-map.
-- **`/aep-build`** treats the injected slice as binding: objects, their core
-  attributes, CTA placement, and screen structure come from the map;
-  visual-design/copy-tone/ux-flow calibration still own look, voice, and journey.
-- **`/aep-validate`** Mode A runs the completeness checks (coverage, anchors,
-  task-flow reasons).
-
----
-
-## Anti-Patterns
-
-- **Backbone → wizard 1:1.** The deepest trap. A slice is scope, not screen shape.
-- **Designing visuals here.** No palette/typography/spacing — that's
-  `/aep-calibrate visual-design`. This skill is structure only.
-- **Modeling backend entities as objects.** If the user never perceives it, it's
-  `architecture`, not the object model.
-- **Skipping the gate.** Auto-approving object boundaries reproduces the guesswork
-  the skill exists to prevent. Always run Step 2.
-- **Fat operational YAML.** Never inline object-map bodies into
-  `product-context.yaml`; keep them under `product/` with thin references.
+**Postcondition:** `YAML OK` printed and the commit is on `$BASE`.
 
 ---
 

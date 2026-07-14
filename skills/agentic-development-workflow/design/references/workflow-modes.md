@@ -1,0 +1,52 @@
+# Workflow Modes — full vs light
+
+**Canonical home for the full/light workflow-mode criteria.** `/aep-design` selects the mode, and
+`/aep-launch` and `/aep-build` honor it (they point here). Pick the mode before designing.
+
+## Full mode (default)
+
+All phases run, plus a **separate evaluator agent** that independently reviews the generator's work.
+Phase 3 (Design Review) runs. Use full mode when the work is at the edge of what the model does
+reliably on its own.
+
+## Light mode
+
+Simplified flow: **no evaluator**, and Phase 3 (Design Review) is skipped. Use light mode for small,
+low-risk changes the model handles reliably in one pass.
+
+## Selection criteria
+
+| Signal          | Full mode                       | Light mode                          |
+| --------------- | ------------------------------- | ----------------------------------- |
+| Task count      | 3+ tasks in `tasks.md`          | 1–2 tasks                           |
+| Surface         | UI-heavy or security-sensitive  | simple CRUD, config change          |
+| Risk / novelty  | at the edge of model capability | well-worn, low-risk (small bug fix) |
+| Evaluator agent | yes (separate reviewer)         | no (self-review)                    |
+| Phase 3 review  | runs                            | skipped                             |
+
+When the signals split, prefer full mode — the cost of an unneeded review is lower than the cost of
+an unreviewed complex change.
+
+## Recording the choice so launch and build honor it
+
+Record the mode in the OpenSpec change's `design.md` — e.g. a `**Workflow mode:** light` line under
+key decisions. The change is committed to `$BASE` (Commit step), so the `/aep-launch` and `/aep-build`
+sessions created from `$BASE` read the mode from `design.md` and act on it: full mode sets up the
+evaluator and runs every phase; light mode skips the evaluator and the review/dogfood phases.
+
+## Not to be confused with build's eval-loop full/light
+
+`/aep-build` also uses "full/light", but there it selects the **generator-evaluator eval loop**
+(Phase 5) — a different axis owned by `/aep-gen-eval`. This workflow mode sets the default
+(full → run the loop; light → skip it); build's usage is its Phase-5 realization, not a separate
+decision.
+
+## Tuning principle — re-evaluate with each model upgrade
+
+> "Every component in a harness encodes an assumption about what the model can't do on its own. Those
+> assumptions deserve stress-testing."
+> — Anthropic, ["Harness Design for Long-Running Application Development"](https://www.anthropic.com/engineering/harness-design-long-running-apps)
+
+With each model upgrade, re-evaluate which phases still earn their place. A capability that once
+justified full mode may become something the model does reliably on its own, shifting more work into
+light mode.

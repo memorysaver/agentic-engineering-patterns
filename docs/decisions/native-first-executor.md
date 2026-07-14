@@ -76,7 +76,9 @@ Selection: natural-language opt-in (`workflow`) → explicit pin (`legacy`) →
 native by host capability → tmux only for generic hosts → headless. **Claude
 Code with tmux installed no longer auto-selects tmux** — the one behavior
 change; cmux fans pin with `git config aep.executor-backend tmux` (a narrow,
-deliberate exception to the "no pins" stance of the previous ADR).
+deliberate exception to the "no pins" stance of the previous ADR). The pin
+exists because detection cannot distinguish "tmux is installed" from "the user
+wants the tmux+cmux workflow"; everything else stays automatic.
 
 ### AEP keeps worktree ownership
 

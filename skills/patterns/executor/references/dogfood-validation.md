@@ -177,7 +177,7 @@ post-deploy report path (staging/prod), one entry per finding:
 
 **On issue** → route per `topology.routing.dogfood.on_issue` (default
 `create_story`): the report is ingested by the **`dogfood_report` adapter**
-(`product-context/_shared/references/telemetry-ingestion.md` → Dogfood-report
+(`/aep-watch` → `references/telemetry-ingestion.md`, Dogfood-report
 adapter), which parses each `##` finding into a normalized record → the
 `/aep-reflect` Step 2 classifier → a bug/refinement story in
 `product-context.yaml` → dispatch (the G6 self-feeding loop). Set `escalate`

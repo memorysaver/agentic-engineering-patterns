@@ -87,7 +87,7 @@ The evaluator independently assesses work against specifications. It has NO know
 - **MUST** score against the dimension scale definitions (not gut feel)
 - **MUST** apply hard failure thresholds strictly
 - **MUST** provide actionable fix suggestions for every finding
-- **MUST**, for UI work, receive screenshot(s) of the running app (captured host-aware per `executor/references/dogfood-validation.md`) and score the **Visual Design** dimension against the project's `calibration/<type>.yaml` / design-system spec using its multimodal vision (Claude natively; Codex GPT-5.4)
+- **MUST**, for UI work, receive screenshot(s) of the running app (captured host-aware per `/aep-executor` → `references/dogfood-validation.md`) and score the **Visual Design** dimension against the project's `calibration/<type>.yaml` / design-system spec using its multimodal vision (Claude natively; Codex GPT-5.4)
 - **MUST NOT** rationalize problems away ("this is probably fine because...")
 - **MUST NOT** implement fixes or capture the screenshot itself (generator ≠ evaluator — the dogfood/capture step produces the image; the evaluator only judges it)
 - **CAN** update `passes`, `evaluated_by`, `round` in feature-verification.json

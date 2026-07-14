@@ -1,11 +1,14 @@
 ---
 name: aep-envision
-description: Product-level opportunity and product framing. Use when starting a new product from scratch, revisiting product direction, or when the user says "new product idea", "validate this idea", "product framing", "what should we build", "revisit our assumptions". Walks through opportunity validation and produces a Context Document that feeds into /aep-map and /aep-design.
+description: >-
+  Validates and frames a product opportunity for downstream agents. Use to
+  start or revisit an idea, validate product direction, answer "what should we
+  build", or create the Context Document for /aep-map and /aep-design.
 ---
 
 # Envision
 
-Transform a fuzzy product idea into a precise, testable product definition. First validate the opportunity is worth pursuing, then frame the product with enough precision that downstream agents can work without ambiguity.
+Transform a fuzzy product idea into a precise, testable product definition. First validate the opportunity is worth pursuing (Phase 0), then frame the product with enough precision that downstream agents work without ambiguity (Phase 1).
 
 **Where this fits:**
 
@@ -14,234 +17,154 @@ Transform a fuzzy product idea into a precise, testable product definition. Firs
 ▲ you are here
 ```
 
-**Session:** Main, interactive with user
-**Input:** Product idea (vague or refined)
-**Output:** `product/index.yaml` with `opportunity`, `personas`, `capabilities`, and `product` sections; `product-context.yaml` with `calibration` and `changelog` sections. In v1 fallback mode (no split), writes everything to `product-context.yaml`.
-
-**YAML Schema:** See `templates/product-context-schema.yaml` for the full structure and field definitions.
-
----
+- **Session:** Main, interactive with user
+- **Input:** Product idea (vague or refined)
+- **Output:** `product/index.yaml` (`opportunity`, `personas`, `capabilities`, `product` sections) + `product-context.yaml` (`calibration`, `changelog`). V1 fallback (no split): everything in `product-context.yaml`.
+- **YAML schema:** field structure and definitions live in `templates/product-context-schema.yaml`.
 
 ## Before Starting
 
-Check which mode to operate in:
+Run the probe, then apply the matching case. Detection is automatic — never ask the user which mode is active.
 
 ```bash
-ls product/index.yaml 2>/dev/null
+ls product/index.yaml 2>/dev/null && echo "SPLIT MODE" || echo "V1 MODE"
 ls product-context.yaml 2>/dev/null
 ```
 
-**File Resolution:**
-
-- If `product/index.yaml` exists → **split mode**. Product definition lives in `product/index.yaml`, operational state in `product-context.yaml`.
-- If only `product-context.yaml` exists → **v1 mode** OR **migration candidate**. Ask the user: "Do you want to migrate to split mode (product/index.yaml + product-context.yaml) or keep the single file?"
-- If neither exists → **new project**. Default to split mode. Create `product/` directory.
-
-In update mode, read the existing file(s) and ask whether they want to revise or start fresh. Preserve all sections you are not updating.
+Split vs V1 vs new-project semantics (including the one-time V1→split migration offer) are canonical in `references/file-resolution.md` — read it to resolve the case. In update mode, read the existing file(s), ask whether to revise or start fresh, and preserve every section you are not updating.
 
 ---
 
 ## Phase 0: Opportunity Framing
 
-**Goal:** Determine whether this idea is worth building at all, before investing in product design.
-
-**Why this is separate from product framing:** Opportunity Framing answers "should we build this?" Product Framing answers "what exactly should we build?" Conflating them causes premature commitment — you start designing a product before validating the opportunity, and sunk-cost bias prevents you from killing a bad idea.
+**Goal:** Decide whether this idea is worth building at all, before investing in product design. Opportunity Framing answers "should we build this?"; Phase 1 answers "what exactly?" — separating them prevents premature commitment and sunk-cost bias against killing a bad idea.
 
 ### How to run this phase
 
-Let the user describe their idea freely. Do not impose structure yet. Your job is to extract the raw material:
+Let the user describe the idea freely; do not impose structure yet. Extract the raw material:
 
-- What triggered this idea? A personal pain point, a market gap, a technology capability?
-- Who has this problem today? How do they currently solve it?
-- What would change in the world if this product existed?
-- What is the user's unique advantage in building this — technical skill, domain knowledge, existing audience?
+- What triggered this idea — a personal pain, a market gap, a technology capability?
+- Who has this problem today, and how do they solve it now?
+- What changes in the world if this product exists?
+- What is the user's unfair advantage — technical skill, domain knowledge, existing audience?
 - What are the strongest reasons this might fail or not matter?
 
-After sufficient divergence, synthesize into an **Opportunity Brief** (see `templates/opportunity-brief.md`). The brief is deliberately short — one page. It captures the core bet: "I believe [target user] has [problem], and I can build [solution] because [advantage]."
+After sufficient divergence, synthesize an **Opportunity Brief** (one page, per `templates/opportunity-brief.md`) capturing the core bet: "I believe [target user] has [problem], and I can build [solution] because [advantage]."
 
 ### Kill Point
 
-Present the Opportunity Brief back to the user. This is an explicit decision point: **proceed or kill.**
+Present the Opportunity Brief back and put three yes/no challenge questions to the user — an honest five-minute challenge. Any **no** stops the phase (Kill or Defer):
 
-If the opportunity does not survive an honest five-minute challenge, it should not consume the resources that subsequent phases require. Killing early is the highest-ROI decision in the entire workflow.
+1. Is the problem real and painful for a specific, named user?
+2. Is there a genuine "why now" and an unfair advantage that is yours?
+3. Do the strongest counter-arguments fail to sink it, and is the impact worth the downstream build cost?
 
-- **Proceed** → Continue to Phase 1
-- **Kill** → Stop here. The brief is still saved as a record.
-- **Defer** → Save the brief with a revisit condition
+Killing early is the highest-ROI decision in the workflow. Record the decision in the brief's Decision section:
+
+- **Proceed** → Phase 1
+- **Kill** → stop; the brief is still saved as a record
+- **Defer** → save the brief with a revisit condition
 
 ### Phase 0 Output
 
-**Split mode:** Write the finalized Opportunity Brief to the `opportunity` section of `product/index.yaml`.
-**V1 mode:** Write to the `opportunity` section of `product-context.yaml`.
+Write the finalized Opportunity Brief to the `opportunity` section — of `product/index.yaml` (split mode) or `product-context.yaml` (v1 mode).
+
+**Postcondition:** the `opportunity` section exists in the mode's target file, and the Kill Point decision (proceed/kill/defer) is recorded.
 
 ---
 
 ## Phase 1: Product Framing
 
-**Goal:** Transform the validated opportunity into a precise product definition that downstream agents can consume without ambiguity.
-
-**Core premise:** The user carries dozens of implicit assumptions — about users, scope, technical constraints, success criteria. Every assumption left implicit will be resolved by a downstream agent through guesswork. This phase makes every assumption explicit.
+**Goal:** Turn the validated opportunity into a precise product definition downstream agents consume without ambiguity. Every assumption left implicit gets resolved by a downstream agent through guesswork — this phase makes each one explicit.
 
 ### Stage 1: Diverge
 
-Continue the conversation from Phase 0, now focused on product specifics. Lines of inquiry:
+Continue the conversation from Phase 0, now on product specifics:
 
-- **Problem statement:** Sharpen the problem. Not "developers need better tools" but "solo developers building SaaS on edge platforms lose 4+ hours per project setting up agent sandboxing because existing solutions assume AWS/GCP infrastructure."
-- **Persona / JTBD:** Who is the primary user, concretely? What job are they hiring this product to do? What does success look like from their perspective?
-- **MVP boundary:** What is the single most important end-to-end journey the user can complete? What is explicitly excluded, even if adjacent and tempting?
-- **User activities (story map backbone):** What does the user DO, step by step, in the core journey? Map the user's activities as a left-to-right narrative. Each activity is a verb phrase from the user's perspective: "Authenticate", "Create Profile", "Generate Content", "Track Progress", "Download Output". These form the backbone of the story map — the horizontal axis that layers cut across. The activities should read as a coherent sentence: "The user authenticates, then creates a profile, then generates content, then tracks progress, then downloads the output." This comes BEFORE layer definitions — build the backbone first, then draw release lines across it.
-- **Technical constraints:** Non-negotiable stack choices, infrastructure requirements, hard dependencies.
-- **Quality dimensions:** Which dimensions of this product require human judgment that agents cannot provide? Not every dimension needs calibration — only those where "correct but not right" is likely. Common dimensions:
-  - **Visual design** — brand identity, color, typography, layout (nearly always needed for user-facing products)
-  - **UX flow** — user journey, information architecture, page transitions
-  - **Object model** — the noun-first object structure behind the UI (objects, their attributes, relationships, and the actions/CTAs on each). Unlike the others this is a **structural gate**, not a taste calibration: `/aep-map` auto-drafts an Object Map and `/aep-model` gets a short human approval. **Declare `object-model` by default for any UI-facing product/capability** — it is what stops build agents from inventing one-step-one-screen task-wizard UIs. (Skip only for pure-backend/CLI products.)
-  - **API surface** — endpoint naming, grouping, error contracts (when external consumers exist)
-  - **Data model** — entity naming, field semantics (when domain language matters)
-  - **Copy/tone** — brand voice, error messages, empty states
-  - **Scope/direction** — mid-build intent correction (common when PM and builder are different people)
-  - **Performance/quality** — latency thresholds, retry behavior, caching strategy
-
-  For each declared dimension: what layer is it most likely to first need calibration? Why?
-
-- **Layered MVP contract:** Layer 0 is the walking skeleton — a horizontal slice across the activity backbone, picking the thinnest story from each activity. Each subsequent layer adds capabilities. Later layers may introduce new activities that extend the backbone to the right. Define what the user can accomplish at each layer.
-
-  `.5` layers are **human alignment layers**, not just "UI polish." A `.5` layer is any point where the team pauses agent execution to calibrate human intent across one or more quality dimensions. Layer 0.5 might be visual design only. Layer 1.5 might be visual design extension + copy tone. The `calibration.plan` maps layers to expected calibration checkpoints.
+- **Problem statement:** Sharpen it. Not "developers need better tools" but "solo developers on edge platforms lose 4+ hours per project on agent sandboxing because existing solutions assume AWS/GCP."
+- **Persona / JTBD:** Who is the primary user, concretely? What job are they hiring this product to do? What does success look like to them?
+- **MVP boundary:** The single most important end-to-end journey the user can complete — and what is explicitly excluded, even if adjacent and tempting.
+- **User activities (story-map backbone):** What the user DOES, step by step, as a left-to-right narrative of verb phrases ("Authenticate", "Create Profile", "Generate Content", "Track Progress", "Download Output"). Build this backbone BEFORE layer definitions — layers cut across it.
+- **Technical constraints:** Non-negotiable stack, infrastructure, hard dependencies.
+- **Quality dimensions:** Which dimensions need human judgment agents cannot provide — only those where "correct but not right" is likely. The seven taste dimensions (visual-design, ux-flow, copy-tone, api-surface, data-model, scope-direction, performance-quality) are cataloged in `/aep-calibrate` (`references/calibration-types.md`) — declare from there rather than re-listing. **`object-model` is separate:** a structural gate (not a taste calibration) that `/aep-map` auto-drafts and `/aep-model` approves. **Declare `object-model` by default for any UI-facing product/capability** — it stops build agents from inventing one-step-one-screen wizard UIs (skip only for pure-backend/CLI). For each declared dimension, record the layer where calibration is first likely and why.
+- **Layered MVP contract:** Layer 0 is the walking skeleton — the thinnest story from each activity, sliced horizontally across the backbone. Each later layer adds capabilities (and may extend the backbone rightward with new activities). `.5` layers are **human alignment layers**: points where agent execution pauses to calibrate intent across one or more quality dimensions (canonical definition: `/aep-map` `references/alignment-layers.md`). `calibration.plan` maps layers to expected checkpoints.
 
 ### Stage 2: Structure
 
-Organize everything into the **Context Document** (see `templates/context-document.md`). Present the draft to the user.
+Organize everything into the **Context Document** (`templates/context-document.md`) and present the draft. Populate `product.quality_dimensions` — for each declared dimension record dimension, criticality, first calibration layer, and rationale.
 
-Populate `product.quality_dimensions` from the diverge conversation — for each dimension the user identified as needing human calibration, record the dimension, criticality, first calibration layer, and rationale.
+Quality standard: **every statement must be convertible into a verification condition.** "The system should be performant" fails; "API p95 latency < 200ms" passes. Untestable statements are not precise enough for agents to act on.
 
-Quality standard: **every statement must be convertible into a verification condition.** "The system should be performant" fails. "API p95 latency < 200ms" passes. If a statement cannot be tested, it is not precise enough for agents to act on.
+### Stage 3: Stress Test (independent agents)
 
-### Stage 3: Stress Test (Independent Agents)
+Hand the Context Document to agents that did not join the conversation. They review it cold from three angles, each producing a challenge list:
 
-Hand the Context Document to agents that did not participate in the conversation. They review it cold from three angles:
+1. **Product viability** — are user/problem assumptions validated? Strongest counter-arguments?
+2. **Technical feasibility** — are technology choices mutually compatible and adequate? Known limits?
+3. **Scope control** — is the MVP actually minimal? Can any layer be cut?
 
-1. **Product viability:** Are the user and problem assumptions validated? What are the strongest counter-arguments?
-2. **Technical feasibility:** Are technology choices compatible with each other and with the stated requirements? Known limitations?
-3. **Scope control:** Is the MVP actually minimal? Can any layer be cut?
-
-Each reviewer produces a challenge list. The user resolves each item — either by refining the document or marking it as an explicit `open_question` with a default assumption and a revisit trigger.
-
-> Note: The stress test is itself a form of pre-build calibration — independent agents check alignment before building. Post-build calibration (`/aep-calibrate`) extends this to dimensions that only become visible after agents have produced output: visual design, UX flow, naming, tone.
-
-Record the stress test results in `product.stress_test` within the YAML.
+The user resolves each item — by refining the document, or by marking it an explicit `open_question` with a default assumption and a revisit trigger. Record results in `product.stress_test`. (This stress test is pre-build calibration; `/aep-calibrate` extends it to dimensions only visible after agents produce output.)
 
 ### Phase 1 Output
 
 **Split mode:**
 
-1. Write the finalized Context Document to `product/index.yaml`:
+1. Write the Context Document to `product/index.yaml`:
    - `opportunity` (from Phase 0)
-   - `personas` (extracted from the persona work — use list format with `id`, `description`, `jtbd`)
-   - `capabilities` (at least one entry; single-journey products get one capability)
-   - `product` subsection: `problem`, `goals`, `non_goals`, `mvp_boundary`, `constraints`, `layers`, `activities`, `failure_model`, `security_model`, `success_criteria`, `quality_dimensions`, `open_questions`, `decisions`, `stress_test`
-2. Write operational initialization to `product-context.yaml`:
-   - Header: `schema: v1`, `project`, `version`, `updated_at`, `dispatch_epoch: 0`
-   - `calibration.plan` (mapped from quality_dimensions)
-   - `calibration.history: []`
-   - `changelog` entry recording what was created
-   - All other operational sections left empty (populated by `/aep-map`)
+   - `personas` (list with `id`, `description`, `jtbd`)
+   - `capabilities` (≥1 entry; single-journey products get one)
+   - `product`: `problem`, `goals`, `non_goals`, `mvp_boundary`, `constraints`, `layers`, `activities`, `failure_model`, `security_model`, `success_criteria`, `quality_dimensions`, `open_questions`, `decisions`, `stress_test`
+2. Write operational init to `product-context.yaml`: header (`schema: v1`, `project`, `version`, `updated_at`, `dispatch_epoch: 0`), `calibration.plan` (mapped from quality_dimensions), `calibration.history: []`, a `changelog` entry; leave other operational sections empty (populated by `/aep-map`).
 
-**V1 mode:** Write everything to `product-context.yaml` using `templates/product-context-schema.yaml` as the structural reference.
+**V1 mode:** write everything to `product-context.yaml` using `templates/product-context-schema.yaml` as the structural reference. If quality dimensions were declared, also write `calibration.plan`. On subsequent runs, update the relevant sections and preserve all others (e.g. `architecture`, `stories`, `topology`).
 
-On subsequent runs — read the existing file(s), update the relevant sections, and preserve all other sections (e.g., `architecture`, `stories`, `topology`).
-
-If quality dimensions were declared, also write the initial `calibration.plan` section — mapping each dimension to the layer where calibration is expected. This plan is refined by `/aep-map` (which has concrete layer definitions) and executed by `/aep-calibrate`.
+**Postcondition:** the `product` sections above are written to the mode's target file, and (split mode) `calibration.plan` + a `changelog` entry exist in `product-context.yaml`.
 
 #### Capability Maps (for multi-journey products)
 
-If the product has **2+ distinct user journeys**, also create capability map files:
-
-1. Ensure `product/index.yaml` has multiple entries in `capabilities[]`
-2. For each capability, create:
-   - `product/maps/<capability-id>/frame.yaml` — scope, boundary, primary user, outcome contract
-   - Story stubs are populated later by `/aep-map`
-
-Simple single-journey products get one capability entry but skip `frame.yaml` and `map.yaml`.
+If the product has **2+ distinct user journeys**: ensure `capabilities[]` has multiple entries and, for each capability, create `product/maps/<capability-id>/frame.yaml` (scope, boundary, primary user, outcome contract) per the schema in `templates/product-context-schema.yaml`. Story stubs are populated later by `/aep-map`. Single-journey products keep one capability entry and skip `frame.yaml`.
 
 ### Before Committing: Validate YAML
 
-See `references/yaml-guardrails.md` for the full checklist. Run:
+Run the gate — see `references/yaml-guardrails.md` for the full checklist and common fixes:
 
 ```bash
 # Split mode
-python3 -c "import yaml; [yaml.safe_load(open(f)) for f in ('product/index.yaml', 'product-context.yaml')]; print('YAML OK')"
+npx js-yaml product/index.yaml > /dev/null && npx js-yaml product-context.yaml > /dev/null && echo "YAML OK"
 # V1 mode
-python3 -c "import yaml; yaml.safe_load(open('product-context.yaml')); print('YAML OK')"
+npx js-yaml product-context.yaml > /dev/null && echo "YAML OK"
 ```
 
-If this fails, fix the YAML before committing. Common fixes: quote list items containing colons, flatten nested sub-lists, escape embedded double quotes.
+**Postcondition:** the command prints `YAML OK` (exit 0). If it fails, fix the YAML before committing.
 
 ### Commit
 
-```bash
-# Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
-BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
-[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
-  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
-BASE=${BASE:-main}
+Resolve `$BASE` per `/aep-git-ref` "Integration Branch", then commit to it per `/aep-git-ref` "Control-Plane Commits":
 
-# Split mode: Write product/index.yaml (opportunity + personas + capabilities + product)
-# Split mode: Write product-context.yaml (calibration + changelog, operational sections empty)
-# V1 mode: Write product-context.yaml (all sections)
-git pull --ff-only origin "$BASE"
+```bash
 git add product-context.yaml product/ docs/
 git commit -m "feat: add product context (opportunity brief + context document)"
-git push origin "$BASE"
 ```
+
+**Postcondition:** the commit is pushed to `$BASE`.
 
 ---
 
 ## For Iteration
 
-When revisiting an existing product (triggered by `/aep-reflect` or the user's own initiative):
+When revisiting an existing product (from `/aep-reflect` or the user's own initiative):
 
-1. Read the existing product definition (`product/index.yaml` in split mode, `product-context.yaml` in v1 mode)
-2. Identify what's changed — new learnings, invalidated assumptions, scope shifts
+1. Read the existing definition (`product/index.yaml`, or `product-context.yaml` in v1 mode)
+2. Identify what changed — new learnings, invalidated assumptions, scope shifts
 3. Update the relevant sections (`opportunity` and/or `product`)
 4. Re-run the stress test on changed sections only
-5. Append to the `changelog` section
+5. Append to `changelog`
 6. Commit the updated version (version history is itself valuable)
 
-### Boundary: When to Use `/aep-envision` vs `/aep-reflect`
-
-Not every post-layer adjustment requires envision. Most learning leads to re-slicing (moving stories between layers), which is handled entirely in `/aep-reflect`. For details, see `docs/decisions/release-line-adjustments.md`.
-
-**What does NOT trigger `/aep-envision`** (handle in `/aep-reflect` instead):
-
-- Moving stories between layers (e.g., promoting a Layer 2 story to Layer 1)
-- Adding new stories to existing activities
-- Re-prioritizing the next layer based on what you learned
-- Adjusting release line boundaries without changing the backbone
-
-**What DOES trigger `/aep-envision`:**
-
-- Backbone changes — new activities, removed activities, reordered user journey
-- Product framing changes — persona, JTBD, or MVP boundary needs redefinition
-- Opportunity hypothesis invalidation — the problem or market shifted
-- New activities that extend the backbone to the right
-
----
-
-## Key Principles
-
-- **One question at a time** — Don't overwhelm with multiple questions
-- **YAGNI ruthlessly** — Remove unnecessary features from all designs
-- **Explain why, don't stack MUSTs** — Every instruction comes with its rationale
-- **Explicit unknowns over implicit assumptions** — Documented unknowns cause agents to stop and ask. Undocumented unknowns cause agents to guess.
-- **Kill early and often** — The best outcome from Phase 0 is sometimes "don't build this"
+**Boundary — `/aep-envision` vs `/aep-reflect`:** `/aep-envision` frames a NEW or shifted opportunity — trigger it for backbone changes (added/removed/reordered activities) or product-framing changes (persona, JTBD, MVP boundary, invalidated opportunity hypothesis). `/aep-reflect` classifies feedback on SHIPPED work — it handles re-slicing (moving stories between layers, adding stories, re-prioritizing) without touching envision. Details: `docs/decisions/release-line-adjustments.md`.
 
 ---
 
 ## Next Step
 
-Product is envisioned. Proceed to:
-
-```
-/aep-map
-```
-
-This decomposes the Context Document into a system map, layered story graph, and agent topology.
+Product is envisioned. Proceed to `/aep-map` — it decomposes the Context Document into a system map, layered story graph, and agent topology.

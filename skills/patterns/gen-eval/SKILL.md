@@ -1,7 +1,9 @@
 ---
 name: aep-gen-eval
-description: |-
-  Reusable generator/evaluator pattern for honest artifact validation. This is a utility skill — it provides the scoring framework, agent contracts, evaluation protocol, and findings format used by /aep-build, /aep-validate, and any skill that needs to evaluate agent-produced work. Use directly when you need to run a gen/eval loop on any artifact, or reference its files from other skills. Triggers on "gen/eval", "generator evaluator", "evaluate honestly", "separate evaluator", "scoring framework".
+description: >-
+  Canonical generator/evaluator pattern for artifact scoring, agent contracts,
+  eval protocol, and findings. Used by /aep-build, /aep-validate, and
+  /aep-launch; invoke for "gen/eval", "separate evaluator", or artifact review.
 ---
 
 # Generator/Evaluator Pattern
@@ -11,10 +13,7 @@ A reusable design pattern for honest evaluation of agent-produced artifacts. Sep
 > "When asked to evaluate work they've produced, agents tend to respond by confidently praising the work — even when, to a human observer, the quality is obviously mediocre."
 > — Anthropic, ["Harness Design for Long-Running Application Development"](https://www.anthropic.com/engineering/harness-design-long-running-apps)
 
-**This skill is both a utility library and a standalone skill:**
-
-- **As a library:** Other skills reference its `references/` files for scoring, prompts, protocol, and findings format.
-- **As a standalone skill:** Invoke directly to run a gen/eval loop on any artifact.
+Dual-use: consumer skills read this skill's `references/` files — the canonical homes for scoring, contracts, protocol, recovery, and findings — while invoking `/aep-gen-eval` directly runs a full gen/eval loop on any artifact.
 
 ---
 
@@ -22,20 +21,9 @@ A reusable design pattern for honest evaluation of agent-produced artifacts. Sep
 
 | Skill                | What it uses                        | Reference files                                                    |
 | -------------------- | ----------------------------------- | ------------------------------------------------------------------ |
-| `/aep-build` Phase 5 | Scoring framework + eval protocol   | `scoring-framework.md`, `eval-protocol.md`                         |
+| `/aep-build` Phase 5 | Scoring framework + eval protocol   | `scoring-framework.md`, `eval-protocol.md`, `recovery-ladder.md`   |
 | `/aep-launch`        | Dimension presets for brainstorming | `scoring-framework.md` (presets section)                           |
 | `/aep-validate`      | Agent prompts + findings format     | `agent-contracts.md`, `findings-format.md`, `scoring-framework.md` |
-
-### Cross-skill reference paths
-
-After sync with `aep-` prefix, reference files are at:
-
-```
-.claude/skills/aep-gen-eval/references/scoring-framework.md
-.claude/skills/aep-gen-eval/references/agent-contracts.md
-.claude/skills/aep-gen-eval/references/eval-protocol.md
-.claude/skills/aep-gen-eval/references/findings-format.md
-```
 
 ---
 
@@ -52,21 +40,22 @@ Why:
 
 > **Scaling up:** generator/evaluator is the canonical instance of _adversarial
 > verification_. When one task produces many findings/claims that each need an
-> independent check, [`/aep-workflow`](../workflow/SKILL.md) generalizes this to a
-> fan-out of N verifiers/refuters — reusing this skill's scoring framework and
-> findings format per finding.
+> independent check, `/aep-workflow` generalizes this to a fan-out of N
+> verifiers/refuters — reusing this skill's scoring framework and findings format
+> per finding.
 
 ---
 
 ## Reference Files
 
-Read these files for detailed specifications. Each file is self-contained.
+These files are the canonical homes for the gen/eval contracts every consumer (`/aep-build`, `/aep-validate`, `/aep-launch`) points at. Read the one the branch needs; each file is self-contained.
 
 | File                                                                 | Contents                                                                                                                                                                                                    | When to read                                                         |
 | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | [`references/scoring-framework.md`](references/scoring-framework.md) | Dimension definitions (1-5 scale), hard failure thresholds, dimension presets (UI, API, security, data, mixed), few-shot examples, anti-patterns                                                            | Setting up evaluation criteria, scoring work, calibrating evaluators |
 | [`references/agent-contracts.md`](references/agent-contracts.md)     | Generator/evaluator role separation, prompt templates (generator, evaluator, protocol checker), context assembly rules                                                                                      | Spawning evaluation agents, assembling prompts                       |
 | [`references/eval-protocol.md`](references/eval-protocol.md)         | Eval request/response format, verification JSON schema, the eval loop (request → response → fix → re-evaluate), execution contexts (Task subagent, codex exec, tmux, workflow), the needs-human gate record | Running the evaluation loop, tracking verification state             |
+| [`references/recovery-ladder.md`](references/recovery-ladder.md)     | Escalating change-strategy ladder (same-fix → re-ground → fresh generator → decompose → human gate) for a stalled eval loop                                                                                 | A FAIL loop is not converging after 2+ rounds                        |
 | [`references/findings-format.md`](references/findings-format.md)     | Severity categorization (blocking/important/minor), deduplication protocol, presentation format, changelog entry format                                                                                     | Consolidating findings from multiple agents, presenting results      |
 
 ---
@@ -94,13 +83,7 @@ What is being evaluated? Options:
 
 ### Step 3: Configure dimensions
 
-Read `references/scoring-framework.md` and select the appropriate preset:
-
-- **Code:** Completeness, Correctness, UX Quality, Security, Code Quality
-- **Product/design:** Completeness, Consistency, Implementability, Security, Downstream Compatibility
-- **Documents:** Accuracy, Executability, Completeness
-
-Or define custom dimensions for the specific artifact.
+Read `references/scoring-framework.md` and select the preset that matches the artifact (UI-heavy, API-only, security-sensitive, data pipeline, mixed/full-stack, product/design, or document), or define custom dimensions. The preset tables, hard-failure thresholds, and few-shot calibration all live in that file.
 
 ### Step 4: Spawn agents
 
@@ -112,30 +95,16 @@ Read `references/agent-contracts.md` for prompt templates. Customize the templat
 
 ### Step 5: Process results
 
-Read `references/findings-format.md` for how to consolidate, categorize, and present findings. Apply fixes to the artifact.
+Read `references/findings-format.md` to consolidate, categorize, and present findings, then converge to one of two checkable end states:
+
+- **Fixes applied and re-scored:** the generator applies the fixes and the artifact passes a fresh evaluation round with no blocking findings remaining. If rounds stall, climb `references/recovery-ladder.md` before escalating to a human.
+- **Findings handed off:** a consolidated findings file is written to a named path (e.g. `<artifact-dir>/eval-findings.md`) for a downstream owner to act on.
 
 ---
 
 ## Design Decisions
 
-**Why a utility skill, not just reference files:**
-
-- A utility skill can be invoked directly (`/aep-gen-eval`) for ad-hoc validation
-- It appears in the skill list, making the pattern discoverable
-- It has its own description for triggering, so agents use it when appropriate
-- The `references/` directory is still accessible to other skills via path
-
-**Why not merge with `/aep-validate`:**
-
-- `/aep-validate` is a product-context skill with 4 specific modes (product, design, code, document)
-- The gen/eval pattern is more general — it applies to any evaluation scenario
-- `/aep-validate` consumes the gen/eval pattern; it is not the pattern itself
-
-**Why not keep in `/aep-launch`:**
-
-- Launch only sets up criteria; it doesn't run the pattern
-- The scoring framework is consumed by build, validate, AND launch
-- Keeping it in launch creates a confusing ownership model
+Gen/eval is packaged as its own invocable skill that doubles as a reference library, rather than folded into `/aep-validate` or `/aep-launch`. Rationale: [`docs/decisions/gen-eval-rationale.md`](https://github.com/memorysaver/agentic-engineering-patterns/blob/main/docs/decisions/gen-eval-rationale.md).
 
 ---
 

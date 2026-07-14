@@ -100,7 +100,7 @@ Does a screenshot of the running UI match the project's design system? Evaluated
 
 > **Hard failure:** Visual Design < 3 for the `.5` polish layer — a screenshot that does not match the design system blocks the polish layer from passing.
 >
-> **Host-aware capture:** The screenshot is captured per `executor/references/dogfood-validation.md` — `/agent-browser:dogfood` on Claude, native in-app browser / computer-use on Codex (GPT-5.4 multimodal), or a Playwright script — and the resulting image is fed to the in-host multimodal evaluator (Claude natively; Codex GPT-5.4). This keeps the visual judgment in-host and removes the human dependency for routine design-system checks.
+> **Host-aware capture:** The screenshot is captured per `/aep-executor` → `references/dogfood-validation.md` — `/agent-browser:dogfood` on Claude, native in-app browser / computer-use on Codex (GPT-5.4 multimodal), or a Playwright script — and the resulting image is fed to the in-host multimodal evaluator (Claude natively; Codex GPT-5.4). This keeps the visual judgment in-host and removes the human dependency for routine design-system checks.
 
 ---
 

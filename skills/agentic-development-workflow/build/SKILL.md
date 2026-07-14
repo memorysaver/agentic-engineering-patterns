@@ -1,15 +1,18 @@
 ---
 name: aep-build
-description: Autonomous feature implementation in a workspace session. Use when a workspace agent starts building, or when the user says "build", "implement", "execute implementation". Covers the full autonomous flow — initialize harness, implement linearly with one commit per task, review, test, create PR, handle review feedback, and merge. Runs in an isolated git worktree on a feature branch without user interaction.
+description: >-
+  Implements one feature autonomously in an isolated workspace, including task
+  commits, review, tests, PR, feedback, and merge. Use when a workspace agent
+  should build or implement; this workflow does not interact with the user.
 ---
 
 # Build
 
 Autonomous feature implementation inside an isolated git worktree on a fresh `feat/<name>` branch. Initialize the harness, implement tasks linearly (one commit per `tasks.md` row), review, test, create a PR, handle feedback, and merge — all without user interaction.
 
-> **Phase numbering note:** Phases 1-3 (explore, propose, review) were completed on main via `/aep-design`. This skill begins at Phase 0 (workspace init) and continues from Phase 4 (implementation).
+> **Phase numbering:** Phases 1–3 (explore, propose, review) were completed on the integration branch via `/aep-design`. This skill begins at Phase 0 (workspace init) and continues from Phase 4 (implementation).
 
-> **Loop hygiene (G7):** Each phase runs under a unified `--max-turns` runaway budget. Hitting the cap is **not** completion — treat it as "possibly unsolvable → escalate" (Human-Gate Protocol, distinct from a genuine clean finish). This keeps a stuck phase (e.g. a non-converging Phase 5 loop) from silently burning turns and reading as done.
+> **Loop hygiene (G7):** Each phase runs under a unified `--max-turns` runaway budget. Hitting the cap is **not** completion — treat it as "possibly unsolvable → escalate" (Human-Gate Protocol), distinct from a genuine clean finish. This keeps a stuck phase (e.g. a non-converging Phase 5 loop) from silently burning turns and reading as done.
 
 **Where this fits:**
 
@@ -19,113 +22,54 @@ Autonomous feature implementation inside an isolated git worktree on a fresh `fe
 ```
 
 **Session:** Workspace session, autonomous
-**Input:** OpenSpec artifacts on disk (committed to main by `/aep-design`)
+**Input:** OpenSpec artifacts on disk (committed to the integration branch by `/aep-design`)
 **Output:** Merged PR
 
 ---
 
 ## Phase 0: Initialize Tracking
 
-Before any work begins, set up the tracking infrastructure and environment. The branch is already created by `/aep-launch` (`feat/<name>`); you do not pre-create commits — implement linearly in Phase 4.
+Set up the tracking infrastructure and environment. The branch already exists (`/aep-launch` created `feat/<name>`); do not pre-create commits — implement linearly in Phase 4. Run these steps in order; each ends in a checkable postcondition.
 
-> **Step 0 — Worktree guard (do this FIRST, before anything else).** You MUST run
-> inside your own feature worktree, never the main checkout. `/aep-build` does not
-> assume `/aep-launch` succeeded — it **verifies**. On Codex `codex-subagent` the
-> worktree binding is a soft prompt-contract (`spawn_agent` has no cwd parameter),
-> so a worker can silently start in the main checkout and create `feat/<name>`
-> there — which then breaks Phase 12 autopilot detection. This guard makes that
-> impossible:
->
-> ```bash
-> WS="<name>"   # your story/change name from the bootstrap prompt — your worktree is
-> #             .feature-workspaces/<name> on branch feat/<name>, matching the active
-> #             OpenSpec change (ls openspec/changes/). If WS is still the literal
-> #             "<name>", resolve it from the prompt/change BEFORE continuing.
-> TOP=$(git rev-parse --show-toplevel)
-> BRANCH=$(git branch --show-current)
->
-> if [[ "$TOP" != *"/.feature-workspaces/$WS" || "$BRANCH" != "feat/$WS" ]]; then
->   echo "GUARD: not in worktree .feature-workspaces/$WS on feat/$WS (top=$TOP branch=$BRANCH)"
->   # /aep-launch OWNS worktree creation. The guard's only job is to ENTER the
->   # worktree launch already made — NEVER create a branch/worktree here and NEVER
->   # touch the main checkout (no `git switch`, no `git worktree add -b`).
->   ROOT=$(git worktree list --porcelain | sed -n '1s/^worktree //p')   # main worktree root
->   if [ -n "$ROOT" ] && [ -d "$ROOT/.feature-workspaces/$WS" ]; then
->     cd "$ROOT/.feature-workspaces/$WS"          # launch made it; just enter it
->   else
->     # No worktree for $WS. Do NOT build here, do NOT improvise one. STOP and
->     # escalate (Human-Gate Protocol / needs-human.md): "no worktree for $WS —
->     # run /aep-launch first, or the launch misfired."
->     echo "ESCALATE: no .feature-workspaces/$WS — run /aep-launch first"; exit 1
->   fi
-> fi
-> # Re-verify before doing ANY work:
-> TOP=$(git rev-parse --show-toplevel); BRANCH=$(git branch --show-current)
-> [[ "$TOP" == *"/.feature-workspaces/$WS" && "$BRANCH" == "feat/$WS" ]] \
->   || { echo "STILL NOT IN feat/$WS WORKTREE — STOP and escalate"; exit 1; }
-> ```
->
-> **Never run Phases 4–12 outside `.feature-workspaces/<name>` on `feat/<name>`.**
-> Worktree creation belongs to `/aep-launch`; if yours is missing, **escalate** — do
-> not improvise one in the main checkout or mutate any other worktree's branch.
+**Step 0 — Worktree guard (FIRST, before anything else).** You MUST run inside your own feature worktree, never the main checkout. `/aep-build` does not assume `/aep-launch` succeeded — it **verifies**. On Codex `codex-subagent` the worktree binding is a soft prompt-contract (`spawn_agent` has no cwd parameter), so a worker can silently start in the main checkout and create `feat/<name>` there — which breaks Phase 12 autopilot detection. This guard makes that impossible:
 
-1. **Read the worktree-onboarding guide** at `skills/agentic-development-workflow/build/references/worktree-onboarding.md`.
+```bash
+WS="<name>"   # your story/change name from the bootstrap prompt — your worktree is
+#             .feature-workspaces/<name> on branch feat/<name>, matching the active
+#             OpenSpec change (ls openspec/changes/). If WS is still the literal
+#             "<name>", resolve it from the prompt/change BEFORE continuing.
+TOP=$(git rev-parse --show-toplevel)
+BRANCH=$(git branch --show-current)
 
-2. **Discover the OpenSpec change:**
-   - List `openspec/changes/` to find the active change
-   - Read all artifacts: `proposal.md`, `design.md`, `specs/**/*.md`, `tasks.md`
+if [[ "$TOP" != *"/.feature-workspaces/$WS" || "$BRANCH" != "feat/$WS" ]]; then
+  echo "GUARD: not in worktree .feature-workspaces/$WS on feat/$WS (top=$TOP branch=$BRANCH)"
+  # /aep-launch OWNS worktree creation. The guard's only job is to ENTER the
+  # worktree launch already made — NEVER create a branch/worktree here and NEVER
+  # touch the main checkout (no `git switch`, no `git worktree add -b`).
+  ROOT=$(git worktree list --porcelain | sed -n '1s/^worktree //p')   # main worktree root
+  if [ -n "$ROOT" ] && [ -d "$ROOT/.feature-workspaces/$WS" ]; then
+    cd "$ROOT/.feature-workspaces/$WS"          # launch made it; just enter it
+  else
+    # No worktree for $WS. Do NOT build here, do NOT improvise one. STOP and
+    # escalate (Human-Gate Protocol / needs-human.md): "no worktree for $WS —
+    # run /aep-launch first, or the launch misfired."
+    echo "ESCALATE: no .feature-workspaces/$WS — run /aep-launch first"; exit 1
+  fi
+fi
+# Re-verify before doing ANY work:
+TOP=$(git rev-parse --show-toplevel); BRANCH=$(git branch --show-current)
+[[ "$TOP" == *"/.feature-workspaces/$WS" && "$BRANCH" == "feat/$WS" ]] \
+  || { echo "STILL NOT IN feat/$WS WORKTREE — STOP and escalate"; exit 1; }
+```
 
-3. **Create the tracking folder:**
+Run Phases 4–12 only inside `.feature-workspaces/<name>` on `feat/<name>`. Worktree creation belongs to `/aep-launch`; if yours is missing, **escalate** — do not improvise one in the main checkout or mutate any other worktree's branch. **Postcondition:** guard exits 0 (`show-toplevel` ends in `.feature-workspaces/<name>`, branch is `feat/<name>`).
 
-   ```bash
-   mkdir -p .dev-workflow
-   ```
-
-4. **Add `.dev-workflow/` to `.gitignore`** if not already present:
-
-   ```bash
-   grep -q '.dev-workflow' .gitignore || echo '\n# Development workflow tracking (per-workspace)\n.dev-workflow/' >> .gitignore
-   ```
-
-5. **Create the progress file** from the template:
-
-   ```bash
-   cp skills/agentic-development-workflow/build/references/progress-template.md \
-      .dev-workflow/progress-$(git rev-parse --short HEAD).md
-   ```
-
-   Fill in feature name, base commit SHA, date, and OpenSpec change name.
-   **Mark design phases as pre-completed** (they were done on main via `/aep-design`).
-
-6. **Read tasks.md** to understand the task list:
-
-   ```bash
-   cat openspec/changes/<change-name>/tasks.md
-   ```
-
-   `tasks.md` _is_ the skeleton. You will implement tasks linearly in Phase 4, committing once per task with conventional-commit messages — the resulting commit history will mirror the task list 1:1.
-
-7. **Run project setup** (if a setup hook exists):
-
-   ```bash
-   SETUP_HOOK=.claude/hooks/workspace-setup.sh
-   if [ -f "$SETUP_HOOK" ]; then
-     bash "$SETUP_HOOK"
-   else
-     echo "No workspace setup hook found at $SETUP_HOOK"
-     echo "Read the project README or ask the user for setup instructions."
-   fi
-   ```
-
-   The project's setup hook handles all project-specific concerns:
-   - Package installation (bun/npm/pnpm/cargo/poetry/etc.)
-   - Dev server startup
-   - Port assignment → writes `.dev-workflow/ports.env`
-   - Database migrations, seeding
-   - Docker/container management
-   - `.env` file validation
-
-   **Contract:** The hook MUST write `.dev-workflow/ports.env` with at minimum:
+1. **Discover the OpenSpec change.** List `openspec/changes/` to find the active change; read `proposal.md`, `design.md`, `specs/**/*.md`, `tasks.md`. **Post:** change dir identified, artifacts read.
+2. **Create the tracking folder:** `mkdir -p .dev-workflow`. **Post:** dir exists.
+3. **Gitignore it:** `grep -q '.dev-workflow' .gitignore || echo '\n# Development workflow tracking (per-workspace)\n.dev-workflow/' >> .gitignore`. **Post:** `.dev-workflow/` is gitignored (ephemeral — never committed). **Post:** `grep -q` exits 0.
+4. **Create the progress file** from this installed skill's template. Resolve the package from the worktree root, preferring the canonical Codex install: `ROOT=$(git rev-parse --show-toplevel); AEP_BUILD_DIR="$ROOT/.agents/skills/aep-build"; [ -f "$AEP_BUILD_DIR/references/progress-template.md" ] || AEP_BUILD_DIR="$ROOT/.claude/skills/aep-build"; [ -f "$AEP_BUILD_DIR/references/progress-template.md" ] || { echo "aep-build progress template not installed" >&2; exit 1; }; cp "$AEP_BUILD_DIR/references/progress-template.md" ".dev-workflow/progress-$(git rev-parse --short HEAD).md"`. Fill in feature name, base SHA, date, change name, mode; mark design Phases 1–3 pre-completed. **Post:** file exists.
+5. **Read `tasks.md`.** It _is_ the skeleton — you implement its rows linearly in Phase 4, one commit per row, so the commit history mirrors it 1:1. **Post:** task list known.
+6. **Run project setup.** If `.claude/hooks/workspace-setup.sh` exists, `bash` it (handles deps, dev server, ports, DB/seed, `.env`); otherwise read the README or ask the user how to set up. The hook MUST write `.dev-workflow/ports.env` with at minimum:
 
    ```
    WEB_PORT=<port>
@@ -134,387 +78,79 @@ Before any work begins, set up the tracking infrastructure and environment. The 
    SERVER_URL=http://localhost:<server-port>
    ```
 
-   If no hook exists and no README provides instructions, ask the user how to set up the project.
+   **Post:** `.dev-workflow/ports.env` exists with those four keys.
 
-8. **Generate sprint contracts:**
+7. **Generate sprint contracts** to `.dev-workflow/contracts.md`, one section per task, from `specs/*.md` + `design.md` + `tasks.md`. Format: `references/contract-template.md`. **Post:** file exists with one section per task.
+8. **Generate the feature verification list** `.dev-workflow/feature-verification.json` (skeleton + generator-ownership rule in `references/harness-artifacts.md`). The generator writes only `commit_sha`; it MUST NOT modify `verification_steps` or `passes`. **Post:** file exists.
+9. **Generate the session recovery script** `.dev-workflow/init.sh` (body in `references/harness-artifacts.md`); `chmod +x` it. **Post:** file exists and is executable.
+10. **Initialize signals:** `mkdir -p .dev-workflow/signals`, create `status.json` (skeleton in `references/harness-artifacts.md`), and read `.dev-workflow/signals/feedback.md` for main-session input. Full spec: `/aep-launch` references/signals-spec.md. **Post:** `status.json` exists.
+11. **Create the lessons file** `.dev-workflow/lessons.md` (template in `references/harness-artifacts.md`); fill the header from the change. Sections populate in Phase 4 (opt-in) and Phase 9 (summary). **Post:** file exists.
 
-   Read `specs/*.md`, `design.md`, and `tasks.md`. For each task, generate a contract entry in `.dev-workflow/contracts.md` using the template at `references/contract-template.md`:
+Update the Phase 0 checkbox in the progress file. **Signal:** set `status.json` `"phase": 0, "phase_name": "initialized", "completion_pct": 10`.
 
-   ```markdown
-   ## Task: <task-description>
-
-   **Source spec:** <matching spec file>
-
-   ### What will be built
-
-   - [specific files/components]
-
-   ### Success criteria
-
-   - [extracted from matching spec]
-
-   ### Verification steps
-
-   1. [concrete, executable step]
-   2. [what to check]
-   ```
-
-9. **Generate feature verification list:**
-
-   Extract the verification steps from contracts into `.dev-workflow/feature-verification.json`:
-
-   ```json
-   [
-     {
-       "task": "<task description>",
-       "commit_sha": null,
-       "verification_steps": ["step 1", "step 2", "step 3"],
-       "passes": false,
-       "evaluated_by": null,
-       "round": null
-     }
-   ]
-   ```
-
-   `commit_sha` starts as `null` and is filled in (8-char prefix) after each task is committed in Phase 4.
-
-   **Rules:**
-   - JSON format is intentional — models tamper with JSON less than Markdown
-   - The generator agent **MUST NOT** modify `verification_steps` or `passes` — only the evaluator (or human) does
-
-10. **Generate session recovery script:**
-
-    Create `.dev-workflow/init.sh` for resuming after context resets:
-
-    ```bash
-    #!/bin/bash
-    # Session recovery script — run this to resume after context reset
-    set -e
-    cd "$(dirname "$0")/.."
-
-    # Project setup (deps, dev server, ports)
-    SETUP_HOOK=.claude/hooks/workspace-setup.sh
-    if [ -f "$SETUP_HOOK" ]; then
-      bash "$SETUP_HOOK"
-    else
-      echo "No workspace setup hook found. Check project README for setup instructions."
-    fi
-
-    # Source ports (written by setup hook)
-    source .dev-workflow/ports.env 2>/dev/null
-
-    # Current state
-    echo "=== Branch & Commits ==="
-    echo "Branch: $(git branch --show-current)"
-    git log --oneline "$(git config --get aep.integration-branch 2>/dev/null || (git show-ref --verify --quiet refs/remotes/origin/develop && echo develop || echo main))"..HEAD 2>/dev/null || git log --oneline -10
-
-    echo "=== Progress ==="
-    grep '\[x\]' .dev-workflow/progress-*.md 2>/dev/null | tail -10
-
-    echo "=== Next Phase ==="
-    grep '\[ \]' .dev-workflow/progress-*.md 2>/dev/null | head -3
-    ```
-
-    Make executable: `chmod +x .dev-workflow/init.sh`
-
-11. **Initialize inter-agent signals:**
-
-    ```bash
-    mkdir -p .dev-workflow/signals
-    ```
-
-    Create `.dev-workflow/signals/status.json`:
-
-    ```json
-    {
-      "phase": 0,
-      "phase_name": "initializing",
-      "task_current": null,
-      "task_index": 0,
-      "task_total": 0,
-      "started_at": "<ISO 8601 timestamp>",
-      "blockers": [],
-      "completion_pct": 0,
-      "last_updated": "<ISO 8601 timestamp>",
-      "story_status": "in_progress",
-      "pr_url": null,
-      "cost_usd": null,
-      "completed_at": null,
-      "failure_log": null,
-      "blocked_on": null
-    }
-    ```
-
-    Check for feedback from main session:
-
-    ```bash
-    cat .dev-workflow/signals/feedback.md 2>/dev/null
-    ```
-
-    See `skills/agentic-development-workflow/launch/references/signals-spec.md` for the full signal file specification.
-
-12. **Create the lessons file:**
-
-    ```bash
-    cat > .dev-workflow/lessons.md <<'TEMPLATE'
-    # Lessons: <change-name>
-
-    Module: <module>
-    Activity: <activity>
-    Date: <date>
-    Story: <story-id>
-
-    ## Solutions
-
-    ## Errors
-
-    ## Missing
-
-    ## Summary for Next Agent
-    TEMPLATE
-    ```
-
-    This file captures what the agent learns during builds — solutions discovered, errors encountered, missing docs, patterns that worked. Fill in the header fields from the OpenSpec change. Sections are populated during Phase 4 (opt-in) and Phase 9 (summary).
-
-Update the Phase 0 checkbox in the progress file when done.
-
-> **Signal update:** Update `.dev-workflow/signals/status.json` with `"phase": 0, "phase_name": "initialized", "completion_pct": 10`.
-
----
-
-## Story Status Tracking (Product-Cycle Mode Only)
-
-> **Standalone mode:** If `product-context.yaml` doesn't exist, skip this entire section. Signal updates (status.json) still work — just omit `story_status` fields.
-
-If this feature corresponds to a story in `product-context.yaml` (check if the OpenSpec change name matches a story's `openspec_change` field):
-
-### Build-Time Dependency Re-Verification (Phase 0)
-
-Before starting implementation, re-verify that all dependencies are still completed:
-
-```
-Read product-context.yaml (READ-ONLY — workspace agents never write to this file)
-Find this story by openspec_change match
-For each dependency in story.dependencies:
-  If dependency.status != completed:
-    ABORT build
-    Signal via .dev-workflow/signals/status.json:
-      { "phase": 0, "phase_name": "dependency_check_failed",
-        "blockers": ["<dep_id> is not completed"] }
-    Stop and wait for main session to investigate
-```
-
-Also check `dispatched_at_epoch` vs current `dispatch_epoch`. If the epoch advanced since dispatch, re-read the YAML to check for architecture amendments.
-
-**Why:** A dependency could be rolled back after dispatch (e.g., PR reverted). This defense-in-depth catches issues that dispatch-time checks missed.
-
-### Status Updates via Signals
-
-> **CONCURRENCY PROTOCOL:** Only the main session writes to `product-context.yaml`. Workspace agents report status through `.dev-workflow/signals/status.json`. The main session (via `/aep-wrap`, `/aep-dispatch`) reads signals and updates the YAML.
-
-All story status updates flow through the signal file, NOT direct YAML writes:
-
-- **Phase 0 start:** Confirm story status is `in_progress` in the YAML (read-only check)
-- **Phase 10 (PR created):** Update `status.json` with `story_status: "in_review"` and `pr_url`
-- **Phase 12 merge:** Update `status.json` with `story_status: "completed"`, `completed_at`, `pr_url`, `cost_usd`
-- **On failure (escalation):** Update `status.json` with `story_status: "failed"` and `failure_log` (structured record: error_class, approach_summary, unexplored_alternatives)
-
-`/aep-wrap` (running on main) reads these signal fields and writes the final status to `product-context.yaml`.
-
-If `product-context.yaml` doesn't exist, skip this tracking (standalone feature mode).
+> **Product-cycle mode:** if this change maps to a story in `product-context.yaml` (change name matches a story's `openspec_change`), read `references/story-status.md` for build-time dependency re-verification and the signal-based status protocol. Standalone (no `product-context.yaml`): skip it.
 
 ---
 
 ## Phase 4: OpenSpec Apply
 
-Implement each task in `tasks.md` linearly. After each task, commit with a conventional-commit message and record the resulting commit SHA in `feature-verification.json`:
+Implement each `tasks.md` task **linearly, one task at a time = one commit**, then record the commit SHA. For each task: implement (edit files directly), inspect (`git status` / `git diff`), run targeted tests, then commit `feat(<scope>): <task description>` and write the 8-char short SHA into the matching `feature-verification.json` entry's `commit_sha` (never touch `verification_steps` or `passes`). The commit shape, amend rules, and recovery are the canonical **One-Commit-per-Task Pattern** — see `/aep-git-ref` "The One-Commit-per-Task Pattern (Phase 4 of `/aep-build`)".
 
-```bash
-# For each task in tasks.md, in order:
-# ... implement the task — edit files directly ...
-git status                                  # Inspect changes
-git diff                                    # Verify the change matches the task
-# ... run targeted tests for this task ...
-git add -A
-git commit -m "feat(<scope>): <task description>"
-
-# Record the commit SHA in feature-verification.json:
-SHA=$(git rev-parse --short HEAD)
-# Update the matching task entry's commit_sha field with $SHA
-# (use jq or a small inline script — never modify verification_steps or passes)
-```
-
-Invoke the apply skill for guidance on implementing each task:
+Invoke the apply skill for per-task guidance:
 
 ```
 /opsx:apply
 ```
 
-The agent works **one task at a time**. Each task = one commit. The branch's commit history mirrors `tasks.md` 1:1, which makes per-task code review on the PR straightforward.
+> **UI-facing stories — obey the Object Map.** If the dispatched context package includes an Object Map slice (objects, attributes, relationships, CTAs, screens), treat it as binding structure: build the listed screens object-first (noun→verb — object collection/detail, the given CTA placements), use the specified core attributes, and do **not** introduce objects/screens outside the slice or collapse a flow into a step-by-step wizard unless the slice marks it `task_oriented`. Visual look (`calibration/visual-design.yaml`), copy voice (`copy-tone`), and journey/transition (`ux-flow`) still govern taste — the Object Map governs object structure and CTA grammar.
 
-> **UI-facing stories — obey the Object Map.** If the dispatched context package
-> includes an Object Map slice (objects, attributes, relationships, CTAs, screens),
-> treat it as binding structure: build the listed screens object-first (noun→verb —
-> object collection/detail, the given CTA placements), use the specified core
-> attributes, and do **not** introduce objects/screens outside the slice or collapse
-> a flow into a step-by-step wizard unless the slice marks it `task_oriented`.
-> Visual look (`calibration/visual-design.yaml`), copy voice (`copy-tone`), and
-> journey/transition (`ux-flow`) still govern taste — the Object Map governs object
-> structure and CTA grammar.
+**Lesson capture (opt-in per task):** after a task, if you hit something noteworthy — a non-obvious solution, an error that took multiple attempts, missing docs — append it to `.dev-workflow/lessons.md` under `## Solutions` / `## Errors` / `## Missing` with a `### <title>` sub-heading. Only when it is genuinely worth passing on.
 
-Update the progress file checkbox for each completed task, and mark the Phase 4 checkbox when all tasks are done.
-
-> **If you need to amend a just-committed task** (e.g., you forgot a file), use `git commit --amend --no-edit` _before_ moving on. Once you've committed the next task, leave prior commits alone — fixes belong as a follow-up commit, not a rewrite.
-
-**Lesson capture (opt-in per task):** After completing each task, if you encountered something noteworthy — a non-obvious solution, an error that took multiple attempts, missing documentation — append to `.dev-workflow/lessons.md` under the appropriate section (`## Solutions`, `## Errors`, or `## Missing`). Use a `### <title>` sub-heading with a brief explanation. This is not mandatory for every task — only write when something is genuinely worth passing on to the next agent.
-
-> **Signal update:** Update `.dev-workflow/signals/status.json` with `"phase": 4` at start, update `task_current`, `task_index`, `task_total` as tasks progress, and `completion_pct` proportionally.
+Update the progress checkbox per task; mark Phase 4 done when all tasks are committed. **Signal:** set `status.json` `"phase": 4` at start; keep `task_current`, `task_index`, `task_total`, `completion_pct` current as tasks progress.
 
 ---
 
 ## Phase 5: Code Review & Verification
 
-After implementation, verify the code before moving to testing. This phase uses the **generator/evaluator pattern** — read the shared utility for full details:
+Verify the code before testing. This phase uses the **generator/evaluator pattern** — full mechanics in `/aep-gen-eval` references: scoring-framework.md (dimensions, thresholds, presets), agent-contracts.md (role separation, prompt templates), eval-protocol.md (request/response format, verification JSON, convergence rules).
 
-- **Scoring framework:** `.claude/skills/aep-gen-eval/references/scoring-framework.md` (dimensions, thresholds, presets)
-- **Agent contracts:** `.claude/skills/aep-gen-eval/references/agent-contracts.md` (role separation, prompt templates)
-- **Eval protocol:** `.claude/skills/aep-gen-eval/references/eval-protocol.md` (request/response format, verification JSON, convergence rules)
+**Completeness check (always, generator-side):**
 
-### Completeness check (always done by generator)
+1. Re-read the proposal (including any design-review adjustments).
+2. Walk each task's commit — `git show <commit-sha>` against its task description.
+3. Check `.dev-workflow/contracts.md` — verify each task's success criteria are met.
+4. If a task is incomplete, add a follow-up commit (`feat(<scope>): complete <task>` / `fix(<scope>): <issue>`) and loop back to Phase 4. Do not rewrite prior commits.
 
-1. Re-read the proposal (including any design review adjustments)
-2. Walk through each task's commit, reviewing with `git show <commit-sha>` against its task description
-3. Check `.dev-workflow/contracts.md` — verify each task's success criteria are met
-4. If any task is incomplete, add a follow-up commit (`feat(<scope>): complete <task>` or `fix(<scope>): <issue>`) and loop back to Phase 4. Do not rewrite prior commits.
+**Quality review — with separate evaluator (full mode):** if `.dev-workflow/evaluator-criteria.md` exists (written during `/aep-launch`), spawn an evaluator via `executor.spawn_evaluator()`; the generator orchestrates the whole loop, no manual intervention. The spawn is **mode-dispatched** and — whatever the mode — the evaluator runs **worktree-bound** against this workspace's files + git state. Spawn recipes per mode (native-bg-subagent/claude-bg foreground Task subagent, codex-subagent/codex-exec `codex exec --cd`, legacy tmux split, workflow verify stage) live in `/aep-executor` references/backends.md — the Context labels there name the spawn _mechanism_, not the read-only/CI _use_ (a Task-subagent evaluator is not a main-session read-only reviewer; a `codex exec` evaluator is not an API/SDK CI job).
 
-### Quality review
+**Evaluation loop** — for each round N (start 1, **max 5**):
 
-**With separate evaluator (full mode):**
+1. **Write eval-request** `.dev-workflow/signals/eval-request.md` per eval-protocol.md (Signal Files).
+2. **Compose the evaluator prompt** from agent-contracts.md (Evaluator Prompt — Code Quality), customized with the workspace paths (`criteria_file`, `eval_request_file`, `spec_directory`, `contracts_file`, `verification_file`, `eval_response_file=.dev-workflow/signals/eval-response-<N>.md`).
+3. **Spawn the evaluator** (mode-dispatched; the prompt _is_ the spawn prompt — recipes in backends.md).
+4. **Confirm the response exists** — native spawns return on completion; legacy polls: `while [ ! -f .dev-workflow/signals/eval-response-<N>.md ]; do sleep 15; done`.
+5. **Read the response** (legacy only: `tmux kill-pane -t :.1`).
+6. **On FAIL, fix per the recovery rung**, add follow-up commits, then loop to step 1 with round N+1. Do not rewrite history — the PR sees fixes as new commits.
 
-If `.dev-workflow/evaluator-criteria.md` exists (written during `/aep-launch`), spawn an evaluator via `executor.spawn_evaluator()`. The generator orchestrates the entire evaluation loop — no manual intervention needed. The spawn mechanism tracks the active executor mode (read `.claude/skills/aep-executor/references/backends.md`):
+The evaluator (only) updates `.dev-workflow/feature-verification.json` pass/fail per eval-protocol.md field ownership. Track `eval_round` + `recovery_rung` in `status.json`.
 
-| Generator mode                     | Evaluator spawn (`executor.spawn_evaluator`)                                                                                        | eval-protocol mechanism                                                           |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| **native-bg-subagent / claude-bg** | **foreground Task subagent** in the generator's own session — inherits the worktree cwd; the evaluator prompt _is_ the spawn prompt | **Context B mechanism**, worktree-bound — _not_ its read-only `/aep-validate` use |
-| **codex-subagent / codex-exec**    | `codex exec --cd <abs worktree>` with the `aep-evaluator` role — enforced cwd, bounded one-shot                                     | **Context C mechanism**, in-host headless — _not_ API/SDK CI                      |
-| **legacy** (tmux)                  | `tmux split-window` — evaluator in a bottom pane                                                                                    | **Context A** (tmux split)                                                        |
-| **workflow**                       | the workflow's `verify` stage (worktree-isolated)                                                                                   | **Context C mechanism**, in-host — _not_ API/SDK CI                               |
+**Recovery ladder (generator-side escalation on FAIL)** — don't retry the same way every round:
 
-> **Always worktree-bound.** Whatever the mode, the evaluator runs against this
-> workspace's worktree (files + git state), per `executor.spawn_evaluator()`.
-> The Context labels name the spawn _mechanism_, not the read-only/CI _use
-> cases_ those contexts describe in eval-protocol — a Task-subagent evaluator
-> is **not** a main-session read-only reviewer, and a `codex exec` evaluator is
-> **not** an API/SDK CI job. It is worktree-bound review.
+- Rounds **1–2**: same generator fixes the FAIL items in place.
+- Round **3**: **re-ground** — re-read the full spec + design + contracts from scratch, then re-attempt.
+- Round **4**: spawn a **fresh `native-bg-subagent` generator** told "the previous approach failed on X; take a different design path" (inherits the existing worktree).
+- Round **5**: **decompose** — split the story, attempt the smallest viable slice, surface the split.
+- **After 5**: ladder exhausted → escalate via the Human-Gate Protocol with type `eval_not_converging`, recording the ladder history.
 
-For the native modes the evaluator prompt is delivered **at spawn time** — there
-is no readiness wait, no separate send step, and no pane to kill; the agent/exec
-returns when `eval-response-<N>.md` is written. The legacy tmux recipe is shown
-below for pinned-tmux workspaces; the request/response signal files and
-convergence rules are identical across modes.
+Generator≠evaluator separation holds — the evaluator only scores; re-ground / fresh generator / decompose are all generator-side. **Skip the ladder and escalate immediately** on a hard-failure / security FAIL (auth-model gap, data-exposure risk), a spec contradiction, or a missing external dependency — these need human judgment. Full rung rationale + the rung-4 fresh-generator spawn contract: `/aep-gen-eval` references/recovery-ladder.md.
 
-> **Why tmux splits, not cmux splits (legacy):** The generator runs inside tmux but was not spawned by cmux,
-> so it cannot use cmux socket commands. Use `tmux split-window` instead — under cmux the surface attached
-> to the tmux session will display both panes automatically.
+**Quality review — without evaluator (light mode):** self-review for correctness (logic errors, off-by-one, edge cases), security (input validation, auth, SQL parameterization), performance (N+1, missing indexes, unbounded loops), and conventions (naming, structure, error handling, imports). Self-review is lenient — walk `feature-verification.json` steps manually. Document findings in `.dev-workflow/code-review-<feature>.md` and fix issues found.
 
-#### Evaluation round
-
-For each round N (starting at 1, max 5), the generator's response to a FAIL escalates along the **change-strategy recovery ladder** (`.claude/skills/aep-gen-eval/references/recovery-ladder.md`) rather than retrying the same way every round:
-
-| Eval round | Rung                   | Generator move                                                                                                                                                                                    |
-| ---------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1–2        | **Same fix**           | Same generator fixes the FAIL items in place (current default).                                                                                                                                   |
-| 3          | **Re-ground**          | Same generator re-reads the FULL spec + design + contracts from scratch, then re-attempts.                                                                                                        |
-| 4          | **Different approach** | Spawn a **fresh `native-bg-subagent` generator** told "the previous approach failed on X; take a different design path" — not anchored on the stuck solution (it inherits the existing worktree). |
-| 5          | **Decompose**          | Split the story into sub-tasks; attempt the **smallest viable slice** and surface the proposed split.                                                                                             |
-| after 5    | **Human gate**         | Ladder exhausted → escalate with type `eval_not_converging`.                                                                                                                                      |
-
-Track the rung with `eval_round` + `recovery_rung` in `status.json` (see the ladder's State Tracking). **Generator≠evaluator separation holds** — the evaluator only scores; re-grounding, a fresh generator, and decomposition are all generator-side moves. **Skip the ladder and escalate immediately** on a hard-failure / security FAIL (auth-model gap, data-exposure risk), a spec contradiction, or a missing external dependency — these need human judgment, not a different approach. See the ladder file for full rung rationale and the rung-4 fresh-generator spawn contract (`native-bg-subagent` + post-spawn liveness probe).
-
-For each round N (starting at 1, max 5):
-
-1. **Write eval-request** — create `.dev-workflow/signals/eval-request.md` per the format in `eval-protocol.md` (Signal Files section).
-
-2. **Compose the evaluator prompt** from `agent-contracts.md` (Evaluator Prompt — Code Quality template). Customize with the workspace paths:
-
-   ```
-   EVAL_PROMPT = <evaluator prompt from agent-contracts.md, customized with:
-     criteria_file=.dev-workflow/evaluator-criteria.md
-     eval_request_file=.dev-workflow/signals/eval-request.md
-     spec_directory=openspec/changes/<change-name>/
-     contracts_file=.dev-workflow/contracts.md
-     verification_file=.dev-workflow/feature-verification.json
-     eval_response_file=.dev-workflow/signals/eval-response-<N>.md
-   >
-   ```
-
-3. **Spawn the evaluator (mode-dispatched, prompt = spawn prompt):**
-   - **native-bg-subagent / claude-bg:** spawn a **foreground Task subagent** with
-     `EVAL_PROMPT`. It inherits the worktree cwd and returns when done — no
-     sleep, no send step, no teardown.
-   - **codex-subagent / codex-exec:**
-
-     ```bash
-     codex exec --cd "$(pwd)" --dangerously-bypass-approvals-and-sandbox \
-       "$EVAL_PROMPT" < /dev/null
-     ```
-
-     (With the `aep-evaluator` role committed in `.codex/agents/`, prefer
-     `spawn_agent(agent_type: "aep-evaluator", ...)` from a living thread.)
-
-   - **legacy (pinned tmux):**
-
-     ```bash
-     # Split current tmux window vertically (top=generator, bottom=evaluator). The evaluator
-     # needs to read files and write eval-response, so it runs the INTERACTIVE executor.
-     tmux split-window -v -c "$(pwd)" "${EXECUTOR:-claude --dangerously-skip-permissions}"
-     tmux select-pane -t :.0       # return focus to the generator pane
-
-     sleep 10
-     # Multi-line prompt: send literally with -l, then a single Enter.
-     tmux send-keys -t :.1 -l -- "$EVAL_PROMPT"
-     tmux send-keys -t :.1 Enter
-     ```
-
-4. **Confirm the response exists** (the native spawns return on completion; the
-   legacy pane needs a poll):
-
-   ```bash
-   while [ ! -f .dev-workflow/signals/eval-response-<N>.md ]; do sleep 15; done
-   ```
-
-5. **Read the response.** Legacy only: close the evaluator pane
-   (`tmux kill-pane -t :.1`). Native evaluators have already exited.
-
-6. **Fix FAIL items per the recovery rung** — add follow-up commits addressing each FAIL item, then loop back to step 1 with round N+1. On rounds 1–2 fix in place; on round 3 re-ground (re-read the full spec/design/contracts from scratch first); on round 4 spawn a fresh `native-bg-subagent` generator with a different approach; on round 5 decompose to the smallest viable slice. Do not rewrite history; the PR review should see the fix as new commits on top. (Hard-failure/security FAILs skip the ladder and escalate immediately — see the rung table above.)
-
-7. **Max 5 rounds** — once the ladder is exhausted (not converging after round 5), escalate to human via the **human-gate
-   protocol** (see below) with type `eval_not_converging`, recording the ladder history. See the convergence rules in `eval-protocol.md` and `recovery-ladder.md`.
-
-The evaluator also updates `.dev-workflow/feature-verification.json` with pass/fail results per the field ownership rules in `eval-protocol.md`.
-
-**Without evaluator (light mode):**
-
-Self-review with awareness of its limitations:
-
-1. **Correctness** — Logic errors, off-by-one bugs, missing edge cases?
-2. **Security** — Input validation, auth checks, SQL parameterization?
-3. **Performance** — N+1 queries, missing indexes, unbounded loops?
-4. **Conventions** — Naming, file structure, error handling, imports?
-
-> **Note:** Self-review tends to be lenient. If using light mode, be extra critical and walk through `feature-verification.json` steps manually.
-
-Document findings in `.dev-workflow/code-review-<feature>.md`. Fix any issues found.
-
-Update the Phase 5 checkbox in the progress file when complete.
-
-> **Signal update:** Update `.dev-workflow/signals/status.json` with `"phase": 5, "phase_name": "code-review"`.
+Update the Phase 5 checkbox. **Signal:** set `status.json` `"phase": 5, "phase_name": "code-review"`.
 
 ### The Human-Gate Protocol (any phase)
 
-When you hit a decision **only the human can make** — design ambiguity the spec
-doesn't resolve, eval non-convergence after max rounds, a product judgment call —
-do not guess and do not silently stall. Raise a gate:
+When you hit a decision **only the human can make** — design ambiguity the spec doesn't resolve, eval non-convergence after max rounds, a product judgment call — do not guess and do not silently stall. Raise a gate:
 
 1. **Record it (always):** append to `.dev-workflow/signals/needs-human.md`:
 
@@ -527,247 +163,102 @@ do not guess and do not silently stall. Raise a gate:
 
    and set `"blocked_on": "human"` in `status.json`.
 
-2. **Raise it on your mode's transport** (how you were launched tells you the
-   mode — see the Human-Gate Protocol in `aep-executor/references/backends.md`).
-   The answer always comes back through the **main agent** (hub-and-spoke) —
-   you never need the human to visit your surface:
-   - **codex-subagent:** ask the parent thread (approvals surface natively)
-   - **legacy:** the file is the transport — the orchestrator detects it and
-     relays the answer via nudge
-   - **native-bg-subagent / claude-bg / codex-exec / workflow / headless:** **gate-and-park** — no
-     push channel reaches you, so after recording the gate: commit WIP (or
-     leave the tree clean), update `status.json`, and **end your run cleanly**
-     (workflow agents: return a structured `gated` result carrying the
-     question). The orchestrator will resume a worker into this same worktree
-     with the human's answer — your state is in the worktree +
-     `.dev-workflow/`, so nothing is lost.
+2. **Raise it on your launch mode's transport** (per `/aep-executor` references/backends.md, "The Human-Gate Protocol"). The answer always comes back through the **main agent** (hub-and-spoke) — you never need the human to visit your surface:
+   - **push-channel modes** (codex-subagent, legacy): the parent thread / orchestrator delivers the answer live (ask the parent; or the file is the transport and a nudge relays it).
+   - **no-push modes** (native-bg-subagent, claude-bg, codex-exec, workflow, headless): **gate-and-park** — commit WIP (or leave the tree clean), update `status.json`, and **end your run cleanly** (workflow agents return a structured `gated` result carrying the question). The orchestrator resumes a worker into this same worktree with the answer — your state is in the worktree + `.dev-workflow/`, so nothing is lost.
 
-3. **Block-in-place modes only:** continue what you can that doesn't depend on
-   the answer; otherwise wait, re-checking `feedback.md`.
-
-4. **On answer** (delivered by push, or in your resume prompt after a park):
-   append `resolved: <summary>` under your entry, clear `blocked_on`, and
-   proceed.
+3. **Block-in-place modes only:** continue anything not blocked on the answer; otherwise wait, re-checking `feedback.md`.
+4. **On answer** (by push, or in your resume prompt after a park): append `resolved: <summary>` under your entry, clear `blocked_on`, and proceed.
 
 ---
 
 ## Phase 6: Browser Testing (Dogfood)
 
-> **Light mode:** skip the **dogfood execution (Step B)** — but **Step A (journey authoring) still runs**.
-> Writing the journey file from acceptance criteria is a pre-merge deliverable independent of build mode;
-> only the browser/device dogfood is skipped. Outside Light mode, **do not skip Step B just because
-> `agent-browser` is absent** — pick a host-aware method and degrade (see below).
-
-This phase is **journey-first**: AUTHOR the journey from the layer's acceptance criteria (Step A), THEN
-execute it (Step B). **Authoring (Step A) is unconditional** — independent of build mode, `dogfood_target`,
-and `journey_timing`. Only _execution_ (Step B) varies: skipped in Light mode or when
-`dogfood_target == none`, and deferred to the `/aep-wrap` gate under `journey_timing: post-deploy`.
+This phase is **journey-first**: **Step A** authors the journey from the layer's acceptance criteria; **Step B** executes it. Step A is **unconditional** (independent of build mode, `dogfood_target`, `journey_timing`). Only _execution_ (Step B) varies: skipped in Light mode or when `dogfood_target == none`, and deferred to the `/aep-wrap` gate under `journey_timing: post-deploy`.
 
 ### Step A — Author the layer's journey (always, pre-merge)
 
-**Before any dogfood**, make sure the journey FILE exists and covers this layer. If the project has the
-`e2e-test` skill with a `journeys/` dir (i.e. `dogfood_target != none`) and no journey covers this layer —
-or new acceptance criteria lack scenarios — **author/extend the journey now** in
-`skills/e2e-test/journeys/<NN-slug>.md` (a path planned in `layer_gates[N].journeys`; copy the template in
-`journeys/README.md`, set front-matter `target:`, `layer:`, and `covers:` — the acceptance-criterion ids
-this journey proves, which feed the coverage matrix; see `references/bdd-journeys.md`):
+If the project has an `e2e-test` skill with a `journeys/` dir (`dogfood_target != none`) and no journey covers this layer — or new acceptance criteria lack scenarios — author/extend the journey now in `skills/e2e-test/journeys/<NN-slug>.md` (path planned in `layer_gates[N].journeys`; copy the template in `journeys/README.md`, set front-matter `target:`, `layer:`, `covers:` — the acceptance-criterion ids this journey proves; see `/aep-e2e-skill-scaffolding` references/bdd-journeys.md):
 
-- **One scenario per acceptance criterion** (from `stories[].acceptance_criteria` in
-  `product-context.yaml`), each `Then` → a concrete **`Verify`** (API response / DB row / inspector check)
-  — intent-level and **tool-agnostic** (`tool-selection.md` resolves the tool later).
-- The journey **must map every acceptance criterion to a scenario `Verify`** (or a Tier-1 scripted case
-  where the behavior is deterministic, or a Tier-3 API check for backend/async state) **before it is
-  executed**. A criterion you deliberately defer carries a `WAIVER: <reason>` line, not silence. This is
-  what makes the layer _covered_ rather than _touched_ — `/aep-wrap` refuses to flip the gate to `passed`
-  while criteria are silently uncovered. (Tier applicability is per project type — a CLI/library layer is
-  `[1,2]` with a bash-driven `target: cli` journey; only a genuine `none`-target layer (no runnable
-  surface) is all Tier-1 with no journey. See the `aep-e2e-skill-scaffolding` `references/three-tier-model.md`.)
-- **Commit the journey file with the feature now (pre-merge).** This holds even when
-  `journey_timing: post-deploy` — only the journey's _execution_ against the deployed target is deferred
-  (see Step B). The authored, committed journey is the deliverable; the post-deploy gate executes it, it
-  never authors it.
+- **One scenario per acceptance criterion** (from `stories[].acceptance_criteria`), each `Then` → a concrete **`Verify`** (API response / DB row / inspector check), intent-level and tool-agnostic.
+- The journey **must map every acceptance criterion to a scenario `Verify`** (or a Tier-1 scripted case for deterministic behavior, or a Tier-3 API check for backend/async state) **before execution**. A deliberately deferred criterion carries a `WAIVER: <reason>` line, not silence. This is what makes the layer _covered_, not just _touched_ — `/aep-wrap` refuses to flip the gate to `passed` while criteria are silently uncovered.
+- **Commit the journey file with the feature now (pre-merge)** — even under `journey_timing: post-deploy`, where only the journey's _execution_ is deferred (Step B). The authored, committed journey is the deliverable; the post-deploy gate executes it, never authors it.
 
-> `dogfood_target == cli` (CLI / library): **author a `target: cli` journey** — bash drives the built
-> binary, each `Then` → a `Verify` on **exit code / stdout / stderr / filesystem**. Same authoring rules
-> as a web journey; only the tool track differs (`tool-selection.md` resolves `cli` → bash).
->
-> `dogfood_target == none` (**no runnable surface** — config / schema / docs, no `journeys/` dir): no
-> journey to author — instead ensure every acceptance criterion maps to a Tier-1 scripted case / Tier-3
-> API check, then jump to Step B's coverage note.
+> `dogfood_target == cli` (CLI/library): author a `target: cli` journey — bash drives the built binary, each `Then` → a `Verify` on exit code / stdout / stderr / filesystem. Same authoring rules; only the tool track differs.
+> `dogfood_target == none` (no runnable surface — config/schema/docs, no `journeys/` dir): no journey to author — instead map every acceptance criterion to a Tier-1 scripted case / Tier-3 API check, then jump to Step B's coverage note.
+
+Tier applicability is per project type (a CLI/library layer is `[1,2]`; only a genuine `none`-target layer is all Tier-1, no journey). Three-tier model: `/aep-e2e-skill-scaffolding` references/three-tier-model.md.
 
 ### Step B — Execute the authored journey (dogfood)
 
-**Run the layer's journey.** Pick the matching BDD journey from `skills/e2e-test/journeys/` (the one Step A
-authored/extended) and drive it (intent, not a click script). The journey's `target:` (web/mobile/desktop/cli)
-plus `skills/e2e-test/tool-selection.md` resolve which automation tool to use — that file is the
-project-local projection of `e2e_tool(target_type)`. Verify state per each `Verify` line.
+> **Light mode:** skip Step B (Step A still ran). Outside Light mode, do **not** skip Step B just because `agent-browser` is absent — pick a host-aware method and degrade.
 
-**Pick the tool, host-aware.** Call `e2e_tool(target_type)` (web wrapper: `dogfood_method()`) from
-`.claude/skills/aep-executor/references/dogfood-validation.md` to select the right **native** tool for
-this target/host/mode:
+**Run the layer's journey** (intent, not a click script). The journey's `target:` (web/mobile/desktop/cli) plus `skills/e2e-test/tool-selection.md` — the project-local projection of `e2e_tool(target_type)` — resolve which automation tool to use. Verify state per each `Verify` line.
 
-- **Claude Code** (web) — `/agent-browser:dogfood` if `agent_browser_healthy()`, else webwright; otherwise **degrade** (non-UI changes → API/curl checks; UI changes → human-eval) rather than skipping.
-- **Codex** (web) — native in-app browser + computer-use (codex-subagent desktop), else a Playwright script (codex-exec headless), falling back to the agent-browser CLI, then API checks.
-- **mobile / desktop** — `agent-device` (mobile) or codex computer-use / agent-browser-Electron (desktop), per the journey's `target:`.
-- **cli** — `bash`: run the built binary as a user would and assert exit code / stdout / stderr / filesystem (per the journey's `target: cli`).
+**Pick the tool, host-aware** via `e2e_tool(target_type)` (web wrapper `dogfood_method()`) from `/aep-executor` references/dogfood-validation.md — the native tool for this target/host/mode (Claude Code web → `/agent-browser:dogfood` if healthy else webwright, then degrade; Codex web → in-app browser / Playwright / CLI / API; mobile/desktop → agent-device / computer-use / agent-browser-Electron; cli → bash asserting exit code / stdout / stderr / filesystem).
 
 **Resolve the target from `skills/e2e-test/policy.md`** (`dogfood_target`) — don't assume local:
 
-- `cli` → run the built CLI binary **locally via bash** (no URL); seed local fixtures with
-  `bash skills/e2e-test/scripts/seed.sh` if the journey needs them.
-- `none` → **skip the journey dogfood** (Tier-2 N/A — no runnable surface); prove the layer's criteria via
-  Tier-1 / Tier-3.
-- `local` → source `.dev-workflow/ports.env` and use `$BASE_URL` (`target_url(local)`).
-- `deployed:<url>` → use that URL (e.g. a Cloudflare preview/prod), and **seed that same target**
-  (`SERVER_URL=<url> bash skills/e2e-test/scripts/seed.sh`) — not local. If the policy's `journey_timing`
-  is `post-deploy`, the journey's **execution** is deferred to the `/aep-wrap` layer gate (after
-  merge/deploy), so Phase 6 here runs only Tier-1/Tier-3 — **but the journey file authored in Step A is
-  still committed now (pre-merge)**; what is deferred is running it, not writing it.
+- `cli` → run the built binary **locally via bash** (no URL); seed local fixtures with `bash skills/e2e-test/scripts/seed.sh` if needed.
+- `none` → **skip the journey dogfood** (Tier-2 N/A); prove criteria via Tier-1 / Tier-3.
+- `local` → `source .dev-workflow/ports.env` and use `$BASE_URL` (`target_url(local)`).
+- `deployed:<url>` → use that URL (e.g. a Cloudflare preview/prod) and seed that same target (`SERVER_URL=<url> bash skills/e2e-test/scripts/seed.sh`), not local. If `journey_timing` is `post-deploy`, execution defers to the `/aep-wrap` gate (target isn't up pre-merge) — Phase 6 here runs only Tier-1/Tier-3, but the Step-A journey file is still committed now.
 
 ```bash
 source .dev-workflow/ports.env   # local target → $BASE_URL  (deployed target: use the URL from policy.md)
 ```
 
-If the selected method is `/agent-browser:dogfood`, run it against `$BASE_URL`:
+Whatever the method, emit the unified severity/category/repro report format (dogfood-validation.md → Unified report format) so the classifier stays host-agnostic. Document results in `.dev-workflow/dogfood-<feature>.md` — **write the report file, not just chat output**: that path is the ingestion contract (dogfood-validation.md → On issue), so `/aep-watch`'s `dogfood_report` source can auto-file findings. Chat-only findings are a dead end.
 
-```
-/agent-browser:dogfood
-```
+**Confirm the coverage matrix.** After executing, recompute the layer's coverage matrix: every acceptance criterion maps to the scenario `Verify` / scripted case / API check that proves it. Because Step A authored a scenario per criterion, this is a confirmation — any uncovered criterion is a Step-A miss: author it now and re-run until `coverage.criteria_covered == coverage.criteria_total` (deferrals carry a `WAIVER: <reason>` line).
 
-Whatever the method, emit the unified severity/category/repro report format (see `dogfood-validation.md` → Unified report format) so the downstream classifier stays host-agnostic. Document results in `.dev-workflow/dogfood-<feature>.md` — **write the report file, not just chat output**: that path is the ingestion contract (`dogfood-validation.md` → On issue), so `/aep-watch`'s `dogfood_report` source can auto-file bug/refinement findings. Findings left only in chat are a dead end.
-
-**Confirm the coverage matrix.** After executing, recompute the layer's **coverage matrix**: every
-acceptance criterion (from `stories[].acceptance_criteria`) maps to the journey scenario `Verify` / scripted
-case / API check that proves it. Because Step A authored a scenario per criterion before execution, this is
-a confirmation, not a scramble — any criterion that surfaces uncovered here is a Step-A miss: author the
-missing scenario/case now and re-run until `coverage.criteria_covered == coverage.criteria_total` (deferrals
-carry a `WAIVER: <reason>` line).
-
-> **Signal update:** Update `.dev-workflow/signals/status.json` with `"phase": 6, "phase_name": "dogfood-testing"`.
+**Signal:** set `status.json` `"phase": 6, "phase_name": "dogfood-testing"`.
 
 ---
 
 ## Phase 7: Finalize the Journey + Record the Layer Gate
 
-> Skip if the project has no `e2e-test` skill. **Light mode:** Skip this phase.
+> Skip if the project has no `e2e-test` skill. **Light mode:** skip this phase.
 
-The journey was **already authored in Phase 6 Step A** (pre-merge, from the layer's acceptance criteria).
-This phase **finalizes** that durable **BDD journey** (the regression artifact) with reality discovered
-during execution. In `skills/e2e-test/journeys/`:
+The journey was **already authored in Phase 6 Step A**. This phase **finalizes** that durable BDD regression artifact with reality discovered during execution. In `skills/e2e-test/journeys/`:
 
-- **Refine the existing journey** for this feature's layer — fold in what execution revealed: selector /
-  route drift, extra `Verify` lines, corrected preconditions. (The journey already exists from Step A; you
-  are refining, not creating. Under `journey_timing: post-deploy` the journey executes later at the
-  `/aep-wrap` gate, so this pre-merge finalize folds in only what local / Tier-3 checks revealed — the gate
-  corrects any selector/route drift it hits against the deployed target.)
-- Each `Then` keeps a concrete **Verify** line (API response / state check) — "looks done" is not a pass.
-- Keep it tool-agnostic; `tool-selection.md` resolves the tool. API-level assertions can use `$BASE_URL` /
-  `$SERVER_URL` from `.dev-workflow/ports.env` (never hardcoded ports).
+- **Refine the existing journey** for this layer — fold in selector/route drift, extra `Verify` lines, corrected preconditions (you are refining, not creating). Under `journey_timing: post-deploy` the journey executes later at the `/aep-wrap` gate, so this pre-merge finalize folds in only what local / Tier-3 checks revealed.
+- Each `Then` keeps a concrete **Verify** line (API response / state check) — "looks done" is not a pass. Keep it tool-agnostic; API-level assertions use `$BASE_URL` / `$SERVER_URL` from `.dev-workflow/ports.env` (never hardcoded ports).
 
-**Record the layer gate.** Write the evidence to `docs/layer-gates/<layer>.md` (the generated `e2e-test`
-skill ships a `layer-gate-evidence` template): the two coverage matrices — **acceptance traceability**
-(criterion → proving test → Verify → PASS/FAIL) and **scripted-coverage** (case → asserts → PASS/FAIL) —
-plus the manual checklist, screenshots / API JSON, and any `WAIVER:` lines. Update `layer_gates[N].coverage`
-and `evidence.{scripted,journeys,matrix}` in `product-context.yaml`. The two-phase flip (`scripted_passed`
-→ `passed`) happens at `/aep-wrap` once all applicable tiers are green and coverage is complete — that is
-what lets `/aep-dispatch` advance to the next layer.
+**Record the layer gate.** Write evidence to `docs/layer-gates/<layer>.md` (the generated `e2e-test` skill ships a `layer-gate-evidence` template): the two coverage matrices — **acceptance traceability** (criterion → proving test → Verify → PASS/FAIL) and **scripted-coverage** (case → asserts → PASS/FAIL) — plus the manual checklist, screenshots / API JSON, and any `WAIVER:` lines. Update `layer_gates[N].coverage` and `evidence.{scripted,journeys,matrix}` in `product-context.yaml`. The two-phase flip (`scripted_passed` → `passed`) happens at `/aep-wrap` once all applicable tiers are green and coverage is complete — that is what lets `/aep-dispatch` advance to the next layer.
 
 ---
 
 ## Phase 8: Review Results
 
-> **Light mode:** Skip this phase.
+> **Light mode:** skip this phase.
 
-1. Source `.dev-workflow/ports.env` for correct ports
-2. Run the project's framework tests (Tier 1), plus any applicable Tier-3 API drivers, and **replay
-   prior-layer journeys** (regression). For **this** layer's Tier-2 journey: replay it here only when
-   `journey_timing: pre-merge` — under `journey_timing: post-deploy` its execution is deferred to the
-   `/aep-wrap` gate (the `deployed:<url>` target isn't up pre-merge), so don't run it here. Verify
-   everything applicable passes and that `coverage.criteria_covered == criteria_total` (or remaining gaps
-   carry a `WAIVER:`)
-3. Present to the user (or note in progress file):
-   - Code review from Phase 5
-   - Dogfood report from Phase 6 (if run)
-   - Journey result + layer-gate evidence + coverage summary (`criteria_covered / criteria_total`) from Phase 7 (if run)
-4. If tests fail, loop back to the appropriate phase
+1. Source `.dev-workflow/ports.env` for correct ports.
+2. Run the project's framework tests (Tier 1), any applicable Tier-3 API drivers, and **replay prior-layer journeys** (regression). Replay **this** layer's Tier-2 journey here only when `journey_timing: pre-merge` — under `post-deploy` its execution defers to the `/aep-wrap` gate (the `deployed:<url>` target isn't up pre-merge). Verify everything applicable passes and `coverage.criteria_covered == criteria_total` (or gaps carry a `WAIVER:`).
+3. Present (or note in the progress file): the Phase 5 code review, the Phase 6 dogfood report (if run), and the Phase 7 journey result + layer-gate evidence + coverage summary (`criteria_covered / criteria_total`, if run).
+4. If tests fail, loop back to the appropriate phase.
 
-> **Signal update:** Update `.dev-workflow/signals/status.json` with `"phase": 8, "phase_name": "review-results"`.
+**Signal:** set `status.json` `"phase": 8, "phase_name": "review-results"`.
 
 ---
 
 ## Phase 9: Cleanup & Publish
 
-> **Note:** Do NOT run `/opsx:archive` here. Archive runs on the integration branch after merge (via `/aep-wrap`).
+> Do NOT run `/opsx:archive` here — archive runs on the integration branch after merge (via `/aep-wrap`).
 
-### 0. Write lesson summary
-
-Before publishing, write a final `## Summary for Next Agent` section in `.dev-workflow/lessons.md` (1-3 sentences): what would you tell the next agent building in this module? If the lessons file has no entries beyond the template header, write the summary anyway — even "straightforward implementation, no surprises" is useful signal.
-
-### 1. Review the commit history
-
-```bash
-git log --oneline "$(git config --get aep.integration-branch 2>/dev/null || (git show-ref --verify --quiet refs/remotes/origin/develop && echo develop || echo main))"..HEAD
-```
-
-The history should be a clean linear sequence: one commit per `tasks.md` task, optionally followed by review-fix commits. The PR will be squash-merged on merge, so per-commit hygiene matters for review readability, not the integration branch's history.
-
-### 2. Rebase onto the latest integration branch
-
-```bash
-# Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
-BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
-[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
-  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
-BASE=${BASE:-main}
-
-git fetch origin
-git rebase origin/"$BASE"
-```
-
-If conflicts arise, resolve them in the working tree, then `git add <files>` and `git rebase --continue`. Abort with `git rebase --abort` if conflicts are too tangled — surface to the orchestrator via the signal file.
-
-### 3. Push the feature branch
-
-```bash
-git push -u origin feat/<name>
-```
-
-The `-u` (`--set-upstream`) flag is needed only on the first push; subsequent pushes can drop it.
+1. **Write the lesson summary.** Before publishing, write a final `## Summary for Next Agent` (1–3 sentences) in `.dev-workflow/lessons.md`: what would you tell the next agent building in this module? Write it even if there are no other entries ("straightforward implementation, no surprises" is useful signal).
+2. **Review the commit history:** `git log --oneline "$BASE"..HEAD` (resolve `$BASE` per `/aep-git-ref` "Resolving `$BASE`"). It should be a clean linear sequence — one commit per `tasks.md` task, optionally followed by review-fix commits. Squash-merge at PR time keeps the integration branch clean, so per-commit hygiene is for reviewer readability.
+3. **Rebase onto the latest integration branch and push** (`-u` on first push): `git fetch origin && git rebase origin/"$BASE"`, resolve conflicts in the tree then `git add <files> && git rebase --continue` (or `git rebase --abort` if too tangled — surface via the signal file), then `git push -u origin feat/<name>`. Full recipe: `/aep-git-ref` "Publishing & PR Conventions".
 
 ---
 
 ## Phase 10: Create PR / MR
 
-**Auto-detect the platform and target the integration branch:**
+Open the PR/MR **targeting the integration branch** — auto-detect the host and **always pass the base explicitly**: `gh pr create --base "$BASE"` (GitHub) / `glab mr create --target-branch "$BASE"` (GitLab); resolve `$BASE` per `/aep-git-ref` "Resolving `$BASE`". Host auto-detect + the recipe: `/aep-git-ref` "Publishing & PR Conventions" → "Open the PR". For an unrecognized host, do not silently no-op — open it manually with the base passed explicitly.
 
-```bash
-# Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
-BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
-[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
-  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
-BASE=${BASE:-main}
+> **CRITICAL — always specify `--base "$BASE"` / `--target-branch "$BASE"`.** Workspace sessions run from a `feat/<name>` worktree, not the integration branch. Without an explicit base, `gh pr create` may infer the wrong base from the most recent merged branch — targeting a stale base, or (in two-branch mode) production `main`, which AEP must never merge feature work into directly.
 
-REMOTE_URL=$(git remote get-url origin)
-case "$REMOTE_URL" in
-  *github.com*) gh pr create --title "<title>" --body "<body>" --base "$BASE" ;;
-  *gitlab*)     glab mr create --title "<title>" --description "<body>" --target-branch "$BASE" ;;
-  *)
-    # Self-hosted GitHub Enterprise / Bitbucket / other host — pattern not matched.
-    # Do NOT silently no-op: open the PR/MR manually with the correct tool, always
-    # passing the base explicitly (--base "$BASE" / --target-branch "$BASE").
-    echo "Unrecognized remote host: $REMOTE_URL — create the PR/MR manually with base \"$BASE\"." >&2
-    exit 1
-    ;;
-esac
-```
-
-> **CRITICAL — always specify `--base "$BASE"` (GitHub) or `--target-branch "$BASE"` (GitLab)**, resolving `$BASE` in the same block as above. Workspace sessions run from a worktree whose checked-out branch is `feat/<name>`, not the integration branch. Without an explicit base, `gh pr create` may infer the wrong base from the most recent merged branch — causing the PR to target a stale base and never land on the integration branch even after merge. In two-branch mode an inferred base could be production `main`, which AEP must never merge feature work into directly.
-
-Include in the PR/MR body:
-
-- Summary of changes (from proposal)
-- Test coverage notes
-- Link to manual test plan (if created)
+Include in the PR/MR body: summary of changes (from the proposal), test-coverage notes, and a link to the manual test plan (if created).
 
 ---
 
@@ -775,174 +266,76 @@ Include in the PR/MR body:
 
 Monitor for CI and review feedback.
 
-### Triage review comments
+**Triage each comment:** **Fix** — correctness, CI failures, convention violations, security. **Acknowledge but skip** — style preferences, over-engineering, cosmetic. **Discuss** — architectural suggestions that expand scope, conflicting comments.
 
-**Fix** — correctness issues, CI failures, convention violations, security.
-**Acknowledge but skip** — style preferences, over-engineering, cosmetic suggestions.
-**Discuss** — architectural suggestions that expand scope, conflicting comments.
-
-### Fix loop
-
-1. Triage all comments
-2. Create fix plan at `.dev-workflow/pr-fix-plan-<round>.md`
-3. Reply to skipped/discussed comments
-4. **Add follow-up commits** for each fix:
-   ```bash
-   # ... make the fix ...
-   git add -A
-   git commit -m "fix(<scope>): address review feedback on <topic>"
-   ```
-   Squash-merge at PR-merge time keeps the integration branch's history clean, so per-commit hygiene on the feature branch only matters for reviewer readability.
-5. Re-run tests
-6. Re-push:
-   ```bash
-   git push origin feat/<name>
-   ```
-7. Repeat until CI green and reviews resolved
+**Fix loop:** (1) triage all comments; (2) write a fix plan at `.dev-workflow/pr-fix-plan-<round>.md`; (3) reply to skipped/discussed comments; (4) add a follow-up commit per fix (`fix(<scope>): address review feedback on <topic>`); (5) re-run tests; (6) re-push (`git push origin feat/<name>`); (7) repeat until CI is green and reviews are resolved. Commit/push conventions: `/aep-git-ref` "Publishing & PR Conventions".
 
 ---
 
 ## Phase 11.5: Human Evaluation & Iteration
 
-After PR review fixes are resolved, the human tester evaluates the feature — typically by running the app from the workspace. If they find minor issues (UX tweaks, missing edge cases, behavior that doesn't match intent), this phase handles the iteration loop.
+After PR-review fixes resolve, the human tester evaluates the feature (typically by running the app from the workspace). If they find minor issues (UX tweaks, missing edge cases, behavior mismatches), this phase handles the iteration loop.
 
-> **If no issues found:** Skip this phase and proceed to Phase 12.
+> **If no issues found:** skip to Phase 12.
 
-### Iteration round
+**Iteration round:**
 
-1. **Document findings** — Write to `.dev-workflow/human-eval-round-<N>.md`:
-   - What was found (description, steps to reproduce)
-   - Severity (minor / moderate)
-   - Category (UX, logic, edge case, visual)
+1. **Document findings** in `.dev-workflow/human-eval-round-<N>.md`: what was found (description + repro), severity (minor/moderate), category (UX/logic/edge case/visual).
+2. **Add a follow-up commit per fix** (`fix(<scope>): <human-eval finding>`).
+3. **Align the OpenSpec change** in `openspec/changes/<name>/`: add completed tasks to `tasks.md`, update `specs/` if behavior changed, update `design.md` only if approach shifted; keep `proposal.md` scope as-is.
+4. **Re-test** — re-run Phase 5 (code review) and Phase 6 (dogfood) on the changed areas.
+5. **Push** (`git push origin feat/<name>`).
+6. **Repeat** if the tester finds more issues.
 
-2. **Add a follow-up commit per fix:**
-
-   ```bash
-   # ... make the fix ...
-   git add -A
-   git commit -m "fix(<scope>): <human-eval finding>"
-   ```
-
-3. **Align OpenSpec change** — Update `openspec/changes/<name>/` artifacts:
-   - Add completed tasks to `tasks.md` for the work just done
-   - Update `specs/` if behavior changed
-   - Update `design.md` only if approach details shifted
-   - Keep `proposal.md` scope as-is (direction unchanged)
-
-4. **Re-test** — Re-run Phase 5 (code review) and Phase 6 (dogfood) on the changed areas.
-
-5. **Push** — Update the PR:
-
-   ```bash
-   git push origin feat/<name>
-   ```
-
-6. **Repeat** — If the human tester finds more issues, start a new round.
-
-> **Signal update:** Create `.dev-workflow/signals/ready-for-review.flag` when ready for human evaluation. Update `status.json` with `"phase": 11.5, "phase_name": "human-evaluation"`. This is a human gate — also follow the Human-Gate Protocol (needs-human.md + `blocked_on: "human"` + your mode's transport) so the orchestrator surfaces it instead of counting you as stuck.
+**Signal:** create `.dev-workflow/signals/ready-for-review.flag` when ready for human evaluation; set `status.json` `"phase": 11.5, "phase_name": "human-evaluation"`. This is a human gate — also follow the Human-Gate Protocol so the orchestrator surfaces it instead of counting you as stuck.
 
 ---
 
 ## Phase 12: Pre-merge Checks & Merge
 
-1. Up-to-date with the integration branch:
-   ```bash
-   # Resolve $BASE — see git-ref "Integration Branch" (override → develop → main)
-   BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
-   [ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
-     || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
-   BASE=${BASE:-main}
-   git fetch origin && git rebase origin/"$BASE" && git push --force-with-lease origin feat/<name>
-   ```
-2. **Mergeable per GitHub's own readiness — don't wait for checks that will never run.**
-   `mergeStateStatus` already accounts for _required_ checks and _required_ reviews,
-   so read it rather than counting raw checks (which can't tell required from
-   optional, nor "none configured" from "not yet reported"):
+1. **Up-to-date with the integration branch** (resolve `$BASE` per `/aep-git-ref` "Resolving `$BASE`"): `git fetch origin && git rebase origin/"$BASE" && git push --force-with-lease origin feat/<name>`.
+
+   > **Why `--force-with-lease` (never `--force`):** rebasing rewrites the feature branch's SHAs; the lease variant pushes only if the remote hasn't advanced since your last fetch, protecting concurrent collaborators.
+
+2. **Read GitHub's own readiness:**
 
    ```bash
    gh pr view <number> --json mergeStateStatus,mergeable --jq '{state: .mergeStateStatus, mergeable}'
    ```
 
-   - `CLEAN` → mergeable now (required checks satisfied or none; no required review missing) → **proceed**. A CLEAN PR with **zero** required checks is mergeable now — absence of checks is not a reason to wait.
-   - `UNKNOWN` → GitHub is still computing mergeability (normal right after the step-1 push) → **wait briefly and re-read**; do not park, do not merge yet.
-   - `UNSTABLE` → mergeable per branch protection, but a non-required check is pending/failing. Do **not** blanket-merge: if any check is **failing**, **stop** — don't land red code, even if the repo configured no _required_ checks (`gh pr checks <number>` to see); if checks are only **pending**, wait and re-read.
-   - `BLOCKED` → a **required** review/check is missing/pending/failing, **or** a branch-protection rule blocks (conversation-resolution, signed commits, linear history, admin-only) → **stop**: maps to conditions 1–2/4, or surface the protection rule as a human-gate (condition 5) — never force past it.
-   - `DIRTY` (conflict) → **stop** (condition 3). `BEHIND` → rebase (step 1) and re-read.
+   - `CLEAN` → mergeable now (required checks satisfied or none; no required review missing) → **proceed** (a CLEAN PR with zero required checks is mergeable — absence of checks is not a reason to wait).
+   - **Anything else** (`UNKNOWN`, `UNSTABLE`, `BLOCKED`, `DIRTY`, `BEHIND`) → load `references/merge-decision-cases.md` for the per-state handling before acting.
 
-3. No unresolved review comments
-4. E2E tests passed (if applicable)
-5. Present final status summary
-6. **Merge decision:**
-   - **Detection — the `mode` marker is the SOLE authority. Do NOT infer from cwd:**
+3. No unresolved review comments.
+4. E2E tests passed (if applicable).
+5. Present the final status summary.
+6. **Merge decision.** Detection — the `mode` marker is the **SOLE authority; do NOT infer from cwd** (the Phase 0 guard relocates every build, interactive included, into a worktree, so cwd no longer distinguishes autonomous from interactive):
 
-     ```bash
-     MODE=$(cat "$(git rev-parse --show-toplevel)/.dev-workflow/signals/mode" 2>/dev/null)  # anchored — a build phase may have cd'd into a subdir
-     ```
+   ```bash
+   MODE=$(cat "$(git rev-parse --show-toplevel)/.dev-workflow/signals/mode" 2>/dev/null)  # anchored — a build phase may have cd'd into a subdir
+   ```
 
-     - `mode` reads exactly `autopilot` → **autopilot mode**.
-     - anything else (absent, empty, other value) → **interactive mode**.
+   - `mode` reads exactly `autopilot` → **autopilot mode**: **merge immediately** when the pre-merge conditions pass — do not wait for confirmation (the orchestrator monitors via signals).
+   - anything else (absent, empty, other) → **interactive mode**: ask for confirmation before merging. When the signal is ambiguous, default to interactive — never auto-merge when unsure.
 
-     > Why not cwd: the Phase 0 guard relocates **every** build — including an
-     > interactive, human-driven one — into a worktree, so "cwd is under
-     > `.feature-workspaces/`" no longer distinguishes autonomous from interactive.
-     > Only `/aep-launch` writes the marker, so only a launched (autonomous) worker
-     > reads `autopilot`. When the signal is ambiguous we default to **interactive
-     > (ask)** — never auto-merge when unsure. (Matches `signals-spec.md`.)
-
-   - **Interactive mode** (a human is at your prompt): ask for confirmation before merging.
-   - **Autopilot mode** (no human at your prompt): **merge immediately** when the
-     pre-merge conditions pass — do **not** wait for user confirmation. The
-     orchestrator monitors via signals, not interactive prompts.
-
-> **"PR ready" is NOT a stop condition.** A ready, mergeable PR is a _precondition
-> to merge_, not a place to stop. In autopilot mode you may stop short of merge
-> **only** when one of these is true — otherwise you MUST proceed to merge:
->
-> 1. a **required** review is missing,
-> 2. **required** checks are pending or failing,
-> 3. a **merge conflict** / dirty branch (rebase failed),
-> 4. an **unresolved review thread** blocks the merge,
-> 5. an explicit **human-approval gate** applies (raise it via the Human-Gate Protocol),
-> 6. project **policy** (`full_auto`/strategic) says pause.
->
-> None of the above ⇒ merge. Reporting `mergeStateStatus=CLEAN` and stopping is a
-> bug, not a safe state. After merging, set `status.json` `story_status: "completed"`
-> — **your job ends there. Do NOT run `/aep-wrap` yourself** (wrap runs `/opsx:archive`
-> on the integration branch; running it from this worktree corrupts the concurrency
-> protocol). Wrap is owned by the integration branch — the human in interactive mode,
-> the orchestrator's next tick in autopilot. The story is "done" only when **merged +
-> wrapped**, but you only do the merge. Canonical worked cases:
-> `references/merge-decision-cases.md`.
+   **"PR ready" is NOT a stop condition.** In autopilot you may stop short of merge **only** on the 6 legitimate conditions; otherwise you MUST merge. Those conditions, the full per-state handling, and the worked cases are canonical in `references/merge-decision-cases.md`. Reporting `mergeStateStatus=CLEAN` and stopping is a bug. **After merging, set `status.json` `story_status: "completed"` — your job ends there. Do NOT run `/aep-wrap` yourself** (wrap runs `/opsx:archive` on the integration branch; running it from this worktree corrupts the concurrency protocol). The story is done only when **merged + wrapped**, but the worker only merges.
 
 Merge:
 
-```bash
-REMOTE_URL=$(git remote get-url origin)
-```
-
 - GitHub: `gh pr merge <number> --squash --delete-branch`
 - GitLab: `glab mr merge <number> --squash --remove-source-branch`
-
-> **Why `--force-with-lease`:** rebasing rewrites the feature branch's commit SHAs. `--force-with-lease` forces the push only if the remote hasn't advanced since you last fetched — protecting concurrent collaborators while still letting you push the rebased history.
 
 ---
 
 ## Guardrails
 
-- **Never skip the tracking initialization** (Phase 0). Every workflow needs a progress file and contracts.
-- **Never run `/opsx:archive` from a workspace** — it writes to `openspec/specs/` and causes conflicts. Archive always runs on the integration branch via `/aep-wrap`.
-- **Never write to `product-context.yaml` from a workspace** — only the main session writes to the YAML. Report all status through `.dev-workflow/signals/status.json`. This is the concurrency protocol.
-- **Confirm with the user before creating PRs, merging, or pushing to shared branches _only in interactive mode_** (a human is at your prompt). **Autopilot mode is decided _solely_ by `.dev-workflow/signals/mode` reading `autopilot`** (not by cwd) — then there is no human to confirm, so **proceed when the Phase 12 conditions pass**; "PR ready" is not a stop point (see Phase 12).
-- **The `.dev-workflow/` folder is ephemeral** — gitignored, local to each workspace.
-- **Resume support**: If returning to an in-progress workflow, run `.dev-workflow/init.sh` if it exists, then read the progress file.
-- **Phase skipping**: Users may ask to skip phases. Update progress file accordingly.
-- **One commit per task** in Phase 4 — the PR review reads cleanly when the commit list mirrors `tasks.md`. Don't bundle multiple tasks into one commit; don't split one task across multiple commits.
-- **Don't rewrite history mid-stream** — once you've moved past a committed task, fixes go in as new commits, not amends or rebases. Squash-merge at PR-merge handles the cleanup.
-- **Use `git push --force-with-lease`, never `--force`** — the `lease` variant fails safely if someone else pushed to the same branch since your last fetch.
-- **Signal updates are required** — update `.dev-workflow/signals/status.json` at the start and end of every phase. Check `.dev-workflow/signals/feedback.md` for main session feedback at phase boundaries.
-- **Generator must not modify verification data** — never modify `verification_steps` or `passes` in `feature-verification.json`. Only `commit_sha` is generator-writable. The evaluator or human updates `passes` / `evaluated_by` / `round`.
-- **Evaluator loop max 5 rounds, climbing the recovery ladder** — the generator escalates its strategy per round (same fix → re-ground → fresh generator → decompose) per `recovery-ladder.md`; only once the ladder is exhausted (after round 5) does it escalate to human as `eval_not_converging`. Hard-failure/security FAILs skip the ladder and escalate on the first occurrence.
-- **Raise human gates, don't guess** — decisions only the human can make go through the Human-Gate Protocol (`needs-human.md` + `blocked_on: "human"` + your mode's transport). Silent stalls read as stuck; unrecorded guesses read as scope drift.
+Cross-cutting rules with no single step home:
+
+- **Archive runs on the integration branch via `/aep-wrap`, never from a workspace** — it writes `openspec/specs/` and causes conflicts.
+- **Only the main session writes `product-context.yaml`** — workspaces report status through `.dev-workflow/signals/status.json` (the concurrency protocol).
+- **Resume:** if returning to an in-progress workflow, run `.dev-workflow/init.sh` if it exists, then read the progress file.
+- **Phase skipping:** users may ask to skip phases — update the progress file accordingly.
+- **Signals:** update `status.json` at the start and end of every phase, and check `.dev-workflow/signals/feedback.md` for main-session feedback at phase boundaries.
 
 ---
 
