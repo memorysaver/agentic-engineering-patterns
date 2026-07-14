@@ -10,7 +10,12 @@ aep_parent_dirs_safe() {
 }
 
 aep_mode() {
-  stat -f '%Lp' "$1" 2>/dev/null || stat -c '%a' "$1" 2>/dev/null
+  local mode
+  if mode=$(stat -c '%a' "$1" 2>/dev/null); then
+    printf '%s\n' "$mode"
+  else
+    stat -f '%Lp' "$1" 2>/dev/null
+  fi
 }
 
 aep_trees_identical() {

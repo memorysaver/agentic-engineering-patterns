@@ -65,6 +65,29 @@ printf 'same\n' > "$case_dir/.claude/skills/aep-demo/SKILL.md"
 assert_file_text "same" "$case_dir/.agents/skills/aep-demo/SKILL.md"
 pass "identical duplicate collapse"
 
+# GNU stat treats BSD's `-f FORMAT` as filesystem mode and may emit output for
+# the valid path before returning non-zero for FORMAT. The mode probe must
+# capture one dialect at a time so failed-probe stdout cannot taint comparison.
+case_dir="$TMP_ROOT/gnu-stat-probe"
+mkdir -p "$case_dir/.agents/skills/aep-demo" "$case_dir/.claude/skills/aep-demo" "$case_dir/fake-bin"
+printf 'same\n' > "$case_dir/.agents/skills/aep-demo/SKILL.md"
+printf 'same\n' > "$case_dir/.claude/skills/aep-demo/SKILL.md"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'if [ "$1" = "-c" ]; then' \
+  '  [ -d "$3" ] && printf "755\n" || printf "644\n"' \
+  '  exit 0' \
+  'fi' \
+  'if [ "$1" = "-f" ]; then' \
+  '  printf "GNU filesystem status for %s\n" "$3"' \
+  '  exit 1' \
+  'fi' \
+  'exit 2' > "$case_dir/fake-bin/stat"
+chmod +x "$case_dir/fake-bin/stat"
+(cd "$case_dir" && PATH="$case_dir/fake-bin:$PATH" bash "$CONVERGE" --category A >/dev/null)
+[ -L "$case_dir/.claude/skills/aep-demo" ] || fail "GNU-stat-compatible identical copy was not collapsed"
+pass "GNU/BSD stat probe isolation"
+
 # Matching bytes with different executable modes are not identical: collapsing
 # them would silently discard runtime semantics.
 case_dir="$TMP_ROOT/mode-divergent"

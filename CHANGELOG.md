@@ -46,7 +46,7 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 - CI now performs a real copied install, asserts the exact marketplace/source
   set, validates all installed units with the official Agent Skills validator,
   checks installed-link containment, enforces metadata/evidence budgets, and
-  runs 10 converge, 4 audit, and 3 generated-resource regression fixtures.
+  runs 11 converge, 4 audit, and 3 generated-resource regression fixtures.
 - The upgrade guide no longer recommends deleting real Claude skill
   directories blindly; it routes normalization through scaffold's fail-closed
   converge.
