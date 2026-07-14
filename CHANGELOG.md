@@ -17,13 +17,13 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 > `/envision`, `/dispatch`, `/reflect`, …), which records product-state history
 > for that project. See [`docs/glossary.md`](docs/glossary.md).
 
-## [Unreleased]
+## [3.0.0] - 2026-07-14
 
 ### Changed
 
-- Skill routing metadata reduced from 6,711 to 4,625 characters (643 words,
-  max 34 per skill), with a 5,000-character corpus budget and recorded
-  front-tier direct/boundary routing probes in `evals/skill-routing.json`.
+- Skill routing metadata reduced from 6,711 to 4,697 characters (652 words,
+  max 35 per skill), with a 5,000-character corpus budget and 36 recorded
+  front-tier direct/boundary selections bound to the exact description digest.
 - Selective-install documentation now states the `/aep-*` dependency-closure
   requirement; the product group list includes `aep-watch`.
 
@@ -32,17 +32,26 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 - `/aep-scaffold` frontmatter is valid YAML and is again discoverable, taking
   the skills CLI from 21/22 to 22/22 installed skills.
 - Scaffold converge now propagates write failures, repairs Claude-only and
-  Codex-only layouts, collapses only byte-identical duplicates, preserves
-  divergent copies, resolves its scripts from the installed skill directory,
-  and honors confirmed A/C/E categories.
+  Codex-only layouts, collapses only content-and-mode-identical duplicates,
+  rejects symlinked parent escapes, preserves divergent copies, resolves its
+  scripts from the installed skill directory, and honors confirmed A/C/E categories.
+- Scaffold audit safely handles arbitrary skill directory names, detects
+  divergent AEP copies, requires exact gitignore entries, and prunes dependency
+  and metadata trees from health-endpoint discovery.
+- Generated-resource markers reject traversal, symlink, and directory targets
+  before the first mutation; dedicated fixtures prove outside files survive.
+- `/aep-onboard` ships its mandatory orientation, `/aep-build` resolves its
+  progress template from the installed package, and launch/liveness preserves
+  backend-specific handles and host-compatible fallbacks.
 - CI now performs a real copied install, asserts the exact marketplace/source
   set, validates all installed units with the official Agent Skills validator,
-  enforces metadata budgets, and runs eight scaffold converge fixtures.
+  checks installed-link containment, enforces metadata/evidence budgets, and
+  runs 10 converge, 4 audit, and 3 generated-resource regression fixtures.
 - The upgrade guide no longer recommends deleting real Claude skill
   directories blindly; it routes normalization through scaffold's fail-closed
   converge.
 
-## [3.0.0] - 2026-07-14
+### Lean Skills refactor
 
 **Lean Skills** — the full corpus restructured to the authoring standard in
 [`docs/decisions/skill-authoring-standard.md`](docs/decisions/skill-authoring-standard.md)
@@ -51,18 +60,18 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 Major bump: every SKILL.md changed shape and several reference files moved or
 became canonical. Signal files and schema fields are unchanged. One structural
 exception is recorded: `/aep-reflect` Step 5.5 was folded into Step 2's Process
-branch while retaining its actions. The branch does not retain the historical
-per-skill execution dry-run artifacts; see the R9 evidence note in the decision.
+branch while retaining its actions. Final 22/22 scenario dry-runs and their
+loaded-reference/postcondition evidence live in `evals/skill-behavior-parity.json`.
 
-### Changed
+#### Corpus changes
 
-- **All 22 SKILL.md files leaned**: 8,209 → 4,831 lines (-41%); largest file
-  955 → 396; every file now under the 400-line budget. Steps stay inline and
+- **All 22 SKILL.md files leaned**: 8,209 → 4,873 lines (-41%); largest file
+  955 → 398; every file now under the 400-line budget. Steps stay inline and
   end in world-derived postconditions; branch-specific reference is disclosed
   to `references/*.md`; every duplicated meaning collapsed to a one-line
   pointer at its canonical home (the `$BASE` resolver alone was inlined ~21×
   in two spellings — it now lives only in `/aep-git-ref`).
-- **Descriptions dieted**: 1,687 → 987 always-loaded words (-41%), one trigger
+- **Descriptions dieted**: 1,687 → 652 always-loaded words (-61%), one trigger
   per branch, every description ≤ 50 words.
 - **Canonical homes established** (R2): git conventions → `/aep-git-ref`;
   gen/eval contracts → `/aep-gen-eval`; full/light mode criteria →
@@ -158,7 +167,7 @@ confirmed and fixed):
   and the `spawn-liveness-probe.sh` script; the CI allowlist comment corrected
   (three reference files, not two).
 - R7 implementation note added to the decision doc recording the accepted
-  per-skill target deviations (corpus 4,831 vs ~4,455; CI budget is the
+  per-skill target deviations (corpus 4,873 vs ~4,455; CI budget is the
   enforceable ceiling).
 
 ## [2.7.0] - 2026-07-10
@@ -1024,7 +1033,7 @@ First stable baseline after the Jujutsu → git migration. Decision record:
 
 - Jujutsu (one-shot migration, no dual-mode period) and the `/jj-ref` skill.
 
-[Unreleased]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.5.0...HEAD
+[3.0.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.5.0...v3.0.0
 [1.5.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.3.2...v1.4.0
 [1.3.2]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.3.1...v1.3.2

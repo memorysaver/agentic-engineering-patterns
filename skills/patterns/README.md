@@ -27,22 +27,24 @@ Duplicating this logic across skills creates drift. Extracting it into a shared 
 
 ## How Skills Reference Patterns
 
-After sync with `aep-` prefix, pattern files are at:
+After sync with the `aep-` prefix, pattern files are below `<skills-root>`, where
+the canonical cross-tool root is `.agents/skills` and a Claude-only install may
+use `.claude/skills`:
 
 ```
-.claude/skills/aep-gen-eval/references/scoring-framework.md
-.claude/skills/aep-gen-eval/references/agent-contracts.md
-.claude/skills/aep-gen-eval/references/eval-protocol.md
-.claude/skills/aep-gen-eval/references/findings-format.md
+<skills-root>/aep-gen-eval/references/scoring-framework.md
+<skills-root>/aep-gen-eval/references/agent-contracts.md
+<skills-root>/aep-gen-eval/references/eval-protocol.md
+<skills-root>/aep-gen-eval/references/findings-format.md
 
-.claude/skills/aep-autopilot/references/tick-protocol.md
-.claude/skills/aep-autopilot/references/state-schema.md
-.claude/skills/aep-autopilot/references/review-trigger.md
-.claude/skills/aep-autopilot/references/orchestration-learning.md
+<skills-root>/aep-autopilot/references/tick-protocol.md
+<skills-root>/aep-autopilot/references/state-schema.md
+<skills-root>/aep-autopilot/references/review-trigger.md
+<skills-root>/aep-autopilot/references/orchestration-learning.md
 
-.claude/skills/aep-executor/references/backends.md
+<skills-root>/aep-executor/references/backends.md
 
-.claude/skills/aep-workflow/references/pattern-catalog.md
+<skills-root>/aep-workflow/references/pattern-catalog.md
 ```
 
 Skills reference them via these paths in their instructions.

@@ -209,16 +209,16 @@ mandatory (without it `/goal` hot-loops the instant a turn ends); and
 Two `topology.routing` flags govern the **strategic** ("what to build" /
 architecture) human gates; both default to keeping the human in control:
 
-- **`auto_design`** (default `false`): a story that needs design input
-  (`readiness_score < 0.7`, or `attempt_count >= 2` repeated failure) **pauses**
+- **`auto_design`** (default `false`): a story in a non-dispatch-ready band, or
+  one that hits the canonical repeated-attempt override, **pauses**
   for the human. `auto_design: true` instead routes it through `/aep-design`
   (non-interactive), re-computes readiness, then `/aep-launch` — no pause.
 - **`full_auto`** (default `false`): the master switch **above** the finer-grained
   flags (`auto_design`, `auto_outcome_eval`, `watch.auto_create`) —
   `full_auto: true` **implies** all of them, so both the design-escalation pause
   and the qualitative outcome-contract evaluation auto-proceed via agent judgment.
-  The default keeps every strategic pause with the human. `attempt_count >= 2`
-  always escalates, even with these flags on.
+  The default keeps every strategic pause with the human. The repeated-attempt
+  override always escalates, even with these flags on.
 
 Routing thresholds and the pause protocol live in the tick step that applies them
 (`references/tick-protocol.md` Step ⑥); the escalation-entry and paused
@@ -269,7 +269,7 @@ content and the ACT templates (including the ④b/④c nudge prompt texts) — a
 ③.5 POST-MERGE GUARD  for each merged story, watch deploy health + host-aware dogfood across a window; UX finding → /aep-reflect story; confirmed hard regression → escalate (or revert if auto_revert). See references/post-merge-guard.md.
 ④ GUIDE COMPLETION per workspace: ④a check PR state; ④b quality gate — no eval PASS → trigger the workspace's OWN gen/eval via executor.nudge(); ④c eval PASS + PR open → nudge toward Phase-12 merge (once). NEVER spawn reviewers; NEVER gh pr merge.
 ⑤ DETECT STUCK     (phase, completion_pct) unchanged vs last tick → run executor.liveness() before counting; 6 ticks→nudge, 12→escalate; human-gate exempt.
-⑥ DISPATCH NEW WORK  capacity? run /aep-dispatch scoring (steps 1-3); wave + layer-gate + grouped-change ordering; route by readiness (≥0.7 → /aep-launch; else escalate or auto-design); max ONE launch per tick ([one-launch-per-tick]); runs after ③ ([wrap-before-dispatch]).
+⑥ DISPATCH NEW WORK  capacity? run /aep-dispatch scoring (steps 1-3); wave + layer-gate + grouped-change ordering; dispatch-ready → /aep-launch, otherwise escalate or auto-design; max ONE launch per tick ([one-launch-per-tick]); runs after ③ ([wrap-before-dispatch]).
 ⑦ WRITE STATE + SURFACE + WAIT  atomic write state (.tmp → rename); append autopilot-history.jsonl; update autopilot-status.md; release the tick lock. GOAL DRIVER ONLY: surface the signals-only AUTOPILOT status line, then wait the per-tick floor before ending the turn.
 ```
 

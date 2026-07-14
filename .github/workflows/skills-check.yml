@@ -9,7 +9,9 @@ on:
       - "evals/**"
       - ".claude-plugin/marketplace.json"
       - "scripts/build-skills.sh"
+      - "scripts/test-build-skills.sh"
       - "scripts/check-skills-package.sh"
+      - "scripts/test-scaffold-audit.sh"
       - "scripts/test-scaffold-converge.sh"
       - ".github/workflows/skills-check.yml"
   pull_request:
@@ -18,7 +20,9 @@ on:
       - "evals/**"
       - ".claude-plugin/marketplace.json"
       - "scripts/build-skills.sh"
+      - "scripts/test-build-skills.sh"
       - "scripts/check-skills-package.sh"
+      - "scripts/test-scaffold-audit.sh"
       - "scripts/test-scaffold-converge.sh"
       - ".github/workflows/skills-check.yml"
 
@@ -31,11 +35,17 @@ jobs:
       - name: Shared skill resources are in sync
         run: bash scripts/build-skills.sh --check
 
+      - name: Generated-resource security fixtures
+        run: bash scripts/test-build-skills.sh
+
       - name: Skill package is complete, bounded, and officially valid
         run: bash scripts/check-skills-package.sh
 
       - name: Scaffold converge regression fixtures
         run: bash scripts/test-scaffold-converge.sh
+
+      - name: Scaffold audit regression fixtures
+        run: bash scripts/test-scaffold-audit.sh
 
       # R7/R8 of docs/decisions/skill-authoring-standard.md: one corpus-wide
       # line budget for every SKILL.md — warn above 400, fail above 500.

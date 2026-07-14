@@ -74,7 +74,7 @@ Dogfood runs — local (`/aep-build` Phase 6), post-deploy (autopilot post-merge
 guard), **or a standalone / ad-hoc live exercise** — emit the **unified markdown
 report** (`## <title>` / `**Severity:**` / `**Category:**` / `**Repro:**` /
 `**Observed:**` / `**Expected:**` / `**Evidence:**`) to `.dev-workflow/dogfood-*.md`
-(see `patterns/executor/references/dogfood-validation.md` → Unified report format).
+(see `/aep-executor` → `references/dogfood-validation.md`, Unified report format).
 This adapter parses each `##` finding into the **`/aep-watch` Step 1 finding
 record** (the operative shape Step 3 dedupes and Step 4 turns into a story — _not_
 the 5-field telemetry record above, which is the classifier's conceptual input)

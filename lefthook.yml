@@ -2,7 +2,9 @@
 # https://github.com/evilmartians/lefthook
 
 pre-commit:
-  parallel: true
+  # Ordering is semantic: format source first, then materialize generated
+  # copies, then verify that the committed artifact is stable.
+  parallel: false
   jobs:
     - name: oxlint
       run: bun oxlint --fix {staged_files}
@@ -17,3 +19,6 @@ pre-commit:
     - name: skills-build
       glob: "skills/product-context/**"
       run: bash scripts/build-skills.sh --stage
+    - name: skills-generated-check
+      glob: "skills/product-context/**"
+      run: bash scripts/build-skills.sh --check

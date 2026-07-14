@@ -64,18 +64,36 @@ if (missingDeclarations.length) errors.push(`marketplace is missing source skill
 if (unknownDeclarations.length) errors.push(`marketplace declares unknown skills: ${unknownDeclarations.join(", ")}`);
 
 const routing = JSON.parse(fs.readFileSync("evals/skill-routing.json", "utf8"));
+const routingEvidence = JSON.parse(fs.readFileSync("evals/skill-routing-observations.json", "utf8"));
 const cases = routing.cases;
+const observations = routingEvidence.observations;
 if (!Array.isArray(cases)) errors.push("evals/skill-routing.json cases must be an array");
+if (!Array.isArray(observations)) errors.push("evals/skill-routing-observations.json observations must be an array");
 const safeCases = Array.isArray(cases) ? cases : [];
+const safeObservations = Array.isArray(observations) ? observations : [];
 const duplicateCaseIds = duplicates(safeCases.map((entry) => entry.id));
 if (duplicateCaseIds.length) errors.push(`duplicate routing case ids: ${duplicateCaseIds.join(", ")}`);
+const duplicateObservationIds = duplicates(safeObservations.map((entry) => entry.id));
+if (duplicateObservationIds.length) errors.push(`duplicate routing observation ids: ${duplicateObservationIds.join(", ")}`);
+const observationById = new Map(safeObservations.map((entry) => [entry.id, entry.selected]));
+if (!routingEvidence.run?.model || !routingEvidence.run?.model_version || !/^[a-f0-9]{64}$/.test(routingEvidence.run?.description_sha256 || "")) {
+  errors.push("routing observations must record model, model_version, and a description_sha256");
+}
 for (const entry of safeCases) {
   if (!entry.id || !entry.prompt || !["direct", "boundary"].includes(entry.kind)) {
     errors.push(`invalid routing case shape: ${JSON.stringify(entry)}`);
   }
-  if (entry.expected !== entry.observed) {
-    errors.push(`routing regression in ${entry.id}: expected ${entry.expected}, observed ${entry.observed}`);
+  if (Object.hasOwn(entry, "observed")) {
+    errors.push(`routing expectation ${entry.id} must not embed an observed result; record it in skill-routing-observations.json`);
   }
+  if (!observationById.has(entry.id)) {
+    errors.push(`missing routing observation for ${entry.id}`);
+  } else if (entry.expected !== observationById.get(entry.id)) {
+    errors.push(`routing regression in ${entry.id}: expected ${entry.expected}, selected ${observationById.get(entry.id)}`);
+  }
+}
+for (const observation of safeObservations) {
+  if (!safeCases.some((entry) => entry.id === observation.id)) errors.push(`routing observation has no expectation: ${observation.id}`);
 }
 const directNames = safeCases.filter((entry) => entry.kind === "direct").map((entry) => entry.expected);
 const duplicateDirectNames = duplicates(directNames);
@@ -86,7 +104,38 @@ if (expectedNames.length !== source.length) {
 }
 for (const entry of safeCases) {
   if (!expectedNames.includes(entry.expected)) errors.push(`routing case ${entry.id} expects unknown skill ${entry.expected}`);
-  if (!expectedNames.includes(entry.observed)) errors.push(`routing case ${entry.id} observed unknown skill ${entry.observed}`);
+  const selected = observationById.get(entry.id);
+  if (selected && !expectedNames.includes(selected)) errors.push(`routing case ${entry.id} selected unknown skill ${selected}`);
+}
+
+const parity = JSON.parse(fs.readFileSync("evals/skill-behavior-parity.json", "utf8"));
+const parityCases = Array.isArray(parity.cases) ? parity.cases : [];
+const parityNames = parityCases.map((entry) => entry.skill);
+const duplicateParityNames = duplicates(parityNames);
+if (duplicateParityNames.length) errors.push(`duplicate behavior-parity skills: ${duplicateParityNames.join(", ")}`);
+const missingParity = expectedNames.filter((name) => !parityNames.includes(name));
+const unknownParity = parityNames.filter((name) => !expectedNames.includes(name));
+if (missingParity.length) errors.push(`behavior parity is missing skills: ${missingParity.join(", ")}`);
+if (unknownParity.length) errors.push(`behavior parity contains unknown skills: ${unknownParity.join(", ")}`);
+if (!parity.run?.date || !parity.run?.method || !Array.isArray(parity.run?.review_scopes)) {
+  errors.push("behavior parity must record date, method, and review_scopes");
+}
+const sourceByName = new Map();
+for (const skillPath of source) {
+  const frontmatter = fs.readFileSync(path.join(skillPath, "SKILL.md"), "utf8").match(/^---\n([\s\S]*?)\n---/);
+  const name = frontmatter?.[1].match(/^name:\s*([^\s]+)\s*$/m)?.[1];
+  if (name) sourceByName.set(name, skillPath);
+}
+for (const entry of parityCases) {
+  if (!entry.scenario || entry.result !== "pass" || !Array.isArray(entry.loaded_references) || !entry.observed_postcondition) {
+    errors.push(`invalid behavior-parity evidence for ${entry.skill}: scenario, pass result, loaded_references, and observed_postcondition are required`);
+  }
+  for (const reference of entry.loaded_references || []) {
+    if (/^\/aep-[a-z0-9-]+$/.test(reference)) continue;
+    if (!reference.startsWith("references/") || !fs.existsSync(path.join(sourceByName.get(entry.skill) || "", reference))) {
+      errors.push(`behavior-parity evidence for ${entry.skill} names an invalid disclosed reference: ${reference}`);
+    }
+  }
 }
 
 function skillRoot(file) {
@@ -145,6 +194,7 @@ if (errors.length) {
 
 fs.writeFileSync(expectedNamesFile, `${expectedNames.join("\n")}\n`);
 console.log(`source catalog: ${source.length} skills; routing probes: ${safeCases.length}`);
+console.log(`behavior parity: ${parityCases.length}/${expectedNames.length} recorded scenario dry-runs`);
 console.log(`navigation debt ratchets: ${referenceHops}/26 reference hops; ${tocDebt}/28 unique long references without early TOC`);
 NODE
 
@@ -163,6 +213,50 @@ if ! diff -u "$EXPECTED_NAMES" "$TMP_ROOT/installed-names"; then
   echo "FAIL: skills CLI did not install the complete expected catalog" >&2
   exit 1
 fi
+
+# Validate links in the artifact users actually receive. Source-tree links can
+# appear valid by escaping to repository docs or sibling skills that are not
+# present when one skill is copied into a downstream project.
+node - "$INSTALL_ROOT/.agents/skills" <<'NODE'
+const fs = require("node:fs");
+const path = require("node:path");
+
+const installRoot = path.resolve(process.argv[2]);
+const errors = [];
+
+function walk(directory) {
+  const output = [];
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    const item = path.join(directory, entry.name);
+    if (entry.isDirectory()) output.push(...walk(item));
+    else if (entry.isFile()) output.push(item);
+  }
+  return output;
+}
+
+for (const entry of fs.readdirSync(installRoot, { withFileTypes: true })) {
+  if (!entry.isDirectory()) continue;
+  const skillRoot = path.join(installRoot, entry.name);
+  for (const markdown of walk(skillRoot).filter((file) => file.endsWith(".md"))) {
+    const text = fs.readFileSync(markdown, "utf8");
+    for (const match of text.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
+      const rawTarget = match[1];
+      const target = rawTarget.replace(/#.*/, "");
+      if (!target || /^(?:https?:\/\/|mailto:|\/aep-)/.test(target)) continue;
+      const resolved = path.resolve(path.dirname(markdown), target);
+      const contained = resolved === skillRoot || resolved.startsWith(`${skillRoot}${path.sep}`);
+      if (!contained) errors.push(`installed link escapes ${entry.name}: ${path.relative(skillRoot, markdown)} -> ${rawTarget}`);
+      else if (!fs.existsSync(resolved)) errors.push(`broken installed link in ${entry.name}: ${path.relative(skillRoot, markdown)} -> ${rawTarget}`);
+    }
+  }
+}
+
+if (errors.length) {
+  for (const error of errors) console.error(`FAIL: ${error}`);
+  process.exit(1);
+}
+console.log("installed links: self-contained and resolvable");
+NODE
 
 if command -v uvx >/dev/null 2>&1; then
   agent_skills=(uvx --from "skills-ref==$SKILLS_REF_VERSION" agentskills)
@@ -198,7 +292,8 @@ done < "$EXPECTED_NAMES"
 
 # Enforce the fixed front-tier metadata cost using the properties the official
 # implementation read from the installed package.
-node - "$PROPERTIES_ROOT" "$EXPECTED_NAMES" <<'NODE'
+node - "$PROPERTIES_ROOT" "$EXPECTED_NAMES" "evals/skill-routing-observations.json" <<'NODE'
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -207,6 +302,7 @@ const expectedNames = fs.readFileSync(process.argv[3], "utf8").trim().split("\n"
 const errors = [];
 let descriptionChars = 0;
 let descriptionWords = 0;
+const descriptionRecords = [];
 
 for (const expectedName of expectedNames) {
   const properties = JSON.parse(fs.readFileSync(path.join(propertiesRoot, `${expectedName}.json`), "utf8"));
@@ -223,14 +319,22 @@ for (const expectedName of expectedNames) {
   if (/[<>]/.test(description)) errors.push(`description contains angle brackets for ${expectedName}`);
   descriptionChars += description.length;
   descriptionWords += description.trim().split(/\s+/).length;
+  descriptionRecords.push(`${name}\0${description}`);
 }
 if (descriptionChars > 5000) errors.push(`description corpus exceeds 5000 characters: ${descriptionChars}`);
+
+const routingEvidence = JSON.parse(fs.readFileSync(process.argv[4], "utf8"));
+const descriptionSha256 = crypto.createHash("sha256").update(descriptionRecords.join("\n")).digest("hex");
+if (routingEvidence.run?.description_sha256 !== descriptionSha256) {
+  errors.push(`routing observations describe a different metadata corpus: recorded ${routingEvidence.run?.description_sha256}, current ${descriptionSha256}`);
+}
 
 if (errors.length) {
   for (const error of errors) console.error(`FAIL: ${error}`);
   process.exit(1);
 }
 console.log(`installed metadata: ${descriptionChars} chars / ${descriptionWords} words`);
+console.log(`routing evidence: ${routingEvidence.observations.length} recorded selections bound to ${descriptionSha256.slice(0, 12)}`);
 NODE
 
 skill_count=$(wc -l < "$EXPECTED_NAMES" | tr -d ' ')

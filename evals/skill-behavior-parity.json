@@ -1,0 +1,209 @@
+{
+  "schema_version": 1,
+  "run": {
+    "date": "2026-07-14",
+    "method": "Final four-way review: a full-PR reviewer, a shell/CI reviewer, a skill-corpus reviewer, and a root-agent reproduction pass dry-ran each public scenario against the leaned skill and its disclosed references. Runtime defects found by the run were fixed before these pass observations were recorded.",
+    "review_scopes": [
+      "full pull-request behavior",
+      "shell and CI failure paths",
+      "all 22 skill contracts",
+      "independent high-risk reproduction"
+    ]
+  },
+  "cases": [
+    {
+      "skill": "aep-build",
+      "scenario": "Execute an approved change from an isolated feature worktree through implementation, evaluation, PR, and merge.",
+      "result": "pass",
+      "loaded_references": [
+        "references/progress-template.md",
+        "references/harness-artifacts.md",
+        "references/merge-decision-cases.md"
+      ],
+      "observed_postcondition": "The template resolves from the installed skill root, task commits and evaluation artifacts are checkable, and the PR reaches a terminal merge decision."
+    },
+    {
+      "skill": "aep-design",
+      "scenario": "Explore a feature and produce an OpenSpec proposal for human review without beginning implementation.",
+      "result": "pass",
+      "loaded_references": ["references/modes.md", "references/workflow-modes.md"],
+      "observed_postcondition": "The selected mode produces proposal, design, specs, and tasks artifacts before approval."
+    },
+    {
+      "skill": "aep-git-ref",
+      "scenario": "Resolve the integration branch and recover a broken feature worktree.",
+      "result": "pass",
+      "loaded_references": [],
+      "observed_postcondition": "Branch resolution and worktree recovery end in observable git refs and registered worktree state."
+    },
+    {
+      "skill": "aep-launch",
+      "scenario": "Create a worktree and launch a Codex or Claude worker for an approved change.",
+      "result": "pass",
+      "loaded_references": [
+        "references/orphan-recovery.md",
+        "references/signals-spec.md",
+        "/aep-executor"
+      ],
+      "observed_postcondition": "A backend-specific worker handle exists, the host confirms it, and the worktree activity probe passes."
+    },
+    {
+      "skill": "aep-wrap",
+      "scenario": "Converge records and clean up after a merged pull request.",
+      "result": "pass",
+      "loaded_references": ["references/convergence.md", "references/layer-advance.md"],
+      "observed_postcondition": "OpenSpec is archived, story/layer state is updated, and the worktree is removed without touching unmerged work."
+    },
+    {
+      "skill": "aep-autopilot",
+      "scenario": "Run one bounded autonomous tick over several ready and active stories.",
+      "result": "pass",
+      "loaded_references": [
+        "references/tick-protocol.md",
+        "references/state-schema.md",
+        "references/drivers.md"
+      ],
+      "observed_postcondition": "The tick applies ordering invariants, performs at most one launch/wrap, writes atomic state, and pauses at strategic gates."
+    },
+    {
+      "skill": "aep-design-lens",
+      "scenario": "Audit an existing interface against usability, accessibility, and theory-grounded heuristics.",
+      "result": "pass",
+      "loaded_references": ["references/method-and-templates.md", "references/theory-catalog.md"],
+      "observed_postcondition": "Findings identify evidence, theory, severity, and an actionable recommendation."
+    },
+    {
+      "skill": "aep-executor",
+      "scenario": "Select a host-compatible backend and verify a new workspace worker is alive.",
+      "result": "pass",
+      "loaded_references": [
+        "references/backends.md",
+        "references/claude-native.md",
+        "references/codex-native.md"
+      ],
+      "observed_postcondition": "Selection returns a supported mode; liveness combines a mode-specific host check with worktree activity."
+    },
+    {
+      "skill": "aep-gen-eval",
+      "scenario": "Define and run a reusable generator/evaluator contract for an artifact.",
+      "result": "pass",
+      "loaded_references": [
+        "references/agent-contracts.md",
+        "references/eval-protocol.md",
+        "references/scoring-framework.md"
+      ],
+      "observed_postcondition": "Independent findings and scores conform to the declared schema and recovery ladder."
+    },
+    {
+      "skill": "aep-workflow-feedback",
+      "scenario": "Capture a downstream process lesson and route it into the AEP upstream review flow.",
+      "result": "pass",
+      "loaded_references": [],
+      "observed_postcondition": "A structured feedback artifact records evidence, scope, proposed change, and upstream destination."
+    },
+    {
+      "skill": "aep-workflow",
+      "scenario": "Author a bounded multi-agent harness for a task too large for one context.",
+      "result": "pass",
+      "loaded_references": ["references/pattern-catalog.md"],
+      "observed_postcondition": "The generated workflow has deterministic inputs, bounded workers, state transitions, and verification."
+    },
+    {
+      "skill": "aep-calibrate",
+      "scenario": "Capture human visual-quality judgments before an alignment layer.",
+      "result": "pass",
+      "loaded_references": ["references/calibration-types.md", "references/vibe-design-tools.md"],
+      "observed_postcondition": "A dimension-specific calibration file records examples, decisions, and acceptance cues."
+    },
+    {
+      "skill": "aep-dispatch",
+      "scenario": "Score the ready queue and hand off one next story.",
+      "result": "pass",
+      "loaded_references": [
+        "references/scoring.md",
+        "references/context-assembly.md",
+        "references/workflow-mode.md"
+      ],
+      "observed_postcondition": "Canonical scoring yields one selected story and a readiness-band-specific handoff."
+    },
+    {
+      "skill": "aep-envision",
+      "scenario": "Frame a product opportunity and decide whether it merits downstream planning.",
+      "result": "pass",
+      "loaded_references": ["references/file-resolution.md", "references/yaml-guardrails.md"],
+      "observed_postcondition": "The opportunity, personas, constraints, activities, and decision are persisted in valid product context."
+    },
+    {
+      "skill": "aep-map",
+      "scenario": "Turn product intent into architecture, stories, layers, waves, and topology.",
+      "result": "pass",
+      "loaded_references": [
+        "references/alignment-layers.md",
+        "references/technical-spec-triggers.md",
+        "references/object-map-drafts.md"
+      ],
+      "observed_postcondition": "The resulting graph has dependencies, release layers, conflict-aware waves, and agent topology."
+    },
+    {
+      "skill": "aep-model",
+      "scenario": "Create an object-first information architecture for UI-facing stories.",
+      "result": "pass",
+      "loaded_references": ["references/orca-process.md", "references/file-resolution.md"],
+      "observed_postcondition": "Objects, relationships, calls to action, and attributes are recorded before screen design."
+    },
+    {
+      "skill": "aep-reflect",
+      "scenario": "Classify a concrete post-ship learning and update the correct product phase.",
+      "result": "pass",
+      "loaded_references": ["references/telemetry-ingestion.md", "references/file-resolution.md"],
+      "observed_postcondition": "Evidence is classified once, routed to the canonical field, and appended to the changelog."
+    },
+    {
+      "skill": "aep-validate",
+      "scenario": "Validate an artifact, completed implementation, or RFC with separate generator and evaluator roles.",
+      "result": "pass",
+      "loaded_references": [
+        "references/modes.md",
+        "references/protocol-specs.md",
+        "references/validation-dimensions.md"
+      ],
+      "observed_postcondition": "The selected mode emits independent findings, applies bounded fixes, and rechecks the target artifact."
+    },
+    {
+      "skill": "aep-watch",
+      "scenario": "Ingest telemetry, deduplicate it, and create evidence-backed refinement stories.",
+      "result": "pass",
+      "loaded_references": ["references/telemetry-ingestion.md"],
+      "observed_postcondition": "Normalized observations are deduplicated and either update an existing story or create one new refinement story."
+    },
+    {
+      "skill": "aep-e2e-skill-scaffolding",
+      "scenario": "Upgrade a thin test helper into a three-tier BDD and layer-gate skill.",
+      "result": "pass",
+      "loaded_references": [
+        "references/three-tier-model.md",
+        "references/bdd-journeys.md",
+        "references/layer-gate-loop.md"
+      ],
+      "observed_postcondition": "The project owns a canonical policy, journey templates, tier commands, and layer-gate loop."
+    },
+    {
+      "skill": "aep-onboard",
+      "scenario": "Install AEP into a new downstream repository and orient a first-time user.",
+      "result": "pass",
+      "loaded_references": ["references/orientation.md", "references/plugins.md"],
+      "observed_postcondition": "All installed links resolve locally or to explicit web resources, required tools are checked, and the user selects one entry path."
+    },
+    {
+      "skill": "aep-scaffold",
+      "scenario": "Converge an existing repository onto the canonical AEP project layout.",
+      "result": "pass",
+      "loaded_references": [
+        "references/converge-flow.md",
+        "references/resulting-structure.md",
+        "references/workspace-hook.md"
+      ],
+      "observed_postcondition": "Audit detects layout drift, confirmed mechanical fixes converge idempotently, and ambiguous copies fail closed."
+    }
+  ]
+}

@@ -176,7 +176,7 @@ resolved: human chose (a) httpOnly cookie — 2026-06-10T15:02:00Z
 - The file is the host-agnostic record; the question is answered
   **hub-and-spoke in the main session** and relayed per launch mode (bg subagent
   `SendMessage(to: agentId)`, session resume, `send_input`, `codex exec resume`, nudge) —
-  see the Human-Gate Protocol in `aep-executor/references/backends.md`.
+  see the Human-Gate Protocol in `/aep-executor` → `references/backends.md`.
 - **Gate-and-park** (native-bg-subagent / workflow / headless / codex-exec / claude-bg): after
   recording the gate the worker commits WIP and **ends its run cleanly**; the
   orchestrator later resumes a worker into the same worktree with the answer.

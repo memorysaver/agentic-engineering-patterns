@@ -65,6 +65,22 @@ printf 'same\n' > "$case_dir/.claude/skills/aep-demo/SKILL.md"
 assert_file_text "same" "$case_dir/.agents/skills/aep-demo/SKILL.md"
 pass "identical duplicate collapse"
 
+# Matching bytes with different executable modes are not identical: collapsing
+# them would silently discard runtime semantics.
+case_dir="$TMP_ROOT/mode-divergent"
+mkdir -p "$case_dir/.agents/skills/aep-demo/scripts" "$case_dir/.claude/skills/aep-demo/scripts"
+printf '#!/usr/bin/env bash\n' > "$case_dir/.agents/skills/aep-demo/scripts/run.sh"
+printf '#!/usr/bin/env bash\n' > "$case_dir/.claude/skills/aep-demo/scripts/run.sh"
+chmod 0644 "$case_dir/.agents/skills/aep-demo/scripts/run.sh"
+chmod 0755 "$case_dir/.claude/skills/aep-demo/scripts/run.sh"
+if (cd "$case_dir" && bash "$CONVERGE" --category A >/dev/null 2>&1); then
+  fail "mode-divergent duplicate returned success"
+fi
+[ ! -L "$case_dir/.claude/skills/aep-demo" ] || fail "mode-divergent copy was collapsed"
+[ -x "$case_dir/.claude/skills/aep-demo/scripts/run.sh" ] || fail "Claude executable mode was lost"
+[ ! -x "$case_dir/.agents/skills/aep-demo/scripts/run.sh" ] || fail "canonical mode was changed"
+pass "mode-divergent duplicate preservation"
+
 # Divergent copies are ambiguous: fail closed and preserve both.
 case_dir="$TMP_ROOT/divergent"
 mkdir -p "$case_dir/.agents/skills/aep-a-same" "$case_dir/.claude/skills/aep-a-same"
@@ -95,6 +111,20 @@ fi
 assert_file_text "aliased" "$case_dir/.agents/skills/aep-demo/SKILL.md"
 [ -L "$case_dir/.claude/skills" ] || fail "whole-directory skills symlink was modified"
 pass "whole-directory symlink preservation"
+
+# A symlinked parent can make apparently relative writes escape the project.
+case_dir="$TMP_ROOT/symlinked-parent"
+external_dir="$TMP_ROOT/external-agents"
+mkdir -p "$case_dir/.claude/skills/aep-demo" "$external_dir/skills"
+printf 'outside-must-stay-empty\n' > "$external_dir/sentinel"
+ln -s "$external_dir" "$case_dir/.agents"
+printf 'claude-only\n' > "$case_dir/.claude/skills/aep-demo/SKILL.md"
+if (cd "$case_dir" && bash "$CONVERGE" --category A >/dev/null 2>&1); then
+  fail "symlinked .agents parent returned success"
+fi
+[ ! -e "$external_dir/skills/aep-demo" ] || fail "skill escaped through symlinked .agents parent"
+assert_file_text "outside-must-stay-empty" "$external_dir/sentinel"
+pass "symlinked parent escape prevention"
 
 # Write failures must propagate instead of reporting a successful converge.
 case_dir="$TMP_ROOT/write-failure"

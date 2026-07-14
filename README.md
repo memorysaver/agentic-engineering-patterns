@@ -167,7 +167,7 @@ Then:
 > symlinks as **deleted** plus a pile of untracked files — a spurious, layout-breaking diff. Run the
 > `-a codex` install (which writes the real `.agents/` files) as well, then run `/aep-scaffold` in
 > existing-project mode and confirm category A. Its converge script promotes the only copy,
-> collapses byte-identical duplicates, and stops for manual resolution when the two real copies
+> collapses content-and-mode-identical duplicates, and stops for manual resolution when the two real copies
 > differ; it does not discard either side of an ambiguous pair.
 >
 > Afterward `git status` shows only the real `.agents/skills/**` updates (no phantom deletions) and
@@ -247,7 +247,11 @@ The `skills` CLI selects by skill name (there's no "group" flag). The groups map
 
 Skills are authored under `skills/<group>/<name>/SKILL.md`; each installed unit must contain every
 file it reads directly. Cross-skill behavior stays an explicit `/aep-*` invocation, so install the
-full suite unless you also install that dependency closure. Resources shared across the product-context skills live once in
+full suite unless you also install that dependency closure. Authoring directories use the short
+source name (`build/`, `map/`, …); the frontmatter name is the distribution identity, and the
+`skills` CLI materializes it as `aep-build/`, `aep-map/`, etc. CI applies the official Agent Skills
+validator to those installed distribution units, not to the intentionally grouped authoring path.
+Resources shared across the product-context skills live once in
 `skills/product-context/_shared/{references,templates}/`. A build step materializes them into each
 skill that references them (those copies are marked with a `.aep-generated` file — don't edit them
 by hand):

@@ -273,15 +273,15 @@ Then commit and push per `/aep-git-ref` "Control-Plane Commits": `git add produc
 > **workflow** mode _from dispatch_, bypassing `/aep-launch`, so dispatch itself owns
 > mode selection and the announcement for that case.
 
-Route on the `readiness_score` computed in Step 3 (bands are canonical in `references/scoring.md` § Routing Thresholds; the bullets below add the interactive actions):
+Route on the `readiness_score` band computed in Step 3. Band definitions are canonical in `references/scoring.md` § Routing Thresholds; this section owns only the interactive actions:
 
-- **readiness_score >= 0.7** → skip to `/aep-launch` (spec is dispatch-ready: 3+ testable acceptance criteria, interface obligations defined, verification complete, files affected identified)
-- **readiness_score 0.5–0.7** → present to the user for the decision (`/aep-launch` or `/aep-design`)
-- **readiness_score < 0.5** → route to `/aep-design` (spec needs refinement: vague or fewer than 3 acceptance criteria, missing interface details, relevant open questions)
+- **dispatch-ready** → skip to `/aep-launch`
+- **borderline** → present the `/aep-launch` versus `/aep-design` decision to the user
+- **under-specified** → route to `/aep-design`
 
 ### Full-auto / auto-design routing (medium/low readiness)
 
-Routing of an under-ready story (readiness < 0.7) depends on two `topology.routing`
+Routing of a borderline or under-specified story depends on two `topology.routing`
 flags — the `full_auto` master switch (default **false**) and the finer-grained
 `auto_design` (default **false**). `full_auto` sits **above** `auto_design`:
 `full_auto: true` implies `auto_design: true`.

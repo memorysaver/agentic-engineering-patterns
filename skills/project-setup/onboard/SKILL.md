@@ -18,7 +18,7 @@ Set up your environment for agentic TypeScript development and get oriented to h
 
 AEP is not a command runner — it's a workflow that separates _thinking_ (what to build, decided with the AI on the **control plane**) from _doing_ (agents building to precise specs on the **execution plane**), communicating only through structured artifacts (`product-context.yaml`, signal files in `.dev-workflow/signals/`) rather than shared code context. Installing the tools without that model leaves you staring at a blank terminal unsure which skill to run first.
 
-Read **[docs/orientation.md](../../../docs/orientation.md)** — the canonical 10-minute first-hour tour: the three mental models (control vs execution plane, the Jeff Patton story map, the two-session main/workspace model), what every skill does, and the four concrete paths (new product / existing project / single feature / hands-free).
+Read **[the installed orientation guide](references/orientation.md)** — the self-contained 10-minute first-hour tour: the three mental models (control vs execution plane, the Jeff Patton story map, the two-session main/workspace model), what every skill does, and the four concrete paths (new product / existing project / single feature / hands-free).
 
 **Done when:** you've read orientation.md and can name which of the four paths in "Next Steps — Pick Your Path" (below) matches your situation. Then continue to Phase 1.
 
@@ -34,7 +34,7 @@ Install the AEP skills with the [`skills`](https://github.com/vercel-labs/skills
 npx skills add memorysaver/agentic-engineering-patterns@<latest-tag> -a claude-code --skill '*' -y
 ```
 
-This installs every AEP skill (the `aep-*` names) plus a `skills-lock.json` manifest — **commit both**. For the full pinning + formatter guidance, see [Installing Skills](../../../README.md#installing-skills).
+This installs every AEP skill (the `aep-*` names) plus a `skills-lock.json` manifest — **commit both**. The lockfile is the project pin; upgrade it intentionally by rerunning the same command with the desired tag, then review and commit the resulting skill and lockfile diff.
 
 ### Optional add-ons — always ask the user
 
@@ -207,7 +207,7 @@ For a **non-standard** integration branch name (not `main`/`develop`, e.g. `stag
 
 ## Next Steps — Pick Your Path
 
-Your next move depends on your situation. Pick the path that matches what you're trying to do. Full context for each path (including why each step is in the order it's in) is in [docs/orientation.md](../../../docs/orientation.md) section 4, "The Four Paths".
+Your next move depends on your situation. Pick the path that matches what you're trying to do. Full context for each path (including why each step is in the order it's in) is in [the installed orientation guide](references/orientation.md#4-pick-one-of-four-paths).
 
 ### Path A — New product from scratch
 
@@ -247,9 +247,9 @@ You have a validated product context and want to go grab coffee.
 /aep-autopilot
 ```
 
-One command. Pauses only for design escalations or layer gate failures. Deep dive: [docs/workflow/autonomous-loop.md](../../../docs/workflow/autonomous-loop.md).
+One command. Pauses only for design escalations or layer gate failures. Run `/aep-autopilot` directly for its full tick and pause protocol.
 
-**Still unsure which path?** See the decision tree in [docs/skills-quick-reference.md](../../../docs/skills-quick-reference.md#decision-tree).
+**Still unsure which path?** Use the decision rule in [the installed orientation guide](references/orientation.md#4-pick-one-of-four-paths).
 
 ---
 
@@ -263,26 +263,7 @@ One command. Pauses only for design escalations or layer gate failures. Deep div
 
 ## Learn More
 
-Pointers for going deeper — check what's relevant when you need it.
-
-**Mental models & concepts**
-
-- [docs/orientation.md](../../../docs/orientation.md) — the canonical first-hour guide (mental models + every skill + four paths)
-- [README.md "Why This Exists"](../../../README.md#why-this-exists) — the full argument for spec-precision-over-execution-speed
-- [docs/glossary.md](../../../docs/glossary.md) — precise definitions for every AEP term (ubiquitous language)
-
-**Skills decision guide**
-
-- [docs/skills-quick-reference.md](../../../docs/skills-quick-reference.md) — cheat sheet + decision tree + common sequences
-
-**Autonomous mode**
-
-- [docs/workflow/autonomous-loop.md](../../../docs/workflow/autonomous-loop.md) — how `/aep-autopilot` orchestrates dispatch → launch → monitor → wrap
-
-**v2 upgrades**
-
-- [docs/aep-v2-improvement-guideline.md](../../../docs/aep-v2-improvement-guideline.md) — split-mode, capability maps, readiness scoring, outcome contracts, technical specs, grouped changes
-
-**Git + worktree conventions**
-
-- `/aep-git-ref` — AEP git + worktree reference (worktree lifecycle, branch naming, commit-per-task pattern, `$BASE` resolution, recovery), accessed on-demand.
+- [Installed orientation guide](references/orientation.md) — mental models, skill map, and the four entry paths; always available offline with this skill.
+- `/aep-git-ref` — worktree lifecycle, branch naming, commit-per-task pattern, `$BASE` resolution, and recovery.
+- `/aep-autopilot` — the autonomous tick, monitoring, escalation, and pause protocol.
+- [Public AEP documentation](https://github.com/memorysaver/agentic-engineering-patterns/tree/main/docs) — extended glossary, decisions, and architecture material when network access is available.

@@ -96,7 +96,7 @@ The v1.8.0 spawn contract for the fresh generator (host-agnostic; same rules as 
 
 1. **Mode:** `native-bg-subagent` — spawned via the **Agent tool** with `run_in_background: true`, **no team**. It runs as an in-process background subagent.
 2. **Worktree:** it inherits the **EXISTING** worktree (`.feature-workspaces/<name>`). The prior generator's commits are present; the fresh generator may revert, rework, or build on them — but its prompt forbids resuming the stuck approach.
-3. **Liveness:** it MUST pass the post-spawn liveness probe — `skills/patterns/executor/scripts/spawn-liveness-probe.sh <ws> <agent_id>`. A spawn call returning is **not** evidence the worker started; the probe confirms worktree activity, and the caller separately confirms the subagent process exists (`TaskList` shows `<agent_id>`). If the probe fails, tear down and re-spawn.
+3. **Liveness:** it MUST pass `/aep-executor`'s `scripts/spawn-liveness-probe.sh <ws> <worker_handle>`. A spawn call returning is **not** evidence the worker started; the probe confirms worktree activity, and the caller separately confirms the worker with the backend-specific host tool. If the probe fails, tear down and re-spawn with the current host's fallback mode.
 4. **Gate-and-park:** like any generator, the fresh generator **gates and parks for human input** when it hits a decision it can't resolve — it does not invent product/security answers.
 
 The fresh generator is still a generator: the evaluator role is untouched, and the generator≠evaluator boundary is preserved across the swap.

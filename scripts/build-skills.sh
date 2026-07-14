@@ -100,6 +100,99 @@ recorded_files() {
   done | sort
 }
 
+# A marker is repository state, not trusted input. Managed paths must stay
+# below their consumer directory and every existing destination component must
+# be a real directory/file (never a symlink). Validate the complete corpus
+# before the first mutation so a malformed late marker cannot partially apply
+# an otherwise valid build.
+valid_managed_path() {
+  local rel="$1"
+  [ -n "$rel" ] || return 1
+  case "$rel" in
+    /*|.|..|./*|../*|*/./*|*/../*|*/.|*/..) return 1 ;;
+  esac
+  [ "$rel" != "$MARKER" ]
+}
+
+safe_destination_shape() {
+  local dst="$1" rel="$2" current part rest
+  valid_managed_path "$rel" || return 1
+  [ ! -L "$dst" ] || return 1
+  [ ! -e "$dst" ] || [ -d "$dst" ] || return 1
+
+  current="$dst"
+  rest="$rel"
+  while [[ "$rest" == */* ]]; do
+    part=${rest%%/*}
+    rest=${rest#*/}
+    current="$current/$part"
+    [ ! -L "$current" ] || return 1
+    [ ! -e "$current" ] || [ -d "$current" ] || return 1
+  done
+
+  current="$dst/$rel"
+  [ ! -L "$current" ] || return 1
+  [ ! -e "$current" ] || [ -f "$current" ] || return 1
+}
+
+preflight_destinations() {
+  local skill_dir name skillmd shared src dst desired recorded rel seen marker
+  local failures=0
+
+  for skill_dir in "$PC"/*/; do
+    name="$(basename "$skill_dir")"
+    [ "$name" = "_shared" ] && continue
+    skillmd="$skill_dir/SKILL.md"
+    [ -f "$skillmd" ] || continue
+
+    for shared in references templates; do
+      src="$SHARED/$shared"
+      [ -d "$src" ] || continue
+      dst="$skill_dir$shared"
+      marker="$dst/$MARKER"
+
+      if [ -L "$marker" ] || { [ -e "$marker" ] && [ ! -f "$marker" ]; }; then
+        echo "ERROR: $name/$shared/$MARKER must be a regular file, never a symlink or directory" >&2
+        failures=$((failures + 1))
+        continue
+      fi
+
+      desired="$(desired_files "$skillmd" "$shared")"
+      recorded="$(recorded_files "$dst" "$shared")"
+      seen=""
+      while IFS= read -r rel; do
+        [ -n "$rel" ] || continue
+        if ! valid_managed_path "$rel"; then
+          echo "ERROR: unsafe managed path in $name/$shared/$MARKER: $rel" >&2
+          failures=$((failures + 1))
+        elif printf '%s\n' "$seen" | grep -qxF "$rel"; then
+          echo "ERROR: duplicate managed path in $name/$shared/$MARKER: $rel" >&2
+          failures=$((failures + 1))
+        elif ! safe_destination_shape "$dst" "$rel"; then
+          echo "ERROR: unsafe managed destination shape: $name/$shared/$rel" >&2
+          failures=$((failures + 1))
+        fi
+        seen="${seen}${rel}"$'\n'
+      done <<< "$recorded"
+
+      while IFS= read -r rel; do
+        [ -n "$rel" ] || continue
+        if ! safe_destination_shape "$dst" "$rel"; then
+          echo "ERROR: desired destination is a symlink, directory, or escapes its consumer: $name/$shared/$rel" >&2
+          failures=$((failures + 1))
+        fi
+      done <<< "$desired"
+    done
+  done
+
+  [ "$failures" -eq 0 ] || {
+    echo "ERROR: $failures unsafe generated-resource destination(s); nothing was changed." >&2
+    return 1
+  }
+}
+
+preflight_destinations
+
 STALE=0
 WROTE=0
 CONFLICT=0

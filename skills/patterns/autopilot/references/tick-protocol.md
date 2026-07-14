@@ -8,14 +8,14 @@ turn then waits the per-tick floor — step ⑦ — before ending)
 this tick each turn until the layer completes; loop driver (fallback) —
 `/loop 5m /aep-autopilot tick`; or manual `/aep-autopilot tick`
 
-> **BOUNDARY REMINDER:** The autopilot is an orchestrator. Every action on a workspace is `executor.nudge()` / `executor.liveness()` — autopilot runs only on **steerable, driver-compatible modes** (native-bg-subagent / claude-bg / codex-subagent / codex-exec / legacy; see the Executor transport summary in SKILL.md and the full per-mode table in `aep-executor/references/backends.md`). The nudge texts in this file are mode-independent — deliver each through the workspace's `backend` transport (`SendMessage(to: agentId)` / `feedback.md` / `send_input` / `codex exec resume` / `tmux send-keys`). Liveness is the **post-spawn liveness probe** (`aep-executor/references/backends.md` § Post-Spawn Liveness Probe — process exists AND worktree active) — **never** roster/state membership. Never spawn code reviewers from main, never read workspace source code, never call `gh pr merge`. See SKILL.md "STOP — Orchestrator Boundaries".
+> **BOUNDARY REMINDER:** The autopilot is an orchestrator. Every action on a workspace is `executor.nudge()` / `executor.liveness()` — autopilot runs only on **steerable, driver-compatible modes** (native-bg-subagent / claude-bg / codex-subagent / codex-exec / legacy; see the Executor transport summary in SKILL.md and the full per-mode table in `/aep-executor` → `references/backends.md`). The nudge texts in this file are mode-independent — deliver each through the workspace's `backend` transport (`SendMessage(to: agentId)` / `feedback.md` / `send_input` / `codex exec resume` / `tmux send-keys`). Liveness is the **post-spawn liveness probe** (`/aep-executor` → `references/backends.md` § Post-Spawn Liveness Probe — process exists AND worktree active) — **never** roster/state membership. Never spawn code reviewers from main, never read workspace source code, never call `gh pr merge`. See SKILL.md "STOP — Orchestrator Boundaries".
 
 **EXECUTION MODEL — CHECK → ACT** (see SKILL.md "Execution model"). A tick is two halves:
 
 - **CHECK** — steps ①②⑤, the read-only/scoring parts of ④⑥, and the ⑦ state write. These run in a cheap, context-isolated agent via `executor.check()` (Claude Code Haiku subagent / Codex `codex exec`) and produce an **action list**. The CHECK reads signals only — never workspace code.
 - **ACT** — the orchestrator performs the emitted actions: ③ wrap, ③.5 post-merge guard (dogfood / reflect / revert), ④/⑤ nudges, ⑥ launch, escalations.
 
-The action-list schema is `{summary, state_written, actions[]}`, each action `{type, workspace, story_id, message, reason}` (full schema in `aep-executor/references/backends.md`). The step recipes below are both the content of the CHECK prompt and the templates the ACT executes.
+The action-list schema is `{summary, state_written, actions[]}`, each action `{type, workspace, story_id, message, reason}` (full schema in `/aep-executor` → `references/backends.md`). The step recipes below are both the content of the CHECK prompt and the templates the ACT executes.
 
 ---
 
@@ -89,7 +89,7 @@ For each workspace in `state.workspaces`:
 
 **Orphan check (session-bound modes — native-bg-subagent, codex-subagent) — by real liveness, not roster:**
 
-- Apply the **post-spawn liveness probe** (`aep-executor/references/backends.md` § Post-Spawn Liveness Probe):
+- Apply the **post-spawn liveness probe** (`/aep-executor` → `references/backends.md` § Post-Spawn Liveness Probe):
   the workspace is an **orphan** when its `agent_id` no longer appears in TaskList
   / `list_agents` (lead restarted, worker crashed, **or the spawn never actually
   started** — e.g. the removed claude-team's truncated-launch failure) **and/or**
@@ -338,7 +338,7 @@ executor.nudge(<workspace-name>,
 
 > **claude-bg:** 6 stuck ticks is the stop+respawn threshold — `claude stop
 <agent_id>`, then respawn in the worktree with the recovery bootstrap and
-> record the new `agent_id` (recipe in `aep-executor/references/claude-native.md`).
+> record the new `agent_id` (recipe in `/aep-executor` → `references/claude-native.md`).
 
 ### Escalation (60 min stuck)
 
@@ -387,11 +387,11 @@ Reuse the dispatch scoring logic from `/aep-dispatch` steps 1-3:
 
 Route the top-scored story (or group) on the canonical `readiness_score` bands (`/aep-dispatch` `references/scoring.md` § Routing Thresholds). Autopilot's action per band:
 
-- **dispatch-ready (>= 0.7)** → dispatch to `/aep-launch`
-- **under-ready (< 0.7, both bands)** → check `topology.routing.full_auto` / `auto_design`:
+- **dispatch-ready** → dispatch to `/aep-launch`
+- **borderline or under-specified** → check `topology.routing.full_auto` / `auto_design`:
   - If `full_auto: true` (master switch) **or** `auto_design: true` → auto-route through the **non-interactive design resolver** (`/aep-design`, no pause), then `/aep-launch`
   - Otherwise → **ESCALATE** (pause for human design input)
-- **`attempt_count >= 2`** → always **ESCALATE** regardless of readiness
+- **repeated-attempt override** → always **ESCALATE** regardless of readiness
 
 ### Pause Protocol (when an escalation triggers)
 

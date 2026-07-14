@@ -65,7 +65,7 @@ the next layer. Each layer adds journeys; the library grows into a regression su
 ## `product-context.yaml` shape
 
 This is the **canonical** `layer_gates` schema (the same one in
-`skills/product-context/_shared/templates/product-context-schema.yaml`):
+`/aep-map` → `templates/product-context-schema.yaml`):
 
 ```yaml
 layer_gates:

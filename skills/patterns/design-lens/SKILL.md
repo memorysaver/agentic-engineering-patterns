@@ -128,4 +128,4 @@ A design-lens pass feeds forward; control then returns to the calling context.
 A product-agnostic task+data method (not a product-type lookup), a leaf skill beside
 `/aep-model` and `/aep-calibrate` rather than inside them, hybrid output, Nielsen 0–4
 severity, two depths, and always-on accessibility — the reasoning is recorded in
-[`docs/decisions/design-lens-rationale.md`](../../../docs/decisions/design-lens-rationale.md).
+[`docs/decisions/design-lens-rationale.md`](https://github.com/memorysaver/agentic-engineering-patterns/blob/main/docs/decisions/design-lens-rationale.md).

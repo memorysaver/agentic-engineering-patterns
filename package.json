@@ -49,8 +49,10 @@
     "check": "oxlint && oxfmt --write",
     "skills:build": "bash scripts/build-skills.sh",
     "skills:check": "bash scripts/build-skills.sh --check",
+    "skills:test-build": "bash scripts/test-build-skills.sh",
     "skills:package-check": "bash scripts/check-skills-package.sh",
-    "skills:test-scaffold": "bash scripts/test-scaffold-converge.sh"
+    "skills:test-scaffold": "bash scripts/test-scaffold-converge.sh",
+    "skills:test-scaffold-audit": "bash scripts/test-scaffold-audit.sh"
   },
   "dependencies": {
     "@agentic-engineering-patterns/env": "workspace:*",

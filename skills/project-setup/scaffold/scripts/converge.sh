@@ -13,6 +13,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source=layout-lib.sh
+. "$SCRIPT_DIR/layout-lib.sh"
+
 usage() {
   cat <<'EOF'
 Usage: converge.sh [--category A|C|E]...
@@ -76,12 +80,10 @@ fi
 # Validate every ambiguous shape before the first write so a later conflict
 # cannot leave an earlier skill normalized in an otherwise failed run.
 if [ "$apply_a" -eq 1 ]; then
-  for skills_dir in .agents/skills .claude/skills; do
-    if [ -L "$skills_dir" ] || { [ -e "$skills_dir" ] && [ ! -d "$skills_dir" ]; }; then
-      echo "ERROR: $skills_dir must be a real directory; inspect it manually." >&2
-      exit 1
-    fi
-  done
+  if ! aep_parent_dirs_safe; then
+    echo "ERROR: .agents, .claude, and their skills directories must be real directories; inspect symlinks or invalid entries manually." >&2
+    exit 1
+  fi
   for claude_skill in .claude/skills/aep-*; do
     [ -e "$claude_skill" ] || [ -L "$claude_skill" ] || continue
     skill_name=${claude_skill##*/}
@@ -98,7 +100,7 @@ if [ "$apply_a" -eq 1 ]; then
     elif [ -L "$canonical_skill" ]; then
       echo "ERROR: canonical $canonical_skill is itself a symlink; inspect it manually." >&2
       exit 1
-    elif [ -e "$canonical_skill" ] && { [ ! -d "$canonical_skill" ] || ! diff -qr -- "$claude_skill" "$canonical_skill" >/dev/null; }; then
+    elif [ -e "$canonical_skill" ] && { [ ! -d "$canonical_skill" ] || ! aep_trees_identical "$claude_skill" "$canonical_skill"; }; then
       echo "ERROR: divergent or invalid copies at $claude_skill and $canonical_skill; refusing to change either." >&2
       exit 1
     fi
@@ -127,7 +129,8 @@ if [ "$apply_a" -eq 1 ]; then
 
   # Promote every Claude-only real aep-* directory to the canonical Codex
   # location, then link Claude to it. If both sides contain the same skill,
-  # collapse only byte-identical copies; divergent copies require a human.
+  # collapse only content-and-mode-identical copies; divergent copies require
+  # a human so executable bits and other meaningful modes are never lost.
   for claude_skill in .claude/skills/aep-*; do
     [ -e "$claude_skill" ] || [ -L "$claude_skill" ] || continue
     skill_name=${claude_skill##*/}
@@ -151,7 +154,7 @@ if [ "$apply_a" -eq 1 ]; then
       echo "ERROR: canonical $canonical_skill is itself a symlink; inspect it manually." >&2
       exit 1
     elif [ -e "$canonical_skill" ]; then
-      if ! diff -qr -- "$claude_skill" "$canonical_skill" >/dev/null; then
+      if ! aep_trees_identical "$claude_skill" "$canonical_skill"; then
         echo "ERROR: divergent copies at $claude_skill and $canonical_skill; refusing to delete either." >&2
         exit 1
       fi

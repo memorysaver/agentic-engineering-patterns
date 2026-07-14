@@ -104,7 +104,7 @@ Read `references/findings-format.md` to consolidate, categorize, and present fin
 
 ## Design Decisions
 
-Gen/eval is packaged as its own invocable skill that doubles as a reference library, rather than folded into `/aep-validate` or `/aep-launch`. Rationale: [`docs/decisions/gen-eval-rationale.md`](../../../docs/decisions/gen-eval-rationale.md).
+Gen/eval is packaged as its own invocable skill that doubles as a reference library, rather than folded into `/aep-validate` or `/aep-launch`. Rationale: [`docs/decisions/gen-eval-rationale.md`](https://github.com/memorysaver/agentic-engineering-patterns/blob/main/docs/decisions/gen-eval-rationale.md).
 
 ---
 

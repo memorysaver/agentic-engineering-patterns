@@ -163,14 +163,21 @@ Full recipes live in the /aep-executor references — spawn per the selected mod
 "aep-builder", …)` / background `codex exec --cd …`).
 - **legacy** — /aep-executor `tmux-session.md` (`tmux new-session` → readiness wait → `send-keys`).
 
-**Post-spawn liveness is mandatory — do not report "running" until it passes.** A working native spawn
-returns a **bare-hex `agentId`** (not an `@<team>` id); record it as `agent_id`, then run the
-Post-Spawn Liveness Probe per /aep-executor (`scripts/spawn-liveness-probe.sh <name> <agent_id>`): the
-worker must exist **and** the worktree show activity (`status.json` written or non-empty `git diff`)
-within N seconds. On failure, tear down the dead spawn (`TeamDelete` any team created) and
-auto-fall-back to `native-bg-subagent` into the same worktree — "roster says active" is not liveness.
+**Post-spawn liveness is mandatory — do not report "running" until it passes.** Record the
+backend-specific `worker_handle`: bare-hex Agent id for `native-bg-subagent`, Claude session id for
+`claude-bg`, Codex agent id for `codex-subagent`, Codex session id plus launch PID for `codex-exec`, or
+tmux session/pane for `legacy`. Apply both halves of the /aep-executor probe: confirm that handle with
+the mode's host tool, then run `scripts/spawn-liveness-probe.sh <name> <worker_handle>` for worktree
+activity (`status.json` or non-empty `git diff`) within N seconds.
 
-**Postcondition:** the spawn returned a bare-hex `agentId` and the liveness probe passed.
+On failure, tear down the dead remnant and make **one host-compatible fallback** into the same
+worktree: Claude native modes switch between `native-bg-subagent` and `claude-bg`; Codex native modes
+switch between `codex-subagent` and `codex-exec`; `legacy` re-runs Step 3 without the tmux pin. Probe
+the fallback once, then escalate if it also fails—never cross-fallback to a backend the current host
+cannot execute.
+
+**Postcondition:** the mode-specific handle is recorded, the host confirms that worker exists, and
+the worktree-activity probe passed.
 
 ## Step 5: Present
 

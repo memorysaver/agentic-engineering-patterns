@@ -107,4 +107,4 @@ Read [`references/pattern-catalog.md`](references/pattern-catalog.md) for skelet
 
 Why this is a first-class pattern (not just `/aep-executor`'s `workflow` mode, and
 why it sits beside `/aep-gen-eval` rather than inside it): rationale in
-[`docs/decisions/workflow-rationale.md`](../../../docs/decisions/workflow-rationale.md).
+[`docs/decisions/workflow-rationale.md`](https://github.com/memorysaver/agentic-engineering-patterns/blob/main/docs/decisions/workflow-rationale.md).

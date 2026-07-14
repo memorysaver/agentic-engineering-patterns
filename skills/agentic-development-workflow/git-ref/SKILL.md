@@ -10,7 +10,7 @@ description: >-
 
 `/aep-launch`, `/aep-build`, and `/aep-wrap` operate on a plain git repository plus `git worktree` for parallel agent isolation. There is no separate VCS, no colocated mode, no special wrapper — when these skills say "commit", they mean `git commit`. This skill is the **canonical home** for AEP's git conventions: every other skill resolves `$BASE`, creates/removes worktrees, and opens PRs by pointing here, never by re-inlining these blocks.
 
-AEP migrated from Jujutsu to pure git in 2026-04 (agent training data, universal tooling); rationale in [docs/decisions/migrate-from-jj-to-git.md](../../../docs/decisions/migrate-from-jj-to-git.md).
+AEP migrated from Jujutsu to pure git in 2026-04 (agent training data, universal tooling); rationale in [docs/decisions/migrate-from-jj-to-git.md](https://github.com/memorysaver/agentic-engineering-patterns/blob/main/docs/decisions/migrate-from-jj-to-git.md).
 
 ---
 
