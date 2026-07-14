@@ -3,7 +3,20 @@
 Detailed reference for the six dynamic-workflow sub-patterns. Each entry gives the
 **intent**, the **Workflow primitive** to use, an **AEP example**, and a **skeleton**.
 Read [`../SKILL.md`](../SKILL.md) first for the "should I use a workflow at all"
-judgment and the failure modes these patterns counter.
+sizing rule.
+
+## Failure modes these patterns counter
+
+Dynamic workflows are a structural fix for three failure modes that appear when a
+complex task runs inside one context window. The mechanism in every case is the
+same: **isolated context windows + focused goals + a deterministic orchestrator**
+instead of one long, drifting transcript.
+
+| Failure mode               | What it looks like                                                                                                           | How a workflow prevents it                                                                                          |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **Agentic laziness**       | Stops after partial progress and declares done (e.g. 35 of 50 security-review items).                                        | Fan-out gives each item its own agent; a `loop-until-done` stop condition replaces a fixed pass count.              |
+| **Self-preferential bias** | Praises / passes its own work when asked to verify it against a rubric.                                                      | A _separate_ verifier agent — no authorship attachment — judges each output (§3, Adversarial verification).         |
+| **Goal drift**             | Fidelity to the original objective decays across many turns, especially after compaction; "don't do X" constraints get lost. | Each subagent gets a short, focused goal in a fresh context, so the objective never has to survive a lossy history. |
 
 ## Primitives (recap)
 
@@ -86,8 +99,8 @@ Counters self-preferential bias directly.
 confidence, fan a small panel of independent refuters per finding and take a
 majority.
 
-**AEP example.** The generalized form of [`/aep-gen-eval`](../../gen-eval/SKILL.md)
-(generator/evaluator) — reuse its scoring framework and findings format.
+**AEP example.** The generalized form of `/aep-gen-eval` (generator/evaluator) —
+reuse its scoring framework and findings format.
 
 ```js
 const checked = await pipeline(
@@ -223,13 +236,13 @@ Independent of which sub-pattern you pick, a workflow can tune:
 - **Worktree isolation.** Use `isolation: 'worktree'` only when agents mutate files
   in parallel and would otherwise conflict (it has real setup cost). In AEP, prefer
   AEP-created `.feature-workspaces/<ws>` worktrees so `monitor()` / `/aep-wrap` paths
-  stay standard — see `../../executor/references/backends.md`. **Caveat
+  stay standard — see `/aep-executor` references (`backends.md`). **Caveat
   [stale-base]:** host-managed `isolation: 'worktree'` bases on stale
   `origin/<base>`, not local HEAD — a dispatched agent misses the dispatch-lock
   commit unless its brief carries a machine-assembled STEP-0 rebase line
   (post-lock `git rev-parse "$BASE"` → `git checkout -B story/<id> <sha>`); see
-  `backends.md` → [stale-base] and the `aep-autopilot`
-  `references/deterministic-orchestration.md` pattern.
+  `/aep-executor` references `backends.md` → [stale-base] and the `/aep-autopilot`
+  `deterministic-orchestration` pattern.
 - **Quarantine.** In triage workflows, agents that read **untrusted public content**
   must be barred from high-privilege actions — keep read-untrusted and act-with-
   privilege in separate agents.

@@ -7,6 +7,40 @@ classifies **tasks + data** and selects lenses from
 
 ---
 
+## Why this pattern earns its place
+
+AEP's third design principle: _every harness component earns its place — each exists
+because of a specific failure mode._ Grounding design in theory is a structural fix for
+four failure modes that appear when agents design and build UI:
+
+| Failure mode                     | What it looks like                                                                                                | How this pattern prevents it                                                                                                     |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| **Ships to spec, not to humans** | The agent builds exactly what the story specifies — and it still violates basic usability (no feedback, no undo). | A design guideline injects evidence-based principles _before_ build, so the spec is checked against 40 years of HCI research.    |
+| **"Looks done" ≠ usable**        | A UI renders and runs, so it's called complete — but fails Nielsen/Norman/cognitive-load tests a user would hit.  | A severity-scored heuristic health-check makes the gap between "works" and "right" explicit and rankable.                        |
+| **Reinventing design knowledge** | Each product re-derives (or silently ignores) the same well-known theory.                                         | One extensible catalog makes the knowledge reusable and consistent across products — the same reason patterns exist at all.      |
+| **Wrong theory for the product** | Applying data-viz encoding rules to a landing page, or ignoring them on a dashboard.                              | A task/data abstraction step selects _only_ the lenses that fire for this product, so the guidance is relevant, not boilerplate. |
+
+The mechanism in every case is the same: **a shared theory catalog + a selection method**
+instead of per-product guesswork.
+
+## Design goals
+
+Every output this skill produces is held to five goals — use them to judge whether a run
+did its job:
+
+1. **Relevant, not boilerplate** — lenses are selected by the product's task+data
+   profile; families that didn't fire don't appear in the output.
+2. **Traceable** — every suggestion and health-check row carries a `(→ lens id)` back to
+   a citable source, so the guidance is defensible, not vibes.
+3. **Honest** — Nielsen 0–4 severity forces triage; passing designs get short tables, and
+   findings cite observed evidence, not assumptions.
+4. **Actionable** — ranked by severity, closed with a cross-family "Top 5", and phrased
+   specifically to the characterized product.
+5. **Cheap to invoke** — a quick check (the Baseline Ten) answers "is this OK?" in
+   minutes; the full audit is reserved for when depth is warranted.
+
+---
+
 ## The 7-step method
 
 ### 1. Characterize (domain problem)
