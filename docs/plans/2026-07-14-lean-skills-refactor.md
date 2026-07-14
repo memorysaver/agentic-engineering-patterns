@@ -1,6 +1,6 @@
 # Lean Skills Refactor — Per-Skill Plan
 
-Companion to [decisions/skill-authoring-standard.md](../decisions/skill-authoring-standard.md), expanding its per-skill target table into concrete moves. Line numbers reference commit `ededa12` (v2.7.0). Vocabulary (spine, disclose, dedup, R1–R8) is the decision doc's.
+Companion to [decisions/skill-authoring-standard.md](../decisions/skill-authoring-standard.md), expanding its per-skill target table into concrete moves. Line numbers reference commit `ededa12` (v2.7.0). Vocabulary (spine, disclose, dedup, R1–R9) is the decision doc's. Every P1–P3 PR attaches R9 behavior-parity evidence for each touched skill.
 
 Each skill entry uses four verbs:
 
@@ -13,12 +13,13 @@ Each skill entry uses four verbs:
 
 ## P1 — cross-cutting sweep (applies corpus-wide; not repeated per skill below)
 
-1. **`$BASE` resolver** (21 sites, 13 skills, two spellings) → keep only in `git-ref` "Integration Branch"; every other site becomes one line: `Resolve $BASE per /aep-git-ref "Integration Branch".`
-2. **File-Resolution SPLIT/V1 block** (8 product-context skills) → new `_shared/references/file-resolution.md` (via `_shared/` + `build-skills.sh`), one-line pointer at each site.
-3. **YAML validation + common-fixes prose** (4–7 sites) → pointer to `references/yaml-guardrails.md` (already materialized in every consumer).
+0. **Extend `build-skills.sh` to per-file materialization** (prerequisite for items 2–3 and the P2 dispatch/map disclosures). Today the `.aep-generated` marker is dir-level and the build does `rm -rf` + `cp -R`, so a skill-owned file inside a generated `references/` dir is wiped on commit, and the dir-level `continue` skips authored dirs entirely. Change the marker to list the managed basenames: the build removes/copies only those files, skill-owned files coexist beside them, and shared files can materialize into the three authored-dir skills (calibrate, model, validate) too. `--check` must diff per managed file.
+1. **`$BASE` resolver** (21 SKILL.md sites, 13 skills, two spellings) → keep only in `git-ref` "Integration Branch"; every other SKILL.md site becomes one line: `Resolve $BASE per /aep-git-ref "Integration Branch".` The `aep.integration-branch` literal legitimately stays in `executor/references/backends.md` (probe) and `autopilot/references/tick-protocol.md` (nudge prompt) — those read the config key for their own bash and are not dedup targets.
+2. **File-Resolution SPLIT/V1 block** (7 product-context skills — all except watch) → new `_shared/references/file-resolution.md`, one-line pointer at each site. Requires item 0: calibrate, model, and validate have authored `references/` dirs the current build never materializes into — without item 0 their pointers would dangle, and `--check` would not catch it.
+3. **YAML validation + common-fixes prose** (4–7 sites) → pointer to `references/yaml-guardrails.md`. The file is materialized today in only 5 of 8 consumers (dispatch, envision, map, reflect, watch); for model, validate, and calibrate this step adds the pointer **and** runs `scripts/build-skills.sh` (verify with `--check`) so the file exists — it does not pre-exist there.
 4. **Cross-skill links** → `/aep-x` prose invocations; delete the four "Cross-skill reference path" blocks (executor:66-73, gen-eval:31-38, workflow:133-137, design-lens:156-162); fixes the dual-path bug (`../../patterns/executor/…` vs `.claude/skills/aep-executor/…`).
 5. **Nudge prompt texts** → live only in `autopilot/references/tick-protocol.md`; autopilot SKILL and review-trigger.md point at it.
-6. **CI (R8)**: line-budget check + `aep.integration-branch` single-file check in `skills-check.yml`.
+6. **CI (R8)**: line check over `skills/**/SKILL.md` (warn > 400 from P1; the > 500 fail threshold activates in the P3 PR) + the multi-line `$BASE` resolver block appears in exactly one SKILL.md (git-ref), with `backends.md`/`tick-protocol.md` allowlisted for the raw literal.
 
 ---
 
@@ -41,7 +42,7 @@ Each skill entry uses four verbs:
 ### /aep-design (187 → ~95) — P3
 
 - **Spine**: Phases 1–3 + Commit + Next step.
-- **Disclose**: Operating Mode product-cycle branch (`:23-39`) → `references/modes.md`; full/light workflow-mode selection (`:76-103`) → `references/workflow-modes.md` — **canonical home for mode criteria** (launch and build point here); Prerequisites probing (`:41-73`) → two one-line checks + `/aep-onboard` pointer.
+- **Disclose**: Operating Mode product-cycle branch (`:23-39`) → `references/modes.md`; full/light workflow-mode selection (`:76-103`) → `references/workflow-modes.md` — **canonical home for mode criteria** (launch points here; build's full/light are eval-loop modes, a different axis, and stay with `/aep-gen-eval`); Prerequisites probing (`:41-73`) → two one-line checks + `/aep-onboard` pointer.
 - **Dedup**: commit-to-integration pattern (`:162-173`) → `/aep-git-ref` "Control-Plane Commits".
 - **Rewrite**: Phase 1–3 completion criteria become postconditions (Phase 1: requirements list written into the change dir; Phase 2: `proposal.md` exists; Phase 3: user approved — recorded in the proposal); delete "Build shared understanding" (vague) and "What NOT to review" (negation → "review scope: architecture, interfaces, task decomposition").
 
@@ -49,7 +50,7 @@ Each skill entry uses four verbs:
 
 - **Spine**: Steps 1–6 with the ordering-invariant postcondition table (`:229-239`) — this table is the R4 exemplar and stays.
 - **Disclose**: Reflect-and-Advance (`:243-336` — layer-gate tiers, distillation protocol) → `references/layer-advance.md`; step 2.5 re-embedded copy commands (`:65-99`) → `references/convergence.md` pointer (file exists; keep the authored prose there per the wrap-convergence memory).
-- **Dedup**: layer-gate tier logic → points to build Phase 6/e2e policy (theory canonical there); worktree remove + ff-commit patterns (stated 3× internally) → `/aep-git-ref` pointers, once.
+- **Dedup**: layer-gate tier logic → points to the project e2e-test skill's `policy.md` + `e2e-skill-scaffolding` references (the R2 canonical home — not build Phase 6, which after its own refactor is itself only a pointer); worktree remove + ff-commit patterns (stated 3× internally) → `/aep-git-ref` pointers, once.
 - **Rewrite**: guardrail Never-list → the ordering invariant already encodes them positively; keep archive-not-from-workspace once as hard guardrail.
 
 ### /aep-git-ref (319 → ~260) — P3
@@ -82,7 +83,7 @@ Each skill entry uses four verbs:
 ### /aep-workflow (187 → ~135) — P3
 
 - **Spine**: judgment framing (when a workflow earns its place), sub-pattern index (one line per pattern — details already in `references/pattern-catalog.md`), invoke steps.
-- **Dedup**: merge the two AEP-mapping tables (`:51-68` catalog column ↔ `:121-137` touchpoints) into one; "earns its place" failure-mode table (shared template with design-lens) → keep once in whichever ships it best, pointer from the other; gen-eval relationship sentence once (today ×3).
+- **Dedup**: merge the two AEP-mapping tables (`:51-68` catalog column ↔ `:121-137` touchpoints) into one; the "earns its place" failure-mode table is a shared _format_ with design-lens but skill-specific _content_ — each skill keeps its own instance, disclosed into its own references (workflow's → `references/pattern-catalog.md`); gen-eval relationship sentence once (today ×3).
 - **Rewrite**: "Do NOT reach for a workflow when…" → positive sizing rule ("reach for a workflow when the task is ≥X independent items / needs adversarial verification; otherwise stay single-context"); Design Decisions → decisions pointer.
 
 ### /aep-workflow-feedback (173 → ~150) — P3
@@ -92,7 +93,7 @@ Each skill entry uses four verbs:
 ### /aep-design-lens (243 → ~145) — P3
 
 - **Spine**: the method (classify → select lenses → suggest → guideline → health-check), theory-catalog one-line index, standalone steps.
-- **Disclose**: Design Decisions (`:190-229`) → new short `docs/decisions/` note or fold into this refactor's PR description; earns-its-place table + design-goals (`:29-61`) → `references/method-and-templates.md`; lens-selection rules (`:91-99`) → already owned by `method-and-templates.md`, keep pointer only.
+- **Disclose**: Design Decisions (`:190-229`) → new short `docs/decisions/design-lens-rationale.md` note (R5 — rationale lives in `docs/decisions/`, not a PR description); earns-its-place table + design-goals (`:29-61`) → `references/method-and-templates.md`; lens-selection rules (`:91-99`) → already owned by `method-and-templates.md`, keep pointer only.
 - **Dedup**: model/calibrate/validate boundary stated once (today ×4); quick-check-vs-deep-audit rule stated once (today ×4); "never writes schema files" once as hard guardrail.
 - **Description**: 138 → ~40 words (worst in corpus; the seven-family enumeration moves into the body).
 
@@ -103,7 +104,7 @@ Each skill entry uses four verbs:
 ### /aep-dispatch (654 → ~300) — P2
 
 - **Spine**: sync → cascade → score (as a call) → present → dispatch-lock (re-read/flip/commit — keep verbatim; it is a named mechanical invariant) → create change → push → route by readiness.
-- **Disclose**: scoring formulas + worked example (`:164-256`) → `references/scoring.md`; context-package assembly (`:406-525`) → `references/context-assembly.md`; Dynamic-Workflow mode (`:312-363`, opt-in branch) → `references/workflow-mode.md` with 3-line pointer; present-queue ASCII example shrinks to one row.
+- **Disclose**: scoring formulas + worked example (`:164-256`) → `references/scoring.md`; context-package assembly (`:406-525`) → `references/context-assembly.md`; Dynamic-Workflow mode (`:312-363`, opt-in branch) → `references/workflow-mode.md` with 3-line pointer; present-queue ASCII example shrinks to one row. These three are **skill-owned files inside dispatch's build-generated `references/` dir — requires P1 item 0** (per-file materialization); without it the build hook wipes them on commit.
 - **Dedup**: story state machine stated once (schema is canonical; map and dispatch point).
 - **Rewrite**: Guardrails five-Never stack (`:649-654`) → the steps already encode them; keep "WIP limit respected" as a checkable gate; delete duplicated "irrelevant context degrades performance" (×2 no-op).
 
@@ -124,7 +125,7 @@ Each skill entry uses four verbs:
 
 ### /aep-map (355 → ~210) — P3
 
-- **Disclose**: telemetry binding (`:137-158`) → `telemetry-ingestion.md` pointer (canonical, already cited); `.5`-alignment-layer treatise (`:171-194`) → `references/alignment-layers.md` — **canonical home for the layer concept** (calibrate/dispatch point here); object-map drafts (`:195-230`) → `references/object-map-drafts.md` (or fold into `/aep-model`'s orca-process.md — decide in PR); technical-spec trigger rules (`:52-68`) → reference.
+- **Disclose**: telemetry binding (`:137-158`) → `telemetry-ingestion.md` pointer (canonical, already cited); `.5`-alignment-layer treatise (`:171-194`) → `references/alignment-layers.md` — **canonical home for the layer concept** (calibrate/dispatch point here); object-map drafts (`:195-230`) → `references/object-map-drafts.md` — map owns drafting, `/aep-model` consumes; technical-spec trigger rules (`:52-68`) → reference. Map's `references/` dir is also build-generated, so these skill-owned files **require P1 item 0**.
 - **Rewrite**: Anti-Patterns negations (`:327-331`) — walking-skeleton rule already stated twice inline; keep once, positively.
 
 ### /aep-model (233 → ~150) — P3
@@ -164,7 +165,7 @@ Each skill entry uses four verbs:
 
 ## Description diet (all 22, P3)
 
-Rule: ≤50 words, one trigger per branch, leading word first. Worked examples of the pattern:
+Rule: ≤50 words, one trigger per branch, leading word first. Any skill whose trigger set shrinks gets a **triggering check before merge** (a handful of probe prompts that previously fired the skill, or a skill-creator-style eval) — dropped trigger terms can silently stop a skill firing, and no other gate catches that. Worked examples of the pattern:
 
 - **design-lens** (138 → ~40): "Theory-grounded design guideline and 0–4 heuristic health-check for any product UI. Use on 'design review', 'usability check', 'accessibility check', or before building/auditing a UI. Not for taste capture (/aep-calibrate) or object IA (/aep-model)."
 - **workflow** (134 → ~40): "Author a dynamic workflow — a deterministic multi-agent harness for one task. Use when work is too large, uncertain, or verification-heavy for one context; triggers on 'dynamic workflow', 'ultracode', 'orchestrate subagents'. Not process feedback (/aep-workflow-feedback)."
@@ -176,4 +177,4 @@ Pipeline-position clauses ("Followed by /aep-launch") are kept — they aid chai
 
 ## Sequencing note
 
-P2 order: **build → autopilot → dispatch → scaffold** (dependency: autopilot's tick pointers assume build/wrap phase names are stable; do build first). Every P2/P3 PR re-runs `bash scripts/build-skills.sh --check` and the R8 lints; product-context reference moves route through `_shared/`. No step is renamed or renumbered without grepping all cross-references (`grep -rn "Phase <n>" skills/ docs/`) — phase names are load-bearing across autopilot/tick-protocol/wrap.
+P1 item 0 (the `build-skills.sh` per-file extension) precedes every product-context disclosure in any phase. P2 order: **build → autopilot → dispatch → scaffold** (dependency: autopilot's tick pointers assume build/wrap phase names are stable; do build first). Every P2/P3 PR re-runs `bash scripts/build-skills.sh --check` and the R8 lints, and attaches R9 parity evidence per touched skill; product-context shared-reference moves route through `_shared/`. No step is renamed or renumbered without grepping all cross-references (`grep -rn "Phase <n>" skills/ docs/`) — phase names are load-bearing across autopilot/tick-protocol/wrap.
