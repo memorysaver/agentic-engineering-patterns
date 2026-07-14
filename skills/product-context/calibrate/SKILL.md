@@ -1,6 +1,6 @@
 ---
 name: aep-calibrate
-description: Human alignment checkpoint for any quality dimension during rapid agent development. Use when /aep-reflect identifies a gap between "works" and "right", when the user says "calibrate", "align", "design brief", "capture", or before dispatching .5 alignment layers. Supports calibration types — visual-design, ux-flow, api-surface, data-model, scope-direction, copy-tone, performance-quality. Phase 1 generates a dimension-specific brief; Phase 2 captures decisions into the appropriate artifact.
+description: Human alignment checkpoint for a quality dimension agents can't judge. Use when /aep-reflect flags a works-vs-right gap, the user says "calibrate", "design brief", or "capture", or before dispatching a .5 alignment layer. Phase 1 writes a dimension brief; Phase 2 captures decisions into an artifact.
 ---
 
 # Calibrate
@@ -37,6 +37,8 @@ Check how the skill was invoked to determine the calibration dimension:
 2. Check stories with `calibration_type` set in the current `.5` layer.
 3. If neither applies, ask the user: "What feels off? (visual design / UX flow / API surface / data model / scope direction / copy tone / performance quality)"
 
+**Postcondition:** one of the 7 dimensions is selected.
+
 ---
 
 ## File Resolution
@@ -46,14 +48,7 @@ ls product/index.yaml 2>/dev/null && echo "SPLIT MODE" || echo "V1 MODE"
 cat product-context.yaml
 ```
 
-- **Split mode** (`product/index.yaml` exists): Read `quality_dimensions`, `layers`, `activities`, `constraints`, `success_criteria`, `failure_model` from `product/index.yaml`. Read `calibration.plan`, `calibration.history`, `stories`, `architecture` from `product-context.yaml`.
-- **V1 mode**: Read everything from `product-context.yaml`.
-
-**Write targets by calibration type:**
-
-- **Heavy** (visual-design, ux-flow, copy-tone): Write `calibration/<type>.yaml`. Append `calibration.history` + `changelog` in `product-context.yaml`.
-- **Light — architecture** (api-surface, data-model): Update `architecture.interfaces` or `architecture.domain_model` in `product-context.yaml`. Append `calibration.history` + `changelog`.
-- **Light — product intent** (scope-direction, performance-quality): Update `product.goals`, `product.mvp_boundary`, `product.layers`, `product.success_criteria`, or `product.failure_model` in `product/index.yaml` (split mode) or `product-context.yaml` (v1 mode). Append `calibration.history` + `changelog` in `product-context.yaml`.
+Mode semantics are canonical in `references/file-resolution.md`. Read the product definition (`quality_dimensions`, `layers`, `activities`, `constraints`, `success_criteria`, `failure_model`) from `product/index.yaml` in split mode or `product-context.yaml` in v1 mode; read operational state (`calibration.plan`, `calibration.history`, `stories`, `architecture`) always from `product-context.yaml`. Which file each type writes to is in `references/calibration-types.md` (Write Targets).
 
 ---
 
@@ -61,41 +56,19 @@ cat product-context.yaml
 
 After type is determined, check for existing calibration:
 
-- **Establishment mode**: No prior entry in `calibration.history` for this dimension → full brief, create artifact from scratch
-- **Extension mode**: Prior entry exists → delta brief covering only NEW patterns/decisions not in existing calibration
+- **Establishment mode**: no prior entry in `calibration.history` for this dimension → full brief, create artifact from scratch.
+- **Extension mode**: prior entry exists → delta brief covering only NEW patterns/decisions not in the existing calibration.
 
 ---
 
-## The Two Classes of Calibration
+## Calibration Types
 
-Calibration types split into two natural classes:
+Every dimension is either **heavy** or **light** — this drives the Phase 1 hand-off:
 
-### Heavy Calibrations
+- **Heavy** (visual-design, ux-flow, copy-tone): external exploration with tools outside the agent workflow, a standalone `calibration/<type>.yaml` artifact, and (usually) `.5` alignment-layer stories. Phase 1 stops and hands off.
+- **Light** (api-surface, data-model, scope-direction, performance-quality): conversational Q&A that updates the product context in place. Phase 1 flows straight into Phase 2.
 
-External exploration required. The human uses tools outside the agent workflow (design tools, wireframing, copy docs). Produces standalone YAML artifacts in `calibration/` directory. Creates `.5` alignment layer stories.
-
-| Dimension     | Brief Template                       | Exploration Method                     | Time Scale | Capture Artifact                 |
-| ------------- | ------------------------------------ | -------------------------------------- | ---------- | -------------------------------- |
-| visual-design | `references/briefs/visual-design.md` | External tool (Stitch, Pencil.dev)     | Hours–days | `calibration/visual-design.yaml` |
-| ux-flow       | `references/briefs/ux-flow.md`       | Conversation + optional wireframe tool | 30–60 min  | `calibration/ux-flow.yaml`       |
-| copy-tone     | `references/briefs/copy-tone.md`     | Conversation + copy doc                | 1–2 hours  | `calibration/copy-tone.yaml`     |
-
-> **Theory before taste (ux-flow / visual-design).** A [`/aep-design-lens`](../../patterns/design-lens/SKILL.md)
-> report can seed a heavy-calibration brief and pre-audit the flow against established HCI
-> theory (families A/B/C/E) with a severity-scored health-check. Design-lens supplies the
-> _evidence_; this skill captures the human's _decision_. They compose — run design-lens
-> first when you want the brief grounded in theory rather than a blank page.
-
-### Light Calibrations
-
-Conversational. The human reviews current state and makes decisions through structured Q&A. Updates existing sections of `product-context.yaml` directly. May or may not create `.5` layer stories.
-
-| Dimension           | Brief Template                             | Exploration Method           | Time Scale | Sections Updated                                          |
-| ------------------- | ------------------------------------------ | ---------------------------- | ---------- | --------------------------------------------------------- |
-| api-surface         | `references/briefs/api-surface.md`         | Conversation + code review   | 30–60 min  | `architecture.interfaces`                                 |
-| data-model          | `references/briefs/data-model.md`          | Conversation + schema review | 30–60 min  | `architecture.domain_model`                               |
-| scope-direction     | `references/briefs/scope-direction.md`     | Conversation                 | 30–60 min  | `product.goals`, `product.mvp_boundary`, `product.layers` |
-| performance-quality | `references/briefs/performance-quality.md` | Conversation + benchmarks    | 30–60 min  | `product.success_criteria`, `product.failure_model`       |
+Per-dimension brief templates, exploration methods, scan targets, and write targets are in `references/calibration-types.md` — load it when picking a dimension or scanning current state. For ux-flow / visual-design, running `/aep-design-lens` first seeds the brief with a theory-grounded, severity-scored health-check (evidence) that calibrate turns into the human's decision.
 
 ---
 
@@ -118,33 +91,22 @@ Extract:
 
 ### Step 2: Scan Current State
 
-Scan targets vary by calibration type:
-
-| Type                | Scan Targets                                                                                   |
-| ------------------- | ---------------------------------------------------------------------------------------------- |
-| visual-design       | `globals.css` (theme tokens), `components/` (available components), `routes/` (existing pages) |
-| ux-flow             | `routes/` (existing pages), `product.activities` (journey backbone), stories (what was built)  |
-| api-surface         | `architecture.interfaces` (contracts), existing API/route handler files, endpoint patterns     |
-| data-model          | `architecture.domain_model` (entities), schema/migration files, ORM models                     |
-| scope-direction     | `product.goals`, `product.mvp_boundary`, stories by layer (built vs planned)                   |
-| copy-tone           | UI components with text content, `product.persona`, brand-related product context              |
-| performance-quality | `product.success_criteria.non_functional`, error logs, monitoring data if available            |
+Inspect the current implementation against the scan targets for this type (table in `references/calibration-types.md` → Scan Targets) — e.g. `globals.css`/`components/`/`routes/` for visual-design, `architecture.interfaces` and handler files for api-surface.
 
 ### Step 3: Generate Brief
 
 Use the type-specific template from `references/briefs/<type>.md`.
 
-**Establishment mode:** Generate the full brief template with all sections.
+- **Establishment mode:** generate the full brief template with all sections.
+- **Extension mode:** read the existing calibration artifact or product-context sections, then generate a focused brief covering only what's NEW in the current layer: "Here's your current calibrated system. These new [pages/endpoints/entities/etc.] need decisions not yet covered: [list]."
 
-**Extension mode:** Read existing calibration artifact or product-context sections. Identify what's NEW in the current layer that isn't covered by prior calibration. Generate a focused brief: "Here's your current calibrated system. These new [pages/endpoints/entities/etc.] need decisions not yet covered: [list]."
+Write the brief to `docs/calibration-brief.md` and print the full content to the terminal.
 
-Write the brief to `docs/calibration-brief.md` and output the full content to terminal.
+**Postcondition:** `docs/calibration-brief.md` exists and its content was printed.
 
 ### Step 4: Hand Off
 
-**Heavy calibrations (visual-design, ux-flow, copy-tone):**
-
-Output exploration instructions and **stop**. The human explores externally — this is explicitly out of the agent's hands.
+**Heavy calibrations (visual-design, ux-flow, copy-tone):** print exploration instructions and **stop** — the human explores externally, out of the agent's hands.
 
 ```
 Calibration brief written to: docs/calibration-brief.md
@@ -152,17 +114,15 @@ Calibration brief written to: docs/calibration-brief.md
 Next steps (you do these):
 
   1. [Type-specific exploration instructions]
-  2. Explore variations. Pick what feels right.
-  3. Save reference files to docs/calibration-references/ (if applicable)
+  2. Explore variations, then pick a direction.
+  3. Save reference files to docs/design-references/ (if applicable)
   4. When ready, come back and run:
      /aep-calibrate capture
 ```
 
-For visual-design specifically, point to `references/vibe-design-tools.md` for tool guidance.
+For visual-design, point the human to `references/vibe-design-tools.md` for tool guidance.
 
-**Light calibrations (api-surface, data-model, scope-direction, performance-quality):**
-
-Present the brief to the human, then proceed directly to Phase 2. No external exploration needed — the brief frames the conversation.
+**Light calibrations (api-surface, data-model, scope-direction, performance-quality):** present the brief and proceed directly to Phase 2 — the brief frames the conversation, no external exploration needed.
 
 ---
 
@@ -170,118 +130,45 @@ Present the brief to the human, then proceed directly to Phase 2. No external ex
 
 ### Step 1: Interactive Q&A
 
-Ask structured questions from `references/capture/<type>.md`, one at a time.
+Ask the structured questions from `references/capture/<type>.md`, one at a time. (Heavy examples: chosen direction, palette, journey decisions, voice. Light examples: naming decisions, entity/field names, scope-gap assessment, latency thresholds.)
 
-**Heavy calibration questions (examples):**
-
-- **visual-design:** Direction chosen, palette, typography, components, layout, brand signals, reference files
-- **ux-flow:** Journey decisions, transition feel (instant/guided/deliberate), page map, entry/exit points
-- **copy-tone:** Voice personality, reference products, pattern decisions (headings, buttons, errors, empty states), glossary terms
-
-**Light calibration questions (examples):**
-
-- **api-surface:** Naming decisions, grouping, error contract shape, versioning approach
-- **data-model:** Entity names, field names, relationships, invariants, normalization rules
-- **scope-direction:** Gap assessment (what percentage is "right"?), one-thing-to-add, scope gap vs direction gap
-- **performance-quality:** Latency thresholds per action, retry policy, caching strategy, degradation behavior
+**Postcondition:** every question in `references/capture/<type>.md` is answered.
 
 ### Step 2: Produce Artifact
 
 **Heavy calibrations:**
 
-- **Establishment mode:** Create the artifact YAML from scratch using the schema at `references/schemas/<type>-schema.yaml`. Fill all sections from Q&A answers.
-- **Extension mode:** Read existing `calibration/<type>.yaml`. Add new entries for newly covered patterns. Update `calibrated_at` and `calibrated_from_layer`. Do not replace existing values — extend them.
+- **Establishment mode:** create `calibration/<type>.yaml` from scratch using the schema at `references/schemas/<type>-schema.yaml`, filling all sections from the Q&A answers.
+- **Extension mode:** read the existing `calibration/<type>.yaml`, add entries for newly covered patterns, and update `calibrated_at` / `calibrated_from_layer` — extend existing values, do not replace them.
 
-Write to `calibration/<type>.yaml`.
+For **visual-design** specifically, also update `globals.css` with the captured palette: convert values to oklch and write them as CSS custom properties under `:root` and `.dark`. Establishment replaces the full palette; extension adds only new custom properties.
 
-**Light calibrations:**
+**Light calibrations:** update the relevant section(s) in the file resolved for this type (see `references/calibration-types.md` → Write Targets) — `architecture.interfaces`, `architecture.domain_model`, `product.goals`/`mvp_boundary`/`layers`, or `product.success_criteria`/`failure_model`.
 
-Update the relevant section(s) — see File Resolution above for which file to write to per calibration type:
-
-| Type                | Section to Update                                                  |
-| ------------------- | ------------------------------------------------------------------ |
-| api-surface         | `architecture.interfaces` — naming, grouping, error contracts      |
-| data-model          | `architecture.domain_model` — entity names, fields, relationships  |
-| scope-direction     | `product.goals`, `product.mvp_boundary`, `product.layers`          |
-| performance-quality | `product.success_criteria.non_functional`, `product.failure_model` |
-
-**For visual-design specifically:** Also update `globals.css` with the captured palette. Read palette values, convert to oklch if provided in other color spaces, write as CSS custom properties under `:root` and `.dark` selectors.
-
-- **Establishment mode:** Replace the full palette.
-- **Extension mode:** Only add new custom properties if the palette expanded. Do not touch existing values.
+**Postcondition:** the chosen decision is recorded in existing schema fields — for heavy, `calibration/<type>.yaml` exists with the chosen direction in `direction.name`/`direction.description` and `calibrated_at` set; for light, the target section reflects the decisions.
 
 ### Step 3: Update Calibration History
 
-Append to `calibration.history` in `product-context.yaml`:
+Append one entry to `calibration.history` and one to `changelog` in `product-context.yaml`, per the product-context schema:
 
-```yaml
-- dimension: <type>
-  calibrated_at: "<ISO date>"
-  calibrated_from_layer: <layer>
-  mode: establishment # or extension
-  artifact_path: "calibration/<type>.yaml" # null for light calibrations
-  sections_updated: [] # e.g., ["architecture.interfaces"] for light calibrations
-  summary: "<one-line summary of what was decided>"
-```
-
-Also append to `changelog`:
-
-```yaml
-- date: <ISO date>
-  type: calibration
-  author: human
-  summary: "Calibrated <dimension> — <summary of decisions>"
-  sections_changed:
-    - calibration
-    - <any other sections updated>
-```
+- `calibration.history` entry — `dimension`, `calibrated_at`, `calibrated_from_layer`, `mode` (establishment|extension), `artifact_path` (null for light calibrations), `sections_updated`, `summary`.
+- `changelog` entry — `date`, `type: calibration`, `author: human`, `summary`, `sections_changed`.
 
 ### Step 4: Commit
 
-```bash
-# Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
-BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
-[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
-  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
-BASE=${BASE:-main}
+Validate YAML before committing (see `references/yaml-guardrails.md` for common fixes):
 
+```bash
+npx js-yaml product-context.yaml > /dev/null && echo "YAML OK"
+```
+
+Fix any error before committing. Then commit and push to `$BASE` (resolve `$BASE` per `/aep-git-ref` "Resolving `$BASE`"):
+
+```bash
 git pull --ff-only origin "$BASE"
-git add calibration/ product-context.yaml
+git add calibration/ product-context.yaml product/
 git commit -m "feat: calibrate <dimension> — <brief summary>"
 git push origin "$BASE"
 ```
 
----
-
-## Type-Specific Reference: visual-design
-
-Visual design is the most fully developed calibration type and serves as the reference implementation for others.
-
-### Phase 1 Specifics
-
-- **Design brief template:** `references/briefs/visual-design.md`
-- **Design directions:** Generate 3 directions spanning a spectrum from "maximum technical" to "maximum approachable". Name 2-3 reference products per direction as visual mood board anchors.
-- **Vibe design tool guide:** `references/vibe-design-tools.md` — covers Google Stitch, Pencil.dev, and alternatives.
-
-### Phase 2 Specifics
-
-- **Schema:** `references/schemas/visual-design-schema.yaml`
-- **Artifact:** `calibration/visual-design.yaml` — palette (oklch), typography, spacing, layout, components, brand signals, reference designs
-- **Companion artifact:** Updated `globals.css` with CSS custom properties from captured palette
-- **Three concerns, three artifacts:** `calibration/visual-design.yaml` documents decisions (why), `globals.css` enacts them (what), reference files in `docs/design-references/` show the visual target (how it looks).
-
-### Mode Detection
-
-- **Establishment mode:** `calibration/visual-design.yaml` does not exist → full calibration (palette, typography, layout, everything)
-- **Extension mode:** File exists → focused brief covering only NEW UI patterns not in the existing design context
-
----
-
-## Key Principles
-
-- **Agents optimize for correctness against spec.** But specs are lossy compressions of human intent. Calibration corrects the loss.
-- **The human decides.** The skill generates options, frames choices, and captures decisions. It does not make choices.
-- **Heavy calibrations pause; light calibrations flow.** Visual design needs external tools and hours. API naming needs a 30-minute conversation. Both are calibration.
-- **Extension mode covers only the delta.** No full redesign on subsequent calibrations — just new patterns that prior calibration didn't cover.
-- **Machine-readable artifacts.** Agents query calibration artifacts for specific values (`palette.dark.primary`, `components.border_radius`, `voice.personality`). Prose descriptions are not queryable.
-- **`.5` layers are human alignment layers.** Not just "UI polish." Any dimension where agent output diverges from human intent.
+**Postcondition:** `npx js-yaml` printed `YAML OK` and `git push` exited 0.

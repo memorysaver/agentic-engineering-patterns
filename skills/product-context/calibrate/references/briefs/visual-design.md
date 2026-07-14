@@ -63,3 +63,14 @@ layout patterns, and overall brand feel for the product.
 | Stack constraints    | `product.constraints.required_stack` + `preferred_stack` |
 | Current theme        | File scan: `packages/ui/src/styles/globals.css`          |
 | Available components | Directory scan: `packages/ui/src/components/`            |
+
+---
+
+## Reference-Implementation Notes
+
+visual-design is the most fully developed calibration type and serves as the reference implementation for the others.
+
+- **Design directions:** generate 3 directions spanning a spectrum from "maximum technical" to "maximum approachable". Name 2–3 reference products per direction as visual mood-board anchors.
+- **Tool guidance:** `references/vibe-design-tools.md` covers Google Stitch, Pencil.dev, and alternatives.
+- **Schema:** `references/schemas/visual-design-schema.yaml` — palette (oklch), typography, spacing, layout, components, brand signals, reference designs.
+- **Three concerns, three artifacts:** `calibration/visual-design.yaml` documents decisions (why), `globals.css` enacts them (what), reference files in `docs/design-references/` show the visual target (how it looks).

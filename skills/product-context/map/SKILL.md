@@ -1,6 +1,6 @@
 ---
 name: aep-map
-description: Decompose a product into system map, layered story graph, and agent topology. Use after /aep-envision, or when the user says "decompose", "story map", "system architecture", "break this down", "plan the stories", "agent topology". Produces the complete execution plan that the feature workflow operates on.
+description: Decompose a product into a system map, layered story graph, and agent topology. Use after /aep-envision, or on "decompose", "story map", "system architecture", "break this down", "plan the stories". Produces the execution plan the feature workflow runs on.
 ---
 
 # Map
@@ -24,15 +24,14 @@ Decompose the Context Document into a system map (modules + interfaces), a layer
 
 ## Before Starting
 
-**File Resolution:**
+Probe which mode the product context is in:
 
 ```bash
 ls product/index.yaml 2>/dev/null && echo "SPLIT MODE" || echo "V1 MODE"
 cat product-context.yaml
 ```
 
-- **Split mode** (`product/index.yaml` exists): Read product definition (opportunity, personas, product.\*) from `product/index.yaml`. Read operational state from `product-context.yaml`.
-- **V1 mode**: Read everything from `product-context.yaml`.
+Mode semantics are canonical in `references/file-resolution.md`. Map reads the product definition (opportunity, personas, `product.*`) from `product/index.yaml` (split) or `product-context.yaml` (v1); it reads operational state from, and writes all output to, `product-context.yaml`.
 
 If product definition is missing (no `product` section in either file), run `/aep-envision` first.
 
@@ -49,29 +48,13 @@ Produce a **System Map** (see `templates/system-map.md`) from the Context Docume
 
 Write the system map to the `architecture` section of `product-context.yaml`.
 
-### When to Produce a Technical Specification
-
-If the System Map reveals any of these conditions, suggest producing a Technical Specification (see `templates/technical-spec.md`) before proceeding to story decomposition:
-
-- 3+ interface contracts require multi-step protocol sequences
-- The system has 2+ distinct state machines
-- There are explicit failure classes with different recovery behaviors
-- Trust boundaries cross module lines
-
-The System Map defines WHAT the modules are and HOW they connect. The Technical Spec defines HOW those connections behave under all conditions (success, failure, timeout, recovery). Write the Technical Spec as a standalone document and reference it from the architecture section:
-
-```yaml
-architecture:
-  technical_spec: "docs/technical-spec.md"
-```
-
-See `templates/references/symphony-spec-reference.md` for the exemplar standard.
+When the System Map exposes multi-step protocols, multiple state machines, distinct failure classes, or trust boundaries crossing module lines, read `references/technical-spec-triggers.md` and suggest producing a Technical Specification before decomposition.
 
 ### Human Review Gate
 
-**The user must review and approve the System Map.** Architecture decisions have the highest error cost in the entire pipeline. Present the map and explicitly ask for approval before proceeding to story decomposition.
+**The user must review and approve the System Map.** Architecture decisions have the highest error cost in the entire pipeline. Present the map and explicitly ask for approval. If the user wants changes, revise and re-present; proceed to story decomposition only after the user explicitly approves.
 
-If the user wants changes, revise and re-present. Do not proceed until approved.
+**Postcondition:** the `architecture` section is written to `product-context.yaml` and the user has approved the System Map.
 
 ---
 
@@ -81,6 +64,8 @@ Once the System Map is confirmed, decompose into stories:
 
 - **One Decomposition Agent per module:** Receives Context Document + System Map + its module definition. Produces stories tagged with layer (0 = walking skeleton, 1+ = enrichment layers).
 - **One Integration Story Agent:** Looks at module connections in the System Map. Produces stories that glue modules together — the end-to-end flows crossing module boundaries. These are especially critical at Layer 0.
+
+Sharpen a vague or overlapping decomposition before adding agents — more agents amplify unclear decomposition rather than resolve it.
 
 Each story follows the **Story Spec** format (see `templates/story-spec.md`) and must include:
 
@@ -94,7 +79,7 @@ Each story follows the **Story Spec** format (see `templates/story-spec.md`) and
 - `business_value` (1-10, or null to derive from priority)
 - `compile_mode` (default `single_change`; use `grouped_change` for tightly coupled stories, `shared_enabler` for infrastructure)
 
-**All stories start with `status: pending`.** Stories follow a state machine: `pending → ready → in_progress → in_review → completed` (or `blocked` / `failed` as error states). The `/aep-dispatch` skill manages state transitions during execution.
+**All stories start with `status: pending`.** Story states follow the product-context schema; `/aep-dispatch` manages transitions during execution.
 
 ### Activity Mapping
 
@@ -112,7 +97,9 @@ Not every story needs an activity. The story map shows the user's perspective �
 
 > "Build a skeleton that can walk before building a perfect leg."
 
-Every activity in `product.activities` with `layer_introduced: 0` should have at least one Layer 0 story. Do not go deep into any module before proving the end-to-end path works. This is the most expensive mistake in this workflow.
+Every activity in `product.activities` with `layer_introduced: 0` should have at least one Layer 0 story. Prove the end-to-end path works before going deep into any module — depth-first before the skeleton walks is the most expensive mistake in this workflow.
+
+**Postcondition:** every story is written with a layer, a module, and `status: pending`; each `layer_introduced: 0` activity has ≥1 Layer 0 story.
 
 ---
 
@@ -135,27 +122,9 @@ The outcome contract is evaluated by `/aep-reflect` after layer completion. It a
 
 ### Telemetry Binding (observability)
 
-This is where the project **decides its telemetry sources** — metric-driven, then
-inventory (see the coverage rule in `references/telemetry-ingestion.md` §1.5).
+This is where the project **decides its telemetry sources** — metric-driven, then inventory. Bind every quantitative `success_metric` and any monitored `health_signals` to a source per `references/telemetry-ingestion.md` (§1.5 coverage rule; §1 Source config for the `metric_map`/`endpoint`/`token_env` binding). Write the result to `topology.routing.telemetry_sources` (+ `health_signals`).
 
-1. **Collect the needed signals:** every **quantitative** `success_metric`
-   (`type` ∈ `task_completion_rate | time_to_complete | error_rate | satisfaction_score`)
-   across the layers, plus any `topology.routing.post_merge_guard.health_signals`
-   you intend to monitor. That set is the demand for telemetry.
-2. **Bind each to a source:** start from the **candidate `telemetry_sources`**
-   detected by `/aep-scaffold`'s audit (or ask the user which tool provides
-   each — Sentry / Datadog / PostHog / analytics / health endpoint). For each needed
-   signal add a `metric_map: { <metric-or-signal>: "<query>" }` entry on the
-   matching source, and fill its `endpoint` + `token_env` (name only — never the
-   secret).
-3. **Flag the unmeasurable:** a quantitative `success_metric` with no source either
-   becomes **qualitative** (it will pause for human judgment in `/aep-reflect`) or is
-   recorded `unmeasured` — never leave a quantitative metric silently un-sourced.
-
-Write the result to `topology.routing.telemetry_sources` (+ `health_signals`).
-`/aep-reflect`, `/aep-watch`, and `/aep-autopilot` run `coverage_check()` against
-this before trusting any auto path; an incomplete binding **blocks auto**, it does
-not silently no-op.
+`/aep-reflect`, `/aep-watch`, and `/aep-autopilot` run `coverage_check()` against this before trusting any auto path; an incomplete binding **blocks auto**, it does not silently no-op.
 
 ### Capability Maps (multi-journey products)
 
@@ -166,79 +135,27 @@ If `product/index.yaml` exists (created by `/aep-envision` for multi-journey pro
 
 > **Split mode note:** In split mode, the capability map's `map.yaml` story stubs are narrative sketches. The full stories are written to `product-context.yaml`, and `product/index.yaml` is NOT modified by `/aep-map` (it only reads from it).
 
-- This is additive — if no capability maps exist, skip this step
+This is additive — if no capability maps exist, skip this step.
 
 ### Alignment Layers (`.5` Layers)
 
-After defining each implementation layer, review `calibration.plan` from `product-context.yaml` (operational file, both modes) (if populated by `/aep-envision`) or consider which quality dimensions may need human calibration:
-
-- **UI-facing stories** → consider visual-design and/or copy-tone calibration
-- **New API endpoints** → consider api-surface calibration
-- **New domain entities** → consider data-model calibration
-- **First user-testable layer** → consider scope-direction calibration
-
-**For heavy dimensions** (visual-design, ux-flow, copy-tone): plan a `.5` alignment layer with stories tagged `calibration_type: <dimension>`. Run `/aep-calibrate <dimension>` before dispatching to generate a brief and capture decisions into `calibration/<type>.yaml`.
-
-**For light dimensions** (api-surface, data-model, scope-direction, performance-quality): plan a `/aep-calibrate <dimension>` checkpoint BEFORE dispatching the relevant stories in the next integer layer. No `.5` layer needed — decisions update `product-context.yaml` directly.
-
-- **Layer 0.5** (first `.5` layer): Typically establishes the visual design system. Run `/aep-calibrate visual-design` to create `calibration/visual-design.yaml`.
-- **Layer 1.5, 2.5** (subsequent `.5` layers): Extend calibration to new patterns. `/aep-calibrate` detects existing calibration artifacts and generates focused briefs covering only the delta.
-- **Opt-in, not automatic.** The `/aep-reflect` step after each layer classifies calibration needs by dimension. The human decides which dimensions need attention. But the workflow makes the question unavoidable.
-
-> **Object Map feeds the heavy UI dimensions.** Once `/aep-model` has approved an
-> Object Map for a capability, the `visual-design` and `ux-flow` `.5`-layer briefs
-> derive their "pages/screens to design" from the Object Map's screen plan
-> (`product/maps/<cap>/object-map.yaml` → `screens`) instead of an ad-hoc `routes/`
-> scan. Structure first (object-model), then taste (visual-design) and journey
-> (ux-flow).
+After defining each implementation layer, plan the `.5` alignment layers that pause execution to calibrate human intent. Review `calibration.plan` (or the quality dimensions each layer touches) and read `references/alignment-layers.md` — the canonical home for the `.5`-layer concept — for the heavy-vs-light dimension rules, the layer progression, and how an approved Object Map feeds the visual-design/ux-flow briefs. Heavy dimensions get a `.5` layer with `calibration_type`-tagged stories; light dimensions get a `/aep-calibrate` checkpoint before the next integer layer.
 
 ### Object Map Drafts (UI-facing capabilities)
 
-After stories are decomposed, produce a **draft** noun-first Object Map for each
-UI-facing capability (a capability that declared the `object-model` quality
-dimension, or `visual-design`/`ux-flow`, or has user-facing stories). This is the
-bridge from the verb-first story map to the UI — it stops build agents from
-inventing one-step-one-screen task-wizard UIs.
-
-Mine the draft with the ORCA rounds (Objects → Relationships → CTAs → Attributes →
-screens) from `product.activities`, `stories[].description`, and
-`architecture.domain_model`. See the `/aep-model` skill and its
-`references/orca-process.md` for the derivation, and
-`templates/object-model-schema.yaml` + `templates/object-map-schema.yaml` for the
-structure. Write:
-
-- `product/object-model.yaml` — cross-capability object ontology (`provenance.reviewed: false`)
-- `product/maps/<capability>/object-map.yaml` — per UI-facing capability, **`status: draft`**
-
-Use the `capabilities[]` ids for the `<capability>` path segment. In v1 /
-single-journey products (no `capabilities[]`), use a single default capability =
-the project slug (`product:` / `project:` in the YAML) and set every UI story's
-`coverage` entry under that one map.
-
-**These are drafts only — do not mark them approved.** Object boundaries and IA
-are high-impact design decisions; `/aep-model` presents the draft for a short human
-review gate and flips `status: approved`. Dispatch/launch refuse UI-facing stories
-without an approved Object Map.
-
-**Re-runs invalidate approval.** If a later `/aep-map` run re-decomposes stories or
-activities under a capability whose object-map is already `approved`, flip that
-map's `status: stale` (and `provenance.reviewed: false` on the shared
-`object-model.yaml` if its objects changed). The dispatch/launch gates treat `stale`
-like `draft` — they abort until `/aep-model` re-approves the delta.
-
-> If a project is pure-backend/CLI (no UI-facing capability), skip this step.
+After stories are decomposed, produce a **draft** noun-first Object Map for each UI-facing capability (declared `object-model`, `visual-design`/`ux-flow`, or user-facing stories). This bridges the verb-first story map to the UI. Read `references/object-map-drafts.md` for the ORCA derivation and the draft/approved/stale rules, then write `product/object-model.yaml` and `product/maps/<capability>/object-map.yaml` with **`status: draft`** — `/aep-model` owns approval. Skip entirely for pure-backend/CLI projects with no UI-facing capability.
 
 ### Feedback Loop
 
 Decomposition agents may discover module boundaries are wrong. They submit amendment proposals to the System Map. When amendments accumulate to 3+ items or any single amendment affects an interface contract, trigger an **Architecture Review** with the user before continuing.
 
+**Postcondition:** the `stories` and `waves` sections are written; each layer has a `layer_gates` entry (with planned `journeys:`); UI-facing capabilities each have a `status: draft` object-map.
+
 ---
 
 ## Step 4: Agent Topology Design
 
-**Why this lives here:** Per Anthropic's research, "each subagent needs an objective, an output format, guidance on tools and sources, and clear task boundaries — defined before execution." Topology is a decomposition decision — it determines how `/aep-launch` configures workspaces and what context `/aep-build` agents receive.
-
-Define the agent roles, handoff contracts, and routing rules using the **Agent Topology** template (see `templates/agent-topology.md`):
+Topology is a decomposition decision — it determines how `/aep-launch` configures workspaces and what context `/aep-build` agents receive, so it is defined before execution. Define the agent roles, handoff contracts, and routing rules using the **Agent Topology** template (see `templates/agent-topology.md`). Every agent-to-agent handoff is schema-defined, not free text — ambiguity compounds exponentially across parallel agents.
 
 ### Agent Role Definition
 
@@ -268,34 +185,25 @@ For every agent-to-agent transition:
 
 Write the topology to the `topology` section of `product-context.yaml`. Also initialize the `layer_gates` and `cost` sections.
 
+**Postcondition:** the `topology` section is written, and `layer_gates` and `cost` are initialized.
+
 ---
 
 ## Output
 
 ### Before Committing: Validate YAML
 
-See `references/yaml-guardrails.md` for the full checklist. Run:
+Validate before committing (checklist in `references/yaml-guardrails.md`):
 
 ```bash
 npx js-yaml product-context.yaml > /dev/null && echo "YAML OK"
 ```
 
-If this fails, fix the YAML before committing. Common fixes: quote list items containing colons, flatten nested sub-lists, escape embedded double quotes.
+If this fails, fix the YAML per `references/yaml-guardrails.md` before committing.
 
 ### Commit
 
-```bash
-# Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
-BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
-[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
-  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
-BASE=${BASE:-main}
-
-git pull --ff-only origin "$BASE"
-git add product-context.yaml product/
-git commit -m "feat: add system map, story graph, and agent topology"
-git push origin "$BASE"
-```
+Commit and push per `/aep-git-ref` "Control-Plane Commits": `git add product-context.yaml product/`, commit (`feat: add system map, story graph, and agent topology`), and push to `$BASE` (resolve `$BASE` per `/aep-git-ref` "Resolving `$BASE`").
 
 **Sections written:**
 
@@ -309,6 +217,8 @@ git push origin "$BASE"
 
 Always append to the `changelog` section.
 
+**Postcondition:** `npx js-yaml` exits 0 and the commit lands on `$BASE`.
+
 ---
 
 ## For Iteration
@@ -321,14 +231,6 @@ When updating the map (triggered by `/aep-reflect` or new requirements):
 4. If interface contracts changed → re-verify dependent stories
 5. Append to the `changelog` section
 6. Commit updated version
-
----
-
-## Anti-Patterns
-
-- **Do not use more agents to mask unclear decomposition.** If stories are vague or overlapping, adding agents amplifies confusion. Fix the decomposition first.
-- **Do not skip the walking skeleton.** Going deep into one module before proving the end-to-end path works is the most expensive mistake in this workflow.
-- **Do not allow free-text handoffs.** Every agent-to-agent communication must be schema-defined. Ambiguity compounds exponentially across parallel agents.
 
 ---
 

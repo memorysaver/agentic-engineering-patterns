@@ -113,6 +113,11 @@ first). **This is IA, not visual design** — no colors, type, or spacing. Those
 stay in `calibration/visual-design.yaml`; journey/page/transition stay in
 `calibration/ux-flow.yaml`.
 
+For data-heavy or exploration-heavy capabilities, draw the structural idiom
+(overview→zoom→detail, coordinated views, information scent) from
+`/aep-design-lens` families C/D — it supplies the HCI theory; `/aep-model` still
+owns the object/screen structure.
+
 ---
 
 ## Object-first default vs. task-oriented escape hatch
