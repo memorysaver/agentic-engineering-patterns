@@ -1,173 +1,26 @@
-# Worktree Onboarding
+# Worktree Onboarding (orientation)
 
-This document is the bootstrap guide for spawned agents running in a git worktree. Read this first when entering a workspace session.
+You are an agent spawned by `/aep-launch` into an isolated git worktree to
+implement a feature autonomously. The design phases (1–3) were completed on the
+integration branch by the user; your worktree is `.feature-workspaces/<name>` on
+a fresh `feat/<name>` branch, matching the active OpenSpec change in
+`openspec/changes/`. Your job is to execute Phases 0 and 4–12.
 
-## Context
+**Your prompt names your worktree path — operate exclusively inside it, and
+report everything through `.dev-workflow/signals/`.** The answer to any human
+gate always returns via the main agent (hub-and-spoke); parked workers are
+resumed into this worktree with the answer.
 
-You are an agent spawned in an isolated git worktree to implement a feature autonomously. The design phases (1-3) were completed on the integration branch by the user, and `/aep-launch` created your worktree on a fresh `feat/<name>` branch. Your job is to execute Phases 0, 4-12.
+## Start here
 
-### Know your launch mode
+**Run `/aep-build`.** Its **Phase 0 is the onboarding** — it runs the worktree
+guard (self-healing into the launch-made worktree), reads the change artifacts,
+and generates every `.dev-workflow/` tracking artifact. The full autonomous
+workflow, the Human-Gate Protocol, and your launch-mode transport table are all
+in `/aep-build`.
 
-How you were started determines how you reach the human and how the
-orchestrator reaches you (full table: `aep-executor/references/backends.md`):
-
-| You are…                                                                                      | Mode               | You raise human gates via…                                             |
-| --------------------------------------------------------------------------------------------- | ------------------ | ---------------------------------------------------------------------- |
-| a Claude Code **bg subagent** (Agent tool, `run_in_background`, no team — bare-hex `agentId`) | native-bg-subagent | `needs-human.md`, then **gate-and-park** (commit WIP, end run cleanly) |
-| a Claude Code session whose cwd **is** the worktree (background session)                      | claude-bg          | `needs-human.md`, then **park** (commit WIP, end run cleanly)          |
-| a Codex **subagent** (aep-builder role, parent thread exists)                                 | codex-subagent     | ask the parent thread + `needs-human.md`; wait in place                |
-| a headless `codex exec` run                                                                   | codex-exec         | `needs-human.md`, then **park**                                        |
-| a dynamic-workflow build agent                                                                | workflow           | `needs-human.md` + return a structured `gated` result, then **park**   |
-| inside a tmux pane                                                                            | legacy             | `needs-human.md`; wait in place (answer arrives via nudge)             |
-
-Whatever the mode: your prompt names your worktree path — operate exclusively
-inside it, and report everything through `.dev-workflow/signals/`. The answer
-always comes back via the **main agent** (hub-and-spoke); parked workers are
-resumed into this worktree with the answer. The human-gate steps are in
-`/aep-build` SKILL.md ("The Human-Gate Protocol").
-
-## Bootstrap Sequence
-
-### 1. Orient yourself — and enforce the worktree (hard guard)
-
-This is a **guard, not a glance**. You MUST operate inside your own feature
-worktree, never the main checkout. On Codex `codex-subagent` the binding is a
-soft contract (`spawn_agent` has no cwd parameter) — so verify and self-heal,
-do not assume.
-
-```bash
-WS="<name>"   # your story/change name from the bootstrap prompt (feat/<name>);
-#             matches the active OpenSpec change. If still literal "<name>", resolve it first.
-TOP=$(git rev-parse --show-toplevel)
-BRANCH=$(git branch --show-current)
-
-if [[ "$TOP" != *"/.feature-workspaces/$WS" || "$BRANCH" != "feat/$WS" ]]; then
-  echo "GUARD: not in worktree .feature-workspaces/$WS on feat/$WS (top=$TOP branch=$BRANCH)"
-  # /aep-launch OWNS worktree creation — ENTER the one it made; never create a
-  # branch/worktree here and never touch the main checkout (no switch, no add -b).
-  ROOT=$(git worktree list --porcelain | sed -n '1s/^worktree //p')   # main worktree root
-  if [ -n "$ROOT" ] && [ -d "$ROOT/.feature-workspaces/$WS" ]; then
-    cd "$ROOT/.feature-workspaces/$WS"          # launch made it; just enter it
-  else
-    # No worktree for $WS → STOP and escalate (needs-human.md): run /aep-launch first.
-    echo "ESCALATE: no .feature-workspaces/$WS — run /aep-launch first"; exit 1
-  fi
-fi
-# Re-verify before doing ANY work:
-TOP=$(git rev-parse --show-toplevel); BRANCH=$(git branch --show-current)
-[[ "$TOP" == *"/.feature-workspaces/$WS" && "$BRANCH" == "feat/$WS" ]] \
-  || { echo "STILL NOT IN feat/$WS WORKTREE — STOP and escalate"; exit 1; }
-
-# Now confirm orientation:
-pwd; git branch --show-current; git log --oneline -5
-ls openspec/changes/   # what's the OpenSpec change?
-```
-
-### 2. Read all change artifacts
-
-```bash
-# Read the full change context
-cat openspec/changes/<change-name>/proposal.md
-cat openspec/changes/<change-name>/aep-design.md
-cat openspec/changes/<change-name>/tasks.md
-ls openspec/changes/<change-name>/specs/ 2>/dev/null
-```
-
-### 3. Initialize tracking and harness artifacts
-
-```bash
-mkdir -p .dev-workflow .dev-workflow/signals
-
-# Copy progress template (named by base commit SHA for traceability)
-cp skills/agentic-development-workflow/build/references/progress-template.md \
-   .dev-workflow/progress-$(git rev-parse --short HEAD).md
-
-# Ensure .dev-workflow is gitignored
-grep -q '.dev-workflow' .gitignore || echo '\n.dev-workflow/' >> .gitignore
-```
-
-Edit the progress file:
-
-- Fill in feature name, base commit SHA, date, change name, mode (full/light)
-- Mark Phases 1-3 as `[x]` (pre-completed on main)
-
-### 4. Set up environment
-
-Run the project's setup hook if it exists:
-
-```bash
-SETUP_HOOK=.claude/hooks/workspace-setup.sh
-if [ -f "$SETUP_HOOK" ]; then
-  bash "$SETUP_HOOK"
-else
-  echo "No workspace setup hook found at $SETUP_HOOK"
-  echo "Read the project README or ask the user for setup instructions."
-fi
-```
-
-The setup hook handles project-specific concerns: package installation, dev server, port assignment, DB seeding, etc. It must write `.dev-workflow/ports.env` with `WEB_PORT`, `SERVER_PORT`, `BASE_URL`, `SERVER_URL`.
-
-Verify setup produced ports.env:
-
-```bash
-[ -f .dev-workflow/ports.env ] && source .dev-workflow/ports.env
-```
-
-### 5. Generate harness artifacts
-
-After reading `tasks.md` (see SKILL.md Phase 0 step 6), generate these additional artifacts:
-
-- **Sprint contracts** — `.dev-workflow/contracts.md`: Per-task success criteria and verification steps extracted from OpenSpec specs. See `references/contract-template.md` for the format.
-- **Feature verification list** — `.dev-workflow/feature-verification.json`: JSON verification list for evaluator scoring. `commit_sha` starts as `null` and is filled in after each task is committed in Phase 4. Generator must NOT modify `verification_steps` or `passes` fields.
-- **Session recovery script** — `.dev-workflow/init.sh`: Auto-generated script for resuming after context resets. Make executable with `chmod +x`.
-- **Inter-agent signals** — `.dev-workflow/signals/status.json`: Initialize with current phase. See `references/signals-spec.md` for the full specification.
-
-### 6. Begin implementation
-
-Now follow the workflow starting from **Phase 4: OpenSpec Apply**.
-
-Read the full workflow at the `/aep-build` skill (skills/agentic-development-workflow/build/SKILL.md) for phase details.
-
----
-
-## Resuming a Session
-
-If you are resuming an interrupted session (context reset, crash, manual restart):
-
-1. **Check for init.sh** — if `.dev-workflow/init.sh` exists, run it:
-
-   ```bash
-   bash .dev-workflow/init.sh
-   ```
-
-   This restarts the dev server, shows the branch state, and displays progress. This is preferred over full context resets because it preserves structured state from previous sessions.
-
-2. **Read the progress file** to find your current phase:
-
-   ```bash
-   cat .dev-workflow/progress-*.md
-   ```
-
-3. **Check for pending feedback** from the main session:
-
-   ```bash
-   cat .dev-workflow/signals/feedback.md 2>/dev/null
-   ```
-
-4. **Continue from where you left off** — pick up at the first unchecked phase. Inspect prior commits via `git log --oneline "$(git config --get aep.integration-branch 2>/dev/null || (git show-ref --verify --quiet refs/remotes/origin/develop && echo develop || echo main))"..HEAD` to see what's already implemented.
-
-> Do NOT re-run the full bootstrap if `.dev-workflow/` already exists. Use init.sh for recovery.
-
----
-
-## Key Rules
-
-- **Update the progress file** after completing each phase
-- **Update signals** — write to `.dev-workflow/signals/status.json` at phase boundaries, check `feedback.md` for main session input
-- **Never run `/opsx:archive`** — that happens on main after merge
-- **Don't stage `openspec/specs/`** files in your commits
-- **Confirm before creating PRs or merging _only in interactive mode_** (a human is at your prompt). **Autopilot mode is decided _solely_ by `.dev-workflow/signals/mode` reading `autopilot`** — not by your cwd (the Phase 0 guard puts every build in a worktree). In autopilot mode **do not ask — merge when the Phase 12 conditions pass.** "PR ready" is not a stop point; see `/aep-build` Phase 12.
-- **The `.dev-workflow/` folder is ephemeral** — never commit it
-- **Generator must not modify verification data** — never change `verification_steps` or `passes` in `feature-verification.json`. Only `commit_sha` is generator-writable.
-- **One commit per task in Phase 4** — keeps the PR review readable. Squash-merge at PR-merge cleans up main history.
-- **Don't rewrite already-pushed commits** — fixes go as follow-up commits. If you need to amend, do it before the next task's commit.
+**Resuming an interrupted session?** If `.dev-workflow/` already exists, do NOT
+re-run the full bootstrap: run `bash .dev-workflow/init.sh` (restarts the dev
+server, shows branch state + progress), read `.dev-workflow/progress-*.md` for
+your current phase, check `.dev-workflow/signals/feedback.md`, and continue from
+the first unchecked phase.

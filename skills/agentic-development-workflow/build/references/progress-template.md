@@ -59,9 +59,9 @@
 - [ ] Phase 6: Browser Testing (Dogfood)
   - [ ] Dogfood report created
   - [ ] Issues fixed
-- [ ] Phase 7: E2E Test Scripts
-  - [ ] Test scripts generated
-  - [ ] Tests passing
+- [ ] Phase 7: Finalize the Journey + Record the Layer Gate
+  - [ ] Journey refined with execution reality
+  - [ ] Layer gate evidence recorded (`docs/layer-gates/<layer>.md`)
 - [ ] Phase 8: Review Results
   - [ ] All results reviewed
   - [ ] No blocking issues

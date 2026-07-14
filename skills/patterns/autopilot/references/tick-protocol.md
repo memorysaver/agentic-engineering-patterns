@@ -8,7 +8,7 @@ turn then waits the per-tick floor — step ⑦ — before ending)
 this tick each turn until the layer completes; loop driver (fallback) —
 `/loop 5m /aep-autopilot tick`; or manual `/aep-autopilot tick`
 
-> **BOUNDARY REMINDER:** The autopilot is an orchestrator. Every action on a workspace is `executor.nudge()` / `executor.liveness()` — autopilot runs only on **steerable, driver-compatible modes** (native-bg-subagent / claude-bg / codex-subagent / codex-exec / legacy; see the per-mode transport table in SKILL.md and `aep-executor/references/backends.md`). The nudge texts in this file are mode-independent — deliver each through the workspace's `backend` transport (`SendMessage(to: agentId)` / `feedback.md` / `send_input` / `codex exec resume` / `tmux send-keys`). Liveness is the [post-spawn liveness probe](../../executor/references/backends.md#post-spawn-liveness-probe) (process exists AND worktree active) — **never** roster/state membership. Never spawn code reviewers from main, never read workspace source code, never call `gh pr merge`. See SKILL.md "STOP — Orchestrator Boundaries".
+> **BOUNDARY REMINDER:** The autopilot is an orchestrator. Every action on a workspace is `executor.nudge()` / `executor.liveness()` — autopilot runs only on **steerable, driver-compatible modes** (native-bg-subagent / claude-bg / codex-subagent / codex-exec / legacy; see the Executor transport summary in SKILL.md and the full per-mode table in `aep-executor/references/backends.md`). The nudge texts in this file are mode-independent — deliver each through the workspace's `backend` transport (`SendMessage(to: agentId)` / `feedback.md` / `send_input` / `codex exec resume` / `tmux send-keys`). Liveness is the [post-spawn liveness probe](../../executor/references/backends.md#post-spawn-liveness-probe) (process exists AND worktree active) — **never** roster/state membership. Never spawn code reviewers from main, never read workspace source code, never call `gh pr merge`. See SKILL.md "STOP — Orchestrator Boundaries".
 
 **EXECUTION MODEL — CHECK → ACT** (see SKILL.md "Execution model"). A tick is two halves:
 
@@ -413,7 +413,16 @@ For the top-scored story (or group), use `readiness_score` for routing:
   - Otherwise → **ESCALATE** (pause for human design input)
 - **`attempt_count >= 2`** → always **ESCALATE** regardless of readiness (repeated failures need human attention)
 
-If escalation triggers: follow the pause protocol from the main SKILL.md. Do not dispatch.
+### Pause Protocol (when an escalation triggers)
+
+Do **not** dispatch. Pause autopilot for the human:
+
+1. Set `status: "paused"` in `.dev-workflow/autopilot-state.json`.
+2. Append an escalation entry (shape + `type` enum in [state-schema.md](./state-schema.md) → Escalation Entry) with `story_id`, `reason`, `details`, and a concrete `expected_human_action` — e.g. for a design escalation: _"Run /aep-design PROJ-010 to refine the spec (it has 1 acceptance criterion for a UI-heavy activity that needs visual-design judgment), then /aep-autopilot to resume."_
+3. Write the **PAUSED** sections of `.dev-workflow/autopilot-status.md` — why paused, what needs human judgment, current state, how to resume (template in [state-schema.md](./state-schema.md)).
+4. Log the pause to `.dev-workflow/autopilot-history.jsonl`.
+
+**Resuming:** the human resolves the issue and re-runs `/aep-autopilot`, which re-reads the (now refined) product context and re-initializes the driver — the goal driver sets a fresh goal for the current layer, the loop driver restarts `/loop` — then resumes ticking. Step ⑤'s stuck detection still runs every tick, so a stalled layer escalates → `paused` → the goal stops for the human.
 
 ### Dispatch
 

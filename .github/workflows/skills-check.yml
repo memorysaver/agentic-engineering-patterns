@@ -42,3 +42,36 @@ jobs:
 
       - name: Skills are discoverable by the skills CLI
         run: npx -y skills@latest add ./ --list
+
+      # R7/R8 of docs/decisions/skill-authoring-standard.md: one corpus-wide
+      # line budget for every SKILL.md — warn above 400, fail above 500.
+      - name: SKILL.md line budget (warn >400, fail >500)
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            n=$(wc -l < "$f")
+            if [ "$n" -gt 500 ]; then
+              echo "FAIL (>500): $n  $f"; fail=1
+            elif [ "$n" -gt 400 ]; then
+              echo "::warning file=$f::SKILL.md is $n lines (budget 400)"
+            fi
+          done < <(find skills -name SKILL.md -not -path '*/node_modules/*')
+          exit $fail
+
+      # R8(b): the $BASE resolver block has exactly one canonical home —
+      # git-ref's SKILL.md. The raw `aep.integration-branch` literal is
+      # allowlisted in the two reference files that read the config key for
+      # their own bash (executor backends probe, autopilot tick nudge prompt).
+      - name: $BASE resolver lives only in git-ref
+        run: |
+          bad=0
+          while IFS= read -r f; do
+            case "$f" in
+              skills/agentic-development-workflow/git-ref/SKILL.md) ;;
+              skills/patterns/executor/references/backends.md) ;;
+              skills/patterns/autopilot/references/tick-protocol.md) ;;
+              skills/agentic-development-workflow/build/references/harness-artifacts.md) ;;
+              *) echo "FAIL: aep.integration-branch resolver leaked into $f"; bad=1 ;;
+            esac
+          done < <(grep -rl 'aep\.integration-branch' skills/ || true)
+          exit $bad

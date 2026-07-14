@@ -1,6 +1,6 @@
 ---
 name: aep-dispatch
-description: Pick the next story to work on and bridge it into the feature lifecycle. Use when ready to start building, or when the user says "what's next", "dispatch", "pick a story", "start next feature", "what should I work on". Reads product-context.yaml, syncs workspace signals, computes readiness score for routing, then scores stories by business value + unblock potential + critical path urgency + reuse leverage (penalized by ambiguity + interface risk), assembles context, and hands off to /aep-design or /aep-launch. Supports batch dispatch with WIP limits. For autonomous orchestration, use /aep-autopilot instead.
+description: Pick the next story to build and route it into the feature lifecycle. Use when ready to start building, or on "what's next", "dispatch", "pick a story". Syncs signals, scores the ready queue, assembles context, then hands off to /aep-design or /aep-launch. For autonomous orchestration use /aep-autopilot instead.
 ---
 
 # Dispatch
@@ -22,30 +22,28 @@ Bridge between the product context (control plane) and the feature lifecycle (ex
 
 > **For autonomous orchestration:** Use `/aep-autopilot` instead. Autopilot runs the full dispatch-launch-monitor-review-wrap-dispatch cycle as a tick-based state machine via `/loop`. Dispatch remains a single-pass interactive tool.
 >
-> **For hands-free batch under Claude Code:** dispatch a wave **"with workflow"** to build the whole wave as a single dynamic workflow (executor **workflow** mode) instead of N monitorable workers. See Step 5 → _Dynamic Workflow_ mode.
+> **For hands-free batch under Claude Code:** dispatch a wave **"with workflow"** to build the whole wave as one dynamic workflow (Step 5 → _Dynamic Workflow_).
 
 ---
 
 ## Before Starting
 
-**File Resolution:**
+Probe which mode the product context is in:
 
 ```bash
 ls product/index.yaml 2>/dev/null && echo "SPLIT MODE" || echo "V1 MODE"
 cat product-context.yaml
 ```
 
-- **Split mode** (`product/index.yaml` exists): Read product definition from `product/index.yaml` for context assembly. Read stories, topology, architecture, cost from `product-context.yaml`.
-- **V1 mode**: Read everything from `product-context.yaml`.
+Mode semantics are canonical in `references/file-resolution.md`. Dispatch reads the product definition from `product/index.yaml` (split) or `product-context.yaml` (v1); it reads/writes operational state (stories, topology, architecture, cost, changelog) always in `product-context.yaml`.
 
-If `product-context.yaml` doesn't exist, run `/aep-envision` then `/aep-map` first.
-If the `stories` section is empty, run `/aep-map` to decompose the product.
+If `product-context.yaml` doesn't exist, run `/aep-envision` then `/aep-map` first. If the `stories` section is empty, run `/aep-map` to decompose the product.
 
 ---
 
 ## The Dispatch Protocol
 
-Every dispatch run follows the same 7-step protocol. Each step is idempotent — running `/aep-dispatch` twice with no state changes produces the same result.
+Every dispatch run follows the same 7-step protocol. Each step is idempotent — running `/aep-dispatch` twice with no state changes produces the same result. Story states (pending / ready / blocked / in_progress / in_review / completed / failed / deferred) follow the product-context schema.
 
 ```
 ① SYNC signals    → bring YAML up to date with workspace reality
@@ -61,7 +59,7 @@ Every dispatch run follows the same 7-step protocol. Each step is idempotent —
 
 ## Step 1: Signal Sync
 
-Before calculating anything, sync workspace signals into the YAML to reflect reality:
+Sync workspace signals into the YAML **before** computing anything — stale YAML shows `in_progress` for stories already done and keeps downstream stories `pending` when they are actually ready.
 
 ```
 For each story with status: in_progress or in_review:
@@ -82,7 +80,7 @@ For each story with status: in_progress or in_review:
       Append signal.failure_log to story.failure_logs
 ```
 
-**Why:** Without signal sync, the YAML shows `in_progress` for stories already done. Downstream stories stay `pending` even though they're actually ready.
+**Postcondition:** every `in_progress`/`in_review` story's YAML status matches its signal file.
 
 ---
 
@@ -104,20 +102,24 @@ For each story with status: blocked:
     Transition → pending (will be re-evaluated in this same pass)
 ```
 
+This is the dependency gate: a story only becomes `ready` when every dependency is `completed`, so no story with unmet dependencies is ever dispatchable.
+
 **Recovery transitions** (user-initiated, handle if requested):
 
 - `failed → pending` — user resets after fixing the spec
 - `deferred → pending` — user un-defers a story
 
-**Validate** the YAML after all updates (see `references/yaml-guardrails.md`):
+**Validate** the YAML after all updates:
 
 ```bash
 npx js-yaml product-context.yaml > /dev/null && echo "YAML OK"
 ```
 
-If this fails, fix the YAML before proceeding. Common fixes: quote list items containing colons, flatten nested sub-lists, escape embedded double quotes.
+If this fails, fix the YAML before proceeding (see `references/yaml-guardrails.md` for the common fixes).
 
-**Commit** the synced + cascaded state to YAML before computing scores. Increment `dispatch_epoch`.
+**Commit** the synced + cascaded state to YAML before computing scores, and increment `dispatch_epoch`.
+
+**Postcondition:** `npx js-yaml` exits 0 and the cascaded state is committed.
 
 ---
 
@@ -135,7 +137,7 @@ For each layer (0, 1, 2, ...):
 
 ### Filter Ready Queue
 
-From `ready` stories in the active layer, remove stories with file-level conflicts:
+Dispatch only `ready` stories in the active layer that have no file-level conflict with in-progress work:
 
 ```
 For each ready story:
@@ -144,121 +146,22 @@ For each ready story:
       Mark as conflicted — cannot dispatch until the in_progress story completes
 ```
 
-### Compute Readiness Score
+### Compute Scores
 
-Before scoring, compute each story's readiness (spec completeness):
+For each remaining ready story, compute `readiness_score` and `dispatch_score` per `references/scoring.md`, and write both into the story YAML:
 
-```
-readiness_score = (
-  min(3, acceptance_criteria_count)      # 0-3
-  + (interface_obligations_defined ? 2 : 0)  # 0 or 2
-  + (files_affected_identified ? 1 : 0)      # 0 or 1
-  + (verification_defined ? 2 : 0)           # 0 or 2
-  + (no_relevant_open_questions ? 2 : 0)     # 0 or 2
-) / 10
-```
+- **`readiness_score`** (0–1) = spec completeness; drives Step 7 routing.
+- **`dispatch_score`** = (business value + unblock potential + critical-path urgency + reuse leverage) / (complexity cost + ambiguity penalty + interface risk); ranks the queue.
 
-Write `readiness_score` to the story in YAML. This is used for routing in Step 7.
+Grouped changes (`compile_mode: grouped_change` sharing a `change_group`) score and dispatch as one unit — see `references/scoring.md` → Grouped Change Dispatch.
 
-### Compute Dispatch Score
-
-Each remaining ready story gets a score:
-
-```
-dispatch_score = (business_value + unblock_potential + critical_path_urgency + reuse_leverage) / (complexity_cost + ambiguity_penalty + interface_risk)
-```
-
-#### Business Value (1-10)
-
-Use `story.business_value` if explicitly set. Otherwise derive from priority:
-
-```
-critical = 10
-high     = 7
-medium   = 4
-low      = 1
-```
-
-#### Unblock Potential (0-10)
-
-```
-unblock_potential = min(10, count of stories that directly depend on this one * 2)
-```
-
-A story that unblocks 5 others scores 10. A leaf story scores 0.
-
-#### Critical Path Urgency (0-10)
-
-Compute the critical path through the dependency DAG (longest chain from any root to any leaf within the active layer). Stories on the critical path get maximum urgency:
-
-```
-If story is on critical path:
-  critical_path_urgency = 10
-Else:
-  slack = latest_possible_start - earliest_possible_start
-  critical_path_urgency = max(0, 10 - slack)
-```
-
-#### Reuse Leverage (0-10)
-
-Stories that produce shared enablers (auth middleware, base components, shared utilities) score higher:
-
-```
-reuse_leverage = min(10, count_of_modules_depending_on_output * 3)
-```
-
-Only applies to stories with `compile_mode: shared_enabler` or whose module appears in 2+ other modules' `depends_on`.
-
-#### Complexity Cost (denominator term)
-
-```
-S = 1    (fast feedback)
-M = 2
-L = 4    (slow, expensive)
-```
-
-#### Ambiguity Penalty (0-5, denominator term)
-
-```
-ambiguity_penalty = 0
-If acceptance_criteria count < 3:     +2
-If interface_obligations empty:       +1
-If relevant open_questions exist:     +1
-If files_affected empty:              +1
-```
-
-Stories with high ambiguity get lower scores, biasing dispatch toward well-specified work.
-
-#### Interface Risk (0-3, denominator term)
-
-```
-interface_risk = min(3, count of interface contracts this story creates or modifies)
-```
-
-Cross-module interface changes carry integration risk in parallel execution.
-
-#### Example Scores
-
-| Story                                                      | Value | Unblock | CP  | Reuse | Cost | Ambig | IFace | Score    |
-| ---------------------------------------------------------- | ----- | ------- | --- | ----- | ---- | ----- | ----- | -------- |
-| Auth middleware (critical path, high, unblocks 3, enabler) | 7     | 6       | 10  | 6     | S=1  | 0     | 1     | **14.5** |
-| User model (not critical, medium, unblocks 2)              | 4     | 4       | 4   | 0     | S=1  | 0     | 0     | **12.0** |
-| Dashboard layout (not critical, low, leaf, ambiguous)      | 1     | 0       | 2   | 0     | L=4  | 3     | 0     | **0.43** |
-
-### Grouped Change Dispatch
-
-For stories with `compile_mode: grouped_change` sharing the same `change_group`:
-
-- **Readiness gate:** Use **min readiness_score** of any story in the group — if any story is under-specified, the group isn't ready
-- **Dispatch score:** Sum `business_value` and `unblock_potential` across the group; use max `critical_path_urgency` and max `reuse_leverage`; divide by sum of `complexity_cost` + max `ambiguity_penalty` + max `interface_risk`
-- Dispatch the entire group as one unit — one OpenSpec change, one workspace, one PR
-- Max 3 stories per group. Failure of any story fails the group.
+**Postcondition:** every ready story has `readiness_score` and `dispatch_score` written to its YAML.
 
 ---
 
 ## Step 4: Present Dispatch Queue
 
-Show the sorted queue with context:
+Show the sorted queue with context. Highlight the top story and explain why (highest score = critical path + high value + unblocks the most). One row per story, plus the conflicted / blocked / in-progress sections:
 
 ```
 Dispatch Queue (Layer 0 — 4 ready, 2 in_progress, WIP 3/5)
@@ -268,27 +171,10 @@ Dispatch Queue (Layer 0 — 4 ready, 2 in_progress, WIP 3/5)
      Unblocks: PROJ-005, PROJ-007, PROJ-008
      → Readiness: 0.9 — skip to /aep-launch
 
-  2.   PROJ-004 "Create user model"                score: 12.0
-     [medium] S | Module: db | Wave 1 | 4h slack
-     Unblocks: PROJ-006, PROJ-009
-     → Readiness: 0.8 — skip to /aep-launch
-
-  3.   PROJ-010 "Add settings page"                score: 0.43
-     [low] L | Module: web | Wave 3 | Leaf
-     → Readiness: 0.3 — go through /aep-design (ambiguous)
-
-  Conflicted (waiting):
-  • PROJ-006 — files overlap with in_progress PROJ-002
-
-  Blocked (dependencies not met):
-  • PROJ-008 — waiting on PROJ-003 (auth middleware)
-
-  In progress:
-  • PROJ-001 (tab: feat-api-scaffold) — Phase 4, 60% complete
-  • PROJ-002 (tab: feat-db-schema) — Phase 5, code review
+  Conflicted (waiting):  • PROJ-006 — files overlap with in_progress PROJ-002
+  Blocked (deps unmet):  • PROJ-008 — waiting on PROJ-003 (auth middleware)
+  In progress:           • PROJ-001 (tab: feat-api-scaffold) — Phase 4, 60%
 ```
-
-**Recommendation:** Always highlight the top story and explain why (highest score = critical path + high value + unblocks the most).
 
 ---
 
@@ -296,71 +182,9 @@ Dispatch Queue (Layer 0 — 4 ready, 2 in_progress, WIP 3/5)
 
 ### Dispatch Modes
 
-#### Interactive (default)
-
-User picks stories one at a time. Best for early layers or learning the system.
-
-#### Wave Batch (`--batch wave`)
-
-Dispatch all ready stories in the current wave (execution slice) at once:
-
-```
-Dispatches all ready stories in Wave N (up to WIP limit)
-Creates N workspaces via /aep-launch
-```
-
-#### Dynamic Workflow (`--batch wave` + "…with workflow")
-
-When the user explicitly asks to dispatch a wave **"with workflow"** AND the host
-is Claude Code with the dynamic-workflow (Workflow) tool, route the batch through
-the **workflow mode** instead of creating N workers. The dispatch front-end is
-identical — sync, cascade, score, lock, assemble context — only the execution
-plane changes: instead of N `/aep-launch` workers, author one dynamic workflow that
-fans out `pipeline(stories, build, verify)` with one agent per story (recipe:
-`aep-executor/references/backends.md` → "Mode: workflow").
-
-```
-Locks + creates OpenSpec changes for the ready stories in Wave N — up to the WIP limit (as usual)
-Creates the .feature-workspaces/<name> worktrees (launch guardrails apply)
-Then: one dynamic workflow, one agent per locked story (build → verify), each bound to its worktree
-After the run: collect `gated` results → ask the human → resume gated stories with the answers
-```
-
-> **Stale-base hazard (why AEP-created worktrees are required here):** the
-> Workflow/Agent tool's own `isolation: "worktree"` bases agents on a **stale
-> `origin/<base>`**, not your local integration-branch HEAD — which by this
-> point carries the dispatch-lock commit itself, so a host-isolated worker
-> would start from a base that predates the very lock that dispatched it, and
-> the drift surfaces only at merge time. If host-managed isolation is ever
-> unavoidable, the brief must be **machine-assembled**: after the lock commit,
-> read the base by command — `SHA=$(git rev-parse "$BASE")` — and print an
-> explicit STEP-0 line into every agent brief:
-> `git checkout -B story/<id> <sha>`. Never let an agent recall or re-type the
-> base. See `aep-autopilot` `references/deterministic-orchestration.md` →
-> Machine-assembled dispatch briefs.
-
-**Respect the WIP limit.** Workflow mode does not exempt the wave from the WIP cap below:
-each workflow agent still opens a PR, so the integration/merge bottleneck is the
-same as Wave Batch. Lock at most `available_slots` stories into the workflow
-(`available_slots = concurrency_limit − current in_progress`); the workflow's own
-per-agent concurrency cap is a separate, lower-level limit and does not replace
-this one.
-
-**Announce the mode (this path bypasses `/aep-launch`).** Because dispatch authors
-the workflow directly instead of handing to `/aep-launch`, dispatch owns the
-announcement that `/aep-launch` normally makes: state "workflow mode (dynamic
-workflow) — autonomous, billed, background; **no mid-stage steering**; human
-gates **park and return here** for confirmation, then gated stories resume"
-before authoring the workflow.
-
-This is the hands-free batch path: autonomous, billed, background. Steering is
-at stage boundaries only — but human decisions are NOT lost: a worker that hits
-one returns a `gated` result (gate-and-park), this session asks you, and the
-story resumes in its worktree with your answer. Use it when you want a wave
-built autonomously without watching individual workers. Requires Claude Code +
-Workflow tool (see `.claude/skills/aep-executor/references/backends.md`,
-"Mode: workflow"). If the host can't support it, fall back to Wave Batch and
-say so.
+- **Interactive (default)** — user picks stories one at a time. Best for early layers or learning the system.
+- **Wave Batch (`--batch wave`)** — dispatch all ready stories in the current wave at once (up to the WIP limit), creating N workspaces via `/aep-launch`.
+- **Dynamic Workflow (`--batch wave` + "…with workflow")** — when the host is Claude Code with the Workflow tool **and** the user asked for a workflow, route the batch through workflow mode (one dynamic workflow, one agent per locked story) instead of N `/aep-launch` workers. Read `references/workflow-mode.md`: it carries the machine-assembled STEP-0 brief requirement (the stale-base hazard) and the mode announcement dispatch must make when it bypasses `/aep-launch`.
 
 ### WIP Limits
 
@@ -368,11 +192,11 @@ say so.
 max_wip = topology.routing.concurrency_limit  (default: 5)
 current_wip = count of stories with status: in_progress
 available_slots = max_wip - current_wip
-
-Never dispatch more than available_slots stories.
 ```
 
-**Why (Little's Law):** `Lead Time = WIP / Throughput`. If you merge 3 stories/day, WIP 3 = 1 day lead time. WIP 15 = 5 days. The bottleneck is usually human PR review, not agent speed.
+Dispatch at most `available_slots` stories — this cap holds in every mode, including Dynamic Workflow. The integration/merge bottleneck (usually human PR review, not agent speed) is what `available_slots` protects: by Little's Law, `Lead Time = WIP / Throughput`, so dispatching beyond capacity creates traffic jams, not speed.
+
+**Gate:** WIP limit respected — do not dispatch when `available_slots <= 0`.
 
 ### The Dispatch Lock
 
@@ -405,129 +229,19 @@ The commit happens BEFORE the workspace is created. Two consecutive `/aep-dispat
 
 ## Step 6: Create OpenSpec Change with Context Package
 
-For each dispatched story, create the OpenSpec change with pre-assembled context:
+For each dispatched story, create the OpenSpec change `openspec/changes/<story-id>/` — `proposal.md`, `design.md`, `specs/<module>.md`, `tasks.md`, and a `.context/` package (`stable-prefix.md`, `dependencies.md`, `retrieval.md`). Always create the OpenSpec change, even for a well-specified story — the `.context/` directory is what the agent reads.
 
-```
-openspec/changes/<story-id>/
-├── proposal.md          ← story description + why + business value
-├── design.md            ← module definition + interface contracts + dependency APIs
-├── specs/<module>.md    ← acceptance criteria + interface obligations + verification
-├── tasks.md             ← story decomposed into implementation tasks
-└── .context/            ← pre-assembled context package
-    ├── stable-prefix.md ← shared product/architecture context (cacheable)
-    ├── dependencies.md  ← public APIs from completed dependency stories
-    └── retrieval.md     ← what to explore at runtime
-```
+Assemble the handoff package per `references/context-assembly.md`, pruned to the role's token budget from topology.
 
-### Context Assembly
+**Dispatch-blocking gates in assembly:** calibrated stories (`calibration_type` set, or `.5` alignment layers) require `calibration/<type>.yaml` to exist — else route to `/aep-calibrate`. UI-facing stories (`object_model_refs`, `calibration_type` in {visual-design, ux-flow}, or a `ui`-kind module) require an `approved` Object Map that covers the story — else route to `/aep-model`. Both gates are detailed in `references/context-assembly.md`; if either fails, **do not dispatch**.
 
-#### Part 1: Stable Prefix (~10K tokens, shared across agents in same layer)
-
-Extracted from product definition (`product/index.yaml` in split mode, `product-context.yaml` in v1 mode):
-
-- `product.problem` — what we're solving
-- `product.constraints` — tech stack, infrastructure
-- `product.layers[active_layer]` — what the user can do at this layer
-- `architecture.overview` — high-level structure
-- `architecture.technical_spec` — if set, include the technical specification document (or relevant sections for the story's module). This provides Symphony-style precision for protocol-heavy systems.
-- Coding conventions (conventional commits, git + worktree workflow, trunk-based)
-
-#### Part 2: Story-Specific Payload (~20K tokens, unique per agent)
-
-- **Full story spec** from the `stories` section
-- **Module definition** from `architecture.modules` matching `story.module`
-- **Adjacent interfaces** from `architecture.interfaces` where `from` or `to` = story module
-- **Dependency outputs** — for each completed dependency: public API surface (types, exports, endpoints). NOT internal implementation.
-
-#### Part 3: Retrieval Instructions (~500 tokens)
-
-```markdown
-## Files to read first
-
-- <files_affected from story spec>
-
-## Patterns to explore
-
-- Check existing patterns in <module> directory
-- Read interface contract tests for consumed interfaces
-
-## Do not read
-
-- Other module internals — use dependency_outputs above
-```
-
-#### Calibration Context (for `.5` alignment layers and calibrated stories)
-
-For stories with `calibration_type` set, or stories in `.5` alignment layers:
-
-**Heavy calibrations** (visual-design, ux-flow, copy-tone):
-
-1. **Include the calibration artifact** — `calibration/<type>.yaml` (e.g., `calibration/visual-design.yaml`)
-2. **For visual-design:** Also include reference design files from `docs/design-references/` matching the story's page (by story activity or title)
-3. **Include calibration constraint directive:**
-
-   ```markdown
-   This story has calibrated <dimension> decisions.
-   Follow the calibration artifact in calibration/<type>.yaml strictly.
-   Do not introduce new [visual tokens / flow patterns / voice patterns]
-   not defined in the calibration artifact.
-   ```
-
-If the required `calibration/<type>.yaml` does not exist, **do not dispatch** — instruct the user to run `/aep-calibrate <type>` first.
-
-**Light calibrations** (api-surface, data-model, scope-direction, performance-quality):
-
-No additional context needed — decisions are already in the architecture section of `product-context.yaml` and the product section of `product/index.yaml` (split mode), which flow through the stable prefix (Part 1) and story-specific payload (Part 2).
-
-**Backward compatibility:** For `.5` layer stories without `calibration_type` set, default to visual-design. Check both `calibration/visual-design.yaml` and `design-context.yaml` (legacy path).
-
-#### Object Map Context (UI-facing stories)
-
-A story is **UI-facing** when it has `object_model_refs` set, `calibration_type` in
-{visual-design, ux-flow}, or a non-null `activity` whose module has `kind: ui`
-(`architecture.modules[].kind`). For these, inject the **Object Map slice**, not the
-whole model:
-
-1. **Resolve the capability:** use `story.capability` if set; otherwise (v1 /
-   single-journey) the default capability is the project slug. The Object Map is
-   `product/maps/<capability>/object-map.yaml`.
-2. **Gate (must pass to dispatch):** the resolved object-map must exist, have
-   `status: approved`, and its `coverage[]` must list this story id. If it is missing,
-   `status` is `draft` or `stale`, or it does not cover the story → **do not
-   dispatch**; instruct the user to run `/aep-model` first (same posture as the
-   calibration gate). If `story.capability` is unset, fall back to scanning
-   `product/maps/*/object-map.yaml` for a `coverage[].story` match — an `approved`
-   match resolves the capability.
-3. From the map's `coverage` index, select only the objects this story realizes and
-   include just those entries: their attributes (core/secondary/metadata), the
-   relationships among them, the CTAs (object × role) on them, and the screen(s) the
-   story builds. Skip unrelated objects — keep the slice minimal.
-4. Include the object-first directive:
-
-   ```markdown
-   This story realizes objects from an approved Object Map.
-   Build object-first (noun→verb): the listed screens, object cards/detail,
-   attributes, and CTA placements come from product/maps/<capability>/object-map.yaml.
-   Do not introduce objects or screen structures not in this slice, and do not
-   collapse the flow into a step-by-step wizard unless the map marks it task_oriented.
-   ```
-
-Visual look, copy voice, and journey/transition still come from
-`calibration/{visual-design,copy-tone,ux-flow}.yaml` — the Object Map governs object
-structure and CTA grammar, not taste.
-
-### Assembly Rules
-
-1. **Prune aggressively** — irrelevant context degrades agent performance
-2. **Dependency outputs = public API only** — types, exports, endpoint signatures, never internals
-3. **Measure the package** — if it exceeds the role's token budget from topology, prune harder or split the story
-4. **Stable prefix is cacheable** — when dispatching multiple stories in the same layer, write it once
+**Postcondition:** `openspec/changes/<story-id>/.context/` exists for each dispatched story.
 
 ---
 
 ## Commit and Push Before Handoff
 
-> **CRITICAL:** Commit and push ALL dispatch artifacts (YAML updates, OpenSpec changes, changelog) to remote BEFORE handing off to `/aep-launch`. If the dispatch commit stays local, it will be lost when workspace PRs merge to the integration branch and you rebase. The push ensures OpenSpec changes survive on the remote.
+> **CRITICAL:** Commit and push ALL dispatch artifacts (YAML updates, OpenSpec changes, changelog) to remote BEFORE handing off to `/aep-launch`. If the dispatch commit stays local, it is lost when workspace PRs merge to the integration branch and you rebase. The push ensures OpenSpec changes survive on the remote.
 
 Append to the `changelog` section:
 
@@ -539,22 +253,11 @@ Append to the `changelog` section:
   sections_changed: [stories]
 ```
 
-Commit and push:
-
-```bash
-# Resolve $BASE (integration branch) — see git-ref "Integration Branch" (override → develop → main)
-BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
-[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
-  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
-BASE=${BASE:-main}
-
-git pull --ff-only origin "$BASE"
-git add product-context.yaml openspec/changes/
-git commit -m "feat: dispatch PROJ-003, PROJ-004 — Layer 0 Wave 1"
-git push origin "$BASE"
-```
+Then commit and push per `/aep-git-ref` "Control-Plane Commits": `git add product-context.yaml openspec/changes/`, commit (`feat: dispatch <ids> — Layer N Wave M`), and push to `$BASE` (resolve `$BASE` per `/aep-git-ref` "Resolving `$BASE`").
 
 **Verify the push succeeded** before proceeding to handoff. If push fails (e.g., remote conflict), resolve before launching workspaces.
+
+**Postcondition:** the dispatch commit is present on `origin/$BASE`.
 
 ---
 
@@ -562,61 +265,38 @@ git push origin "$BASE"
 
 > **Launch mode is normally resolved at `/aep-launch`, not here.** For the default
 > path dispatch stays executor-agnostic — it hands a well-specified change to
-> `/aep-launch`, which detects the host and selects a mode (native-bg-subagent /
-> claude-bg / codex-subagent / codex-exec / legacy) via `aep-executor`. Native
-> modes outrank tmux on every host; dispatch does not need to know. **The one
-> exception is the _Dynamic Workflow_ opt-in (Step 5):** that path runs the
-> **workflow** mode _from dispatch_, bypassing `/aep-launch`, so dispatch itself
-> owns mode selection and the announcement for that case.
+> `/aep-launch`, which detects the host and selects a mode via `aep-executor`.
+> **The one exception is the _Dynamic Workflow_ opt-in (Step 5):** that path runs the
+> **workflow** mode _from dispatch_, bypassing `/aep-launch`, so dispatch itself owns
+> mode selection and the announcement for that case.
 
-Determine the handoff based on story completeness:
+Route on the `readiness_score` computed in Step 3:
 
-### Readiness-based routing
+- **readiness_score >= 0.7** → skip to `/aep-launch` (spec is dispatch-ready: 3+ testable acceptance criteria, interface obligations defined, verification complete, files affected identified)
+- **readiness_score 0.5–0.7** → present to the user for the decision (`/aep-launch` or `/aep-design`)
+- **readiness_score < 0.5** → route to `/aep-design` (spec needs refinement: vague or fewer than 3 acceptance criteria, missing interface details, relevant open questions)
 
-Use the `readiness_score` computed in Step 3:
+### Full-auto / auto-design routing (medium/low readiness)
 
-- **readiness_score >= 0.7** → skip to `/aep-launch` (spec is dispatch-ready)
-- **readiness_score 0.5–0.7** → present to user for decision (`/aep-launch` or `/aep-design`)
-- **readiness_score < 0.5** → route to `/aep-design` (spec needs refinement)
+Routing of an under-ready story (readiness < 0.7) depends on two `topology.routing`
+flags — the `full_auto` master switch (default **false**) and the finer-grained
+`auto_design` (default **false**). `full_auto` sits **above** `auto_design`:
+`full_auto: true` implies `auto_design: true`.
 
-#### Full-auto / auto-design routing (medium/low readiness)
+- **`full_auto: true` OR `auto_design: true`** → resolve the story with a
+  **non-interactive gen/eval design resolver** (a design agent that refines the spec
+  without a human, then routes to `/aep-launch`) instead of escalating to interactive
+  `/aep-design`. No strategic pause.
+- **`full_auto: false` AND `auto_design: false` (default)** → route to interactive
+  `/aep-design` for human design refinement before launch. The strategic "what to
+  build" gate stays with the human.
 
-Routing of an under-ready story depends on two `topology.routing` flags — the
-`full_auto` master switch (default **false**) and the finer-grained `auto_design`
-(default **false**). `full_auto` sits **above** `auto_design`: `full_auto: true`
-implies `auto_design: true`.
-
-- **`full_auto: true` OR `auto_design: true`** → a medium/low-readiness story
-  (readiness < 0.7) is resolved by a **non-interactive gen/eval design resolver** —
-  a design agent that refines the spec without a human, then routes to
-  `/aep-launch` — instead of escalating to interactive `/aep-design` (the G3 human
-  gate). No strategic pause.
-- **`full_auto: false` AND `auto_design: false` (default)** → keep escalating: a
-  medium/low-readiness story routes to interactive `/aep-design` for human design
-  refinement before launch. The strategic "what to build" gate stays with the human.
-
-### Well-specified (readiness >= 0.7) → skip to /aep-launch
-
-- 3+ specific, testable acceptance criteria
-- Interface obligations defined
-- Verification strategy complete
-- Files affected identified
-
-### Ambiguous (readiness < 0.5) → go through /aep-design
-
-- Vague or fewer than 3 acceptance criteria
-- Missing interface details
-- Open questions relevant to this story
+Example single-story handoff:
 
 ```
 Story PROJ-003 dispatched (score: 14.5, critical path, shared enabler).
-
-OpenSpec change: openspec/changes/PROJ-003/
-Context package: openspec/changes/PROJ-003/.context/
-
-Recommendation: Readiness 0.9 — well-specified
-  → Skip to /aep-launch
-
+OpenSpec change: openspec/changes/PROJ-003/   Context: .../.context/
+Recommendation: Readiness 0.9 — well-specified → /aep-launch
   /aep-launch    ← start building immediately
   /aep-design    ← refine the spec first
 ```
@@ -627,7 +307,6 @@ For batch dispatch, create all workspaces via `/aep-launch`:
 
 ```
 Batch dispatched: PROJ-003 (score 23.0), PROJ-004 (score 12.0)
-
   /aep-launch PROJ-003  → tab: auth-middleware
   /aep-launch PROJ-004  → tab: user-model
 ```
@@ -637,18 +316,7 @@ Batch dispatched: PROJ-003 (score 23.0), PROJ-004 (score 12.0)
 ## Edge Cases
 
 - **No stories ready:** All pending stories have unmet dependencies. Check if any `in_progress` stories are stuck (high attempt_count, old started_at). Suggest checking workspace progress or running `/aep-reflect`.
-- **All stories completed in active layer:** Trigger layer gate test. If passed, advance to next layer and re-run dispatch.
+- **All stories completed in active layer:** Trigger the layer gate test. If passed, advance to the next layer and re-run dispatch.
 - **All stories completed in all layers:** Product is done. Suggest `/aep-reflect` for final review.
 - **Layer gate failed:** Do not advance. Create fix stories based on gate failure, add to current layer, re-dispatch.
 - **WIP limit reached:** No available slots. Show what's in progress and suggest waiting or reviewing PRs to unblock slots.
-
----
-
-## Guardrails
-
-- **Never dispatch a story with unmet dependencies** — even if the user insists.
-- **Never dispatch conflicting stories in parallel** — file-level conflicts cause merge chaos.
-- **Always sync signals before computing** — stale YAML produces wrong dispatch decisions.
-- **Always commit YAML before creating workspaces** — the commit IS the dispatch lock.
-- **Always create the OpenSpec change** — even for well-specified stories. The `.context/` directory is what the agent reads.
-- **Respect WIP limits** — dispatching beyond integration capacity creates traffic jams, not speed.

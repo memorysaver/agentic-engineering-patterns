@@ -52,7 +52,8 @@ Resolution order:
 1. **Explicit override** — `git config --get aep.integration-branch`. This is an **override only**,
    for a non-standard integration branch name (e.g. `staging`, `integration`). You do **not** set it
    for the standard `main`/`develop` cases — those are auto-detected. `/aep-onboard` reports the detected
-   mode and only writes this key when you use a non-standard name.
+   mode and only writes this key when you use a non-standard name
+   (`git config aep.integration-branch <name>`; unset with `git config --unset aep.integration-branch`).
 2. **Auto-detect** — `develop` if it exists locally or on `origin`.
 3. **Default** — `main` (single-branch mode).
 

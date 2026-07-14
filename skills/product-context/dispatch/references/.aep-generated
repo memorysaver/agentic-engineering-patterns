@@ -1,2 +1,3 @@
 # Managed by scripts/build-skills.sh — the files listed below are copies of skills/product-context/_shared/. Edit _shared/ and rebuild; every other file in this directory is skill-owned and never touched.
+file-resolution.md
 yaml-guardrails.md

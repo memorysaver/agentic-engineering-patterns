@@ -1,8 +1,8 @@
 # Workspace Gen/Eval Triggering Protocol
 
-How the autopilot detects when a workspace needs code review and triggers the workspace's own gen/eval loop via `executor.nudge()` — delivered through the workspace's mode transport (`SendMessage` / `feedback.md` / `send_input` / `codex exec resume` / `tmux send-keys`; see the table in SKILL.md). The autopilot **never evaluates code itself** — it triggers and monitors.
+How the autopilot **detects** when a workspace needs code review, so it can trigger the workspace's own gen/eval loop via `executor.nudge()` — delivered through the workspace's mode transport (see the Executor transport summary in SKILL.md). The autopilot **never evaluates code itself** — it triggers and monitors.
 
-> **Note:** Key trigger templates from this file are also inlined in `tick-protocol.md` Step ④ (GUIDE COMPLETION) to ensure the LLM sees them in context during tick execution.
+> **Scope of this file = the detection conditions.** The nudge/trigger **prompt texts** and the per-tick monitoring recipe are canonical in `tick-protocol.md` Step ④ (GUIDE COMPLETION) — this file names _when_ each trigger fires and points there for _what_ to send.
 
 ---
 
@@ -74,73 +74,20 @@ AND latest eval-response shows "Result: FAIL"
 
 ---
 
-## Trigger Commands
+## Trigger and Monitoring — canonical in tick-protocol.md
 
-### First Trigger (gentle)
+Each detection condition above maps to a nudge in `tick-protocol.md` Step ④b, and
+the per-tick monitoring recipe (check for `eval-response-*.md`; PASS → guide to
+merge next tick via ④c; FAIL → let it fix or re-trigger; the 3-tick / 6-tick
+escalation ladder) is Step ④'s **Monitoring Protocol**. The prompt texts and
+`last_action` state writes live there — this file does not restate them.
 
-```
-executor.nudge(<workspace-name>,
-  "Run Phase 5 code review now. Write eval-request.md to .dev-workflow/signals/, spawn an evaluator via executor.spawn_evaluator (your mode's recipe) per the build skill Phase 5 protocol, and execute the gen/eval loop. Check .dev-workflow/signals/feedback.md for context.")
-```
-
-Set in state: `code_review_triggered = true`, `code_review_triggered_at = now`, `last_action = "review_triggered"`.
-
-### Re-trigger (after 3 ticks / 15 min no response)
-
-```
-executor.nudge(<workspace-name>,
-  "URGENT: Phase 5 code review has not produced results. If you had a context reset, run bash .dev-workflow/init.sh to recover state. Then immediately: 1) Write eval-request.md 2) Spawn the evaluator via executor.spawn_evaluator 3) Execute the gen/eval loop per build Phase 5.")
-```
-
-Set: `last_action = "review_re_triggered"`.
-
-### Send Back (moved past without PASS)
-
-```
-executor.nudge(<workspace-name>,
-  "Your latest eval-response shows FAIL but you moved past Phase 5. Go back to Phase 5: fix the FAIL items identified in the eval-response, then re-run the gen/eval loop. Do not proceed to PR until eval passes.")
-```
-
-### Fresh Review for PR (Phase 10+ with stale eval)
-
-```
-executor.nudge(<workspace-name>,
-  "Code has changed since your last evaluation. Re-run Phase 5 code review on the current state before proceeding with the PR. Write a new eval-request.md and spawn a fresh evaluator.")
-```
-
----
-
-## Monitoring Protocol
-
-Each tick after triggering, check for eval-response files:
-
-```bash
-ls .feature-workspaces/<name>/.dev-workflow/signals/eval-response-*.md 2>/dev/null
-```
-
-### If eval-response exists:
-
-Read the latest response file. Parse the `## Result: PASS / FAIL` line.
-
-**PASS:**
-
-- Set `eval_rounds_completed` to the round number
-- Workspace can proceed to Phase 9+ (it will do so autonomously)
-- Tick step ④c will guide workspace toward Phase 12 merge via `executor.nudge()`
-
-**FAIL:**
-
-- Check if workspace is actively fixing (`phase == 5`, `completion_pct` changing) → let it work
-- If stuck → re-trigger (see above)
-- Track round count via `eval_rounds_completed`
-
-### If no eval-response after trigger:
-
-| Ticks since trigger | Action                                                     |
-| ------------------- | ---------------------------------------------------------- |
-| 1-2                 | Wait — workspace may be running eval                       |
-| 3 (15 min)          | Re-trigger with URGENT message                             |
-| 6 (30 min)          | Add escalation: "Workspace not responding to eval trigger" |
+| Detection condition                          | Trigger (tick-protocol.md Step ④b) |
+| -------------------------------------------- | ---------------------------------- |
+| 1 — Phase ≥ 5, no eval started               | First Trigger (gentle)             |
+| 2 — Stuck at Phase 5, already triggered      | Re-trigger (URGENT)                |
+| 3 — Phase 10+, eval older than latest commit | Fresh Review for PR                |
+| 4 — Moved past Phase 5 with a FAIL eval      | Send Back to Phase 5               |
 
 ---
 
