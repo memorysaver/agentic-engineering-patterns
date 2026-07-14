@@ -1,6 +1,6 @@
 ---
 name: aep-scaffold
-description: Scaffold a new project or onboard/converge an existing one with agentic infrastructure. New project ("new project", "scaffold", "create app"): full-stack monorepo via Better-T-Stack. Existing project ("onboard project", "initialize infrastructure", "fix the skills layout"): idempotent audit → confirm → converge. Both add OpenSpec, a workspace hook, and the BDD e2e-test skill.
+description: Creates a new AEP project or converges an existing project's agentic infrastructure. Use for new project, scaffold, infrastructure setup, or skills-layout repair; use /aep-onboard for installation and orientation.
 ---
 
 # Scaffold
@@ -313,7 +313,7 @@ hand-authored content**. Re-running a fully-converged project is a no-op ("alrea
 Read [`references/converge-flow.md`](references/converge-flow.md) for how to interpret each audit category,
 the observability→telemetry-candidate handling, and the per-category converge detail.
 
----
+In commands below, replace `<aep-scaffold-dir>` with the absolute directory containing this `SKILL.md`; it is notation, not an environment variable or a target-project-relative path.
 
 ## Phase 0E: Status Check (stack + pin)
 
@@ -329,7 +329,7 @@ or **uv** (Python) if the package manager is undetected; the frontend signal set
 Run the read-only audit. Nothing is changed in this phase.
 
 ```bash
-bash scripts/audit.sh
+bash "<aep-scaffold-dir>/scripts/audit.sh"
 ```
 
 It prints `[ok]`/`[DRIFT]` per check across categories A (canonical layout), B (e2e shape), C (infra) and
@@ -353,8 +353,10 @@ Apply only the confirmed changes; each step is a no-op when already satisfied. R
 then the two model-driven steps. Detail for every category is in `references/converge-flow.md`.
 
 ```bash
-bash scripts/converge.sh   # A canonical aep-* layout, C gitignore, E pin recommendation (recommend-only)
+bash "<aep-scaffold-dir>/scripts/converge.sh" --category A --category C
 ```
+
+Pass only confirmed mechanical categories (`A`, `C`, or `E`), repeating `--category`; skip the script if none were confirmed. E only prints a re-pin recommendation; B and D remain model-driven.
 
 - **B. E2E-test skill** — delegate to **`/aep-e2e-skill-scaffolding`** (creates or upgrades to BDD in
   canonical cross-tool form; migrates a legacy `.claude/skills/e2e-test` real dir; never overwrites
@@ -370,7 +372,7 @@ bash scripts/converge.sh   # A canonical aep-* layout, C gitignore, E pin recomm
 Re-run the audit until it **exits 0** — every confirmed category then reads `[ok]`:
 
 ```bash
-bash scripts/audit.sh
+bash "<aep-scaffold-dir>/scripts/audit.sh"
 ```
 
 A fully-converged project re-running this flow produces no changes — **idempotent**.

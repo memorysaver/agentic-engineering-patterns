@@ -1,6 +1,9 @@
 ---
 name: aep-reflect
-description: Classify post-ship feedback and route it back to the right phase — story graph, architecture, or opportunity hypothesis. Use after /aep-wrap or user testing, or on "reflect", "what did we learn", "update the product context", "replan".
+description: >-
+  Classifies post-ship feedback and routes it to the story graph, architecture,
+  or opportunity hypothesis. Use after /aep-wrap or user testing, or for
+  "reflect", "what did we learn", "update product context", and "replan".
 ---
 
 # Reflect

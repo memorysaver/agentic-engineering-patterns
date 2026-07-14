@@ -1,6 +1,9 @@
 ---
 name: aep-git-ref
-description: Canonical reference for AEP's git + worktree conventions — $BASE resolution, worktree lifecycle, branch naming, one-commit-per-task, PR and control-plane commit rules. Use when a skill needs a git convention, the user asks how AEP uses git, or a worktree needs recovery.
+description: >-
+  Canonical AEP git and worktree reference covering base resolution, lifecycle,
+  naming, task commits, PRs, and recovery. Use when another skill needs a git
+  convention or the user asks how AEP uses git.
 ---
 
 # Git + Worktree Reference (AEP)

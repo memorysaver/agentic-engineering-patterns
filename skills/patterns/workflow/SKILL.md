@@ -1,7 +1,9 @@
 ---
 name: aep-workflow
-description: |-
-  Author a dynamic workflow — a deterministic multi-agent harness Claude writes for one task. Use when work is too large, uncertain, or verification-heavy for one context; triggers on "dynamic workflow", "ultracode", "orchestrate subagents", "…with workflow". Not process feedback (/aep-workflow-feedback).
+description: >-
+  Authors a deterministic multi-agent harness for one large, uncertain, or
+  verification-heavy task. Use for "dynamic workflow", "ultracode", or
+  "orchestrate subagents"; not process feedback (/aep-workflow-feedback).
 ---
 
 # Dynamic Workflow Pattern

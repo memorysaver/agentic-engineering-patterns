@@ -1,6 +1,9 @@
 ---
 name: aep-launch
-description: Spawn an autonomous workspace agent to implement a feature. Use after /aep-design, or on "launch workspace", "start building", "spawn agent". Creates a git worktree on a feature branch, starts the selected executor mode via /aep-executor, and optionally sets up a separate evaluator. Followed by /aep-build.
+description: >-
+  Launches an autonomous workspace agent for a designed feature by creating its
+  worktree, selecting an /aep-executor backend, and optionally adding an
+  evaluator. Use after /aep-design or for "launch workspace" and "spawn agent".
 ---
 
 # Launch

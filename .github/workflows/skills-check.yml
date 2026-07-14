@@ -1,19 +1,25 @@
 name: skills-check
 
-# Verify the published skills stay self-contained and installable via the open
-# Agent Skills format (https://skills.sh). Runs on changes to the skills tree.
+# Verify every published skill carries its direct resources, the complete suite
+# installs, and installed units satisfy the open Agent Skills format.
 on:
   push:
     paths:
       - "skills/**"
+      - "evals/**"
       - ".claude-plugin/marketplace.json"
       - "scripts/build-skills.sh"
+      - "scripts/check-skills-package.sh"
+      - "scripts/test-scaffold-converge.sh"
       - ".github/workflows/skills-check.yml"
   pull_request:
     paths:
       - "skills/**"
+      - "evals/**"
       - ".claude-plugin/marketplace.json"
       - "scripts/build-skills.sh"
+      - "scripts/check-skills-package.sh"
+      - "scripts/test-scaffold-converge.sh"
       - ".github/workflows/skills-check.yml"
 
 jobs:
@@ -25,23 +31,11 @@ jobs:
       - name: Shared skill resources are in sync
         run: bash scripts/build-skills.sh --check
 
-      - name: marketplace.json is valid and declared skills exist
-        run: |
-          node -e '
-            const fs = require("fs");
-            const m = require("./.claude-plugin/marketplace.json");
-            const paths = m.plugins.flatMap(p => p.skills);
-            let bad = 0;
-            for (const p of paths) {
-              const f = p.replace(/^\.\//, "") + "/SKILL.md";
-              if (!fs.existsSync(f)) { console.error("Missing:", f); bad++; }
-            }
-            if (bad) process.exit(1);
-            console.log(`marketplace.json v${m.metadata.version}: ${paths.length} skills OK`);
-          '
+      - name: Skill package is complete, bounded, and officially valid
+        run: bash scripts/check-skills-package.sh
 
-      - name: Skills are discoverable by the skills CLI
-        run: npx -y skills@latest add ./ --list
+      - name: Scaffold converge regression fixtures
+        run: bash scripts/test-scaffold-converge.sh
 
       # R7/R8 of docs/decisions/skill-authoring-standard.md: one corpus-wide
       # line budget for every SKILL.md — warn above 400, fail above 500.

@@ -1,6 +1,9 @@
 ---
 name: aep-watch
-description: Continuously monitor bug trackers, error streams, and telemetry; classify findings with the /aep-reflect classifier, dedupe against the backlog, and auto-create bug/refinement stories in product-context.yaml — the self-feeding reflect→dispatch loop. Use for "watch", "monitor for new work", "ingest errors", "auto-create stories from telemetry", "/aep-watch". Main workspace only.
+description: >-
+  Monitors bug trackers, errors, and telemetry from the main workspace, then
+  classifies, deduplicates, and creates backlog stories. Use for "watch",
+  "monitor for new work", "ingest errors", or telemetry-driven stories.
 ---
 
 # Watch

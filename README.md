@@ -101,8 +101,9 @@ npx skills add memorysaver/agentic-engineering-patterns -a claude-code --skill '
 ```
 
 Skills install with the `aep-` prefix (e.g. `aep-map`, `aep-build`) at **project level** — committed
-with your repo and shared with your team — and each skill is **self-contained**, so its shared
-templates and references travel with it.
+with your repo and shared with your team. Each installed skill carries its own templates and
+references. The workflows also invoke named sibling skills, so install `'*'` by default; a selective
+install must include every `/aep-*` dependency named by the selected skill.
 
 ### Multiple runtimes (run once per agent)
 
@@ -164,15 +165,10 @@ Then:
 > `../../.agents/skills/<name>` (so both runtimes share one copy), then `npx skills add -a claude-code`
 > **replaces those symlinks with copied real directories.** `git status` then shows the tracked
 > symlinks as **deleted** plus a pile of untracked files — a spurious, layout-breaking diff. Run the
-> `-a codex` install (which writes the real `.agents/` files) as well, then normalize the Claude side
-> back to symlinks before committing:
->
-> ```bash
-> cd .claude/skills
-> for d in aep-*; do
->   [ -L "$d" ] || { rm -rf "$d" && ln -s "../../.agents/skills/$d" "$d"; }
-> done
-> ```
+> `-a codex` install (which writes the real `.agents/` files) as well, then run `/aep-scaffold` in
+> existing-project mode and confirm category A. Its converge script promotes the only copy,
+> collapses byte-identical duplicates, and stops for manual resolution when the two real copies
+> differ; it does not discard either side of an ambiguous pair.
 >
 > Afterward `git status` shows only the real `.agents/skills/**` updates (no phantom deletions) and
 > both runtimes resolve to one set of bytes again. Repos that install real copies for each agent
@@ -216,8 +212,8 @@ with `--no-verify` so the pinned bytes stay byte-for-byte intact.
 # List what's available before installing
 npx skills add memorysaver/agentic-engineering-patterns --list
 
-# Install specific skills (repeat --skill; use the aep- name)
-npx skills add memorysaver/agentic-engineering-patterns -a claude-code --skill aep-map --skill aep-build
+# Install a specific standalone reference skill (workflow skills need their named /aep-* dependencies)
+npx skills add memorysaver/agentic-engineering-patterns -a claude-code --skill aep-git-ref
 
 # Install globally (user-level, ~/.claude/skills) instead of project level
 npx skills add memorysaver/agentic-engineering-patterns -a claude-code -g --skill '*'
@@ -238,19 +234,20 @@ npx skills experimental_install
 
 The `skills` CLI selects by skill name (there's no "group" flag). The groups map to these `--skill` names:
 
-| Group                                       | `--skill` names                                                                                             |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| **Workflow** (agentic-development-workflow) | `aep-design`, `aep-launch`, `aep-build`, `aep-wrap`, `aep-git-ref`                                          |
-| **Product** (product-context)               | `aep-envision`, `aep-map`, `aep-model`, `aep-dispatch`, `aep-validate`, `aep-calibrate`, `aep-reflect`      |
-| **Setup** (project-setup)                   | `aep-onboard`, `aep-scaffold`, `aep-e2e-skill-scaffolding`                                                  |
-| **Patterns** (patterns)                     | `aep-gen-eval`, `aep-executor`, `aep-autopilot`, `aep-workflow`, `aep-workflow-feedback`, `aep-design-lens` |
+| Group                                       | `--skill` names                                                                                                     |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **Workflow** (agentic-development-workflow) | `aep-design`, `aep-launch`, `aep-build`, `aep-wrap`, `aep-git-ref`                                                  |
+| **Product** (product-context)               | `aep-envision`, `aep-map`, `aep-model`, `aep-dispatch`, `aep-validate`, `aep-calibrate`, `aep-reflect`, `aep-watch` |
+| **Setup** (project-setup)                   | `aep-onboard`, `aep-scaffold`, `aep-e2e-skill-scaffolding`                                                          |
+| **Patterns** (patterns)                     | `aep-gen-eval`, `aep-executor`, `aep-autopilot`, `aep-workflow`, `aep-workflow-feedback`, `aep-design-lens`         |
 
 > **Releasing:** bumping `metadata.version` in `.claude-plugin/marketplace.json` must come with a matching [CHANGELOG.md](CHANGELOG.md) entry in the same PR (move the `[Unreleased]` notes under the new `[X.Y.Z] - DATE` heading), and a `vX.Y.Z` git tag on merge to `main`.
 
 ### Contributing skills (shared resources)
 
-Skills are authored under `skills/<group>/<name>/SKILL.md` and must be **self-contained** so each
-installs cleanly on its own. Resources shared across the product-context skills live once in
+Skills are authored under `skills/<group>/<name>/SKILL.md`; each installed unit must contain every
+file it reads directly. Cross-skill behavior stays an explicit `/aep-*` invocation, so install the
+full suite unless you also install that dependency closure. Resources shared across the product-context skills live once in
 `skills/product-context/_shared/{references,templates}/`. A build step materializes them into each
 skill that references them (those copies are marked with a `.aep-generated` file — don't edit them
 by hand):

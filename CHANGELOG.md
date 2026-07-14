@@ -19,7 +19,28 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 
 ## [Unreleased]
 
-_Nothing yet._
+### Changed
+
+- Skill routing metadata reduced from 6,711 to 4,625 characters (643 words,
+  max 34 per skill), with a 5,000-character corpus budget and recorded
+  front-tier direct/boundary routing probes in `evals/skill-routing.json`.
+- Selective-install documentation now states the `/aep-*` dependency-closure
+  requirement; the product group list includes `aep-watch`.
+
+### Fixed
+
+- `/aep-scaffold` frontmatter is valid YAML and is again discoverable, taking
+  the skills CLI from 21/22 to 22/22 installed skills.
+- Scaffold converge now propagates write failures, repairs Claude-only and
+  Codex-only layouts, collapses only byte-identical duplicates, preserves
+  divergent copies, resolves its scripts from the installed skill directory,
+  and honors confirmed A/C/E categories.
+- CI now performs a real copied install, asserts the exact marketplace/source
+  set, validates all installed units with the official Agent Skills validator,
+  enforces metadata budgets, and runs eight scaffold converge fixtures.
+- The upgrade guide no longer recommends deleting real Claude skill
+  directories blindly; it routes normalization through scaffold's fail-closed
+  converge.
 
 ## [3.0.0] - 2026-07-14
 
@@ -28,8 +49,10 @@ _Nothing yet._
 (per-skill moves in
 [`docs/plans/2026-07-14-lean-skills-refactor.md`](docs/plans/2026-07-14-lean-skills-refactor.md)).
 Major bump: every SKILL.md changed shape and several reference files moved or
-became canonical; step names, phase numbers, signal files, and schema fields are
-unchanged, and each refactor carried a behavior-parity (R9) argument.
+became canonical. Signal files and schema fields are unchanged. One structural
+exception is recorded: `/aep-reflect` Step 5.5 was folded into Step 2's Process
+branch while retaining its actions. The branch does not retain the historical
+per-skill execution dry-run artifacts; see the R9 evidence note in the decision.
 
 ### Changed
 

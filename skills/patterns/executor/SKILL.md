@@ -1,11 +1,9 @@
 ---
 name: aep-executor
-description: |-
-  Host-agnostic executor for spawning and steering workspace agents across
-  Claude Code and Codex backends. Consulted by /aep-launch, /aep-build,
-  /aep-autopilot; invoke directly for "which backend", "launch mode",
-  "host detection", running under Codex, with/without tmux (legacy),
-  "as a workflow", or why "claude-team" was removed.
+description: >-
+  Spawns and steers workspace agents across Claude Code and Codex backends.
+  Used by /aep-launch, /aep-build, and /aep-autopilot; invoke directly for
+  backend choice, launch mode, host/tmux detection, or workflow execution.
 ---
 
 # Executor Abstraction

@@ -1,6 +1,9 @@
 ---
 name: aep-design
-description: Interactive feature design on the integration branch. Use when starting a new feature, or when the user says "design a feature", "let's design", "explore and propose". Runs OpenSpec explore/propose/review, then commits artifacts. The first step in the feature lifecycle — followed by /aep-launch.
+description: >-
+  Designs a feature interactively on the integration branch with OpenSpec
+  exploration, proposal, review, and committed artifacts. Use for "design a
+  feature" or "explore and propose"; next run /aep-launch.
 ---
 
 # Design

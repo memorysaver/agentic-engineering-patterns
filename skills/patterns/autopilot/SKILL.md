@@ -1,7 +1,9 @@
 ---
 name: aep-autopilot
-description: |-
-  Autonomously orchestrate the dispatch→launch→monitor→review→wrap cycle for one layer, hands-free. Use on "autopilot", "run autonomously", "hands-free mode", "let it run", "manage workspaces", or to dispatch and monitor multiple stories unattended. Always trigger this over /aep-dispatch when the user wants continuous autonomous operation, not a single dispatch. Main workspace only.
+description: >-
+  Runs the dispatch-to-wrap cycle continuously for one layer from the main
+  workspace. Use for "autopilot", "hands-free", or unattended multi-story
+  execution; prefer /aep-dispatch for one story only.
 ---
 
 # Autopilot

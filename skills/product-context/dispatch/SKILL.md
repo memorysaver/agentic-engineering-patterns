@@ -1,6 +1,9 @@
 ---
 name: aep-dispatch
-description: Pick the next story to build and route it into the feature lifecycle. Use when ready to start building, or on "what's next", "dispatch", "pick a story". Syncs signals, scores the ready queue, assembles context, then hands off to /aep-design or /aep-launch. For autonomous orchestration use /aep-autopilot instead.
+description: >-
+  Selects and routes one ready story by syncing signals, scoring the queue, and
+  handing off to /aep-design or /aep-launch. Use for "what's next", "dispatch",
+  or "pick a story"; use /aep-autopilot for continuous execution.
 ---
 
 # Dispatch

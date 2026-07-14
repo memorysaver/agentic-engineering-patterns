@@ -1,6 +1,9 @@
 ---
 name: aep-calibrate
-description: Human alignment checkpoint for a quality dimension agents can't judge. Use when /aep-reflect flags a works-vs-right gap, the user says "calibrate", "design brief", or "capture", or before dispatching a .5 alignment layer. Phase 1 writes a dimension brief; Phase 2 captures decisions into an artifact.
+description: >-
+  Captures human judgment for a quality dimension agents cannot evaluate. Use
+  when /aep-reflect finds a works-vs-right gap, before a .5 alignment layer, or
+  for "calibrate" and "design brief".
 ---
 
 # Calibrate

@@ -1,6 +1,9 @@
 ---
 name: aep-model
-description: OOUX/ORCA object modeling for UI-facing products. Run after /aep-map, before dispatching UI-facing stories, or on "object model", "object map", "OOUX", "ORCA", "noun-first IA". Mines a draft Object Map, gates it through a short human review, then writes the noun-first blueprint so build stops inventing task-wizard screens per story.
+description: >-
+  Builds a human-reviewed OOUX/ORCA object map and noun-first UI blueprint. Use
+  after /aep-map, before UI stories, or for "object model", "object map",
+  "OOUX", "ORCA", and "noun-first IA".
 ---
 
 # Model
