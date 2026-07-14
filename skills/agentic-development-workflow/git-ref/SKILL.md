@@ -1,28 +1,13 @@
 ---
 name: aep-git-ref
-description: AEP-specific reference for git + git worktree workflows. Use when the user asks "how do I create a worktree?", "what's the AEP branch convention?", "how do I clean up a worktree?", "how does AEP use git?", "remind me of git commands for parallel agents", or needs to recover from a worktree mishap. Documents worktree lifecycle, branch naming, the one-commit-per-task pattern, recovery procedures, and PR conventions used by `/aep-launch`, `/aep-build`, and `/aep-wrap`.
+description: Canonical reference for AEP's git + worktree conventions — $BASE resolution, worktree lifecycle, branch naming, one-commit-per-task, PR and control-plane commit rules. Use when a skill needs a git convention, the user asks how AEP uses git, or a worktree needs recovery.
 ---
 
 # Git + Worktree Reference (AEP)
 
-`/aep-launch`, `/aep-build`, and `/aep-wrap` operate on a plain git repository plus `git worktree` for parallel agent isolation. There is no separate VCS, no colocated mode, no special wrapper — when these skills say "commit", they mean `git commit`. This skill documents the AEP-specific conventions on top of standard git.
+`/aep-launch`, `/aep-build`, and `/aep-wrap` operate on a plain git repository plus `git worktree` for parallel agent isolation. There is no separate VCS, no colocated mode, no special wrapper — when these skills say "commit", they mean `git commit`. This skill is the **canonical home** for AEP's git conventions: every other skill resolves `$BASE`, creates/removes worktrees, and opens PRs by pointing here, never by re-inlining these blocks.
 
-If you've used git for ten minutes, you already know 90% of this. The remaining 10% is the conventions AEP layers on top.
-
----
-
-## Why Git, Not jj
-
-AEP previously used Jujutsu (jj) in colocated mode for change-mutability and zero-disk workspaces. We migrated to pure git because:
-
-- **Agent training data.** Every LLM has orders of magnitude more git in its training set. Agents reach for `git status` reflexively, and on a colocated jj+git repo that returned confusing detached-HEAD output.
-- **No colocated rulebook.** The "use jj for local, jj git for remote, never raw git commit" rule produced repeated agent violations and wasted prompt tokens reinforcing it.
-- **Universal tooling.** `gh`, IDE git panes, every CI provider, husky hooks — all assume git. jj needed adapter skills.
-- **No async-snapshot footgun.** jj's working-copy auto-snapshot has no daemon; agents could lose work between commands. Manual `git commit` per task is now enforced upfront.
-
-What we lost: jj's auto-rebase, conflict-as-data, and `op log` recovery. The replacements (linear commits, eager conflict resolution, `git reflog`) are documented below.
-
-See [docs/decisions/migrate-from-jj-to-git.md](../../../docs/decisions/migrate-from-jj-to-git.md) for the full rationale.
+AEP migrated from Jujutsu to pure git in 2026-04 (agent training data, universal tooling); rationale in [docs/decisions/migrate-from-jj-to-git.md](../../../docs/decisions/migrate-from-jj-to-git.md).
 
 ---
 
@@ -87,12 +72,7 @@ common `.git/config`, so `$BASE` resolves identically in the main session and in
 ### Create
 
 ```bash
-# Resolve $BASE — see "Integration Branch" above (override → develop → main)
-BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
-[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
-  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
-BASE=${BASE:-main}
-
+# Resolve $BASE first — see "Resolving $BASE" above
 mkdir -p .feature-workspaces
 git worktree add -b feat/<name> .feature-workspaces/<name> "$BASE"
 ```
@@ -234,15 +214,10 @@ We always squash-merge. The feature branch's per-task commits collapse into one 
 
 ## Control-Plane Commits (on the integration branch)
 
-`/aep-dispatch`, `/aep-envision`, `/aep-map`, `/aep-calibrate`, `/aep-validate`, `/aep-reflect`, and the `/aep-wrap` archive step all commit directly to the integration branch (`$BASE`). The pattern is identical:
+`/aep-design`, `/aep-dispatch`, `/aep-envision`, `/aep-map`, `/aep-calibrate`, `/aep-validate`, `/aep-reflect`, and the `/aep-wrap` archive step all commit directly to the integration branch (`$BASE`). The pattern is identical:
 
 ```bash
-# Resolve $BASE — see "Integration Branch" above (override → develop → main)
-BASE=$(git config --get aep.integration-branch 2>/dev/null || true)
-[ -z "$BASE" ] && { git show-ref --verify --quiet refs/heads/develop \
-  || git show-ref --verify --quiet refs/remotes/origin/develop; } && BASE=develop
-BASE=${BASE:-main}
-
+# Resolve $BASE first — see "Resolving $BASE" above
 git pull --ff-only origin "$BASE"       # fail-fast if the integration branch has diverged
 git add <specific-files>                # never -A on the integration branch; be explicit
 git commit -m "<conventional message>"

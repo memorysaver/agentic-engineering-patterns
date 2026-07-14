@@ -1,17 +1,17 @@
 ---
 name: aep-workflow-feedback
 description: |-
-  Capture and route workflow learnings between downstream projects and AEP. Use after /aep-wrap or /aep-reflect when process observations need to be standardized, when reviewing what a build run taught about AEP workflows, or when pulling learnings from downstream projects back upstream. Triggers on "workflow feedback", "capture learnings", "what did we learn about process", "pull learnings from downstreams", "upstream lessons".
+  Capture workflow learnings in a downstream project and route them upstream to AEP. Use after /aep-wrap or /aep-reflect to standardize process/tech-stack observations, or in the AEP repo to pull learnings from downstreams. Triggers on "workflow feedback", "capture learnings", "pull learnings upstream".
 ---
 
 # Workflow Feedback
 
-A reusable pattern for capturing workflow observations in downstream projects and routing them upstream to improve AEP skills and documentation. Ensures that lessons learned during builds don't stay buried in individual project repos.
+A reusable pattern for capturing workflow observations in downstream projects and routing them upstream to improve AEP skills and documentation. Ensures lessons learned during builds don't stay buried in individual project repos.
 
-**This skill has two modes:**
+**Two modes:**
 
-- **Capture mode:** Run in a downstream project after builds to standardize observations
-- **Review mode:** Run in the AEP repo to pull and route upstream candidates from downstreams
+- **Capture** — run in a downstream project after builds to standardize observations.
+- **Review** — run in the AEP repo to pull and route upstream candidates from downstreams.
 
 ```
 DOWNSTREAM PROJECT                           AEP REPO
@@ -27,27 +27,30 @@ DOWNSTREAM PROJECT                           AEP REPO
                                              tag release → re-pin downstreams ──→ updated skills flow back
 ```
 
-**Session:** Main, interactive with user
-**Relates to:** `/aep-reflect` (classifies product feedback), `/aep-wrap` (archives workspace lessons), `/aep-build` (captures lessons during execution)
+**Session:** Main, interactive with user.
+
+**Hard guardrail — this skill never edits AEP skill files.** In either mode, propose amendments in the feedback/lesson file; a human applies them upstream via a deliberate re-pin.
 
 ---
 
 ## Mode 1: Capture
 
-Run this in a **downstream project** after completing a layer, a batch of stories, or an autopilot run. The goal is to standardize raw observations into a format that AEP can review.
+Run this in a **downstream project** after completing a layer, a batch of stories, or an autopilot run. The goal is to standardize raw observations into a format AEP can review.
 
 ### Step 1 — Gather sources
 
-Collect observations from all available sources:
+Collect observations from all available sources, including AEP skill/process behavior, not only product bugs (product-specific bugs go to `/aep-reflect` → story creation, not here):
 
 1. **Archived lessons:** `lessons-learned/*.md` (written by `/aep-wrap`)
 2. **Process lessons:** `lessons-learned/process/*.md` (from `/aep-reflect`)
 3. **Unarchived workspace lessons:** `.feature-workspaces/*/dev-workflow/lessons.md` (if workspaces not yet wrapped)
-4. **User observations:** Ask the user what they noticed during the run that isn't captured above
+4. **User observations:** Ask the user what they noticed during the run that isn't captured above.
+
+Postcondition: each user observation is recorded in the feedback file (Step 3), or the user explicitly confirms there were none.
 
 ### Step 2 — Classify each observation
 
-For each observation, assign a classification:
+Assign each observation a classification:
 
 | Classification  | Description                                                         | Upstream? |
 | --------------- | ------------------------------------------------------------------- | --------- |
@@ -55,6 +58,8 @@ For each observation, assign a classification:
 | `tech-stack`    | Technology-specific gotcha — applies to any project using this tech | Yes       |
 | `discovery`     | New understanding about the product domain or architecture          | Maybe     |
 | `project-local` | Specific to this project's codebase, not generalizable              | No        |
+
+Mark `upstream_candidate: yes` only for items that would benefit other projects using AEP. Postcondition: every observation carries a classification.
 
 ### Step 3 — Write standardized feedback
 
@@ -80,16 +85,11 @@ Stories: <count>
 - **Upstream candidate:** yes | no
 ```
 
+Postcondition: `.dev-workflow/feedback.md` exists with one Observations entry per gathered observation.
+
 ### Step 4 — Commit
 
-Commit `.dev-workflow/feedback.md` to the downstream project. This makes it available for AEP review mode.
-
-### Guardrails (Capture)
-
-- **DO** include observations about AEP skill behavior, not just product bugs
-- **DO** mark `upstream_candidate: yes` only for items that would benefit other projects using AEP
-- **DO NOT** include product-specific bugs — those belong in `/aep-reflect` → story creation
-- **DO NOT** edit AEP skills from a downstream project — always route upstream
+Commit `.dev-workflow/feedback.md` to the downstream project, making it available for AEP review mode. Postcondition: `git status` shows `.dev-workflow/feedback.md` committed.
 
 ---
 
@@ -101,22 +101,24 @@ Run this in the **AEP repo** to pull feedback from downstream projects and route
 
 Read `.aep/config.yaml` to find registered downstream project paths. For each project:
 
-1. Check for `.dev-workflow/feedback.md` (standardized feedback from Capture mode)
-2. Check for `lessons-learned/**/*.md` (raw lessons from builds, if no feedback.md exists)
+1. Check for `.dev-workflow/feedback.md` (standardized feedback from Capture mode).
+2. If no `feedback.md` exists, check `lessons-learned/**/*.md` (raw lessons from builds) — feedback may be incomplete, so read these directly when present.
 
-If a downstream has no feedback file, note it and move on — don't block on incomplete data.
+If a downstream has no feedback file, note it and move on — don't block on incomplete data. Postcondition: every registered downstream is either scanned or noted as having no feedback.
 
 ### Step 2 — Filter upstream candidates
 
-From all collected observations, filter for:
+Pull observations that are:
 
-- Items marked `upstream_candidate: yes`
-- Items classified as `process` or `tech-stack` (these are almost always upstream-relevant)
-- Items classified as `discovery` only if they reveal a pattern applicable beyond one project
+- Marked `upstream_candidate: yes`, or
+- Classified `process` or `tech-stack` (almost always upstream-relevant), or
+- Classified `discovery` only when they reveal a pattern applicable beyond one project.
+
+Pull `project-local` items only when the human explicitly requests it.
 
 ### Step 3 — Route items
 
-For each upstream candidate, determine the destination:
+For each upstream candidate, determine the destination, noting which AEP skills a `process` observation affects:
 
 | Classification | Destination                                      | Format                                          |
 | -------------- | ------------------------------------------------ | ----------------------------------------------- |
@@ -126,7 +128,7 @@ For each upstream candidate, determine the destination:
 
 ### Step 4 — Present summary
 
-Show the human a table of all upstream candidates with proposed routing:
+Show the human a table of every upstream candidate — including minor ones — with proposed routing:
 
 ```
 | # | Source | Classification | Title | Proposed destination |
@@ -135,21 +137,13 @@ Show the human a table of all upstream candidates with proposed routing:
 | 2 | looplia | tech-stack | Rust keyring needs platform features | docs/tech-stack/... |
 ```
 
-The human approves, modifies, or rejects each item. **Never auto-edit skill files** — proposed skill amendments are documented in the lesson/decision file for manual application.
+The human approves, modifies, or rejects each item.
 
 ### Step 5 — Write approved items
 
-For each approved item, create the target file following the conventions in `docs/README.md`.
+For each approved item, create the target file following the conventions in `docs/README.md`. Record proposed skill amendments inside the lesson/decision file (per the hard guardrail above) for a human to apply.
 
-After writing, remind the human that skill improvements reach downstream projects via a deliberate **re-pin** (not a push script): cut a new AEP release tag, then in each downstream registered in `.aep/config.yaml` re-run `npx skills add memorysaver/agentic-engineering-patterns@<newtag>` once per agent (`-a claude-code`, then `-a codex`) and commit the updated skill files + `skills-lock.json`. See the README "Upgrading to a new release" flow.
-
-### Guardrails (Review)
-
-- **DO** present all upstream candidates, even if they seem minor
-- **DO** note which AEP skills are affected by process observations
-- **DO NOT** auto-edit skill files — document proposed amendments, let human apply
-- **DO NOT** pull items marked `project-local` unless the human explicitly requests it
-- **DO NOT** assume feedback.md is complete — some downstreams may have lessons only in `lessons-learned/`
+After writing, remind the human that approved skill improvements reach downstream projects only via a deliberate re-pin: cut a new AEP release tag, then re-pin each downstream registered in `.aep/config.yaml` per the README "Upgrading to a new release" flow. Postcondition: each approved item exists as a file under `docs/`.
 
 ---
 
@@ -163,11 +157,4 @@ After writing, remind the human that skill improvements reach downstream project
 | Time to review what downstream projects have learned   | Review  |
 | Preparing an AEP release with accumulated improvements | Review  |
 
----
-
-## Relationship to Other Skills
-
-- **`/aep-reflect`** classifies product feedback (bugs, refinements, discoveries, polish). `/aep-workflow-feedback` handles the process and tech-stack observations that `/aep-reflect` identifies but doesn't route upstream.
-- **`/aep-wrap`** archives workspace lessons to `lessons-learned/`. `/aep-workflow-feedback` capture reads those archives and standardizes them.
-- **`/aep-build`** writes raw observations to `.dev-workflow/lessons.md`. `/aep-workflow-feedback` capture reads those if workspaces haven't been wrapped yet.
-- **`/aep-autopilot`** `orchestration-learning.md` captures meta-patterns across workspaces. `/aep-workflow-feedback` review can pull those patterns upstream.
+Relationship to adjacent skills: `/aep-reflect` classifies _product_ feedback (bugs, refinements, discoveries, polish); this skill handles the _process_ and _tech-stack_ observations it surfaces but doesn't route upstream. `/aep-wrap` archives workspace lessons to `lessons-learned/` and `/aep-build` writes raw observations to `.dev-workflow/lessons.md` — Capture reads both. `/aep-autopilot`'s `orchestration-learning.md` captures meta-patterns across workspaces that Review can pull upstream.
