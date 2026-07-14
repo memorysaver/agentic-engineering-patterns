@@ -12,9 +12,9 @@ behavior, and the **bug** behavior it forbids.
 handling below are the source of truth. The orchestrator merge **nudges**
 (`autopilot/SKILL.md`, `tick-protocol.md`) must enumerate all 6 (the two safety
 stops — human-approval gate, policy pause — are the ones most often dropped).
-Files that describe only the **mode** decision (`worktree-onboarding.md`,
-`signals-spec.md`) carry the autopilot-vs-interactive rule, not the full stop
-list, but must not contradict it. When you change Phase 0 / Phase 12 / the launch
+The launch `mode` marker's semantics (`/aep-launch` `references/signals-spec.md`)
+carry the autopilot-vs-interactive rule, not the full stop list, but must not
+contradict it. When you change Phase 0 / Phase 12 / the launch
 `mode` marker, re-verify every case below still holds and that no file
 contradicts this list — half-applying it is this repo's #1 bug class.
 

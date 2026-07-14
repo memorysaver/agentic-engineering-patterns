@@ -63,10 +63,10 @@ After type is determined, check for existing calibration:
 
 ## Calibration Types
 
-Every dimension is either **heavy** or **light** — this drives the Phase 1 hand-off:
+Every dimension is either **heavy** or **light** (the split is canonical in `/aep-map` `references/alignment-layers.md`) — this drives the Phase 1 hand-off:
 
-- **Heavy** (visual-design, ux-flow, copy-tone): external exploration with tools outside the agent workflow, a standalone `calibration/<type>.yaml` artifact, and (usually) `.5` alignment-layer stories. Phase 1 stops and hands off.
-- **Light** (api-surface, data-model, scope-direction, performance-quality): conversational Q&A that updates the product context in place. Phase 1 flows straight into Phase 2.
+- **Heavy**: external exploration with tools outside the agent workflow, a standalone `calibration/<type>.yaml` artifact, and (usually) `.5` alignment-layer stories. Phase 1 stops and hands off.
+- **Light**: conversational Q&A that updates the product context in place. Phase 1 flows straight into Phase 2.
 
 Per-dimension brief templates, exploration methods, scan targets, and write targets are in `references/calibration-types.md` — load it when picking a dimension or scanning current state. For ux-flow / visual-design, running `/aep-design-lens` first seeds the brief with a theory-grounded, severity-scored health-check (evidence) that calibrate turns into the human's decision.
 

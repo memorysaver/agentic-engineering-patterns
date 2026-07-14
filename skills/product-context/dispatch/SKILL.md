@@ -233,7 +233,7 @@ For each dispatched story, create the OpenSpec change `openspec/changes/<story-i
 
 Assemble the handoff package per `references/context-assembly.md`, pruned to the role's token budget from topology.
 
-**Dispatch-blocking gates in assembly:** calibrated stories (`calibration_type` set, or `.5` alignment layers) require `calibration/<type>.yaml` to exist — else route to `/aep-calibrate`. UI-facing stories (`object_model_refs`, `calibration_type` in {visual-design, ux-flow}, or a `ui`-kind module) require an `approved` Object Map that covers the story — else route to `/aep-model`. Both gates are detailed in `references/context-assembly.md`; if either fails, **do not dispatch**.
+**Dispatch-blocking gates in assembly:** calibrated stories (`calibration_type` set, or `.5` alignment layers — concept canonical in `/aep-map` `references/alignment-layers.md`) require `calibration/<type>.yaml` to exist — else route to `/aep-calibrate`. UI-facing stories (`object_model_refs`, `calibration_type` in {visual-design, ux-flow}, or a `ui`-kind module) require an `approved` Object Map that covers the story — else route to `/aep-model`. Both gates are detailed in `references/context-assembly.md`; if either fails, **do not dispatch**.
 
 **Postcondition:** `openspec/changes/<story-id>/.context/` exists for each dispatched story.
 
@@ -270,7 +270,7 @@ Then commit and push per `/aep-git-ref` "Control-Plane Commits": `git add produc
 > **workflow** mode _from dispatch_, bypassing `/aep-launch`, so dispatch itself owns
 > mode selection and the announcement for that case.
 
-Route on the `readiness_score` computed in Step 3:
+Route on the `readiness_score` computed in Step 3 (bands are canonical in `references/scoring.md` § Routing Thresholds; the bullets below add the interactive actions):
 
 - **readiness_score >= 0.7** → skip to `/aep-launch` (spec is dispatch-ready: 3+ testable acceptance criteria, interface obligations defined, verification complete, files affected identified)
 - **readiness_score 0.5–0.7** → present to the user for the decision (`/aep-launch` or `/aep-design`)

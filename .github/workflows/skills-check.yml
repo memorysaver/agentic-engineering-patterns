@@ -60,10 +60,14 @@ jobs:
 
       # R8(b): the $BASE resolver block has exactly one canonical home —
       # git-ref's SKILL.md. The raw `aep.integration-branch` literal is
-      # allowlisted in the two reference files that read the config key for
-      # their own bash (executor backends probe, autopilot tick nudge prompt).
+      # allowlisted in the three reference files that read the config key for
+      # their own bash (executor backends probe, autopilot tick nudge prompt,
+      # build harness-artifacts init.sh recovery script).
       - name: $BASE resolver lives only in git-ref
         run: |
+          # Two signatures: the config-key literal AND the develop-probe bash
+          # (a resolver copy that omits the config override still probes
+          # refs/heads/develop — that spelling must not reappear either).
           bad=0
           while IFS= read -r f; do
             case "$f" in
@@ -71,7 +75,7 @@ jobs:
               skills/patterns/executor/references/backends.md) ;;
               skills/patterns/autopilot/references/tick-protocol.md) ;;
               skills/agentic-development-workflow/build/references/harness-artifacts.md) ;;
-              *) echo "FAIL: aep.integration-branch resolver leaked into $f"; bad=1 ;;
+              *) echo "FAIL: integration-branch resolver leaked into $f"; bad=1 ;;
             esac
-          done < <(grep -rl 'aep\.integration-branch' skills/ || true)
+          done < <({ grep -rl 'aep\.integration-branch' skills/ || true; grep -rlE 'refs/(heads|remotes/origin)/develop' skills/ || true; } | sort -u)
           exit $bad

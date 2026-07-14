@@ -61,7 +61,7 @@ Within the open window, each tick performs two independent reads:
 
 Read every signal named in `topology.routing.post_merge_guard.health_signals`. These are service-level, signals-only probes — no workspace code.
 
-> **Coverage precondition.** Run `coverage_check(health_signals)` (`../../../product-context/reflect/references/telemetry-ingestion.md` §1.5) first: a signal like `error_rate` / `latency_p95` that needs a metrics source must be **bound** (the `/aep-map` Telemetry Binding step wired a `telemetry_sources` entry / `health_url`). An **unbound** signal is reported as "telemetry binding incomplete — run /aep-map", **not** treated as green — never infer health from a signal you can't actually read. (`ci_status` / `health_endpoint` / `smoke_check` are self-describing and need no binding.)
+> **Coverage precondition.** Run `coverage_check(health_signals)` (`/aep-reflect` `references/telemetry-ingestion.md` §1.5) first: a signal like `error_rate` / `latency_p95` that needs a metrics source must be **bound** (the `/aep-map` Telemetry Binding step wired a `telemetry_sources` entry / `health_url`). An **unbound** signal is reported as "telemetry binding incomplete — run /aep-map", **not** treated as green — never infer health from a signal you can't actually read. (`ci_status` / `health_endpoint` / `smoke_check` are self-describing and need no binding.)
 
 | Signal kind       | How the orchestrator reads it (examples)                                             |
 | ----------------- | ------------------------------------------------------------------------------------ |
@@ -95,7 +95,7 @@ The design fixes two **distinct** failure shapes (`g4-dogfood-validation-design.
 
 The deploy is healthy at the service level, but the dogfood surfaced a UX or functional defect (broken flow, visual regression, wrong copy, dead link). This is feedback, not an outage.
 
-- Feed the dogfood report to the **`/aep-reflect` classifier** via the **`dogfood_report` adapter** (`../../../product-context/_shared/references/telemetry-ingestion.md` → Dogfood-report adapter), which classifies severity/category and **auto-creates a bug/refinement story** in `product-context.yaml` (links the G6 self-feeding loop).
+- Feed the dogfood report to the **`/aep-reflect` classifier** via the **`dogfood_report` adapter** (`/aep-reflect` `references/telemetry-ingestion.md` → Dogfood-report adapter), which classifies severity/category and **auto-creates a bug/refinement story** in `product-context.yaml` (links the G6 self-feeding loop).
 - **Stamp `watch_origin: {source: dogfood, external_id: <adapter key>}`** on each story you file, using the adapter's deterministic `external_id`. This is the **same** dedupe key `/aep-watch`'s `dogfood_report` source uses, so if watch also ingests the report neither path double-files — whichever runs first wins and the other no-ops (see the adapter's "No high-water mark — dedupe-only").
 - The new story enters the normal dispatch queue — Step ⑥ picks it up on a later tick by `readiness_score`.
 - **Never revert** for a Path-1 finding. The merged change stays; the fix ships as its own story.

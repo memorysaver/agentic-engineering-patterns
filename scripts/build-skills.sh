@@ -17,13 +17,18 @@
 #
 # Selection rules:
 #   - references: a skill receives exactly the _shared/references/ files whose
-#     basename its SKILL.md mentions as "references/<name>".
+#     path (relative to references/) its SKILL.md mentions as "references/<path>".
 #   - templates: a skill that mentions "templates/" receives the full shared
 #     template kit (templates cross-reference each other, so they ship whole).
+#
+# A name conflict (a skill-owned file where _shared wants to manage that name)
+# is never resolved by overwriting: the conflicted file is left untouched and
+# excluded from the manifest, and the script exits 1 until one side is renamed.
 #
 # Usage:
 #   bash scripts/build-skills.sh            # materialize (idempotent)
 #   bash scripts/build-skills.sh --check    # verify in sync; non-zero if stale
+#   bash scripts/build-skills.sh --stage    # materialize + git add what changed
 #   bash scripts/build-skills.sh --help
 
 set -euo pipefail
@@ -32,7 +37,7 @@ MARKER=".aep-generated"
 MARKER_HEADER="# Managed by scripts/build-skills.sh — the files listed below are copies of skills/product-context/_shared/. Edit _shared/ and rebuild; every other file in this directory is skill-owned and never touched."
 
 show_help() {
-  sed -n '2,28p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,33p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 # --- Resolve repo + paths ---
@@ -43,9 +48,11 @@ PC="$REPO/skills/product-context"
 SHARED="$PC/_shared"
 
 CHECK=false
+STAGE=false
 for arg in "$@"; do
   case "$arg" in
     --check) CHECK=true ;;
+    --stage) STAGE=true ;;
     --help|-h) show_help; exit 0 ;;
     *) echo "Unknown argument: $arg (try --help)"; exit 1 ;;
   esac
@@ -65,12 +72,10 @@ desired_files() {
     fi
     return 0
   fi
-  local f bn
-  for f in "$SHARED/references"/*; do
-    [ -f "$f" ] || continue
-    bn="$(basename "$f")"
-    if grep -qF "references/$bn" "$skillmd"; then
-      printf '%s\n' "$bn"
+  local rel
+  (cd "$SHARED/references" && find . -type f ! -name "$MARKER" | sed 's|^\./||') | while IFS= read -r rel; do
+    if grep -qF "references/$rel" "$skillmd"; then
+      printf '%s\n' "$rel"
     fi
   done | sort
 }
@@ -86,15 +91,19 @@ recorded_files() {
     tail -n +2 "$dst/$MARKER"
     return 0
   fi
-  # legacy marker
+  # legacy marker (an `if` guard, not `&&` — a non-mirroring final file must
+  # not fail the pipeline under set -e/pipefail)
   (cd "$dst" && find . -type f ! -name "$MARKER" | sed 's|^\./||') | while IFS= read -r rel; do
-    [ -f "$SHARED/$shared/$rel" ] && printf '%s\n' "$rel"
+    if [ -f "$SHARED/$shared/$rel" ]; then
+      printf '%s\n' "$rel"
+    fi
   done | sort
 }
 
 STALE=0
 WROTE=0
 CONFLICT=0
+CHANGED_FILES=""
 
 for skill_dir in "$PC"/*/; do
   name="$(basename "$skill_dir")"
@@ -117,13 +126,27 @@ for skill_dir in "$PC"/*/; do
     [ -z "$desired" ] && [ -z "$recorded" ] && continue
 
     # Conflict: a desired managed file already exists but is skill-owned.
+    # Conflicted names are excluded from copying and from the manifest, so the
+    # skill-owned file is never overwritten and a rerun re-detects the conflict.
+    conflicted=""
     while IFS= read -r rel; do
       [ -n "$rel" ] || continue
       if [ -f "$dst/$rel" ] && ! printf '%s\n' "$recorded" | grep -qxF "$rel"; then
         echo "CONFLICT: $name/$shared/$rel exists as a skill-owned file but _shared wants to manage that name"
         CONFLICT=$((CONFLICT + 1))
+        conflicted="${conflicted}${rel}"$'\n'
       fi
     done <<< "$desired"
+    if [ -n "$conflicted" ]; then
+      safe_desired=""
+      while IFS= read -r rel; do
+        [ -n "$rel" ] || continue
+        if ! printf '%s' "$conflicted" | grep -qxF "$rel"; then
+          safe_desired="${safe_desired}${rel}"$'\n'
+        fi
+      done <<< "$desired"
+      desired="${safe_desired%$'\n'}"
+    fi
 
     if [ "$CHECK" = true ]; then
       if [ "$legacy" = true ]; then
@@ -153,6 +176,7 @@ for skill_dir in "$PC"/*/; do
       if ! printf '%s\n' "$desired" | grep -qxF "$rel"; then
         rm -f "$dst/$rel"
         changed=true
+        CHANGED_FILES="${CHANGED_FILES}${dst}/${rel}"$'\n'
       fi
     done <<< "$recorded"
 
@@ -163,6 +187,7 @@ for skill_dir in "$PC"/*/; do
         mkdir -p "$(dirname "$dst/$rel")"
         cp "$src/$rel" "$dst/$rel"
         changed=true
+        CHANGED_FILES="${CHANGED_FILES}${dst}/${rel}"$'\n'
       fi
     done <<< "$desired"
 
@@ -173,10 +198,12 @@ $desired"
       if [ ! -f "$dst/$MARKER" ] || [ "$(cat "$dst/$MARKER")" != "$new_marker" ]; then
         printf '%s\n' "$new_marker" > "$dst/$MARKER"
         changed=true
+        CHANGED_FILES="${CHANGED_FILES}${dst}/${MARKER}"$'\n'
       fi
     elif [ -f "$dst/$MARKER" ]; then
       rm -f "$dst/$MARKER"
       changed=true
+      CHANGED_FILES="${CHANGED_FILES}${dst}/${MARKER}"$'\n'
     fi
 
     # Prune dirs emptied by removals (keeps dirs that still hold owned files).
@@ -189,9 +216,18 @@ $desired"
   done
 done
 
+# Stage exactly what this run changed (lefthook's stage_fixed only re-stages
+# files that were already staged, so the hook passes --stage instead).
+if [ "$STAGE" = true ] && [ "$CHECK" = false ] && [ -n "$CHANGED_FILES" ] && [ "$CONFLICT" -eq 0 ]; then
+  while IFS= read -r p; do
+    [ -n "$p" ] || continue
+    git -C "$REPO" add -A -- "$p"
+  done <<< "$CHANGED_FILES"
+fi
+
 if [ "$CONFLICT" -gt 0 ]; then
   echo ""
-  echo "ERROR: $CONFLICT name conflict(s) between skill-owned files and _shared. Rename one side."
+  echo "ERROR: $CONFLICT name conflict(s) between skill-owned files and _shared. Nothing was overwritten — the conflicted file(s) stay skill-owned and unmanaged. Rename one side and rebuild."
   exit 1
 fi
 

@@ -73,8 +73,12 @@ unchanged, and each refactor carried a behavior-parity (R9) argument.
 - `_shared/references/orchestration-patterns.md` (zero consumers; superseded
   by autopilot's tick-protocol / state-schema / deterministic-orchestration
   references).
-- `build/references/worktree-onboarding.md` demoted from a near-complete copy
-  of build Phase 0 (173 lines) to a 26-line orientation pointer.
+- `build/references/worktree-onboarding.md` removed — the launch-assembled
+  bootstrap prompt and `/aep-build` Phase 0 carry the onboarding; after the
+  lean pass the file had no remaining consumers.
+- `calibrate/references/design-brief-template.md` removed — orphaned since the
+  per-dimension `references/briefs/<type>.md` templates superseded it (see
+  `docs/decisions/generalized-calibration-workflow.md`).
 
 ### Fixed
 
@@ -90,6 +94,49 @@ unchanged, and each refactor carried a behavior-parity (R9) argument.
 - `/aep-design` added to git-ref's control-plane-commits enumeration; the
   integration-branch override set/unset commands documented at the canonical
   home.
+
+Post-review hardening (adversarially verified review round, 16/16 findings
+confirmed and fixed):
+
+- `scripts/build-skills.sh` write mode no longer overwrites a skill-owned file
+  on a `_shared` name conflict, nor adopts it into the manifest — the conflict
+  stays in place and the error repeats until one side is renamed (previously
+  the first pre-commit retry silently committed the clobber).
+- Legacy dir-level marker migration no longer dies silently (`set -e` +
+  `pipefail`) when the dir holds files that don't mirror `_shared/`.
+- `_shared/references/` selection is recursive — nested shared files
+  materialize instead of silently never shipping while `--check` stayed green.
+- The pre-commit `skills-build` job now runs `--stage`, staging exactly the
+  files the build changed (lefthook's `stage_fixed` cannot stage newly
+  materialized copies or removals, so commits landed with a stale tree).
+- The `$BASE` auto-detect bash surviving in `/aep-onboard` — a second resolver
+  spelling that also skipped the config override, reporting the wrong branch
+  under `aep.integration-branch` overrides — replaced with the `/aep-git-ref`
+  pointer; the CI resolver check now also greps the develop-probe signature so
+  literal-free copies can't evade it.
+- Remaining cross-skill relative links in reference files (tick-protocol ×4,
+  post-merge-guard ×2, backends, theory-catalog) converted to `/aep-x` prose
+  invocations (R3 — they broke in flattened `.claude/skills/aep-*` installs).
+- Dispatch scoring formulas, grouped-change rules, and routing bands
+  single-homed in `/aep-dispatch` `references/scoring.md` (new § Routing
+  Thresholds); autopilot tick Step ⑥ and validate `protocol-specs.md` point
+  there, and CHECK prompts include the file verbatim at assembly time.
+- Heavy/light calibration-dimension membership single-homed in `/aep-map`
+  `references/alignment-layers.md`; reflect, calibrate, dispatch, and envision
+  now point there (the file's consumer claim was previously false).
+- `merge-decision-cases.md` no longer claims `worktree-onboarding.md` carries
+  the autopilot-vs-interactive mode rule (`signals-spec.md` is the home).
+- Watch's liveness probe is `/aep-executor`-qualified with a non-circular
+  fallback (retry once, then inline for the tick — previously "fall back" named
+  the mode that had just failed).
+- YAML validation standardized on `npx js-yaml` everywhere (envision and model
+  used PyYAML — a second spelling with YAML 1.1/1.2 edge-case divergence).
+- Executor's Reference Files index now lists `references/dogfood-validation.md`
+  and the `spawn-liveness-probe.sh` script; the CI allowlist comment corrected
+  (three reference files, not two).
+- R7 implementation note added to the decision doc recording the accepted
+  per-skill target deviations (corpus 4,831 vs ~4,455; CI budget is the
+  enforceable ceiling).
 
 ## [2.7.0] - 2026-07-10
 

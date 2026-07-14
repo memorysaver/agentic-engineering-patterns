@@ -120,3 +120,14 @@ For stories with `compile_mode: grouped_change` sharing the same `change_group`:
 - **Dispatch score:** Sum `business_value` and `unblock_potential` across the group; use max `critical_path_urgency` and max `reuse_leverage`; divide by sum of `complexity_cost` + max `ambiguity_penalty` + max `interface_risk`.
 - Dispatch the entire group as one unit — one OpenSpec change, one workspace, one PR.
 - Max 3 stories per group. Failure of any story fails the group.
+
+---
+
+## Routing Thresholds
+
+Canonical `readiness_score` bands. The **actions** per band are mode-specific — interactive actions live in `/aep-dispatch` Step 7, autonomous actions in the autopilot tick Step ⑥ (Check Routing) — but the bands themselves are defined only here:
+
+- **>= 0.7** — dispatch-ready: 3+ testable acceptance criteria, interface obligations defined, verification complete, files affected identified.
+- **0.5–0.7** — borderline: spec mostly complete, but a design decision is still open.
+- **< 0.5** — under-specified: vague or fewer than 3 acceptance criteria, missing interface details, relevant open questions.
+- **`attempt_count >= 2`** — always escalate to a human, regardless of readiness: repeated failures need human attention.

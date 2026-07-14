@@ -242,8 +242,7 @@ explorers, search, doc libraries, catalogs, run/trace browsers).
 
 > Note: IA here is **wayfinding/orientation** (does the user stay oriented). The
 > object/screen **structure** itself (which objects, what screens) is
-> [`/aep-model`](../../../product-context/model/SKILL.md)'s job — reference it, don't
-> redo it.
+> `/aep-model`'s job — reference it, don't redo it.
 
 ---
 

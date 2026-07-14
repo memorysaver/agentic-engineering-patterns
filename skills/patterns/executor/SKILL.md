@@ -92,12 +92,17 @@ orphan re-adoption.
 
 ## Reference Files
 
-| File                                                         | Contents                                                                                                    | When to read                                  |
-| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| [`references/backends.md`](references/backends.md)           | Mode matrix, detection, selection order, driver compatibility, gate protocol, orphan re-adoption, `check()` | Always, before spawning or steering           |
-| [`references/claude-native.md`](references/claude-native.md) | `native-bg-subagent` (default) + `claude-bg` recipes, `--bg` availability note                              | When the selected mode is a Claude native one |
-| [`references/codex-native.md`](references/codex-native.md)   | `codex-subagent` + `codex-exec` recipes, `aep-builder`/`aep-evaluator` role TOMLs, desktop app mapping      | When the selected mode is a Codex one         |
-| [`references/tmux-session.md`](references/tmux-session.md)   | `legacy` recipes (tmux spawn/nudge/liveness, cmux tab ladder)                                               | When `legacy` is pinned or selected           |
+| File                                                                   | Contents                                                                                                    | When to read                                                                                                            |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| [`references/backends.md`](references/backends.md)                     | Mode matrix, detection, selection order, driver compatibility, gate protocol, orphan re-adoption, `check()` | Always, before spawning or steering                                                                                     |
+| [`references/claude-native.md`](references/claude-native.md)           | `native-bg-subagent` (default) + `claude-bg` recipes, `--bg` availability note                              | When the selected mode is a Claude native one                                                                           |
+| [`references/codex-native.md`](references/codex-native.md)             | `codex-subagent` + `codex-exec` recipes, `aep-builder`/`aep-evaluator` role TOMLs, desktop app mapping      | When the selected mode is a Codex one                                                                                   |
+| [`references/tmux-session.md`](references/tmux-session.md)             | `legacy` recipes (tmux spawn/nudge/liveness, cmux tab ladder)                                               | When `legacy` is pinned or selected                                                                                     |
+| [`references/dogfood-validation.md`](references/dogfood-validation.md) | `dogfood_method()` host × mode detection, `e2e_tool()`, `target_url()` resolution                           | When running dogfood validation (consumed by `/aep-build`, `/aep-launch`, `/aep-watch`, the autopilot post-merge guard) |
+
+The skill also ships `scripts/spawn-liveness-probe.sh <name> <agent_id>` — the
+post-spawn liveness probe every spawner runs (recipe in `references/backends.md`
+§ Post-Spawn Liveness Probe).
 
 ---
 

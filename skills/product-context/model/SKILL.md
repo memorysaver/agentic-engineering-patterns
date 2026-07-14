@@ -160,8 +160,11 @@ On approval:
 ## Step 4: Validate YAML & Commit
 
 ```bash
-# Validate every YAML touched
-python3 -c "import yaml,glob; [yaml.safe_load(open(f)) for f in ['product/object-model.yaml','product-context.yaml']+glob.glob('product/maps/*/object-map.yaml')]; print('YAML OK')"
+# Validate every YAML touched (globs that match nothing are skipped)
+ok=1; for f in product/object-model.yaml product-context.yaml product/maps/*/object-map.yaml; do
+  [ -f "$f" ] || continue
+  npx js-yaml "$f" > /dev/null || { echo "YAML FAIL: $f"; ok=0; }
+done; [ "$ok" = 1 ] && echo "YAML OK"
 ```
 
 If it fails, fix before committing — see `references/yaml-guardrails.md` for the

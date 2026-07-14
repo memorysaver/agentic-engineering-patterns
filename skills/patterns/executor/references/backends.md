@@ -403,7 +403,7 @@ as **waiting, not stuck and not failed**.
 > build wave as a fan-out. For the general dynamic-workflow pattern catalog
 > (classify-route, fan-out/synthesize, adversarial verify, generate-filter,
 > tournament, loop-until-done) and the judgment of _when a task warrants a workflow
-> at all_, see [`/aep-workflow`](../../workflow/SKILL.md).
+> at all_, see `/aep-workflow`.
 
 Claude Code's Workflow tool builds a whole dispatched wave as one deterministic
 fan-out: one build agent per locked story, each with per-agent worktree

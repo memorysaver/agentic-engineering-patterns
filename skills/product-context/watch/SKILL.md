@@ -53,10 +53,12 @@ pwd | grep -q '.feature-workspaces' && echo "ABORT: Run /aep-watch from main wor
 
 Any worker `/aep-watch` spawns (e.g. a cheap CHECK delegate to fetch + classify a
 batch) is a **`native-bg-subagent`** on Claude Code, gated by the standard
-**post-spawn liveness probe** (`scripts/spawn-liveness-probe.sh`): confirm the
-agent exists AND shows activity before counting it; on failure, tear down and
-fall back to `native-bg-subagent`. The watch session itself does **not** read
-workspace code.
+**Post-Spawn Liveness Probe** per `/aep-executor`
+(`scripts/spawn-liveness-probe.sh <name> <agent_id>`): confirm the agent exists
+AND shows activity before counting it. If the probe fails, tear the spawn down
+and retry once; if the retry also fails, run the fetch + classify inline in the
+watch session for this tick (degraded but still signals-only). The watch session
+itself does **not** read workspace code.
 
 ---
 

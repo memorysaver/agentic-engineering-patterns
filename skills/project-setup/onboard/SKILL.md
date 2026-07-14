@@ -192,19 +192,9 @@ If all core tools show OK, the environment is ready.
 
 ### Integration branch (single- vs two-branch mode)
 
-AEP integrates all feature work into one **integration branch** (`$BASE` across the skills). The standard cases are **auto-detected** — you configure nothing. Report which mode this repo is in:
+AEP integrates all feature work into one **integration branch** (`$BASE` across the skills). Resolve `$BASE` per `/aep-git-ref` → "Integration Branch" (config override first, then auto-detect — the standard `main`/`develop` cases need no configuration) and report which mode this repo is in: `develop` → two-branch (main is promote-only production); otherwise single-branch on `main`.
 
-```bash
-# Auto-detect (same logic every skill uses): develop → two-branch; otherwise single-branch
-if git show-ref --verify --quiet refs/heads/develop \
-   || git show-ref --verify --quiet refs/remotes/origin/develop; then
-  echo "Integration branch: develop  (two-branch mode — main is promote-only production)"
-else
-  echo "Integration branch: main  (single-branch mode)"
-fi
-```
-
-For a **non-standard** integration branch name (not `main`/`develop`, e.g. `staging` or `integration`), set the repo-local override once — see `/aep-git-ref` → "Integration Branch" for the config command and why the standard `main`/`develop` cases stay unpinned (so a repo can grow from single- to two-branch mode with no reconfiguration).
+For a **non-standard** integration branch name (not `main`/`develop`, e.g. `staging` or `integration`), set the repo-local override once — see the same `/aep-git-ref` section for the config command and why the standard cases stay unpinned (so a repo can grow from single- to two-branch mode with no reconfiguration).
 
 ### Enable the native launch modes (recommended)
 

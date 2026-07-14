@@ -62,8 +62,10 @@ Working behavior that needs improvement — or existing stories that need to mov
 
 **Sub-type — Calibration:** a gap between "works correctly" and "feels right." The code works as specified and the spec was correct, but the result doesn't match what the human wanted. Confirm: does the code work as specified (yes → not a bug)? Was the spec correct (yes → not a discovery)? Does the result feel right (no → calibration)? Which dimension is off (visual-design / ux-flow / api-surface / data-model / scope-direction / copy-tone / performance-quality)?
 
-- **Heavy** dimensions (visual-design, ux-flow, copy-tone): create stories in the next `.5` alignment layer with `calibration_type: <dimension>`; run `/aep-calibrate <dimension>` before dispatching.
-- **Light** dimensions (api-surface, data-model, scope-direction, performance-quality): route to `/aep-calibrate <dimension>` directly — it may create stories in the next integer layer or update product context inline. No `.5` layer needed.
+Route by the dimension's weight — the heavy/light split is canonical in `/aep-map` `references/alignment-layers.md`:
+
+- **Heavy** dimensions: create stories in the next `.5` alignment layer with `calibration_type: <dimension>`; run `/aep-calibrate <dimension>` before dispatching.
+- **Light** dimensions: route to `/aep-calibrate <dimension>` directly — it may create stories in the next integer layer or update product context inline. No `.5` layer needed.
 
 ### Discovery
 

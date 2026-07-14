@@ -11,8 +11,9 @@ pre-commit:
       run: bun oxfmt --write {staged_files}
       stage_fixed: true
     # Keep each skill self-contained: materialize skills/product-context/_shared
-    # into the skills that reference it, then re-stage the regenerated copies.
+    # into the skills that reference it. --stage makes the script git-add every
+    # file it changed (lefthook's stage_fixed only re-stages already-staged
+    # files, so it cannot pick up newly materialized copies or removals).
     - name: skills-build
       glob: "skills/product-context/**"
-      run: bash scripts/build-skills.sh
-      stage_fixed: true
+      run: bash scripts/build-skills.sh --stage

@@ -29,19 +29,7 @@ The `/aep-dispatch` skill reads stories from `product-context.yaml` and computes
 
 ### Scoring Formula
 
-```
-dispatch_score = (business_value + unblock_potential + critical_path_urgency + reuse_leverage) / (complexity_cost + ambiguity_penalty + interface_risk)
-```
-
-Where:
-
-- `business_value` (1-10): from story field if set, else derived from priority (critical=10, high=7, medium=4, low=1)
-- `unblock_potential` (0-10): min(10, count_of_direct_dependents \* 2)
-- `critical_path_urgency` (0-10): Stories on the longest dependency chain get 10
-- `reuse_leverage` (0-10): min(10, modules_depending_on_output \* 3) for shared enablers
-- `complexity_cost` (denominator): S=1, M=2, L=4
-- `ambiguity_penalty` (0-5): +2 if <3 criteria, +1 each for missing interfaces/files/questions
-- `interface_risk` (0-3): +1 per interface contract touched
+The `readiness_score` / `dispatch_score` formulas, all term definitions, grouped-change scoring, and the routing bands are canonical in `/aep-dispatch` `references/scoring.md` — validate story scores against that file, never against a local restatement.
 
 ### DAG Validation Rules
 

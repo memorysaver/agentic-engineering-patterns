@@ -1,6 +1,6 @@
 # Alignment Layers (`.5` Layers)
 
-Canonical definition of the `.5`-layer concept for the whole AEP corpus. `/aep-map` plans these layers during dependency resolution; `/aep-calibrate`, `/aep-reflect`, `/aep-envision`, `/aep-dispatch`, and `/aep-launch` all reference this concept — they point here rather than re-defining it.
+Canonical definition of the `.5`-layer concept — and of the **heavy/light dimension split** — for the whole AEP corpus. `/aep-map` plans these layers during dependency resolution; `/aep-calibrate`, `/aep-reflect`, `/aep-envision`, and `/aep-dispatch` point here rather than re-defining it; `/aep-launch` consumes the calibration gate without re-defining the concept.
 
 ## What a `.5` layer is
 

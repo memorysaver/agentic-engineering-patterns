@@ -84,7 +84,7 @@ Continue the conversation from Phase 0, now on product specifics:
 - **User activities (story-map backbone):** What the user DOES, step by step, as a left-to-right narrative of verb phrases ("Authenticate", "Create Profile", "Generate Content", "Track Progress", "Download Output"). Build this backbone BEFORE layer definitions — layers cut across it.
 - **Technical constraints:** Non-negotiable stack, infrastructure, hard dependencies.
 - **Quality dimensions:** Which dimensions need human judgment agents cannot provide — only those where "correct but not right" is likely. The seven taste dimensions (visual-design, ux-flow, copy-tone, api-surface, data-model, scope-direction, performance-quality) are cataloged in `/aep-calibrate` (`references/calibration-types.md`) — declare from there rather than re-listing. **`object-model` is separate:** a structural gate (not a taste calibration) that `/aep-map` auto-drafts and `/aep-model` approves. **Declare `object-model` by default for any UI-facing product/capability** — it stops build agents from inventing one-step-one-screen wizard UIs (skip only for pure-backend/CLI). For each declared dimension, record the layer where calibration is first likely and why.
-- **Layered MVP contract:** Layer 0 is the walking skeleton — the thinnest story from each activity, sliced horizontally across the backbone. Each later layer adds capabilities (and may extend the backbone rightward with new activities). `.5` layers are **human alignment layers**: points where agent execution pauses to calibrate intent across one or more quality dimensions. `calibration.plan` maps layers to expected checkpoints.
+- **Layered MVP contract:** Layer 0 is the walking skeleton — the thinnest story from each activity, sliced horizontally across the backbone. Each later layer adds capabilities (and may extend the backbone rightward with new activities). `.5` layers are **human alignment layers**: points where agent execution pauses to calibrate intent across one or more quality dimensions (canonical definition: `/aep-map` `references/alignment-layers.md`). `calibration.plan` maps layers to expected checkpoints.
 
 ### Stage 2: Structure
 
@@ -127,9 +127,9 @@ Run the gate — see `references/yaml-guardrails.md` for the full checklist and 
 
 ```bash
 # Split mode
-python3 -c "import yaml; [yaml.safe_load(open(f)) for f in ('product/index.yaml', 'product-context.yaml')]; print('YAML OK')"
+npx js-yaml product/index.yaml > /dev/null && npx js-yaml product-context.yaml > /dev/null && echo "YAML OK"
 # V1 mode
-python3 -c "import yaml; yaml.safe_load(open('product-context.yaml')); print('YAML OK')"
+npx js-yaml product-context.yaml > /dev/null && echo "YAML OK"
 ```
 
 **Postcondition:** the command prints `YAML OK` (exit 0). If it fails, fix the YAML before committing.
