@@ -81,7 +81,7 @@ New glossary entries (identical wording wherever used, per the propagation disci
 
 ## The refactor (implementation contract)
 
-Per-skill targets from the audit. "Lean" = steps kept inline, listed material moved to `references/` or replaced by pointers; no step is removed or reordered.
+Per-skill targets from the audit. "Lean" = steps kept inline, listed material moved to `references/` or replaced by pointers; no step is removed or reordered. The per-skill moves (what stays, what discloses where, what dedups to which canonical home) are expanded in [plans/2026-07-14-lean-skills-refactor.md](../plans/2026-07-14-lean-skills-refactor.md).
 
 | Skill                 |       Now |     Target | Primary moves                                                                                                                                                                          |
 | --------------------- | --------: | ---------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
