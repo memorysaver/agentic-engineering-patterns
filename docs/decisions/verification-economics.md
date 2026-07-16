@@ -13,11 +13,16 @@ _verification itself_ — the routing, depth, and accounting of verification are
 judging content stays judgment.
 
 > **Status:** Proposal (not yet implemented). This document records the design precisely so the
-> implementation PRs (target: v3.1.0) can be made and reviewed against it. It changes how AEP works,
-> so it lives in `decisions/` per the [docs routing guide](../README.md). Revised after a three-lens
-> design review (factual grounding, adversarial critique, downstream operability); the review's
-> blocking findings are folded in below — classification authority, two-point tier derivation,
-> cap-exhaustion semantics, autopilot integration, and the `live_policy`-aware preflight.
+> implementation PRs can be made and reviewed against it — **across two releases**: v3.1.0 ships
+> the incident-proven half (taxonomy, preflight, deterministic security gates, replay move,
+> evaluator-independence fixes, accounting instrumentation); v3.2.0 ships the economics half
+> (tiers, recipes, calibration), gated on field data from a v3.1.0 consumer. It changes how AEP
+> works, so it lives in `decisions/` per the [docs routing guide](../README.md). Revised after a
+> three-lens design review (factual grounding, adversarial critique, downstream operability) and an
+> independent frontier-model best-practice evaluation; their blocking findings are folded in below
+> — classification authority, two-point tier derivation, cap-exhaustion semantics, autopilot
+> integration, the `live_policy`-aware preflight, the referee-asset rule, and the typed recipe
+> artifact.
 
 > **Sourcing note:** Sourced from the 2026-07-16 cross-repo research session over SIBYL (story
 > SIBYL-189, `openspec/changes/archive/2026-07-15-SIBYL-189/`, and
@@ -96,13 +101,13 @@ reward-hacking future model — satisfy the check without satisfying the intent?
 > **Cheap and tamper-evident validators run in the inner loop, always. Expensive or gameable
 > validators run at the outermost boundary that still catches their failure class, gated by risk.**
 
-| DevOps position                  | Validators                                                                                              | Properties                                            | Frequency                       |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------- |
-| **Inner loop** (per task/commit) | Typed gates: lint, typecheck, focused Tier-1, schema validation, scope gates, **environment preflight** | Deterministic, named refusals, cannot be rationalized | Every commit                    |
-| **Merge boundary** (per story)   | One decisive evaluator cycle (diff vs. acceptance contract; tier-capped rounds) + CI + Tier-3 drivers   | Expensive, partially gameable → risk-tiered rounds    | Once per story under `standard` |
-| **Deploy boundary** (per layer)  | Tier-2 journey dogfood on the real target, **full regression replay**, coverage matrices, gate evidence | Expensive but tamper-evident (real execution)         | Once per layer                  |
-| **Operate** (post-deploy)        | Telemetry / production outcomes → `/aep-watch` → `/aep-reflect`                                         | The least gameable evidence that exists               | Continuous                      |
-| **Human gate**                   | Residual-risk acceptance at layer advance; taxonomy escalations                                         | Most expensive                                        | Per layer + exceptions          |
+| DevOps position                  | Validators                                                                                                                      | Properties                                            | Frequency                       |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------- |
+| **Inner loop** (per task/commit) | Typed gates: lint, typecheck, focused Tier-1, schema validation, scope gates, **secret scan / SAST**, **environment preflight** | Deterministic, named refusals, cannot be rationalized | Every commit                    |
+| **Merge boundary** (per story)   | One decisive evaluator cycle (diff vs. acceptance contract; tier-capped rounds) + CI + Tier-3 drivers                           | Expensive, partially gameable → risk-tiered rounds    | Once per story under `standard` |
+| **Deploy boundary** (per layer)  | Tier-2 journey dogfood on the real target, **full regression replay**, coverage matrices, gate evidence                         | Expensive but tamper-evident (real execution)         | Once per layer                  |
+| **Operate** (post-deploy)        | Telemetry / production outcomes → `/aep-watch` → `/aep-reflect`                                                                 | The least gameable evidence that exists               | Continuous                      |
+| **Human gate**                   | Residual-risk acceptance at layer advance; taxonomy escalations                                                                 | Most expensive                                        | Per layer + exceptions          |
 
 Two consequences worth naming:
 
@@ -241,10 +246,34 @@ between planning and merge:
   a human-owned list in the generated e2e skill's `policy.md` covering auth, payments, irreversible
   data operations, migrations, deploy/CI config; **or** the layer is the walking skeleton (0/0.5);
   **or** a human override says so. This is the hard floor; it is never loosenable by calibration.
-- **`light`** iff all: the change is docs/tests-only by path, no contract obligations, no new
-  non-test files — confirmed by the binding diff, not just the plan.
+- **`light`** iff all: the change is **docs-only** by path (tests are _not_ docs — see the
+  referee-asset rule below), no contract obligations, no new non-doc files — confirmed by the
+  binding diff, not just the plan.
 - **`standard`** otherwise (the default; multi-module or `on_critical_path` stories are at least
   `standard`).
+
+**Referee assets never derive `light`.** Test directories, journey specs
+(`skills/e2e-test/journeys/**`, including their `paths:` front-matter), the e2e skill's
+`policy.md`, and CI workflow definitions are the evidence base every later verifier stands on — a
+diff confined to them is a change to the _referee_, not a cheap change. The design already refuses
+generator edits to `.github/workflows/**` ("a generator that edits its own referee is not
+evidence", § Design 5); the same rule must cover the rest of the referee class, or the derivation
+function hands the reward-hacking generator a designed-in channel: delete assertions or weaken
+oracles in a tests-only diff and receive the cheapest, self-reviewed tier by construction — and the
+taxonomy _funnels_ work into that hole, because a `harness-flake` quarantine story is typically
+tests-only. Therefore: **a diff touching referee assets floors at `standard`**, and a **negative
+assertion delta** (more test/`Verify` lines removed than added) always requires an evaluation
+round, whatever the tier. Journey `paths:` edits after first authoring trigger the same scope
+refusal as workflow edits.
+
+**The recipe is a typed artifact, not a remembered rule.** The binding derivation emits
+`.dev-workflow/verification-recipe.json` (tier, dimension preset, hard floors, referee-asset and
+`scope_drift` flags), and **Phase 5 refuses to start without it** — by the companion doc's own law,
+a derivation function executed from prose recall is exactly the class of mechanical step that
+eventually gets skipped. Downstream projects get a runnable reference implementation (derivation
+function + preflight probe stubs + recipe emission) shipped with the e2e scaffolding skill —
+reference scripts are established precedent there (`scripts/audit.sh`, `scripts/converge.sh`);
+AEP still ships no runtime.
 
 | Tier                   | Evaluator rounds (cap)                      | Evaluator effort  | Dogfood scope (Phase 6B)          | Full-suite runs               |
 | ---------------------- | ------------------------------------------- | ----------------- | --------------------------------- | ----------------------------- |
@@ -264,6 +293,9 @@ floors — from one set of inputs:
 
 - `sensitive_paths` match → **Security-sensitive preset**, and its `Security ≥ 4` /
   `Data Privacy ≥ 4` floors become part of the tier hard floor — they survive any customization;
+  the recipe also adds the **deterministic security gates** (secret scan, SAST) as inner-loop typed
+  gates — the mechanically detectable half of security must never be routed to a more expensive LLM
+  judge, and their findings are `product-defect` by construction;
 - `ui`-kind module / `calibration_type` in {visual-design, ux-flow} / `object_model_refs` →
   **UI-heavy preset**, and only these stories pay for **Visual Design** — the most expensive
   dimension (screenshot capture + multimodal evaluation). Dimension cost follows the shipped
@@ -276,7 +308,10 @@ floors — from one set of inputs:
 Customization keeps the ratchet direction: launch or the human may **add** dimensions or raise
 thresholds, never drop a derived preset's hard-floor dimensions — the same
 tamper-resistance rule as the tier binding. Per tier: `light` scores no dimensions (self-review);
-`standard` runs the derived preset; `deep` runs it with no de-weighted dimensions. The framework's
+`standard` runs the derived preset; `deep` runs it with no de-weighted dimensions — and, where more
+than one model family is available, **`deep`-tier evaluation prefers a different model family from
+the generator**: cross-family judging reduces correlated generator/judge blind spots (SIBYL's
+`gpt-5.6-terra`-judging-Claude-output split is the downstream prior art). The framework's
 existing advice — _"weight dimensions toward areas where the model falls short"_ — becomes
 data-driven through the accounting below: findings and escapes are attributable per dimension, so
 calibration can propose re-weighting from evidence instead of intuition.
@@ -331,20 +366,26 @@ light` instead of carrying its own eval-loop toggle, collapsing the repo's three
 
 ### 3. Verification accounting — priced, recorded, calibrated
 
-`execution-record.yaml` (`wrap/references/convergence.md:70-88`) gains a `verification:` block. Every
-field is nullable and carries a named gather source (the gather stays best-effort):
+`execution-record.yaml` (`wrap/references/convergence.md:70-88`) gains a `verification:` block. The
+fields split into a **mandatory file-derivable floor** — every field marked `MUST` below is
+computable from artifacts the workflow already writes, and an implementation that leaves them null
+has not implemented this design — and best-effort fields that stay nullable. The motivating
+evidence is the warning: looplia ran 444 ticks with `total_cost_usd: 0`; a calibration loop built
+on optional sensors starves.
 
 ```yaml
 verification:
-  tier: light | standard | deep # provisional from the brief; Phase 5 binding re-derivation wins
-  tier_escalated: true | false # cap-exhaustion escalation fired
-  scope_drift: true | false # binding diff left the declared files_affected
-  eval_rounds: <n> | null # from signals/eval-response-*.md count
-  findings_by_round: [<n>, ...] | null # blocking+important per round; needs per-round persistence
-  finding_dimensions: [<dimension>, ...] | null # dimensions breached across rounds; feeds dimension re-weighting
-  journey_scenarios_run: <n> | null # from the dogfood report
-  preflight_refusals: [] # named tags, if any; [] when preflight passed
-  cost_usd: <n> | null # verification share when separable
+  tier: light | standard | deep # MUST — from verification-recipe.json
+  tier_escalated: true | false # MUST — cap-exhaustion escalation fired
+  scope_drift: true | false # MUST — binding diff left the declared files_affected
+  generator_model: <id> | null # MUST when known — model swaps shift both escape rate and findings
+  evaluator_model: <id> | null # MUST when an evaluator ran
+  eval_rounds: <n> | null # MUST when an evaluator ran — from signals/eval-response-*.md count
+  findings_by_round: [<n>, ...] | null # MUST when an evaluator ran — needs per-round persistence
+  finding_dimensions: [<dimension>, ...] | null # dimensions breached across rounds; feeds re-weighting
+  journey_scenarios_run: <n> | null # MUST when a journey ran — from the dogfood report
+  preflight_refusals: [] # MUST — named tags; [] when preflight passed
+  cost_usd: <n> | null # best-effort — verification share when separable
   escaped_defects: [] # filled retroactively by /aep-reflect
 ```
 
@@ -368,16 +409,21 @@ Consumers close the loop:
   escapes surface a layer later), which is the textbook oscillation setup. Dampening rules:
   **loosening proposals require ≥2 layers of `findings_by_round` evidence and zero unresolved
   escape attributions; loosen at most one notch per layer; the `sensitive_paths` hard floor is
-  never loosenable.** Tightening has no such damper. Verification assets get the same lifecycle:
+  never loosenable.** Tightening has no such damper. **Calibration proposals must condition on
+  model version** (`generator_model` / `evaluator_model` from the accounting block): a model swap
+  shifts escape rate and findings-per-round simultaneously, and a loop that cannot see the swap
+  will misattribute the shift to tier settings. Verification assets get the same lifecycle:
   distillation may propose merging or retiring journeys that have replayed green for N layers with
   no coverage loss. Proposals only; a human applies them. This is what breaks the ratchet.
 - **The layer budget box:** each layer gate's evidence doc records expected vs. actual verification
   spend (rounds, suite runs/time, scenarios, `cost_usd` where known). **The expected values are
   human-owned** — set at layer planning or accepted from a distillation proposal — never authored by
-  the loop that is graded against them. When actuals overrun the box, `/aep-wrap` surfaces a
-  **scope-vs-verification tradeoff to the human** at the layer-advance gate — the loop asks, it does
-  not silently grind. (looplia's tick-444 halt is the degenerate form of this question, asked ten
-  rounds too late.)
+  the loop that is graded against them. **Cold start is defined, not improvised:** the first
+  instrumented layer runs with no box and only records; its observed actuals plus a human-chosen
+  margin become the next layer's expected values. When actuals overrun the box, `/aep-wrap`
+  surfaces a **scope-vs-verification tradeoff to the human** at the layer-advance gate — the loop
+  asks, it does not silently grind. (looplia's tick-444 halt is the degenerate form of this
+  question, asked ten rounds too late.)
 
 ### 4. Regression replay moves from story to layer granularity
 
@@ -390,8 +436,10 @@ Consumers close the loop:
   prior-layer set per story (the one exception to impacted-only).
 - **Per layer** (`/aep-wrap` layer gate, `wrap/references/layer-advance.md`): the **full**
   prior-layer replay stays here, once per layer. For large layers, a **mid-layer full-replay
-  checkpoint every k stories** (k chosen at layer planning; looplia's L31 had 14 stories — k=5
-  would have bounded defect lifetime to 5 merges) keeps gate-time bisects tractable.
+  checkpoint every k stories** keeps gate-time bisects tractable — and k is **derived, not an
+  unguided planning judgment**: default `k = min(5, ⌈N/3⌉)` for a layer of N stories, overridable
+  by the human (looplia's L31 had 14 stories — the default gives k=5, bounding defect lifetime to
+  5 merges).
 - **The honest tradeoff:** executions drop from O(layers × stories) to O(stories + layers), but a
   cross-cutting regression a story's diff does not intersect now lives until the next checkpoint or
   the gate — worst-case defect lifetime is k merges, and gate-time attribution costs a bisect. The
@@ -405,7 +453,9 @@ generator cannot modify**:
 
 1. a CI run bound to the merged SHA — **valid as tamper-evident only when the workflow definitions
    are outside the story's diff scope** (a diff touching `.github/workflows/**` triggers a scope
-   refusal or human review; a generator that edits its own referee is not evidence);
+   refusal or human review; a generator that edits its own referee is not evidence — and the same
+   refusal covers the rest of the referee-asset class from § Design 2: journey `paths:` re-scoping
+   after first authoring, and `policy.md` edits outside a scaffold run);
 2. journey execution performed by `/aep-wrap` (executes-never-authors — existing canon);
 3. **read-only golden fixtures with a ledger-equality oracle** — fixture trees the generator's
    workspace cannot write, verified by before/after equality of durable state (SIBYL's
@@ -415,10 +465,17 @@ generator cannot modify**:
 
 Additionally:
 
-- **Evaluator prompts are machine-assembled** (extending deterministic-orchestration's
-  machine-assembled brief to evaluation): the orchestrating layer — not the generator — assembles
-  the evaluator's context (criteria file, contract file, diff range), so the generator cannot curate
-  what its judge sees.
+- **Evaluator prompts are machine-assembled, and spawn authority leaves the player** (extending
+  deterministic-orchestration's machine-assembled brief to evaluation): the orchestrating layer —
+  not the generator — assembles the evaluator's context (criteria file, contract file, diff range),
+  so the generator cannot curate what its judge sees. Today the generator also _spawns_ its own
+  evaluator and authors `eval-request.md`, the narrative the judge reads first — two residual
+  player-referee channels. Where an orchestrating layer exists (autopilot already nudges Phase 5;
+  the main session in interactive runs), **it owns the evaluator spawn**; in genuinely standalone
+  builds the spawn recipe stays generator-invoked, but in every mode the machine-assembled
+  evaluator prompt marks `eval-request.md` as the **generator's untrusted claim** — data to verify,
+  never framing to adopt — consistent with the untrusted-output guard the companion doc already
+  mandates for subagent results.
 - **`policy.md` gains a `live_policy` decision** for cost-bearing dogfoods (live model calls, quota-
   or fee-metered targets): `every_gate | milestone_gates_only | none`, with the milestone list named
   in the policy — the value set matches the proven downstream shape (SIBYL's
@@ -429,48 +486,65 @@ Additionally:
 
 ---
 
-## What upstream changes now (v3.1.0) vs future
+## What upstream changes now (v3.1.0 / v3.2.0) vs future
 
-**Now — one teaching reference plus prose edits across the verification-touching skills; no runtime,
-no new required schema fields:**
+**The two halves of this design carry unequal evidence and get unequal commitment.** The
+taxonomy + preflight + replay half is proven by incident — it neutralizes looplia's L31 failure end
+to end. The tiers + recipes + calibration half is extrapolated from one story (SIBYL-189) and
+carries most of the prose surface. They therefore ship in two releases: **v3.1.0** = items marked
+(3.1) below — taxonomy carriers, preflight, deterministic security gates, replay move,
+evaluator-independence fixes, and the accounting **instrumentation** (record-only, so the field
+data exists); **v3.2.0** = items marked (3.2) — the tier/recipe machinery and the calibration loop
+that consume that data, gated on **≥2 layers of real accounting data from a re-pinned consumer**.
+One teaching reference plus prose edits across the verification-touching skills; no runtime, no new
+required schema fields:
 
-1. **NEW `skills/patterns/gen-eval/references/verification-economics.md`** — the canonical reference
+1. **(3.1) NEW `skills/patterns/gen-eval/references/verification-economics.md`** — the canonical reference
    carrying the placement matrix, the failure taxonomy + classification-authority table + routing,
    the `error_class` → `failure_class` mapping, the tier derivation function + two-point protocol,
    the `verification:` accounting schema with gather sources, the evidence-class catalog, and the
    worked examples. It lives under gen-eval because gen-eval already owns evaluation canon and is
    read by `/aep-build`, `/aep-validate`, and `/aep-launch`; every other change site cross-references
    it **by name**.
-2. **`skills/patterns/executor/references/`** — `dogfood-validation.md`: Unified report format
+2. **(3.1) `skills/patterns/executor/references/dogfood-validation.md`** — Unified report format
    (`:160-199`) gains the required `**Failure-Class:**` line + the four-way routing table; Config
    block (`:203-232`) gains a cross-reference stating `live_policy` lives in the e2e skill's
-   `policy.md`, not in `topology.routing.dogfood`. `backends.md`: the `executor.spawn_evaluator()`
-   recipes accept an optional evaluator-effort hint derived from the tier (`deep` → highest
-   available).
-3. **`skills/project-setup/e2e-skill-scaffolding/`** — `templates/policy.md.tmpl` + SKILL.md Phase 2
-   confirmation questions gain the `live_policy` decision, the `sensitive_paths` list, and the
-   preflight probe sets (deploy-independent vs target-bound, with web **and** cli/tui probe
-   vocabularies); `templates/layer-gate-evidence.md.tmpl` gains the budget box;
-   `templates/tool-selection.md.tmpl` notes REFUSED vs SKIP semantics;
+   `policy.md`, not in `topology.routing.dogfood`. **(3.2)** `backends.md`: the
+   `executor.spawn_evaluator()` recipes accept an optional evaluator-effort hint derived from the
+   tier (`deep` → highest available, preferring a different model family from the generator).
+3. **(3.1) `skills/project-setup/e2e-skill-scaffolding/`** — `templates/policy.md.tmpl` + SKILL.md
+   Phase 2 confirmation questions gain the `live_policy` decision, the `sensitive_paths` list, the
+   **deterministic security gates** (secret-scan/SAST commands the project confirms at scaffold),
+   and the preflight probe sets (deploy-independent vs target-bound, with web **and** cli/tui probe
+   vocabularies); `templates/layer-gate-evidence.md.tmpl` gains the budget box (record-only until
+   3.2); `templates/tool-selection.md.tmpl` notes REFUSED vs SKIP semantics;
    `references/layer-gate-loop.md` and `references/three-tier-model.md` add the preflight gate, the
-   evidence-class requirement on `passed`, and the replay-placement note.
-4. **`skills/agentic-development-workflow/build/SKILL.md`** — Phase 5 (`:126-145`): the **binding
-   tier re-derivation at Phase 5 entry** (before any round spends the cap), tier-capped rounds, the
-   taxonomy check at every FAIL, cap-exhaustion auto-escalation, and publishing
-   `verification_tier` / `tier_escalated` to `status.json`. Phase 6 Step B (`:192-215`):
+   evidence-class requirement on `passed`, and the replay-placement note. **(3.2)** a **runnable
+   reference implementation** in the generated skill's `scripts/` — derivation function + probe
+   stubs + `verification-recipe.json` emission (precedent: `aep-scaffold`'s `audit.sh` /
+   `converge.sh`; AEP still ships no runtime).
+4. **`skills/agentic-development-workflow/build/SKILL.md`** — **(3.1)** Phase 5: the taxonomy check
+   at every FAIL; evaluator spawn authority moves to the orchestrating layer where one exists, and
+   `eval-request.md` is marked the generator's untrusted claim. Phase 6 Step B (`:192-215`):
    deploy-independent preflight on every story; target-bound preflight when execution runs here.
-   Phase 8 (`:237`): impacted-only replay + canary + the `deep` exception. Phase 12: the tier
-   re-check on post-eval commits (sensitive-path drift ⇒ one fresh round at the upgraded tier).
-5. **`skills/patterns/gen-eval/references/`** — `eval-protocol.md` (`:116`): tier-derived
-   `max_rounds`; evaluator-authored `failure_class` in the response format; per-round response
-   persistence. `recovery-ladder.md` (`:3`, `:25-31`, `:59-67`): the second `max_rounds` copy; rungs
-   re-keyed relative to the tier cap; "When to Skip the Ladder" reframed as the typed taxonomy step
-   with the class mapping. `scoring-framework.md`: zero-blocking threshold semantics; perfect-score
-   gates named as an anti-pattern; the Customization Guide's preset-selection step becomes
-   **recipe-derived** (the derivation-inputs → preset + hard-floor mapping from § Design 2), with
-   the ratchet rule — customization adds dimensions or raises thresholds, never drops a derived
-   hard floor.
-6. **`skills/agentic-development-workflow/launch/`** — `SKILL.md` "Optional: Evaluator (Full
+   Phase 8 (`:237`): impacted-only replay + canary. **(3.2)** Phase 5 (`:126-145`): the **binding
+   tier re-derivation at Phase 5 entry** (before any round spends the cap) emitting
+   `verification-recipe.json` (Phase 5 refuses to start without it), tier-capped rounds,
+   cap-exhaustion auto-escalation, publishing `verification_tier` / `tier_escalated` to
+   `status.json`, and the `deep` full-replay exception in Phase 8. Phase 12: the tier re-check on
+   post-eval commits (sensitive-path drift ⇒ one fresh round at the upgraded tier).
+5. **`skills/patterns/gen-eval/references/`** — **(3.1)** `eval-protocol.md`: evaluator-authored
+   `failure_class` in the response format; per-round response persistence (the sensor data 3.2's
+   calibration needs). `agent-contracts.md`: the machine-assembled evaluator prompt treats
+   `eval-request.md` as the generator's untrusted claim. `recovery-ladder.md` (`:59-67`): "When to
+   Skip the Ladder" reframed as the typed taxonomy step with the class mapping.
+   `scoring-framework.md`: zero-blocking threshold semantics; perfect-score gates named as an
+   anti-pattern. **(3.2)** `eval-protocol.md` (`:116`) + `recovery-ladder.md` (`:3`, `:25-31`):
+   tier-derived `max_rounds`; rungs re-keyed relative to the tier cap. `scoring-framework.md`: the
+   Customization Guide's preset-selection step becomes **recipe-derived** (the derivation-inputs →
+   preset + hard-floor mapping from § Design 2), with the ratchet rule — customization adds
+   dimensions or raises thresholds, never drops a derived hard floor.
+6. **(3.2) `skills/agentic-development-workflow/launch/`** — `SKILL.md` "Optional: Evaluator (Full
    Mode)" (`:199-205`): evaluator existence, criteria, and effort become **recipe-derived from the
    dispatch brief** (light → no criteria file; standard → the derived dimension preset; deep →
    the derived preset with nothing de-weighted, at top effort) — this replaces the workflow-modes
@@ -482,39 +556,44 @@ no new required schema fields:**
    never drop derived hard floors).
    `references/signals-spec.md`: `status.json` gains `verification_tier`, `tier_escalated`, and
    latest-FAIL `failure_class` — the fields autopilot's tier-aware monitoring reads.
-7. **`skills/agentic-development-workflow/wrap/references/`** — `convergence.md` (`:70-88`): the
-   `verification:` block. `layer-advance.md`: full replay + mid-layer checkpoint policy + budget box
-   - evidence-class check before flipping `passed`.
-8. **`skills/product-context/dispatch/`** — `references/context-assembly.md` (the assembly-time
+7. **(3.1) `skills/agentic-development-workflow/wrap/references/`** — `convergence.md` (`:70-88`):
+   the `verification:` block with the mandatory file-derivable sensor floor (instrumentation ships
+   early so 3.2 has data). `layer-advance.md`: full replay + the derived mid-layer checkpoint +
+   evidence-class check before flipping `passed`; budget-box recording (cold-start: record-only on
+   the first instrumented layer). **(3.2)** `layer-advance.md`: budget-box overrun surfacing at the
+   layer-advance gate.
+8. **(3.2) `skills/product-context/dispatch/`** — `references/context-assembly.md` (the assembly-time
    home): provisional tier derivation into the machine-assembled brief (grouped changes take the
    max of member tiers); `SKILL.md` (`:237`) notes the binding re-derivation contract (Phase 5
    entry, build-owned). `references/workflow-mode.md`: the STEP-0 brief carries the tier; the
    workflow verify stage — that mode's evaluator — honors the tier cap.
-9. **`skills/product-context/_shared/references/telemetry-ingestion.md`** (regenerated into
+9. **(3.1) `skills/product-context/_shared/references/telemetry-ingestion.md`** (regenerated into
    `reflect/` and `watch/` via `build-skills.sh`) — the `dogfood_report` adapter parses
    `**Failure-Class:**`; `environment` / `harness-flake` / `scope` findings **never auto-file**
    stories; escape-rate ingestion appends `escaped_defects`.
-10. **`skills/patterns/autopilot/`** — `references/tick-protocol.md`: REFUSED ≠ FAIL at the gate (a
-    refused gate pauses cheaply with the ops checklist and **re-probes world-derived on each tick**,
-    so human repair auto-resumes; remaining in-layer stories may still dispatch);
-    "`eval_not_converging` after the ladder is exhausted" becomes tier-derived (fires only after
-    the published cap **plus** the automatic `standard → deep` escalation are spent); the ④b nudge
-    texts (`:212`, `:237`) go tier-aware — read `verification_tier` from `status.json`, nudge a
-    `light` workspace to self-review rather than "spawn the evaluator", and extend the stale-eval
-    nudge with the sensitive-path-drift upgrade. `references/state-schema.md` (`:138`): a new
-    `environment_repair` escalation type carrying the checklist.
-    `references/post-merge-guard.md`: preflight before the guard's dogfood; `Failure-Class:` in the
-    guard report; `live_policy` governs the guard's live half.
-11. **`skills/agentic-development-workflow/design/references/workflow-modes.md`** — Light mode's
-    eval-loop behavior subsumed into `verification_tier: light`.
-12. **`docs/glossary.md`** — new entries: **Verification Tier**, **Verification Recipe** (tier +
+10. **`skills/patterns/autopilot/`** — **(3.1)** `references/tick-protocol.md`: REFUSED ≠ FAIL at
+    the gate (a refused gate pauses cheaply with the ops checklist and **re-probes world-derived on
+    each tick**, so human repair auto-resumes; remaining in-layer stories may still dispatch); the
+    ④b Phase-5 trigger nudge notes the orchestrator owns the evaluator spawn.
+    `references/state-schema.md` (`:138`): a new `environment_repair` escalation type carrying the
+    checklist. `references/post-merge-guard.md`: preflight before the guard's dogfood;
+    `Failure-Class:` in the guard report; `live_policy` governs the guard's live half. **(3.2)**
+    `tick-protocol.md`: "`eval_not_converging` after the ladder is exhausted" becomes tier-derived
+    (fires only after the published cap **plus** the automatic `standard → deep` escalation are
+    spent); the ④b nudge texts (`:212`, `:237`) go tier-aware — read `verification_tier` from
+    `status.json`, nudge a `light` workspace to self-review rather than "spawn the evaluator", and
+    extend the stale-eval nudge with the sensitive-path-drift upgrade.
+11. **(3.2) `skills/agentic-development-workflow/design/references/workflow-modes.md`** — Light
+    mode's eval-loop behavior subsumed into `verification_tier: light`.
+12. **(3.1) `docs/glossary.md`** — new entries: **Verification Tier**, **Verification Recipe** (tier +
     dimension preset + dimension hard floors, one derivation), **Failure Class (Failure
     Taxonomy)**, **Classification Authority**, **Environment Preflight Gate**, **Verification
     Accounting**, **Escape Rate**, **Tamper-Evident Evidence**, **Verification Ratchet**
-    (anti-pattern), **Perfect-Score Gate** (anti-pattern) — the Verification Tier entry
-    disambiguates the three prior "light" senses.
-13. `CHANGELOG.md` `[3.1.0]`; `.claude-plugin/marketplace.json` → `3.1.0` (the sole versioned
-    field). If any skill description changes, re-record the front-tier description digest and update
+    (anti-pattern), **Perfect-Score Gate** (anti-pattern), **Referee Asset** — the Verification
+    Tier entry disambiguates the three prior "light" senses.
+13. `CHANGELOG.md` `[3.1.0]` and later `[3.2.0]`; `.claude-plugin/marketplace.json` bumps per
+    release (the sole versioned field — root `package.json` carries none). If any skill description
+    changes, re-record the front-tier description digest and update
     `docs/skills-quick-reference.md`. Among the sites above, only `telemetry-ingestion.md` is
     `_shared/`-managed; the SKILL.md and skill-owned reference edits are made in place.
 
@@ -562,13 +641,14 @@ checklist), and acceptance criteria authored solely by misrouted recovery storie
 of the coverage denominator via `/aep-reflect` (`scope`), so a poisoned gate can reach `passed` once
 the environment is actually repaired.
 
-| Phase                       | Action                                                                                                                           | Breaking? |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| **P0 — this decision doc**  | Record the evidence, the placement principle, the five design elements                                                           | No        |
-| **P1 — canon reference**    | Ship `gen-eval/references/verification-economics.md` + glossary entries                                                          | No        |
-| **P2 — taxonomy carriers**  | `Failure-Class:` + classification authority + preflight + adapter routing (executor, e2e, build, shared)                         | No        |
-| **P3 — tiers + accounting** | Two-point derivation (dispatch/build), tier-derived caps (build/gen-eval/launch), `verification:` + per-round persistence (wrap) | No        |
-| **P4 — calibration + bump** | Reflect/distillation dampened calibration, replay move + checkpoints, budget box, autopilot integration; v3.1.0                  | No        |
+| Phase                                          | Action                                                                                                                                                                                                                                         | Breaking? |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| **P0 — this decision doc**                     | Record the evidence, the placement principle, the five design elements                                                                                                                                                                         | No        |
+| **P1 — canon reference (v3.1.0)**              | Ship `gen-eval/references/verification-economics.md` + glossary entries                                                                                                                                                                        | No        |
+| **P2 — taxonomy carriers (v3.1.0)**            | `Failure-Class:` + classification authority + referee-asset rule + preflight + secret-scan/SAST + adapter routing + REFUSED≠FAIL/`environment_repair` + replay move/canary/checkpoints + evaluator spawn ownership/untrusted `eval-request.md` | No        |
+| **P2.5 — accounting instrumentation (v3.1.0)** | `verification:` sensor floor + per-round persistence + model-version fields + budget-box recording (cold-start record-only); **tag v3.1.0**                                                                                                    | No        |
+| **P3 — tiers + recipes (v3.2.0)**              | Two-point derivation + `verification-recipe.json` + reference script + tier caps (build/gen-eval/launch) + recipe-derived criteria + signals fields + tier-aware nudges — **gated on ≥2 layers of P2.5 field data from a re-pinned consumer**  | No        |
+| **P4 — calibration (v3.2.0)**                  | Dampened calibration + escape-rate ingestion + journey retirement + budget-box overrun surfacing; **tag v3.2.0**                                                                                                                               | No        |
 
 **Exact change sites:** the numbered list under "What upstream changes now" is the implementation
 PRs' review contract.
@@ -588,10 +668,10 @@ comments), `map/SKILL.md` (`:116`, `:217`), `scaffold/references/resulting-struc
 `autopilot/references/post-merge-guard.md`. The existing `error_class` enum is **not** renamed; its
 mapping into `failure_class` lives in the canon reference. `_shared/` edits regenerate via
 `scripts/build-skills.sh`; `skills:check` must come back clean. Downstream consumers go live only
-after the v3.1.0 tag is cut and each consumer re-pins via the skills CLI — **after** first
-completing the v2.5.0 → v3.0.0 re-pin per the
-[migration guide](../aep-v3.0.0-migration-guide.md), so routing changes and verification-semantics
-changes are canaried separately.
+after each release tag (v3.1.0, then v3.2.0) is cut and the consumer re-pins via the skills CLI —
+**after** first completing the v2.5.0 → v3.0.0 re-pin per the
+[migration guide](../aep-v3.0.0-migration-guide.md), so routing changes, taxonomy changes, and
+tier-economics changes are canaried separately, one release apart.
 
 ---
 
@@ -603,8 +683,9 @@ name was checkable without any deploy) — the ops checklist surfaces days befor
 slips through, the gate-time target-bound preflight refuses with
 `REFUSING [auth-identity-mismatch:account …d422b ≠ …88e6]` before any scenario spend. Classification
 is `environment` by construction; the ownership check pairs it with `product-defect` findings for
-the unwired deploy binding and the tracked literal-password fallback — filed as ordinary stories,
-not spun into recovery loops. **Zero journey scenarios wasted, zero evaluation rounds, no
+the unwired deploy binding — filed as an ordinary story, not spun into recovery loops. The tracked
+literal-password fallback never even reaches that path: the inner-loop **secret scan** catches it
+pre-merge as a typed gate, on the first story that committed it. **Zero journey scenarios wasted, zero evaluation rounds, no
 misclassified recovery stories.** The loop still pauses on the human ops checklist — environment
 repair is genuinely human work — but it pauses **immediately, cheaply, and correctly labeled**, with
 the gate re-probing on each tick so repair auto-resumes; the actual history (two recovery stories,
