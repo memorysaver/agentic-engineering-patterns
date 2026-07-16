@@ -4,6 +4,8 @@ When the Phase 5 gen/eval loop FAILs, the default behavior is for the **same gen
 
 > **The taxonomy step comes first — at every FAIL, before choosing a rung.** The ladder is repair machinery for `product-defect` findings only. Classify each FAIL finding per `verification-economics.md` → Failure Taxonomy (evaluator-authored, evidence-gated): `environment` → ops checklist, zero rounds spent; `harness-flake` → quarantine + harness story; `scope` → `/aep-reflect` re-slicing; unbuilt in-repo dependency → `/aep-dispatch` re-ordering. Only `product-defect` climbs.
 
+> **The taxonomy step comes first — at every FAIL, before choosing a rung.** The ladder is repair machinery for `product-defect` findings only. Classify each FAIL finding per `verification-economics.md` → Failure Taxonomy (evaluator-authored, evidence-gated): `environment` → ops checklist, zero rounds spent; `harness-flake` → quarantine + harness story; `scope` → `/aep-reflect` re-slicing; unbuilt in-repo dependency → `/aep-dispatch` re-ordering. Only `product-defect` climbs.
+
 This reference defines an escalating recovery ladder. Each rung tries something **structurally different** from the last, so the system exhausts real strategy changes **before** a human gate — not five copies of the same attempt.
 
 > The evaluator never climbs this ladder. Generator≠evaluator separation still holds: the evaluator scores; the generator (or a fresh generator) is the only role that "tries a new approach." A re-grounded read, a fresh generator, and a decomposition are all generator-side moves.
