@@ -12,12 +12,16 @@ of _orchestration_ behind mechanism; this one applies the same mechanical/judgme
 _verification itself_ — the routing, depth, and accounting of verification are mechanical; only the
 judging content stays judgment.
 
-> **Status:** Proposal (not yet implemented). This document records the design precisely so the
-> implementation PRs can be made and reviewed against it — **across two releases**: v3.1.0 ships
-> the incident-proven half (taxonomy, preflight, deterministic security gates, replay move,
-> evaluator-independence fixes, accounting instrumentation); v3.2.0 ships the economics half
-> (tiers, recipes, calibration), gated on field data from a v3.1.0 consumer. It changes how AEP
-> works, so it lives in `decisions/` per the [docs routing guide](../README.md). Revised after a
+> **Status:** Accepted; implementation in progress. The (3.1)/(3.2) tags below are the
+> implementation PRs' review contract — **across two releases**: v3.1.0 ships the incident-proven
+> half (taxonomy, preflight, deterministic security gates, replay move, evaluator-independence
+> fixes, accounting instrumentation); v3.2.0 ships the economics half (tiers, recipes,
+> calibration). **Owner decision (2026-07-16): the two releases are authored back-to-back** rather
+> than gating v3.2.0's authoring on consumer field data — the ≥2-layers field-data gate converts
+> from a release gate into a **downstream activation gate**: the calibration loop stays
+> record-only/proposal-only in every consumer until that consumer has ≥2 layers of accounting
+> data. It changes how AEP works, so it lives in `decisions/` per the
+> [docs routing guide](../README.md). Revised after a
 > three-lens design review (factual grounding, adversarial critique, downstream operability) and an
 > independent frontier-model best-practice evaluation; their blocking findings are folded in below
 > — classification authority, two-point tier derivation, cap-exhaustion semantics, autopilot

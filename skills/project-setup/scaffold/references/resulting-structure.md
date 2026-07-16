@@ -12,6 +12,9 @@ it in context only.
 ├── skills/
 │   └── e2e-test/                # REAL dir — canonical, BDD layer-gate e2e (cross-tool)
 │       ├── SKILL.md  ├── policy.md  └── scripts/seed.sh
+│       │   # policy.md owns tiers/target/timing + live_policy (every_gate |
+│       │   # milestone_gates_only | none), sensitive_paths, preflight probes,
+│       │   # and the deterministic security gates — single source of truth
 │       └── journeys/ + tool-selection.md   # only when dogfood_target ≠ none (emitted for cli too; omitted only when no runnable surface)
 ├── .claude/
 │   ├── hooks/

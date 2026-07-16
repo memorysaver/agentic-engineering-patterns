@@ -85,9 +85,47 @@ gen_eval: # per-round summaries; [] if none
     result: PASS | FAIL
     scores: { completeness: <n>, correctness: <n>, security: <n>, code_quality: <n> }
 review_findings: [] # one-line summaries from code-review artifacts; [] if none
+verification: # the accounting block — see field rules below
+  tier: light | standard | deep # MUST — from verification-recipe.json; null only when no recipe exists (pre-tier consumers)
+  tier_escalated: true | false # MUST — cap-exhaustion escalation fired
+  scope_drift: true | false # MUST — binding diff left the declared files_affected
+  generator_model: <id> | null # MUST when known — model swaps shift both escape rate and findings
+  evaluator_model: <id> | null # MUST when an evaluator ran
+  eval_rounds: <n> | null # MUST when an evaluator ran — from signals/eval-response-*.md count
+  findings_by_round: [<n>, ...] | null # MUST when an evaluator ran — needs per-round persistence
+  finding_dimensions: [<dimension>, ...] | null # dimensions breached across rounds; feeds re-weighting
+  journey_scenarios_run: <n> | null # MUST when a journey ran — from the dogfood report
+  preflight_refusals: [] # MUST — named tags; [] when preflight passed
+  cost_usd: <n> | null # best-effort — verification share when separable
+  escaped_defects: [] # filled retroactively by /aep-reflect
 ```
 
 Standalone mode (no `product-context.yaml`): `story_id` takes the change name.
+
+### The `verification:` block — mandatory sensor floor
+
+Canon: `/aep-gen-eval` → `references/verification-economics.md` (Verification
+Accounting). The fields marked `MUST` are **file-derivable from artifacts the
+workflow already writes** — an implementation that leaves them null when their
+source exists has not implemented the block (a calibration loop built on
+optional sensors starves):
+
+| Field                                   | Gather source                                                          |
+| --------------------------------------- | ---------------------------------------------------------------------- |
+| `tier`, `tier_escalated`, `scope_drift` | `.dev-workflow/verification-recipe.json` (null tier when absent)       |
+| `generator_model` / `evaluator_model`   | launch/spawn records, `status.json`, or the eval responses when stated |
+| `eval_rounds`, `findings_by_round`      | count of / findings per `signals/eval-response-*.md`                   |
+| `finding_dimensions`                    | dimensions of FAIL findings across the responses                       |
+| `journey_scenarios_run`                 | the `dogfood-*.md` unified report                                      |
+| `preflight_refusals`                    | named `REFUSING [...]` tags in dogfood/guard reports; `[]` when clean  |
+
+**Per-round persistence is a gather precondition:** workspaces keep every
+`eval-response-<N>.md` (never overwrite round N with N+1) so `findings_by_round`
+is computable here. Suite-level economics (`suite_runs`, `suite_seconds`) do
+**not** live in this per-story record — they belong to the **layer budget box**
+in the layer-gate evidence doc, where `/aep-wrap` actually runs the suites
+(`layer-advance.md`). The best-effort rule still holds for the block as a whole:
+a missing source degrades that field to `null` / `[]`, never fails the wrap.
 
 ---
 

@@ -165,6 +165,7 @@ Used in multi-round mode (workspace context). Files live in `.dev-workflow/signa
 
 ### [PASS/FAIL]: [Finding title] ([Dimension]: [Score])
 
+- Failure-Class: [product-defect | environment | harness-flake | scope]
 - Steps to reproduce: [concrete steps]
 - Expected: [what should happen]
 - Actual: [what actually happens]
@@ -187,6 +188,10 @@ Used in multi-round mode (workspace context). Files live in `.dev-workflow/signa
 
 [Which items in feature-verification.json were updated, with new pass/fail status]
 ```
+
+**`Failure-Class` is evaluator-authored** — the generator never labels its own failure (same field-ownership rule as `passes` below). It routes the FAIL per `verification-economics.md` → Failure Taxonomy: only `product-defect` enters fix rounds / the recovery ladder; `environment` needs a named preflight refusal tag; `harness-flake` needs world-derivable reproduction evidence; `scope` needs a human acknowledgment. Without qualifying evidence, the class defaults to `product-defect`.
+
+**Per-round persistence is required:** keep every `eval-response-<N>.md` until `/aep-wrap`'s convergence gather copies them — `findings_by_round` in the execution record's `verification:` block is computed from these files, and it is the sensor the calibration loop depends on. Never overwrite round N's response with round N+1's.
 
 ### status.json (generator updates at phase boundaries)
 

@@ -13,6 +13,7 @@ and Pi all read this same file — that is what keeps behavior consistent across
 | **Applicable tiers** | {{E2E_TIERS}}             |
 | **Dogfood target**   | {{E2E_TARGET}}            |
 | **Journey timing**   | {{E2E_JOURNEY_TIMING}}    |
+| **Live policy**      | {{E2E_LIVE_POLICY}}       |
 
 - **Applicable tiers** — only these tiers gate a layer (its `passed` needs them green + every acceptance
   criterion proven). A **CLI** is `1 + 2` (Tier-2 journey is **bash-driven** — run the built binary, assert
@@ -38,12 +39,67 @@ and Pi all read this same file — that is what keeps behavior consistent across
   says "machinery green, product not yet verified". Either way the committed journey already exists; what
   `journey_timing` moves is the run, not the write.
 
+- **Live policy** — which gates spend **cost-bearing dogfood** (live model calls, quota- or fee-metered
+  targets): `every_gate` runs the live half at every layer gate; `milestone_gates_only` runs it only at
+  the milestone gates named below (all other gates use zero-cost render smokes / scripted tiers, and the
+  absent live half is **SKIP**, never FAIL); `none` never spends live runs. Projects with no cost-bearing
+  dogfood keep `every_gate` (it is then free). Milestone gates: `{{E2E_MILESTONE_GATES}}`.
+
 ## Options reference
 
 ```
 applicable_tiers : [1] | [1,3] | [1,2] | [1,2,3]          # which tiers gate a layer (project-type driven)
 dogfood_target   : none | cli | local | deployed:<url>    # what/where Tier-2 journeys run against (cli = built binary via bash)
 journey_timing   : pre-merge | post-deploy                # when the journey half of the gate runs
+live_policy      : every_gate | milestone_gates_only | none  # which gates spend cost-bearing (live/quota-metered) dogfood
+```
+
+## Sensitive paths (verification hard floor — human-owned)
+
+Globs that force the **`deep` verification tier** (`/aep-gen-eval` → `references/verification-economics.md`)
+whenever a story's diff touches them. This list is **human-owned**: the loop never edits it, and no
+calibration proposal may loosen it. Cover auth, payments, irreversible data operations, migrations, and
+deploy/CI config:
+
+```yaml
+sensitive_paths:
+  - "**/auth/**"
+  - "**/payments/**"
+  - "**/migrations/**"
+  - ".github/workflows/**"
+  - "wrangler.*" # deploy config — adjust to this project's stack
+```
+
+> **Referee assets** (test dirs, `journeys/**`, this file, CI workflow definitions) are guarded
+> separately: a diff touching them floors at `standard` and a negative assertion delta always forces an
+> evaluation round — they never derive the `light` tier.
+
+## Environment preflight probes
+
+Probes run **before any journey/dogfood spend**; an unmet **required** precondition is a named refusal
+(`REFUSING [dogfood-secret-absent:<NAME>]`) — `environment` by construction, zero scenarios spent. A gate
+probes only the preconditions of criteria it **requires** (derived from `live_policy` — the optional live
+half of a non-milestone gate is not probed; its absence stays **SKIP**).
+
+- **Deploy-independent** (run pre-merge in `/aep-build` Phase 6 Step B on every story): required secret
+  _names_ present in CI config; expected account fingerprint recorded vs. actual auth identity; env-var
+  names wired in deploy config.
+- **Target-bound** (run wherever journey execution runs — Phase 6B under `pre-merge`, the `/aep-wrap`
+  gate under `post-deploy`): target reachable; deployed bindings present; fixtures seedable.
+- **CLI/TUI vocabulary** (when `dogfood_target: cli`): provider auth present; provider reachable; PTY
+  driver healthy; fixture repos creatable.
+
+List this project's probes here (probe → guarded precondition → refusal tag), next to the target they
+guard.
+
+## Deterministic security gates (inner loop)
+
+The mechanically detectable half of security never routes to an LLM judge — it runs as typed gates on
+every commit, and findings are `product-defect` by construction:
+
+```
+secret_scan : {{SECRET_SCAN_CMD}}   # e.g. gitleaks protect --staged
+sast        : {{SAST_CMD}}          # e.g. semgrep --config auto; "none" if deliberately not adopted
 ```
 
 ## How the workflow honors it
@@ -61,7 +117,10 @@ journey_timing   : pre-merge | post-deploy                # when the journey hal
   (`applicable_tiers` includes `2`), a layer that reaches the gate with no journey file is a COVERAGE
   FAILURE (the build should have authored it) and stays `scripted_passed`. (A project without Tier-2 —
   `applicable_tiers` lacks `2`, e.g. an API-only `[1,3]` or a `none`-target `[1]` repo — has no journey by
-  design and gates on its applicable tiers + coverage.)
+  design and gates on its applicable tiers + coverage.) The gate runs the **target-bound preflight**
+  first (REFUSED ≠ FAIL — a refusal pauses the gate with an ops checklist, spending nothing), honors
+  `live_policy` for its live half, and flips `passed` only with at least one **tamper-evident evidence
+  class** in the record.
 - **`/aep-dispatch`** — blocks the next layer until the gate is `passed` under this policy (a
   `scripted_passed` gate still blocks: "machinery green, dogfood pending").
 

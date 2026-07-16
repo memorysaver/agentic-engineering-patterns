@@ -47,6 +47,20 @@ Run against the live environment; record evidence inline.
 `<WAIVER: <criterion> — why it's deliberately not covered this layer, and when it will be>`
 _(none if every criterion is proven)_
 
+## Verification budget box
+
+Expected values are **human-owned** (set at layer planning or accepted from a distillation proposal —
+never authored by the loop graded against them). First instrumented layer: no expected column — record
+actuals only; actuals + a human-chosen margin seed the next layer's expected values.
+
+| Metric                       | Expected (human-owned) | Actual     |
+| ---------------------------- | ---------------------- | ---------- |
+| Eval rounds (sum of stories) | `<n or —>`             | `<n>`      |
+| Full-suite runs / seconds    | `<n / s or —>`         | `<n / s>`  |
+| Journey scenarios run        | `<n or —>`             | `<n>`      |
+| Preflight refusals           | `0`                    | `<n>`      |
+| Verification cost (USD)      | `<n or —>`             | `<n or ?>` |
+
 ## Evidence
 
 - **Screenshots:** `<paths>`

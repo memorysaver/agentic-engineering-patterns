@@ -2,6 +2,8 @@
 
 When the Phase 5 gen/eval loop FAILs, the default behavior is for the **same generator to retry the same way** — fix the FAIL items, re-request evaluation, repeat. After `max_rounds` (default 5) it escalates to a human. The failure mode this guards against is **strategy stagnation**: the generator keeps applying the approach that already failed, burning rounds without exploring a genuinely different path.
 
+> **The taxonomy step comes first — at every FAIL, before choosing a rung.** The ladder is repair machinery for `product-defect` findings only. Classify each FAIL finding per `verification-economics.md` → Failure Taxonomy (evaluator-authored, evidence-gated): `environment` → ops checklist, zero rounds spent; `harness-flake` → quarantine + harness story; `scope` → `/aep-reflect` re-slicing; unbuilt in-repo dependency → `/aep-dispatch` re-ordering. Only `product-defect` climbs.
+
 This reference defines an escalating recovery ladder. Each rung tries something **structurally different** from the last, so the system exhausts real strategy changes **before** a human gate — not five copies of the same attempt.
 
 > The evaluator never climbs this ladder. Generator≠evaluator separation still holds: the evaluator scores; the generator (or a fresh generator) is the only role that "tries a new approach." A re-grounded read, a fresh generator, and a decomposition are all generator-side moves.
@@ -58,13 +60,15 @@ Only once every rung has been tried does the loop escalate. This is the `eval_no
 
 ## When to Skip the Ladder
 
-The ladder is for **convergence** failures — the generator can't get the work to PASS. Some FAILs are not convergence problems and **escalate immediately**, skipping all rungs:
+This section is the **typed taxonomy step** (`verification-economics.md` → Failure Taxonomy), run **mandatorily at every FAIL before choosing a rung** — not a prose bullet to recall mid-FAIL. The ladder is for **convergence** failures on `product-defect` findings — the generator can't get the work to PASS. Every other class routes off the ladder immediately:
 
-- **Hard-failure / security FAIL that needs human judgment** — e.g. an auth-model gap, a data-exposure risk, or any finding whose fix requires a product/security decision the agent is not authorized to make. Trying "a different approach" on a security boundary is worse than asking. Escalate on the first such FAIL.
-- **Spec contradiction** — the FAIL is caused by the spec itself being internally inconsistent or wrong. No generator strategy can fix a contradictory spec; this needs a human to amend the spec.
-- **Missing external dependency / access** — the work cannot proceed without something outside the worktree (a credential, an unbuilt upstream service). Decomposing won't help.
+- **Hard-failure / security FAIL that needs human judgment** (`product-defect`, escalation preserved) — e.g. an auth-model gap, a data-exposure risk, or any finding whose fix requires a product/security decision the agent is not authorized to make. Trying "a different approach" on a security boundary is worse than asking. Escalate on the first such FAIL — the taxonomy adds routing, it never removes an escalation.
+- **Spec contradiction** (`scope`) — the FAIL is caused by the spec itself being internally inconsistent or wrong. No generator strategy can fix a contradictory spec; routes to `/aep-reflect` re-slicing with a human acknowledgment on the gate record.
+- **Missing external dependency / access** (`environment`) — the work cannot proceed without something outside the worktree (a credential, a wrong account, an unreachable target). Decomposing won't help; claimable **only** via a named preflight/probe refusal tag, and routed to the ops checklist — never a code story, never a rung, never an evaluation round.
+- **Test machinery misbehaving** (`harness-flake`) — race, port collision, known-red baseline; claimable only with world-derivable reproduction evidence ratified by wrap/`aep-reflect`, then quarantined + a harness story. The product gate re-runs after quarantine.
+- **Unbuilt in-repo dependency** — a sequencing problem, not an ops one: route to `/aep-dispatch` re-ordering.
 
-In these cases, escalate with the appropriate type immediately and note that the ladder was deliberately skipped.
+In these cases, escalate/route with the appropriate type immediately and note that the ladder was deliberately skipped. **Without qualifying evidence, a FAIL is `product-defect` and climbs** — the generator never labels its own failure into a cheaper class.
 
 ---
 

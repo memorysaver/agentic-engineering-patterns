@@ -100,12 +100,36 @@ Per-finding mapping (markdown field → finding field):
 | `**Repro / Observed / Expected / Evidence**` | `detail` (repro steps + observed-vs-expected; **no secrets**) — also the classifier's `evidence`                                                                                                                       |
 | `**Severity:**`                              | priority — `blocker`/`major` → `high` (`critical` if it blocks a core flow); `minor` → normal. Dogfood findings have **no `count`**, so priority comes from Severity, not the count-based escalation other sources use |
 | `**Category:**`                              | `suggested_class` hint — `UX`/`logic`/`edge-case`/`accessibility` → `bug`; `visual`/`performance` → `bug` when Severity ∈ {blocker,major}, else `refinement`                                                           |
+| `**Failure-Class:**`                         | routing gate (below) — only `product-defect` findings continue into the Step 2 classifier / story path; absent line → `product-defect` (the tamper-resistance default)                                                 |
 | —                                            | `signal: dogfood`, `story_ref: null`, `external_id:` (below); `count`/`first_seen`/`last_seen` **unset** (the report carries no occurrence count or timestamp)                                                         |
+
+**Failure-class routing (before classification).** The adapter **never
+auto-files** non-product classes (`/aep-gen-eval` →
+`references/verification-economics.md` → Failure Taxonomy):
+
+- `environment` → surfaced to the human/orchestrator as an **ops checklist**
+  (named refusal tags + implied repairs); no story, no classifier pass.
+- `harness-flake` → surfaced for **quarantine ratification** (wrap/reflect
+  confirms the reproduction evidence); the ratified quarantine files a _harness_
+  story through the human, never automatically.
+- `scope` → surfaced to the human gate for `/aep-reflect` re-slicing.
+- `product-defect` (or no `Failure-Class:` line — the default) → the normal
+  path below.
 
 `suggested_class` is a **hint only** — the Step 2 classifier (and the human, unless
 `full_auto`) makes the final call, exactly as for every other source. In
 particular a finding that reads as **calibration / discovery / opportunity-shift /
 process** is **not** auto-filed; it surfaces to a human (see `/aep-watch` Step 2).
+
+**Escape-rate ingestion (reflect side).** When `/aep-reflect` classifies a
+post-merge bug, it traces the bug to the story that introduced it (blame the
+diff, not the reporter) and appends an entry to that story's
+`escaped_defects` in the archived execution record
+(`openspec/changes/archive/<change>/convergence/execution-record.yaml` →
+`verification:` block). Escape rate is defined **per story per tier**; when
+attribution is ambiguous (multi-story interaction bugs) the escape attributes
+to the **layer**, not to no one. This is the feedback signal the dampened
+calibration loop reads (`aep-wrap` `references/convergence.md`).
 
 **No high-water mark — dedupe-only.** The unified report has no per-finding
 timestamp, so a `dogfood_report` source does **not** advance `watch.since` (that

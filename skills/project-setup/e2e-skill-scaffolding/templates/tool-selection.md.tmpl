@@ -112,6 +112,17 @@ When no tool in the track is healthy, **degrade — don't FAIL**:
 
 A `SKIP` with a recorded reason is honest coverage; a silent pass is not.
 
+## REFUSED vs SKIP vs FAIL
+
+Three result semantics that never blur (`/aep-gen-eval` → `references/verification-economics.md`):
+
+- **REFUSED** — an environment-preflight probe found an unmet **required** precondition
+  (`REFUSING [dogfood-secret-absent:<NAME>]`). Blocks what the gate requires, spends zero scenarios, and
+  classifies as `environment` by construction — an ops checklist, never a code story.
+- **SKIP** — an **optional** capability is absent (an unhealthy tool with a degrade path; the live half
+  of a non-milestone gate under `live_policy: milestone_gates_only`). Never blocks; record the reason.
+- **FAIL** — the product misbehaved. `product-defect` unless non-generator evidence says otherwise.
+
 ## Unified report
 
 Whatever tool ran, findings use the **same** structure so the downstream classifier never branches on
@@ -122,10 +133,15 @@ tool. Write to `.dev-workflow/dogfood-<feature>.md`, one entry per finding:
 
 **Severity:** blocker | major | minor
 **Category:** UX | logic | visual | edge-case | accessibility | performance
+**Failure-Class:** product-defect | environment | harness-flake | scope
 **Repro:** <ordered steps against the target>
 **Observed:** <what happened> **Expected:** <what should happen>
 **Evidence:** <screenshot path / log excerpt / API JSON>
 ```
+
+`Failure-Class` routes the finding before any repair spend — only `product-defect` (the default when the
+line is absent) auto-files a story; `environment` / `harness-flake` / `scope` surface to the
+human/orchestrator instead.
 
 Writing the report file is what makes a finding ingestible by `/aep-reflect` (bug → story; "feels wrong"
 → calibration). A dogfood that only prints to chat is a dead end.

@@ -98,15 +98,21 @@ Read the stack to fill template placeholders. Reuse the `/aep-scaffold` **Defaul
 The policy (which tiers gate a layer, where to dogfood, when) is a **per-project decision, not a default
 to assume**. Propose from the stack, **then ask the user to confirm/adjust** before rendering `policy.md`:
 
-| Placeholder              | Propose from                                                                                                                                                                                              | Confirm? |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| `{{E2E_TIERS}}`          | project type → tier table (`references/three-tier-model.md`): CLI/lib `[1,2]` (bash journey), API `[1,3]`, web/mobile `[1,2,3]`, config-only `[1]`                                                        | **yes**  |
-| `{{E2E_TARGET}}`         | CLI tool / library → `cli` (bash); web frontend + deploy config (`wrangler.*`, `vercel.*`) → offer `deployed:<url>`; web frontend, no deploy → `local`; no runnable surface (config/schema/docs) → `none` | **yes**  |
-| `{{E2E_JOURNEY_TIMING}}` | `cli` / `local` target → `pre-merge`; `deployed:<url>` → `post-deploy`                                                                                                                                    | **yes**  |
+| Placeholder                                       | Propose from                                                                                                                                                                                                                       | Confirm? |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| `{{E2E_TIERS}}`                                   | project type → tier table (`references/three-tier-model.md`): CLI/lib `[1,2]` (bash journey), API `[1,3]`, web/mobile `[1,2,3]`, config-only `[1]`                                                                                 | **yes**  |
+| `{{E2E_TARGET}}`                                  | CLI tool / library → `cli` (bash); web frontend + deploy config (`wrangler.*`, `vercel.*`) → offer `deployed:<url>`; web frontend, no deploy → `local`; no runnable surface (config/schema/docs) → `none`                          | **yes**  |
+| `{{E2E_JOURNEY_TIMING}}`                          | `cli` / `local` target → `pre-merge`; `deployed:<url>` → `post-deploy`                                                                                                                                                             | **yes**  |
+| `{{E2E_LIVE_POLICY}}` + `{{E2E_MILESTONE_GATES}}` | cost-bearing dogfood (live model calls, quota/fee-metered target) → propose `milestone_gates_only` + name the milestone gates; otherwise `every_gate` (then free)                                                                  | **yes**  |
+| `sensitive_paths` list                            | stack scan for auth / payments / migrations / deploy-CI globs → seeds the human-owned `deep`-tier hard-floor list in `policy.md`                                                                                                   | **yes**  |
+| `{{SECRET_SCAN_CMD}}` / `{{SAST_CMD}}`            | available tooling (`gitleaks`, `semgrep`, stack-native scanners) → the inner-loop deterministic security gates; `none` only by explicit decline                                                                                    | **yes**  |
+| preflight probe sets                              | target + `live_policy` → deploy-independent probes (secret names in CI, account fingerprint, env-var wiring) + target-bound probes (reachable, bindings, seedable); `cli`/TUI → provider auth/reachable, PTY health, fixture repos | **yes**  |
 
 Ask plainly, e.g. _"This looks like a {type}. Proposed e2e policy: tiers `{tiers}`, dogfood target
-`{target}`, timing `{timing}`. Keep, or adjust (e.g. dogfood against a deployed Cloudflare URL
-post-merge)?"_ Record the confirmed values; they fill `policy.md` and decide what Phase 3 emits.
+`{target}`, timing `{timing}`, live policy `{live_policy}`. Keep, or adjust (e.g. dogfood against a
+deployed Cloudflare URL post-merge)?"_ Then confirm the `sensitive_paths` seed list, the security-gate
+commands, and the probe sets (`/aep-gen-eval` → `references/verification-economics.md` is the canon for
+what these govern). Record the confirmed values; they fill `policy.md` and decide what Phase 3 emits.
 
 ---
 

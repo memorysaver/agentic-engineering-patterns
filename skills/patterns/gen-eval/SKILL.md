@@ -19,11 +19,12 @@ Dual-use: consumer skills read this skill's `references/` files — the canonica
 
 ## How Other Skills Use This
 
-| Skill                | What it uses                        | Reference files                                                    |
-| -------------------- | ----------------------------------- | ------------------------------------------------------------------ |
-| `/aep-build` Phase 5 | Scoring framework + eval protocol   | `scoring-framework.md`, `eval-protocol.md`, `recovery-ladder.md`   |
-| `/aep-launch`        | Dimension presets for brainstorming | `scoring-framework.md` (presets section)                           |
-| `/aep-validate`      | Agent prompts + findings format     | `agent-contracts.md`, `findings-format.md`, `scoring-framework.md` |
+| Skill                                                        | What it uses                                             | Reference files                                                    |
+| ------------------------------------------------------------ | -------------------------------------------------------- | ------------------------------------------------------------------ |
+| `/aep-build` Phase 5                                         | Scoring framework + eval protocol                        | `scoring-framework.md`, `eval-protocol.md`, `recovery-ladder.md`   |
+| `/aep-launch`                                                | Dimension presets for brainstorming                      | `scoring-framework.md` (presets section)                           |
+| `/aep-validate`                                              | Agent prompts + findings format                          | `agent-contracts.md`, `findings-format.md`, `scoring-framework.md` |
+| `/aep-build`, `/aep-dispatch`, `/aep-wrap`, `/aep-autopilot` | Failure taxonomy, verification tiers/recipes, accounting | `verification-economics.md`                                        |
 
 ---
 
@@ -50,13 +51,14 @@ Why:
 
 These files are the canonical homes for the gen/eval contracts every consumer (`/aep-build`, `/aep-validate`, `/aep-launch`) points at. Read the one the branch needs; each file is self-contained.
 
-| File                                                                 | Contents                                                                                                                                                                                                    | When to read                                                         |
-| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| [`references/scoring-framework.md`](references/scoring-framework.md) | Dimension definitions (1-5 scale), hard failure thresholds, dimension presets (UI, API, security, data, mixed), few-shot examples, anti-patterns                                                            | Setting up evaluation criteria, scoring work, calibrating evaluators |
-| [`references/agent-contracts.md`](references/agent-contracts.md)     | Generator/evaluator role separation, prompt templates (generator, evaluator, protocol checker), context assembly rules                                                                                      | Spawning evaluation agents, assembling prompts                       |
-| [`references/eval-protocol.md`](references/eval-protocol.md)         | Eval request/response format, verification JSON schema, the eval loop (request → response → fix → re-evaluate), execution contexts (Task subagent, codex exec, tmux, workflow), the needs-human gate record | Running the evaluation loop, tracking verification state             |
-| [`references/recovery-ladder.md`](references/recovery-ladder.md)     | Escalating change-strategy ladder (same-fix → re-ground → fresh generator → decompose → human gate) for a stalled eval loop                                                                                 | A FAIL loop is not converging after 2+ rounds                        |
-| [`references/findings-format.md`](references/findings-format.md)     | Severity categorization (blocking/important/minor), deduplication protocol, presentation format, changelog entry format                                                                                     | Consolidating findings from multiple agents, presenting results      |
+| File                                                                           | Contents                                                                                                                                                                                                           | When to read                                                                      |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| [`references/scoring-framework.md`](references/scoring-framework.md)           | Dimension definitions (1-5 scale), hard failure thresholds, dimension presets (UI, API, security, data, mixed), few-shot examples, anti-patterns                                                                   | Setting up evaluation criteria, scoring work, calibrating evaluators              |
+| [`references/agent-contracts.md`](references/agent-contracts.md)               | Generator/evaluator role separation, prompt templates (generator, evaluator, protocol checker), context assembly rules                                                                                             | Spawning evaluation agents, assembling prompts                                    |
+| [`references/eval-protocol.md`](references/eval-protocol.md)                   | Eval request/response format, verification JSON schema, the eval loop (request → response → fix → re-evaluate), execution contexts (Task subagent, codex exec, tmux, workflow), the needs-human gate record        | Running the evaluation loop, tracking verification state                          |
+| [`references/recovery-ladder.md`](references/recovery-ladder.md)               | Escalating change-strategy ladder (same-fix → re-ground → fresh generator → decompose → human gate) for a stalled eval loop                                                                                        | A FAIL loop is not converging after 2+ rounds                                     |
+| [`references/findings-format.md`](references/findings-format.md)               | Severity categorization (blocking/important/minor), deduplication protocol, presentation format, changelog entry format                                                                                            | Consolidating findings from multiple agents, presenting results                   |
+| [`references/verification-economics.md`](references/verification-economics.md) | Validator placement matrix, failure taxonomy + classification authority, environment preflight, verification tiers + two-point derivation, verification recipe, accounting schema, tamper-evident evidence classes | Routing a FAIL, deriving verification depth, pricing/recording verification spend |
 
 ---
 

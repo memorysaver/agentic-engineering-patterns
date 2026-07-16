@@ -170,18 +170,32 @@ post-deploy report path (staging/prod), one entry per finding:
 
 **Severity:** blocker | major | minor
 **Category:** UX | logic | visual | edge-case | accessibility | performance
+**Failure-Class:** product-defect | environment | harness-flake | scope
 **Repro:** <ordered steps to reproduce against the target URL>
 **Observed:** <what happened> **Expected:** <what should happen>
 **Evidence:** <screenshot path / log excerpt>
 ```
+
+**`Failure-Class` is required per finding** and routes the finding before any
+repair spend (`/aep-gen-eval` → `references/verification-economics.md` — the
+classification-authority evidence rules live there; no qualifying evidence →
+`product-defect`):
+
+| Failure-Class    | Route                                                                                           |
+| ---------------- | ----------------------------------------------------------------------------------------------- |
+| `product-defect` | The normal path below — adapter → classifier → bug/refinement story (default class)             |
+| `environment`    | Ops checklist to the human/orchestrator; **never auto-filed as a code story**, zero eval rounds |
+| `harness-flake`  | Quarantine + a harness story, evidence-gated and ratified by wrap/reflect; **never auto-filed** |
+| `scope`          | Human gate → `/aep-reflect` re-slicing; **never auto-filed**                                    |
 
 **On issue** → route per `topology.routing.dogfood.on_issue` (default
 `create_story`): the report is ingested by the **`dogfood_report` adapter**
 (`/aep-watch` → `references/telemetry-ingestion.md`, Dogfood-report
 adapter), which parses each `##` finding into a normalized record → the
 `/aep-reflect` Step 2 classifier → a bug/refinement story in
-`product-context.yaml` → dispatch (the G6 self-feeding loop). Set `escalate`
-instead to surface to the human rather than auto-filing.
+`product-context.yaml` → dispatch (the G6 self-feeding loop) — **for
+`product-defect` findings only**; the adapter never auto-files the other three
+classes. Set `escalate` instead to surface to the human rather than auto-filing.
 
 > **The report path is the contract.** Whatever the trigger — local Phase 6, the
 > post-deploy post-merge guard, or a **standalone / ad-hoc** dogfood — write the
@@ -230,6 +244,12 @@ topology:
 - **`post_deploy_env`** — which environment the post-deploy step validates;
   `none` disables post-deploy dogfood.
 - **`on_issue`** — `create_story` (default) or `escalate`.
+- **`live_policy` does NOT live here.** The cost-bearing-dogfood decision
+  (`every_gate | milestone_gates_only | none` — which gates spend live-model /
+  quota-metered runs) is canonically owned by the generated e2e skill's
+  `skills/e2e-test/policy.md`, next to tiers/target/timing — not by
+  `topology.routing.dogfood`. Projects migrating from a
+  `topology.routing.dogfood.live_policy` field move it to `policy.md` on re-pin.
 
 ---
 

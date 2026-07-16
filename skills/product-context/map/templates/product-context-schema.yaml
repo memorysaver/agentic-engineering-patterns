@@ -416,6 +416,10 @@ topology:
       method: auto # auto | agent-browser | codex-native | playwright
       post_deploy_env: none # none | staging | production
       on_issue: create_story # create_story | escalate
+      # NOTE: live_policy (every_gate | milestone_gates_only | none — which gates spend
+      # cost-bearing live dogfood) does NOT live here — it is owned by the generated
+      # e2e skill's skills/e2e-test/policy.md next to tiers/target/timing. A legacy
+      # topology.routing.dogfood.live_policy moves there on re-pin.
     post_merge_guard: # G4a — watch merged stories' deploy health (see autopilot/references/post-merge-guard.md)
       window_min: 15
       auto_revert: false # conservative default: warn + escalate only; true = auto `gh pr revert` on confirmed regression
@@ -452,6 +456,12 @@ topology:
 # against the target (pre-merge here, or at the post-deploy gate). A layer that
 # reaches its gate (when Tier-2 applies) with no journey file is a COVERAGE
 # FAILURE — /aep-wrap refuses to flip it to `passed`.
+# COST: policy.md `live_policy` (every_gate | milestone_gates_only | none) prices
+# the cost-bearing live half of a gate's dogfood — under milestone_gates_only,
+# non-milestone gates run zero-cost smokes and the absent live half is SKIP.
+# The gate's preflight probes only what the gate REQUIRES (REFUSED ≠ FAIL ≠ SKIP),
+# and `passed` additionally needs one tamper-evident evidence class
+# (gen-eval references/verification-economics.md).
 layer_gates:
   - layer: 0
     status: not_started # not_started | running | scripted_passed | passed | failed | deferred

@@ -133,16 +133,18 @@ Machine-readable state file. Read and written by the autopilot tick.
 
 #### Escalation Entry
 
-| Field                   | Type         | Description                                                                                                                         |
-| ----------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `type`                  | enum         | `"design_needed"`, `"stuck"`, `"failed"`, `"layer_gate_failed"`, `"eval_not_converging"`, `"human_gate"`, `"post_merge_regression"` |
-| `story_id`              | string       | Related story ID                                                                                                                    |
-| `workspace`             | string\|null | Workspace name (null if not yet launched)                                                                                           |
-| `reason`                | string       | One-line reason                                                                                                                     |
-| `details`               | string       | Detailed explanation of why escalation triggered                                                                                    |
-| `expected_human_action` | string       | What the human should do                                                                                                            |
-| `created_at`            | string       | ISO8601 timestamp                                                                                                                   |
-| `acknowledged`          | boolean      | Whether human has seen this                                                                                                         |
+| Field                   | Type         | Description                                                                                                                                                 |
+| ----------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `type`                  | enum         | `"design_needed"`, `"stuck"`, `"failed"`, `"layer_gate_failed"`, `"eval_not_converging"`, `"human_gate"`, `"post_merge_regression"`, `"environment_repair"` |
+| `story_id`              | string       | Related story ID                                                                                                                                            |
+| `workspace`             | string\|null | Workspace name (null if not yet launched)                                                                                                                   |
+| `reason`                | string       | One-line reason                                                                                                                                             |
+| `details`               | string       | Detailed explanation of why escalation triggered                                                                                                            |
+| `expected_human_action` | string       | What the human should do                                                                                                                                    |
+| `created_at`            | string       | ISO8601 timestamp                                                                                                                                           |
+| `acknowledged`          | boolean      | Whether human has seen this                                                                                                                                 |
+
+**`environment_repair`** (added by the verification-economics design): emitted when a gate/dogfood **preflight refuses** on unmet required preconditions (named `REFUSING [...]` tags — `environment` failure class, not a product failure). `details` carries the **ops checklist** — every named refusal tag plus the repair each implies (add secret `<NAME>` to CI, re-auth the deploy account, seed the fixture target). Unlike other escalation types it does **not** pause dispatch of remaining in-layer stories, and it self-clears: the refusing gate re-probes world-derived on each tick and resumes when the probes pass (tick-protocol.md → Layer Completion, REFUSED ≠ FAIL).
 
 #### `guard_state` Entry (post-merge guard, keyed by story_id)
 

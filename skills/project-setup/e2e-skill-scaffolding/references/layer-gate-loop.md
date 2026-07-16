@@ -22,7 +22,8 @@ the layer is _covered_ across whichever test tiers apply to the project (see
 line/branch percentage (that stays a Tier-1 framework concern and never gates a layer).
 
 **Which** tiers are applicable, **what** journeys dogfood against (`none` / `cli` / `local` /
-`deployed:<url>`), and **when** (pre-merge / post-deploy) are not assumed — they come from the generated
+`deployed:<url>`), **when** (pre-merge / post-deploy), and **which gates spend cost-bearing live dogfood**
+(`live_policy: every_gate | milestone_gates_only | none`) are not assumed — they come from the generated
 skill's `skills/e2e-test/policy.md`, confirmed with the user at scaffold and read by `/aep-build` and
 `/aep-wrap`. A `cli` project dogfoods the built binary via **bash** (Tier-2 applies); only a `none`-target
 project (no runnable surface at all) has no Tier-2 — its gate is Tier-1 (+ Tier-3) + coverage.
@@ -39,6 +40,11 @@ new capability / new layer
   author the journey   (/aep-build Phase 6 Step A; copy journeys/README.md template + front-matter
         │               layer: N / target / covers; one scenario per acceptance criterion → Then/Verify;
         │               PRE-MERGE, before any dogfood; committed with the feature, independent of timing)
+        ▼
+  environment preflight (probes from policy.md, BEFORE any journey spend — deploy-independent probes
+        │                pre-merge on every story; target-bound probes where execution runs. An unmet
+        │                required precondition is a named REFUSING [...] tag → ops checklist, zero
+        │                scenarios spent; REFUSED ≠ FAIL. Optional-capability absence stays SKIP.)
         ▼
   run the journey      (/aep-build Phase 6 Step B; tool resolved by tool-selection.md; verify state, not
         │               pixels — execution deferred to the gate when journey_timing: post-deploy)
@@ -61,6 +67,19 @@ is `passed`, and a gate is only `passed` once its scripted suite _and_ its journ
 evidence _and_ every acceptance criterion is proven. The agent **auto-closes** coverage gaps during the
 build (it authors the missing scenario rather than asking); the human only decides _when to advance_ to
 the next layer. Each layer adds journeys; the library grows into a regression suite the gate replays.
+
+Two placement rules keep the loop honest and affordable
+(`/aep-gen-eval` → `references/verification-economics.md`):
+
+- **Evidence-class requirement on `passed`:** the gate's evidence must include at least one
+  **tamper-evident class** — something the generator cannot modify: a CI run bound to the merged SHA
+  (workflow definitions outside the stories' diff scope), a wrap-executed journey, read-only golden
+  fixtures with a ledger-equality oracle, or production telemetry. A gate with no named evidence class
+  records a warning (one release of migration grace), then refuses.
+- **Replay placement:** **full** prior-layer replay runs at the layer gate (plus a mid-layer checkpoint
+  every `k = min(5, ⌈N/3⌉)` stories for large layers); per-story replay (`/aep-build` Phase 8) is
+  **impacted-only + the walking-skeleton canary** — full-per-story replay is the O(layers × stories)
+  anti-pattern.
 
 ## `product-context.yaml` shape
 

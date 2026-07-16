@@ -115,6 +115,8 @@ Any of these conditions means the evaluation **FAILS** and the generator must fi
 
 **Overall pass:** All dimensions >= 3 AND Completeness >= 4 AND no dimension at 1.
 
+**PASS means zero blocking findings against these thresholds — nothing more.** A perfect aggregate score is **never** a gate condition: a "must return exactly 5.00/5.00 with zero findings" merge gate trains the generator to satisfy the evaluator instead of the product (Goodhart's law) and turns ordinary convergence into round exhaustion. Projects may raise individual dimension floors (see `verification-economics.md` — customization only ratchets up), but the gate is always threshold-based, never perfection-based.
+
 ---
 
 ## Dimension Presets
@@ -386,14 +388,15 @@ Generator must fix both issues before re-evaluation.
 
 These are common evaluator failure modes — watch for them:
 
-| Anti-Pattern           | What Happens                               | Why It's Wrong                                           |
-| ---------------------- | ------------------------------------------ | -------------------------------------------------------- |
-| **Surface testing**    | Only test the happy path                   | Bugs hide in error paths and edge cases                  |
-| **Rationalization**    | "This is probably fine because..."         | If you found a problem, score it honestly                |
-| **Score inflation**    | Everything gets 4-5                        | Compare against scale definitions, not gut feel          |
-| **Scope creep**        | "It would be nice if..."                   | Only evaluate against the spec, not wishlist items       |
-| **Premature approval** | Passing after finding only minor issues    | Minor issues compound — evaluate the whole surface first |
-| **Self-persuasion**    | Identifying a problem then arguing it away | The problem exists. Score accordingly                    |
+| Anti-Pattern           | What Happens                                | Why It's Wrong                                                                                      |
+| ---------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| **Surface testing**    | Only test the happy path                    | Bugs hide in error paths and edge cases                                                             |
+| **Rationalization**    | "This is probably fine because..."          | If you found a problem, score it honestly                                                           |
+| **Score inflation**    | Everything gets 4-5                         | Compare against scale definitions, not gut feel                                                     |
+| **Scope creep**        | "It would be nice if..."                    | Only evaluate against the spec, not wishlist items                                                  |
+| **Premature approval** | Passing after finding only minor issues     | Minor issues compound — evaluate the whole surface first                                            |
+| **Self-persuasion**    | Identifying a problem then arguing it away  | The problem exists. Score accordingly                                                               |
+| **Perfect-score gate** | Requiring 5.00/5.00 + zero findings to pass | Trains evaluator-gaming and blocks convergence — PASS is zero **blocking** findings, not perfection |
 
 ---
 
