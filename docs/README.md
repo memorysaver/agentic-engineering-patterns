@@ -12,6 +12,7 @@ Rules for organizing documentation in this directory.
 | **Lessons**    | `lessons/`    | Date-prefixed observations from downstream project runs                                               | `YYYY-MM-DD-<project>-<context>.md`                             |
 | **Plans**      | `plans/`      | Design plans from `/design` skill                                                                     | `YYYY-MM-DD-<topic>.md`                                         |
 | **Research**   | `research/`   | Exploratory studies, source reviews, and gap analyses before a decision or implementation plan exists | Descriptive slug (`ooux-object-modeling.md`)                    |
+| **Audits**     | `audits/`     | Point-in-time compatibility and implementation evidence for a specific downstream or release          | `YYYY-MM-DD-<scope>.md`                                         |
 
 ## Key Distinctions
 
@@ -27,6 +28,7 @@ These stay at the docs root because they're cross-cutting references:
 
 - `glossary.md` — Ubiquitous language across all skills
 - `skills-quick-reference.md` — Quick lookup for all AEP skills
+- `aep-v3.0.0-migration-guide.md` — Safe downstream re-pin, cutover, canary, and rollback runbook
 
 ## Routing Guide
 
@@ -38,3 +40,4 @@ When adding new documentation, ask:
 4. **"Does this explain an existing AEP pattern?"** → `workflow/`
 5. **"Is this a forward-looking design for a feature?"** → `plans/`
 6. **"Is this still exploratory evidence or gap analysis?"** → `research/`
+7. **"Is this a point-in-time compatibility or implementation check?"** → `audits/`
