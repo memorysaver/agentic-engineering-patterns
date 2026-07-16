@@ -95,8 +95,8 @@ The load-bearing properties:
 - **Environment is claimable only by construction.** The preflight probe runs _before_ any
   verification spend; a refusal means zero scenarios executed, zero findings generated, zero
   rounds burned. The classification is not a judgment call anyone makes — it is what the world
-  said. Nobody argued the looplia incident into the environment class; a probe that checks "does
-  the secret name exist in CI" refuses, and the classification follows.
+  said. Nobody argues the motivating incident into the environment class; a probe that checks
+  "does the secret name exist in CI" refuses, and the classification follows.
 - **The cheap classes are ratified, never self-applied.** A flake claim needs a reproduction the
   world can verify, and a second, differently-incentivized role signs it off.
 - **The default is the expensive class.** Fail-open here is also the tamper-resistance rule: an
