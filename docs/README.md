@@ -13,6 +13,7 @@ Rules for organizing documentation in this directory.
 | **Plans**      | `plans/`      | Design plans from `/design` skill                                                                     | `YYYY-MM-DD-<topic>.md`                                         |
 | **Research**   | `research/`   | Exploratory studies, source reviews, and gap analyses before a decision or implementation plan exists | Descriptive slug (`ooux-object-modeling.md`)                    |
 | **Audits**     | `audits/`     | Point-in-time compatibility and implementation evidence for a specific downstream or release          | `YYYY-MM-DD-<scope>.md`                                         |
+| **Articles**   | `article/`    | Self-contained write-ups distilled from decisions/research, written to be shareable outside the repo  | Descriptive slug (`three-mechanisms-….md`)                      |
 
 ## Key Distinctions
 
@@ -41,3 +42,4 @@ When adding new documentation, ask:
 5. **"Is this a forward-looking design for a feature?"** → `plans/`
 6. **"Is this still exploratory evidence or gap analysis?"** → `research/`
 7. **"Is this a point-in-time compatibility or implementation check?"** → `audits/`
+8. **"Is this a self-contained story for readers outside this repo?"** → `article/`
