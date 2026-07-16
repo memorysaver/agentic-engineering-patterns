@@ -221,12 +221,19 @@ between planning and merge:
   `files_affected`, `module`, contract obligations, `complexity`, `on_critical_path`, layer kind —
   into the machine-assembled brief. This prices the build (evaluator effort, dogfood scope) but is a
   _prediction_: `files_affected` is authored by the planning pipeline, not observed.
-- **Binding (merge boundary):** re-derived from the **actual diff** (`git diff --name-only
-"$BASE"...HEAD` — genuinely world-derived) against the human-owned sensitive-path list. If the
-  diff leaves the declared scope (`diff ∖ files_affected ≠ ∅`), the tier is recomputed from the diff
-  and `scope_drift: true` is recorded. **At binding, a tier may only go up, never down** — a story
-  cannot talk its way into a cheaper class by under-declaring scope, and impacted-journey selection
-  (§ Design 4) keys off the merged diff, never the declaration.
+- **Binding (Phase 5 entry):** re-derived from the **actual diff** (`git diff --name-only
+"$BASE"...HEAD` — genuinely world-derived, and it exists as soon as Phase 4 implementation
+  commits land) against the human-owned sensitive-path list. The binding derivation must run
+  **before the first evaluation round consumes the cap** — binding at the merge step would let the
+  whole eval loop run on the gameable provisional tier. If the diff leaves the declared scope
+  (`diff ∖ files_affected ≠ ∅`), the tier is recomputed from the diff and `scope_drift: true` is
+  recorded. **At binding, a tier may only go up, never down** — a story cannot talk its way into a
+  cheaper class by under-declaring scope, and impacted-journey selection (§ Design 4) keys off the
+  merged diff, never the declaration. **Pre-merge re-check (Phase 12):** commits added after the
+  last PASS (Phase 11 review fixes, Phase 11.5 human-eval fixes) re-run the derivation; a
+  post-eval drift into `sensitive_paths` upgrades the tier and requires one fresh evaluation round
+  at the new tier — this rides the existing stale-eval rule (`tick-protocol.md:237`, "code has
+  changed since your last evaluation"), it does not add a new mechanism.
 
 **The derivation function** (deterministic; ties resolve upward):
 
@@ -245,6 +252,31 @@ between planning and merge:
 | **standard** (default) | **2** — one decisive fix-and-reverify cycle | session default   | impacted-surface journey + canary | focused; full once at land    |
 | **deep**               | up to 5 + full recovery ladder              | highest available | full journey + prior-layer replay | full pre-eval **and** at land |
 
+**How the tier travels the trigger path.** Gen-eval is not self-triggering — it is configured down
+the chain autopilot → dispatch → launch → build, and the tier must ride that exact chain or it
+governs nothing:
+
+- **Dispatch** computes the provisional tier into the machine-assembled brief (grouped changes —
+  `compile_mode: grouped_change`, one workspace for N stories — take the **max** of member tiers;
+  Dynamic Workflow batches, which bypass `/aep-launch` entirely, carry the tier in the STEP-0 brief
+  and apply it to the workflow's verify stage, the evaluator of that mode).
+- **Launch is the tier's first real consumer**: today evaluator _existence_ is launch's full/light
+  call ("offer one when the change is full mode", `launch/SKILL.md:199-205`) and the criteria file
+  it writes (`.dev-workflow/evaluator-criteria.md`) is what makes build Phase 5 spawn an evaluator
+  at all. Under this design that decision becomes tier-derived and mechanical: `light` → no
+  criteria file (build self-reviews); `standard` → criteria from the scoring-framework presets;
+  `deep` → tailored criteria + the highest-available evaluator effort (the effort hint travels to
+  `executor.spawn_evaluator()`'s recipes). This also fixes the autonomous gap — the criteria
+  brainstorm is interactive today, and autopilot launches had no rule for it.
+- **The workspace publishes the tier**: `status.json` gains `verification_tier`, `tier_escalated`,
+  and the latest FAIL's `failure_class` (the signals spec is the schema owner), because that signal
+  file is the **only** thing autopilot may read.
+- **Autopilot's monitoring goes tier-aware**: the ④b nudge texts currently say "spawn the
+  evaluator" unconditionally and the escalation rule waits for a 5-round ladder — under tiers, the
+  nudge must match the workspace's published tier (a `light` workspace is nudged to self-review,
+  not to spawn), and `eval_not_converging` fires only after the published tier's cap **plus** the
+  automatic `standard → deep` escalation have both been spent.
+
 - **Cap exhaustion is defined, not silent:** when `standard` exhausts its 2 rounds on a genuine
   `product-defect`, the story **auto-escalates once to `deep`** (recorded as `tier_escalated: true`
   in the execution record — which is itself calibration data) and continues the ladder from where it
@@ -256,7 +288,10 @@ between planning and merge:
 - **Light-mode subsumption:** the design-time Light mode's eval-loop behavior
   (`design/references/workflow-modes.md`) is subsumed — Light mode selects `verification_tier:
 light` instead of carrying its own eval-loop toggle, collapsing the repo's three near-identical
-  "light" senses into one glossary-defined term.
+  "light" senses into one glossary-defined term. The same reconciliation absorbs launch's
+  full/light evaluator-offer criteria ("3+ tasks, UI-heavy, or security-sensitive → full",
+  `launch/SKILL.md:203`): those heuristics become **inputs to the provisional derivation** at
+  dispatch, not a second, independently-consulted depth switch.
 - **Threshold semantics (all tiers):** PASS means **zero blocking findings** against the
   hard-failure thresholds (`gen-eval/references/scoring-framework.md:107`). A perfect aggregate
   score is **never** a gate condition — perfect-score gates train evaluator-gaming and block
@@ -272,7 +307,7 @@ field is nullable and carries a named gather source (the gather stays best-effor
 
 ```yaml
 verification:
-  tier: light | standard | deep # from the brief; binding re-derivation wins
+  tier: light | standard | deep # provisional from the brief; Phase 5 binding re-derivation wins
   tier_escalated: true | false # cap-exhaustion escalation fired
   scope_drift: true | false # binding diff left the declared files_affected
   eval_rounds: <n> | null # from signals/eval-response-*.md count
@@ -376,10 +411,12 @@ no new required schema fields:**
    worked examples. It lives under gen-eval because gen-eval already owns evaluation canon and is
    read by `/aep-build`, `/aep-validate`, and `/aep-launch`; every other change site cross-references
    it **by name**.
-2. **`skills/patterns/executor/references/dogfood-validation.md`** — Unified report format
-   (`:160-199`): the required `**Failure-Class:**` line + the four-way routing table. Config block
-   (`:203-232`): a cross-reference stating `live_policy` lives in the e2e skill's `policy.md`, not
-   in `topology.routing.dogfood`.
+2. **`skills/patterns/executor/references/`** — `dogfood-validation.md`: Unified report format
+   (`:160-199`) gains the required `**Failure-Class:**` line + the four-way routing table; Config
+   block (`:203-232`) gains a cross-reference stating `live_policy` lives in the e2e skill's
+   `policy.md`, not in `topology.routing.dogfood`. `backends.md`: the `executor.spawn_evaluator()`
+   recipes accept an optional evaluator-effort hint derived from the tier (`deep` → highest
+   available).
 3. **`skills/project-setup/e2e-skill-scaffolding/`** — `templates/policy.md.tmpl` + SKILL.md Phase 2
    confirmation questions gain the `live_policy` decision, the `sensitive_paths` list, and the
    preflight probe sets (deploy-independent vs target-bound, with web **and** cli/tui probe
@@ -387,24 +424,36 @@ no new required schema fields:**
    `templates/tool-selection.md.tmpl` notes REFUSED vs SKIP semantics;
    `references/layer-gate-loop.md` and `references/three-tier-model.md` add the preflight gate, the
    evidence-class requirement on `passed`, and the replay-placement note.
-4. **`skills/agentic-development-workflow/build/SKILL.md`** — Phase 5 (`:126-145`): tier-capped
-   rounds, the taxonomy check at every FAIL, cap-exhaustion auto-escalation. Phase 6 Step B
-   (`:192-215`): deploy-independent preflight on every story; target-bound preflight when execution
-   runs here. Phase 8 (`:237`): impacted-only replay + canary + the `deep` exception.
+4. **`skills/agentic-development-workflow/build/SKILL.md`** — Phase 5 (`:126-145`): the **binding
+   tier re-derivation at Phase 5 entry** (before any round spends the cap), tier-capped rounds, the
+   taxonomy check at every FAIL, cap-exhaustion auto-escalation, and publishing
+   `verification_tier` / `tier_escalated` to `status.json`. Phase 6 Step B (`:192-215`):
+   deploy-independent preflight on every story; target-bound preflight when execution runs here.
+   Phase 8 (`:237`): impacted-only replay + canary + the `deep` exception. Phase 12: the tier
+   re-check on post-eval commits (sensitive-path drift ⇒ one fresh round at the upgraded tier).
 5. **`skills/patterns/gen-eval/references/`** — `eval-protocol.md` (`:116`): tier-derived
    `max_rounds`; evaluator-authored `failure_class` in the response format; per-round response
    persistence. `recovery-ladder.md` (`:3`, `:25-31`, `:59-67`): the second `max_rounds` copy; rungs
    re-keyed relative to the tier cap; "When to Skip the Ladder" reframed as the typed taxonomy step
    with the class mapping. `scoring-framework.md`: zero-blocking threshold semantics; perfect-score
    gates named as an anti-pattern.
-6. **`skills/agentic-development-workflow/launch/references/evaluator.md`** (`:73-74`) — the third
-   `max_rounds` copy goes tier-derived.
+6. **`skills/agentic-development-workflow/launch/`** — `SKILL.md` "Optional: Evaluator (Full
+   Mode)" (`:199-205`): evaluator existence, criteria, and effort become **tier-derived from the
+   dispatch brief** (light → no criteria file; standard → preset criteria; deep → tailored criteria
+   - top effort) — this replaces the workflow-modes full/light heuristics as launch's decision
+     rule and gives autonomous launches a deterministic criteria policy.
+     `references/evaluator.md` (`:73-74`): the third `max_rounds` copy goes tier-derived; the
+     criteria-brainstorm step notes the autonomous fallback per tier.
+     `references/signals-spec.md`: `status.json` gains `verification_tier`, `tier_escalated`, and
+     latest-FAIL `failure_class` — the fields autopilot's tier-aware monitoring reads.
 7. **`skills/agentic-development-workflow/wrap/references/`** — `convergence.md` (`:70-88`): the
    `verification:` block. `layer-advance.md`: full replay + mid-layer checkpoint policy + budget box
    - evidence-class check before flipping `passed`.
 8. **`skills/product-context/dispatch/`** — `references/context-assembly.md` (the assembly-time
-   home): provisional tier derivation into the machine-assembled brief; `SKILL.md` (`:237`) notes
-   the binding re-derivation at the merge boundary.
+   home): provisional tier derivation into the machine-assembled brief (grouped changes take the
+   max of member tiers); `SKILL.md` (`:237`) notes the binding re-derivation contract (Phase 5
+   entry, build-owned). `references/workflow-mode.md`: the STEP-0 brief carries the tier; the
+   workflow verify stage — that mode's evaluator — honors the tier cap.
 9. **`skills/product-context/_shared/references/telemetry-ingestion.md`** (regenerated into
    `reflect/` and `watch/` via `build-skills.sh`) — the `dogfood_report` adapter parses
    `**Failure-Class:**`; `environment` / `harness-flake` / `scope` findings **never auto-file**
@@ -412,10 +461,14 @@ no new required schema fields:**
 10. **`skills/patterns/autopilot/`** — `references/tick-protocol.md`: REFUSED ≠ FAIL at the gate (a
     refused gate pauses cheaply with the ops checklist and **re-probes world-derived on each tick**,
     so human repair auto-resumes; remaining in-layer stories may still dispatch);
-    "`eval_not_converging` after the ladder is exhausted" becomes tier-derived.
-    `references/state-schema.md` (`:138`): a new `environment_repair` escalation type carrying the
-    checklist. `references/post-merge-guard.md`: preflight before the guard's dogfood;
-    `Failure-Class:` in the guard report; `live_policy` governs the guard's live half.
+    "`eval_not_converging` after the ladder is exhausted" becomes tier-derived (fires only after
+    the published cap **plus** the automatic `standard → deep` escalation are spent); the ④b nudge
+    texts (`:212`, `:237`) go tier-aware — read `verification_tier` from `status.json`, nudge a
+    `light` workspace to self-review rather than "spawn the evaluator", and extend the stale-eval
+    nudge with the sensitive-path-drift upgrade. `references/state-schema.md` (`:138`): a new
+    `environment_repair` escalation type carrying the checklist.
+    `references/post-merge-guard.md`: preflight before the guard's dogfood; `Failure-Class:` in the
+    guard report; `live_policy` governs the guard's live half.
 11. **`skills/agentic-development-workflow/design/references/workflow-modes.md`** — Light mode's
     eval-loop behavior subsumed into `verification_tier: light`.
 12. **`docs/glossary.md`** — new entries: **Verification Tier**, **Failure Class (Failure
@@ -447,10 +500,10 @@ no new required schema fields:**
 | `/aep-gen-eval`  | Owns the verification-economics reference; tier-derived caps; evaluator-authored `failure_class`; zero-blocking semantics |
 | `/aep-build`     | Preflight before dogfood; taxonomy check before any ladder rung; impacted replay + canary; cap-exhaustion escalation      |
 | `/aep-wrap`      | Full replay + checkpoints + budget box + evidence-class check at the gate; gathers the `verification:` block              |
-| `/aep-dispatch`  | Provisional tier into the machine-assembled brief; binding re-derivation contract at the merge boundary                   |
+| `/aep-dispatch`  | Provisional tier into the machine-assembled brief (grouped = max; workflow mode carries it in STEP-0)                     |
 | `/aep-reflect`   | Routes on `failure_class`; ratifies `harness-flake`; ingests escape rate; proposes dampened calibration                   |
-| `/aep-autopilot` | REFUSED ≠ FAIL tick handling; `environment_repair` escalation; preflight + `live_policy` on the post-merge guard          |
-| `/aep-launch`    | Evaluator round cap read from the tier                                                                                    |
+| `/aep-autopilot` | REFUSED ≠ FAIL ticks; tier-aware ④b nudges + escalation; `environment_repair`; preflight + `live_policy` on the guard     |
+| `/aep-launch`    | Evaluator existence + criteria + effort derived from the tier; signals spec carries the tier fields                       |
 | e2e scaffold     | `live_policy` + `sensitive_paths` + probe sets in `policy.md`; budget box in the gate evidence template                   |
 
 ## Migration
