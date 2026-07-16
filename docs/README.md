@@ -30,6 +30,7 @@ These stay at the docs root because they're cross-cutting references:
 - `glossary.md` — Ubiquitous language across all skills
 - `skills-quick-reference.md` — Quick lookup for all AEP skills
 - `aep-v3.0.0-migration-guide.md` — Safe downstream re-pin, cutover, canary, and rollback runbook
+- `aep-v3.2.0-downstream-migration-playbook.md` — Four-phase v2.5.0→v3.2.0 consumer migration (re-pin → audit → artifact plane → loop plane), proven on SIBYL
 
 ## Routing Guide
 
