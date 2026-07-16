@@ -55,9 +55,13 @@ consumer has ≥2 layers of accounting data.
   tier-derived effort hint (`deep` → highest available, preferring a different
   model family from the generator; `executor/references/backends.md`).
 - **Tier-aware signals + autopilot** — `status.json` gains
-  `verification_tier`, `tier_escalated`, and latest-FAIL `failure_class`
-  (`launch/references/signals-spec.md`); autopilot ④b nudges match the
-  published tier (a `light` workspace is nudged to self-review, never to spawn)
+  `verification_tier`, `tier_escalated`, per-finding `failure_classes` counts
+  (deterministic conjunctive mixed-class routing — an environment refusal and a
+  product defect in one round both route, neither masks the other), and the
+  `light`-tier `self_review` completion signal
+  (`launch/references/signals-spec.md`); autopilot ④b is tier-branched — a
+  `light` workspace satisfies the quality gate via a current-sha `self_review`
+  PASS (it never produces an eval-response), `standard`/`deep` via eval PASS —
   and `eval_not_converging` fires only after the published cap **plus** the
   automatic `standard → deep` escalation are spent; the stale-eval nudge
   carries the sensitive-path-drift upgrade (`tick-protocol.md`). Dynamic
@@ -65,9 +69,14 @@ consumer has ≥2 layers of accounting data.
   honors the cap (`dispatch/references/workflow-mode.md`).
 - **Runnable reference implementation** — the generated e2e skill ships
   `scripts/derive-verification-recipe.sh` (binding derivation + recipe
-  emission) and `scripts/preflight.sh` (named-refusal probe stubs), both
-  project-owned templates (`e2e-skill-scaffolding`); AEP still ships no
-  runtime.
+  emission: stateful `sensitive_paths` parser, full derivation-input → preset
+  mapping with hard floors, `files_affected` scope-drift computation, absent
+  provisional tier fails open to `deep`) and `scripts/preflight.sh`
+  (named-refusal probe stubs), both project-owned templates
+  (`e2e-skill-scaffolding`); AEP still ships no runtime. Functional fixtures
+  (`scripts/test-derive-recipe.sh`, wired into CI) prove a sensitive-path diff
+  derives `deep`, docs-only derives `light`, drift and fail-open behave as
+  documented.
 - **Dampened calibration** — layer distillation may propose tier-derivation
   loosening/tightening and journey retirement under the dampers (≥2 layers of
   `findings_by_round` + zero unresolved escapes, one notch per layer, the
@@ -83,6 +92,15 @@ consumer has ≥2 layers of accounting data.
   full/light selection signals become inputs to the dispatch-time derivation
   (`design/references/workflow-modes.md`), collapsing the repo's three "light"
   senses into the one glossary-defined term.
+- **Binding tier decides evaluator existence** — `/aep-build` Phase 5 gates the
+  evaluator on the recipe's binding tier, never on whether `/aep-launch`
+  created a criteria file: a provisional-`light` story upgraded at binding gets
+  its criteria assembled from the recipe on the spot (`build/SKILL.md`).
+- **Tamper-evident evidence grace retired** — the v3.1 one-release migration
+  warning ends: a layer gate whose evidence names no tamper-evident class now
+  refuses the flip (`REFUSING [evidence-class-missing:<layer>]`) and stays
+  `scripted_passed` (`wrap/references/layer-advance.md`, generated
+  `layer-gate-loop.md` + `layer-gate-evidence.md.tmpl`).
 
 ## [3.1.0] - 2026-07-16
 

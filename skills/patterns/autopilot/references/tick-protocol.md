@@ -187,9 +187,12 @@ gh pr view <number> --json state --jq '.state'
 - `skip_human_eval: backend` → skip the quality gate for stories in non-UI modules (check `story.activity` — if null or infrastructure, skip). UI stories still require eval.
 - `skip_human_eval: none` (default) → apply the full quality gate below
 
-**Then read the workspace's published tier** (`status.json` → `verification_tier` — the only thing autopilot may read; null = no recipe yet = treat as `deep` fail-open). **The nudge must match the tier**: a `light` workspace is nudged to **self-review** ("Run Phase 5 self-review per the build skill light path; document findings in .dev-workflow/code-review-<feature>.md") — never to spawn an evaluator it has no criteria file for. `standard`/`deep` workspaces get the evaluator nudges below.
+**Then read the workspace's published tier** (`status.json` → `verification_tier` — the only thing autopilot may read; null = no recipe yet = treat as `deep` fail-open). **The nudge must match the tier**: a `light` workspace is nudged to **self-review** ("Run Phase 5 self-review per the build skill light path; document findings in .dev-workflow/code-review-<feature>.md and publish `self_review: {result, sha, report}` to status.json — that signal is this gate's PASS") — never to spawn an evaluator it has no criteria file for. `standard`/`deep` workspaces get the evaluator nudges below.
 
-Check whether a passing evaluation exists:
+**Satisfaction is tier-branched** — a `light` workspace deliberately produces no eval-response, so the gate must never wait for one:
+
+- **`light`:** read `status.json.self_review` (signals-spec is the schema owner). Satisfied — proceed to ④c — when `self_review.result == "PASS"` **and** `self_review.sha` matches the workspace's current HEAD; a stale sha means commits landed after the review, so re-nudge the self-review exactly like a stale eval. `self_review` null → not yet run → send the self-review nudge above as the first trigger (same trigger/re-trigger cadence and `code_review_triggered` state as below); `result: "FAIL"` → the workspace fixes and re-reviews (`product-defect` findings only — the taxonomy still applies).
+- **`standard` / `deep`:** check whether a passing evaluation exists:
 
 ```bash
 ls .feature-workspaces/<name>/.dev-workflow/signals/eval-response-*.md 2>/dev/null
@@ -197,7 +200,15 @@ ls .feature-workspaces/<name>/.dev-workflow/signals/eval-response-*.md 2>/dev/nu
 
 **If latest eval-response shows "Result: PASS"** → quality gate satisfied, proceed to ④c.
 
-**If no eval-response exists OR latest shows "Result: FAIL":**
+**If no eval-response exists OR latest shows "Result: FAIL"** (evaluator tiers only — a `light` workspace never enters this branch):
+
+**On FAIL, route on `status.json.failure_classes` first** (per-class finding counts; signals-spec owns the
+schema and the mixed-class rule). Routing is **conjunctive** — every non-zero class routes and none masks
+another: `environment > 0` → add the `environment_repair` escalation with the ops checklist (in-layer
+dispatch continues; re-probe each tick) **and, in parallel,** `product-defect > 0` → the eval/ladder
+nudges below stay live; `scope > 0` → the human gate; `harness-flake > 0` → wait on wrap/reflect
+ratification, then re-run. A FAIL with `failure_classes` null routes as `product-defect` (the no-evidence
+default).
 
 Check detection conditions (see `references/review-trigger.md` for full logic):
 
@@ -241,11 +252,11 @@ executor.nudge(<workspace-name>,
   "Code has changed since your last evaluation. Re-run the Phase 5 binding tier derivation on the updated diff — a drift into sensitive_paths upgrades your tier — then re-run Phase 5 code review at the (possibly upgraded) tier before proceeding with the PR. Write a new eval-request.md and spawn a fresh evaluator.")
 ```
 
-**Escalation is tier-derived:** No eval-response after 6 ticks (30 min) post-trigger → before escalating, the workspace must climb the **recovery ladder** (`/aep-gen-eval` `references/recovery-ladder.md`): nudge it to work the ladder's rungs (re-scope, decompose, relax non-essential criteria, etc.) first. Emit the `"eval_not_converging"` escalation only after the **published tier's round cap AND the automatic `standard → deep` escalation have both been spent** (read `verification_tier` + `tier_escalated` from `status.json`: a `standard` workspace that exhausted 2 rounds is not stuck — it auto-escalates to `deep` and keeps climbing; only a `deep` — or escalated — workspace with its ladder spent escalates to the human).
+**Escalation is tier-derived:** the awaited signal is the tier's own — an eval-response for `standard`/`deep`, `status.json.self_review` for `light`. No signal after 6 ticks (30 min) post-trigger → before escalating, the workspace must climb the **recovery ladder** (`/aep-gen-eval` `references/recovery-ladder.md`): nudge it to work the ladder's rungs (re-scope, decompose, relax non-essential criteria, etc.) first. Emit the `"eval_not_converging"` escalation only after the **published tier's round cap AND the automatic `standard → deep` escalation have both been spent** (read `verification_tier` + `tier_escalated` from `status.json`: a `standard` workspace that exhausted 2 rounds is not stuck — it auto-escalates to `deep` and keeps climbing; only a `deep` — or escalated — workspace with its ladder spent escalates to the human; a `light` workspace has no rounds to spend, so a self-review that stays FAIL/stale past the same 6-tick window escalates directly).
 
 ### Sub-step ④c: Guide to Merge
 
-For workspaces where the quality gate is satisfied (eval PASS exists) AND PR is OPEN.
+For workspaces where the quality gate is satisfied (eval PASS exists — or, on a `light` tier, a current-sha `self_review` PASS in `status.json`) AND PR is OPEN.
 
 **Guard: only nudge once.** Check `last_action` before sending — if already `"merge_nudged"`, do not re-send the nudge. The workspace received the instruction and is working on it. Re-nudging every tick floods the workspace with duplicate prompts.
 
@@ -271,7 +282,9 @@ Set `last_action = "merge_stuck_nudged"`, `last_action_at = now`.
 
 ### Monitoring Protocol
 
-Each tick after triggering gen/eval, check for eval-response files:
+Each tick after triggering the quality gate, check the tier's own signal — `status.json.self_review` for a
+`light` workspace (PASS at current HEAD satisfies; the table below applies unchanged with "self-review" for
+"eval") — or, for `standard`/`deep`, the eval-response files:
 
 ```bash
 ls .feature-workspaces/<name>/.dev-workflow/signals/eval-response-*.md 2>/dev/null

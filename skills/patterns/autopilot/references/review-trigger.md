@@ -19,6 +19,11 @@ The workspace agent owns code quality evaluation. The autopilot's role is:
 
 ## Detection Logic
 
+**Tier gate first:** the conditions below apply to `standard`/`deep` workspaces
+(`status.json.verification_tier`; null = `deep` fail-open). A `light` workspace never produces an
+eval-response — its quality gate watches `status.json.self_review` instead (tick-protocol ④b owns that
+branch) — so none of the eval-file conditions here fire for it.
+
 Each tick, for every active workspace, check:
 
 ### Condition 1: Phase 4 Complete, No Eval Started

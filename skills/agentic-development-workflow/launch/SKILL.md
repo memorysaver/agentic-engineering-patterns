@@ -204,7 +204,10 @@ Phase 5 spawn happen. **Evaluator existence, criteria, and effort are derived fr
 brief's verification tier** (/aep-gen-eval `references/verification-economics.md`), not offered as a
 judgment call — which also gives autonomous launches a deterministic criteria policy:
 
-- **`light`** → write **no** `.dev-workflow/evaluator-criteria.md` — build Phase 5 self-reviews.
+- **`light`** → write **no** `.dev-workflow/evaluator-criteria.md` — build Phase 5 self-reviews (and
+  publishes `self_review` to `status.json`). If the **binding** derivation later upgrades the tier,
+  Phase 5 assembles the criteria from the binding recipe itself — the missing launch-time file never
+  downgrades the gate (build SKILL.md Phase 5).
 - **`standard`** → assemble the criteria file from the recipe's dimension preset + hard floors.
 - **`deep`** → assemble tailored criteria from the recipe with **nothing de-weighted**, and record the
   **highest-available evaluator effort** hint (it travels to `executor.spawn_evaluator()`; prefer a
