@@ -113,10 +113,12 @@ Round 2:
   3. If PASS → done
   4. If FAIL → generator fixes again
 
-...repeat up to max_rounds (default 5)...
+...repeat up to max_rounds (tier-derived; see below)...
 
 If not converged → escalate to human
 ```
+
+**`max_rounds` is tier-derived**, read from `.dev-workflow/verification-recipe.json` when it exists (see `verification-economics.md`): `light` → 0 rounds (generator self-review), `standard` → 2, `deep` → 5. When `standard` exhausts its cap on a genuine `product-defect`, the story auto-escalates once to `deep` (`tier_escalated: true`) and continues the recovery ladder from where it left off. With no recipe (standalone / non-adopting projects), the default stays 5 — today's behavior.
 
 ### Choosing the mode
 
@@ -311,7 +313,8 @@ Task-level tracking for code evaluation. Format is intentionally JSON — models
 | Condition                                              | Action                                       |
 | ------------------------------------------------------ | -------------------------------------------- |
 | All dimensions pass thresholds                         | **STOP — PASS**                              |
-| Round N reaches max_rounds (default 5)                 | **STOP — ESCALATE** to human                 |
+| Round N reaches the tier cap (`standard`: 2)           | **AUTO-ESCALATE once to `deep`**, continue   |
+| Round N reaches max_rounds (`deep` / no recipe: 5)     | **STOP — ESCALATE** to human                 |
 | Same findings appear 3+ consecutive rounds             | **STOP — ESCALATE** (generator can't fix it) |
 | Evaluator finds new issues each round (not converging) | **STOP — ESCALATE** after max_rounds         |
 | Generator and evaluator disagree on pass/fail          | **STOP — ESCALATE** for human judgment       |
@@ -339,10 +342,10 @@ Task-level tracking for code evaluation. Format is intentionally JSON — models
 
 ### Round budgets
 
-| Artifact type         | Max rounds | Typical rounds  |
-| --------------------- | ---------- | --------------- |
-| Code (implementation) | 5          | 2-3             |
-| Code (PR review)      | 1          | 1 (single-pass) |
-| Product context       | 1          | 1 (single-pass) |
-| Design artifacts      | 1-2        | 1               |
-| Documents             | 1          | 1 (single-pass) |
+| Artifact type         | Max rounds                                                       | Typical rounds  |
+| --------------------- | ---------------------------------------------------------------- | --------------- |
+| Code (implementation) | tier-derived (light 0 / standard 2 / deep 5); 5 without a recipe | 1-2             |
+| Code (PR review)      | 1                                                                | 1 (single-pass) |
+| Product context       | 1                                                                | 1 (single-pass) |
+| Design artifacts      | 1-2                                                              | 1               |
+| Documents             | 1                                                                | 1 (single-pass) |

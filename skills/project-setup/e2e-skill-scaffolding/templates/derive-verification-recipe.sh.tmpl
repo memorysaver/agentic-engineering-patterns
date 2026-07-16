@@ -1,0 +1,157 @@
+#!/usr/bin/env bash
+# Verification-recipe derivation — reference implementation ({{PROJECT_NAME}}).
+# Canon: the AEP gen-eval skill's references/verification-economics.md. This script is the
+# project-owned, ADAPTABLE realization (precedent: seed.sh); AEP ships no runtime.
+#
+# Emits .dev-workflow/verification-recipe.json from the ACTUAL diff — the binding derivation
+# /aep-build runs at Phase 5 entry, BEFORE any evaluation round spends the cap.
+#
+#   bash skills/e2e-test/scripts/derive-verification-recipe.sh <BASE> <story-id> \
+#        [provisional-tier] [files-affected-list]
+#
+#   BASE                 integration-branch ref the diff is computed against (resolved by the caller)
+#   provisional-tier     tier from the dispatch brief (light|standard|deep); binding only ratchets UP.
+#                        ABSENT ⇒ deep — no brief/tier fails OPEN to full depth, never to a default.
+#   files-affected-list  path to a file with the brief's declared files_affected (one path/glob per
+#                        line, "#" comments ok). ABSENT ⇒ nothing was declared, so the whole diff is
+#                        outside the declared scope and scope_drift records true.
+#   BRIEF_MODULE_KIND    optional env hint from the brief (ui|data|product) — the brief-side preset
+#                        inputs (ui-kind module, calibration_type visual-design/ux-flow,
+#                        object_model_refs) that a pure diff cannot see. OR'd with the diff signals.
+set -euo pipefail
+
+BASE="${1:?usage: derive-verification-recipe.sh <BASE> <story-id> [provisional-tier] [files-affected-list]}"
+STORY_ID="${2:?story id required}"
+PROVISIONAL="${3:-deep}" # fail-open: a missing brief/tier runs deep (canon: two-point derivation)
+DECLARED_FILE="${4:-}"
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+POLICY="$REPO_ROOT/skills/e2e-test/policy.md"
+OUT="$REPO_ROOT/.dev-workflow/verification-recipe.json"
+mkdir -p "$REPO_ROOT/.dev-workflow"
+
+rank() { case "$1" in light) echo 0 ;; standard) echo 1 ;; deep) echo 2 ;; *) echo 2 ;; esac; }
+max_tier() { [ "$(rank "$1")" -ge "$(rank "$2")" ] && echo "$1" || echo "$2"; }
+
+# ── sensitive_paths: the human-owned deep-tier hard floor, read from policy.md's yaml block ──
+# Stateful block parser: starts AFTER the "sensitive_paths:" key, consumes only "- ..." list lines,
+# stops at the first non-list line (a naive awk range /start/,/end/ terminates on its own start line).
+SENSITIVE_GLOBS=$(awk '
+  /^sensitive_paths:/ { in_block = 1; next }
+  in_block && /^[[:space:]]*-[[:space:]]/ { print; next }
+  in_block { exit }
+' "$POLICY" 2>/dev/null | sed -n 's/^ *- *"\([^"]*\)".*$/\1/p; s/^ *- *\([^"# ][^ ]*\).*$/\1/p' || true)
+[ -n "$SENSITIVE_GLOBS" ] \
+  || echo "WARN [sensitive-paths-empty] no globs parsed from $POLICY — the deep hard floor is inactive" >&2
+
+# ── referee assets: never derive light; floor at standard (adapt the list to this project) ──
+REFEREE_RE='(^|/)(tests?|__tests__|spec)/|\.test\.|\.spec\.|^skills/e2e-test/journeys/|^skills/e2e-test/policy\.md$|^\.github/workflows/'
+DOCS_RE='\.(md|mdx|txt)$|^docs/|^README'
+# preset signals (canon: scoring-framework.md → How to use presets; adapt regexes to this stack)
+UI_RE='(^|/)(components|pages|views|screens|layouts|ui)/|\.(tsx|jsx|vue|svelte|css|scss)$|^apps/web/'
+DATA_RE='(^|/)(migrations|db|etl|pipelines|jobs|schemas?)/|\.sql$|^packages/db/'
+PRODUCT_RE='(^|/)product-context\.yaml$|^docs/(product|design|stories)/|story-map'
+
+DIFF_FILES=$(git diff --name-only "$BASE"...HEAD)
+[ -n "$DIFF_FILES" ] || { echo "REFUSING [empty-diff:$BASE...HEAD] — nothing to derive against" >&2; exit 1; }
+
+TIER=light SENSITIVE_HITS="" REFEREE=false DOCS_ONLY=true UI_N=0 DATA_N=0 PRODUCT_N=0
+while IFS= read -r f; do
+  echo "$f" | grep -Eq "$DOCS_RE" || DOCS_ONLY=false
+  echo "$f" | grep -Eq "$REFEREE_RE" && { REFEREE=true; DOCS_ONLY=false; }
+  echo "$f" | grep -Eq "$UI_RE" && UI_N=$((UI_N + 1))
+  echo "$f" | grep -Eq "$DATA_RE" && DATA_N=$((DATA_N + 1))
+  echo "$f" | grep -Eq "$PRODUCT_RE" && PRODUCT_N=$((PRODUCT_N + 1))
+  while IFS= read -r g; do
+    [ -n "$g" ] || continue
+    # shellcheck disable=SC2254
+    case "$f" in $g) SENSITIVE_HITS="$SENSITIVE_HITS$g "; TIER=deep ;; esac
+  done <<< "$SENSITIVE_GLOBS"
+done <<< "$DIFF_FILES"
+
+if [ "$TIER" != "deep" ]; then
+  if [ "$DOCS_ONLY" = true ]; then TIER=light; else TIER=standard; fi
+  [ "$REFEREE" = true ] && TIER=$(max_tier "$TIER" standard)   # referee assets never derive light
+fi
+TIER=$(max_tier "$TIER" "$PROVISIONAL")                        # binding only ratchets UP
+
+# ── scope drift: diff ∖ declared files_affected ≠ ∅ (canon: two-point derivation) ──
+SCOPE_DRIFT=false DRIFT_N=0 DECLARED=false
+if [ -n "$DECLARED_FILE" ] && [ -f "$DECLARED_FILE" ]; then
+  DECLARED=true
+  DECLARED_SET=$(grep -v '^[[:space:]]*\(#\|$\)' "$DECLARED_FILE" || true)
+  while IFS= read -r f; do
+    hit=false
+    while IFS= read -r g; do
+      [ -n "$g" ] || continue
+      # shellcheck disable=SC2254
+      case "$f" in $g | $g/*) hit=true ;; esac
+    done <<< "$DECLARED_SET"
+    [ "$hit" = false ] && { SCOPE_DRIFT=true; DRIFT_N=$((DRIFT_N + 1)); }
+  done <<< "$DIFF_FILES"
+else
+  # nothing declared ⇒ the whole diff is outside the declared scope; the fail-open
+  # provisional (deep) already prices this — the flag just records it honestly.
+  SCOPE_DRIFT=true; DRIFT_N=$(printf '%s\n' "$DIFF_FILES" | wc -l | tr -d ' ')
+fi
+
+# ── negative assertion delta: more test/Verify lines removed than added forces a round ──
+ADDED=$(git diff "$BASE"...HEAD -- '*test*' '*spec*' 'skills/e2e-test/journeys/*' 2>/dev/null \
+  | grep -c '^\+.*\(assert\|expect\|Verify\)' || true)
+REMOVED=$(git diff "$BASE"...HEAD -- '*test*' '*spec*' 'skills/e2e-test/journeys/*' 2>/dev/null \
+  | grep -c '^-.*\(assert\|expect\|Verify\)' || true)
+NEG_DELTA=false; [ "${REMOVED:-0}" -gt "${ADDED:-0}" ] && NEG_DELTA=true
+
+# ── preset + hard floors travel WITH the tier (one derivation, one artifact) ──
+# Full derivation-input → preset mapping (canon: scoring-framework.md → How to use presets).
+case "${BRIEF_MODULE_KIND:-}" in
+  ui) [ "$UI_N" -eq 0 ] && UI_N=1 ;;
+  data) [ "$DATA_N" -eq 0 ] && DATA_N=1 ;;
+  product) [ "$PRODUCT_N" -eq 0 ] && PRODUCT_N=1 ;;
+esac
+if [ -n "$SENSITIVE_HITS" ]; then
+  PRESET="security-sensitive"; FLOORS='{ "Security": 4, "Data Privacy": 4 }'
+elif [ "$UI_N" -gt 0 ] && [ "$DATA_N" -eq 0 ]; then
+  PRESET="ui-heavy"; FLOORS='{ "UX Quality": 3, "Visual Design": 3, "Completeness": 4 }'
+elif [ "$DATA_N" -gt 0 ] && [ "$UI_N" -eq 0 ]; then
+  PRESET="data-pipeline"; FLOORS='{ "Data Integrity": 4, "Completeness": 4 }'
+elif [ "$PRODUCT_N" -gt 0 ]; then
+  PRESET="product-design"; FLOORS='{ "Walking Skeleton Validity": 3, "Vision Alignment": 3, "INVEST Compliance": 3 }'
+else
+  # Genuinely mixed (or no signal at all) — named, never silent.
+  PRESET="mixed"; FLOORS='{}'
+  echo "NOTE [preset-mixed] signals ui=$UI_N data=$DATA_N product=$PRODUCT_N — no single preset dominates; mixed with default thresholds" >&2
+fi
+case "$TIER" in
+  light)    MAX_ROUNDS=0; EFFORT="none" ;;
+  standard) MAX_ROUNDS=2; EFFORT="default" ;;
+  deep)     MAX_ROUNDS=5; EFFORT="highest" ;;
+esac
+# A negative assertion delta always requires at least one evaluation round, whatever the tier.
+[ "$NEG_DELTA" = true ] && [ "$MAX_ROUNDS" -eq 0 ] && { MAX_ROUNDS=1; TIER=standard; EFFORT="default"; }
+
+cat > "$OUT" <<JSON
+{
+  "story_id": "$STORY_ID",
+  "derived_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "base_sha": "$(git rev-parse "$BASE")",
+  "tier": "$TIER",
+  "tier_provisional": "$PROVISIONAL",
+  "tier_escalated": false,
+  "scope_drift": $SCOPE_DRIFT,
+  "referee_assets_touched": $REFEREE,
+  "negative_assertion_delta": $NEG_DELTA,
+  "dimension_preset": "$PRESET",
+  "hard_floors": $FLOORS,
+  "max_rounds": $MAX_ROUNDS,
+  "evaluator_effort": "$EFFORT",
+  "inputs": {
+    "sensitive_paths_matched": [$(printf '%s' "$SENSITIVE_HITS" | tr ' ' '\n' | sed '/^$/d; s/.*/"&"/' | sort -u | paste -sd, -)],
+    "files_in_diff": $(printf '%s\n' "$DIFF_FILES" | wc -l | tr -d ' '),
+    "preset_signals": { "ui": $UI_N, "data": $DATA_N, "product": $PRODUCT_N },
+    "files_affected_declared": $DECLARED,
+    "scope_drift_files": $DRIFT_N
+  }
+}
+JSON
+
+echo "verification-recipe: tier=$TIER preset=$PRESET rounds=$MAX_ROUNDS drift=$SCOPE_DRIFT → $OUT"

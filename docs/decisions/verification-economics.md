@@ -12,7 +12,7 @@ of _orchestration_ behind mechanism; this one applies the same mechanical/judgme
 _verification itself_ — the routing, depth, and accounting of verification are mechanical; only the
 judging content stays judgment.
 
-> **Status:** Accepted; implementation in progress. The (3.1)/(3.2) tags below are the
+> **Status:** Accepted; implemented (v3.1.0 + v3.2.0, 2026-07-16). The (3.1)/(3.2) tags below were the
 > implementation PRs' review contract — **across two releases**: v3.1.0 ships the incident-proven
 > half (taxonomy, preflight, deterministic security gates, replay move, evaluator-independence
 > fixes, accounting instrumentation); v3.2.0 ships the economics half (tiers, recipes,

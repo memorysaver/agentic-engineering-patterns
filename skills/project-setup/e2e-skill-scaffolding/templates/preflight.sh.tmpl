@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Environment preflight — reference probe stubs ({{PROJECT_NAME}}).
+# Canon: the AEP gen-eval skill's references/verification-economics.md → Environment Preflight Gate.
+# Runs BEFORE any journey/dogfood spend. Every unmet REQUIRED precondition prints a named refusal
+# (REFUSING [tag:detail]) and the script exits 1 — `environment` by construction, zero scenarios
+# spent. Optional-capability absence prints SKIP and never blocks. Adapt the stubs; keep the tags.
+#
+#   bash skills/e2e-test/scripts/preflight.sh deploy-independent   # pre-merge, every story
+#   bash skills/e2e-test/scripts/preflight.sh target-bound         # where journey execution runs
+set -uo pipefail
+
+MODE="${1:?usage: preflight.sh <deploy-independent|target-bound>}"
+FAILED=0
+refuse() { echo "REFUSING [$1]"; FAILED=1; }
+skip()   { echo "SKIP [$1]"; }
+
+if [ "$MODE" = "deploy-independent" ]; then
+  # ── required secret NAMES present in CI config (names, never values) ──
+  # for NAME in {{REQUIRED_SECRET_NAMES}}; do
+  #   gh secret list --json name -q '.[].name' | grep -qx "$NAME" \
+  #     || refuse "dogfood-secret-absent:$NAME"
+  # done
+
+  # ── expected account fingerprint vs actual auth identity ──
+  # WANT="{{EXPECTED_ACCOUNT_FINGERPRINT}}"
+  # GOT=$(<deploy-cli> whoami 2>/dev/null | <extract-account-id>)
+  # [ "$GOT" = "$WANT" ] || refuse "auth-identity-mismatch:${GOT:-none}≠$WANT"
+
+  # ── env-var names wired in deploy config ──
+  # grep -q "{{REQUIRED_BINDING}}" wrangler.* || refuse "deploy-binding-missing:{{REQUIRED_BINDING}}"
+  :
+elif [ "$MODE" = "target-bound" ]; then
+  # Probe ONLY what this gate REQUIRES (live_policy: the optional live half of a
+  # non-milestone gate is NOT probed — its absence is SKIP, printed by the caller).
+
+  # ── target reachable ──
+  # curl -fsS --max-time 5 "$TARGET_URL" >/dev/null || refuse "target-unreachable:$TARGET_URL"
+
+  # ── fixtures seedable ──
+  # bash "$(dirname "$0")/seed.sh" || refuse "fixture-seed-failed:seed.sh"
+
+  # ── cli/tui vocabulary (dogfood_target: cli) ──
+  # command -v <provider-cli> >/dev/null || refuse "provider-cli-absent:<provider-cli>"
+  # <provider-cli> auth status >/dev/null 2>&1 || refuse "provider-auth-absent:<provider>"
+  :
+else
+  echo "unknown mode: $MODE" >&2; exit 2
+fi
+
+[ "$FAILED" -eq 0 ] && echo "preflight ($MODE): all required preconditions met"
+exit "$FAILED"

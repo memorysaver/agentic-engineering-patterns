@@ -130,8 +130,17 @@ skills/e2e-test/
 ├── tool-selection.md               ← templates/tool-selection.md.tmpl  (omit when E2E_TARGET == none)
 ├── layer-gate-evidence.template.md ← templates/layer-gate-evidence.md.tmpl
 └── scripts/
-    └── seed.sh                     ← templates/seed.sh.tmpl   (chmod +x)
+    ├── seed.sh                     ← templates/seed.sh.tmpl   (chmod +x)
+    ├── preflight.sh                ← templates/preflight.sh.tmpl   (chmod +x; probe stubs per policy.md)
+    └── derive-verification-recipe.sh ← templates/derive-verification-recipe.sh.tmpl (chmod +x)
 ```
+
+The last two are the **runnable reference implementation** of the verification-economics canon
+(`/aep-gen-eval` → `references/verification-economics.md`): `preflight.sh` realizes the named-refusal
+probe sets `policy.md` declares; `derive-verification-recipe.sh` is the binding tier derivation
+`/aep-build` Phase 5 runs to emit `.dev-workflow/verification-recipe.json`. Both are project-owned
+and meant to be adapted (precedent: `seed.sh`, `aep-scaffold`'s `audit.sh`/`converge.sh`) — AEP
+still ships no runtime.
 
 **Conditional on the policy** — `journeys/` + `tool-selection.md` are emitted for **every dogfoodable
 target**, including `cli` (its journeys carry `target: cli` and dogfood the built binary via bash). Skip
@@ -150,7 +159,8 @@ generated infrastructure docs, not hand-authored journeys) and tell the user. **
 silently overwritten** — read the existing one, re-confirm with the user (Phase 2), then update it.
 
 ```bash
-chmod +x skills/e2e-test/scripts/seed.sh
+chmod +x skills/e2e-test/scripts/seed.sh skills/e2e-test/scripts/preflight.sh \
+  skills/e2e-test/scripts/derive-verification-recipe.sh
 ```
 
 ---
@@ -217,7 +227,9 @@ green + every acceptance criterion proven + prior-layer journeys replay). See
 # Core files (always emitted):
 test -f skills/e2e-test/SKILL.md && test -f skills/e2e-test/policy.md \
   && test -f skills/e2e-test/layer-gate-evidence.template.md \
-  && test -x skills/e2e-test/scripts/seed.sh && echo "core files OK"
+  && test -x skills/e2e-test/scripts/seed.sh \
+  && test -x skills/e2e-test/scripts/preflight.sh \
+  && test -x skills/e2e-test/scripts/derive-verification-recipe.sh && echo "core files OK"
 # Journey tier (only when E2E_TARGET != none):
 if [ -d skills/e2e-test/journeys ]; then
   test -f skills/e2e-test/journeys/README.md && test -f skills/e2e-test/tool-selection.md \

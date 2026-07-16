@@ -54,7 +54,7 @@ per mode.
 | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `detect()`                  | Resolve host + native capabilities + pin, select a mode                                                                                                     |
 | `spawn(ws, branch, prompt)` | Start an implementation agent bound to the AEP worktree                                                                                                     |
-| `spawn_evaluator(ws, role)` | Start an evaluator agent (worktree-bound) in the mode's eval context                                                                                        |
+| `spawn_evaluator(ws, role)` | Start an evaluator agent (worktree-bound) in the mode's eval context; accepts an optional tier-derived **effort hint** (see backends.md)                    |
 | `nudge(ws, msg)`            | Send a mid-flight instruction _(steerable modes; pull-based under claude-bg)_                                                                               |
 | `liveness(ws)`              | Is the agent actively working? _(mode-specific signal + git-diff corroboration)_                                                                            |
 | `gate(ws)`                  | Surface a worker's human decision: `needs-human.md` + the mode's transport, answered hub-and-spoke through the main agent (block-in-place or gate-and-park) |

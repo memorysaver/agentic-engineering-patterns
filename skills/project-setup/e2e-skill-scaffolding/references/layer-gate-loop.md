@@ -75,7 +75,7 @@ Two placement rules keep the loop honest and affordable
   **tamper-evident class** — something the generator cannot modify: a CI run bound to the merged SHA
   (workflow definitions outside the stories' diff scope), a wrap-executed journey, read-only golden
   fixtures with a ledger-equality oracle, or production telemetry. A gate with no named evidence class
-  records a warning (one release of migration grace), then refuses.
+  **refuses the flip** (`REFUSING [evidence-class-missing:<layer>]`) and stays `scripted_passed`.
 - **Replay placement:** **full** prior-layer replay runs at the layer gate (plus a mid-layer checkpoint
   every `k = min(5, ⌈N/3⌉)` stories for large layers); per-story replay (`/aep-build` Phase 8) is
   **impacted-only + the walking-skeleton canary** — full-per-story replay is the O(layers × stories)

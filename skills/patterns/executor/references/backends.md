@@ -524,6 +524,18 @@ satisfied under every mode. The gen/eval separation (generator ≠ evaluator)
 and the rule that the main session never reads workspace code both still hold —
 only the spawn mechanism changes.
 
+**Evaluator-effort hint (all `spawn_evaluator()` recipes).** The spawn accepts an
+optional effort hint derived from the story's verification tier
+(`verification-recipe.json` → `evaluator_effort`; canon: `/aep-gen-eval` →
+`references/verification-economics.md`): `standard` → the session default;
+`deep` → the **highest evaluator effort the mode offers** (model/effort flags on
+`codex exec`, effort/model selection on a Task-subagent spawn, the priciest
+configured profile on legacy), and — where more than one model family is
+available — **prefer a different model family from the generator** (cross-family
+judging reduces correlated generator/judge blind spots). `light` never reaches
+these recipes (no evaluator is spawned). The hint is advisory per mode: a mode
+with one fixed evaluator profile ignores it without failing.
+
 **Codex caveat:** `spawn_agent` has no cwd parameter, so the codex-subagent
 binding is a directory contract hardened by the `aep-builder` role's
 `developer_instructions` (see `codex-native.md`). The contract stays inside the

@@ -13,6 +13,7 @@ on:
       - "scripts/check-skills-package.sh"
       - "scripts/test-scaffold-audit.sh"
       - "scripts/test-scaffold-converge.sh"
+      - "scripts/test-derive-recipe.sh"
       - ".github/workflows/skills-check.yml"
   pull_request:
     paths:
@@ -24,6 +25,7 @@ on:
       - "scripts/check-skills-package.sh"
       - "scripts/test-scaffold-audit.sh"
       - "scripts/test-scaffold-converge.sh"
+      - "scripts/test-derive-recipe.sh"
       - ".github/workflows/skills-check.yml"
 
 jobs:
@@ -46,6 +48,9 @@ jobs:
 
       - name: Scaffold audit regression fixtures
         run: bash scripts/test-scaffold-audit.sh
+
+      - name: Verification-recipe derivation fixtures
+        run: bash scripts/test-derive-recipe.sh
 
       # R7/R8 of docs/decisions/skill-authoring-standard.md: one corpus-wide
       # line budget for every SKILL.md — warn above 400, fail above 500.

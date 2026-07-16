@@ -13,27 +13,32 @@ Source: [Harness Design for Long-Running Application Development](https://www.an
 — evaluation is sequential (build first, then evaluate), which is why the evaluator is a
 Phase-5 spawn, not a launch-time one.
 
-## 1. Brainstorm project-specific criteria (at launch time)
+## 1. Assemble the criteria from the verification recipe (at launch time)
 
-Before the generator starts, brainstorm **project-specific** scoring criteria with the user
-and write them to `.dev-workflow/evaluator-criteria.md` (per-workspace) so they are ready when
-the generator reaches Phase 5. Read the dimension presets in /aep-gen-eval `scoring-framework.md`
-(Dimension Presets), then with the user decide which defaults (Completeness, Correctness, UX,
-Security, Code Quality) to **keep**, **drop**/de-weight, **add** (Originality, Accessibility,
-API Design, Performance, Data Integrity, …), or **weight heavily** (where the model tends to
-fall short). Ask:
+The criteria file is **recipe-derived, then optionally ratcheted up** — not a free-form
+brainstorm. Before the generator starts, read the dispatch brief's provisional verification tier
+and dimension preset (/aep-gen-eval `references/verification-economics.md` → The Verification
+Recipe; presets + floors in `scoring-framework.md`) and assemble
+`.dev-workflow/evaluator-criteria.md` (per-workspace) so it is ready when the generator reaches
+Phase 5:
+
+- **`light`** → stop: write no criteria file (Phase 5 self-reviews).
+- **`standard`** → the derived preset's dimensions, weights, and hard floors, with scale
+  definitions tailored to this feature.
+- **`deep`** → the derived preset with nothing de-weighted, plus the top-effort hint.
+
+**Interactive customization only ratchets up.** With the user (when one is present), you may
+**add** dimensions (Originality, Accessibility, API Design, Performance, Data Integrity, …),
+**raise** thresholds, or weight dimensions the model tends to fall short on — never drop a
+derived preset's hard-floor dimensions or lower a derived floor. Useful prompts:
 
 1. Which dimensions matter most for this specific feature?
 2. What does "good" look like — any concrete quality bars?
 3. Where have you seen mediocre output from the model before on similar work?
-4. Any hard failure conditions beyond the defaults?
+4. Any hard failure conditions beyond the derived ones?
 
-Write `.dev-workflow/evaluator-criteria.md` with the agreed dimensions + weights, scale
-definitions tailored to this feature, hard-failure thresholds, and few-shot examples adapted
-from the defaults.
-
-**Skip?** To move fast, fall back to the defaults in /aep-gen-eval `scoring-framework.md` — but
-task-specific calibration significantly improves evaluator judgment.
+Autonomous launches (no user at the prompt) write the derived criteria as-is — that is the
+deterministic policy; the recipe needs no brainstorm to be valid.
 
 ## 2. Per-mode spawn (pointer)
 
@@ -70,6 +75,8 @@ Never modify verification_steps in feature-verification.json.
 
 ## The loop (canonical elsewhere)
 
-The 5-round loop — generator writes `eval-request.md` → evaluator writes
-`eval-response-<N>.md` → generator fixes → repeat until pass (max 5 rounds) — is canonical in
-/aep-gen-eval `eval-protocol.md` and realized in /aep-build Phase 5. You do not run it here.
+The eval loop — generator writes `eval-request.md` → evaluator writes
+`eval-response-<N>.md` → generator fixes → repeat until pass, up to the **tier-derived round
+cap** (`light` 0 / `standard` 2 / `deep` 5, from `verification-recipe.json`; 5 with no recipe) —
+is canonical in /aep-gen-eval `eval-protocol.md` and realized in /aep-build Phase 5. You do not
+run it here.
