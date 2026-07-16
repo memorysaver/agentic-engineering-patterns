@@ -58,16 +58,12 @@ live_policy      : every_gate | milestone_gates_only | none  # which gates spend
 
 Globs that force the **`deep` verification tier** (`/aep-gen-eval` → `references/verification-economics.md`)
 whenever a story's diff touches them. This list is **human-owned**: the loop never edits it, and no
-calibration proposal may loosen it. Cover auth, payments, irreversible data operations, migrations, and
-deploy/CI config:
+calibration proposal may loosen it. Confirmed at scaffold (Phase 2) from a stack scan covering auth,
+payments, irreversible data operations, migrations, and deploy/CI config — one glob per line:
 
 ```yaml
 sensitive_paths:
-  - "**/auth/**"
-  - "**/payments/**"
-  - "**/migrations/**"
-  - ".github/workflows/**"
-  - "wrangler.*" # deploy config — adjust to this project's stack
+{{E2E_SENSITIVE_PATHS}}
 ```
 
 > **Referee assets** (test dirs, `journeys/**`, this file, CI workflow definitions) are guarded
@@ -89,8 +85,12 @@ half of a non-milestone gate is not probed; its absence stays **SKIP**).
 - **CLI/TUI vocabulary** (when `dogfood_target: cli`): provider auth present; provider reachable; PTY
   driver healthy; fixture repos creatable.
 
-List this project's probes here (probe → guarded precondition → refusal tag), next to the target they
-guard.
+This project's probes, confirmed at scaffold (Phase 2) — extend the table as new required preconditions
+appear:
+
+| Probe (command / check) | Guards (precondition) | Mode (`deploy-independent` / `target-bound`) | Refusal tag |
+| ----------------------- | --------------------- | -------------------------------------------- | ----------- |
+{{E2E_PREFLIGHT_PROBES}}
 
 ## Deterministic security gates (inner loop)
 

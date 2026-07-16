@@ -106,8 +106,10 @@ calibration) ships as v3.2.0.
   `**Failure-Class:**` line in the unified dogfood report
   (`executor/references/dogfood-validation.md`, `tool-selection.md.tmpl`);
   evaluator-authored `Failure-Class` in `eval-response-<N>.md`
-  (`eval-protocol.md`, `agent-contracts.md`); the `dogfood_report` adapter
-  routes on class and **never auto-files** non-product classes
+  (`eval-protocol.md`, `agent-contracts.md`); `failure_class` in
+  `status.json.failure_log` alongside `error_class` so autopilot can route
+  Build/CI FAILs (`launch/references/signals-spec.md`); the `dogfood_report`
+  adapter routes on class and **never auto-files** non-product classes
   (`_shared/references/telemetry-ingestion.md`); the recovery ladder's "When to
   Skip" is now the typed taxonomy step, mandatory at every FAIL
   (`recovery-ladder.md`, `build/SKILL.md` Phase 5).
@@ -130,8 +132,10 @@ calibration) ships as v3.2.0.
   `product-context-schema.yaml` comments, `map/SKILL.md`,
   `scaffold/references/resulting-structure.md`).
 - **`sensitive_paths`** — the human-owned deep-tier hard-floor list, seeded and
-  confirmed at scaffold (`policy.md.tmpl`), with the referee-asset rule (test
-  dirs / journeys / policy / CI never derive `light`).
+  confirmed at scaffold and rendered into `policy.md` via
+  `{{E2E_SENSITIVE_PATHS}}` / `{{E2E_PREFLIGHT_PROBES}}` (`policy.md.tmpl`),
+  with the referee-asset rule (test dirs / journeys / policy / CI never derive
+  `light`).
 - **Verification accounting instrumentation** — the `verification:` block in
   `execution-record.yaml` with a mandatory file-derivable sensor floor
   (tier/escalation/drift flags, generator/evaluator model ids, rounds,

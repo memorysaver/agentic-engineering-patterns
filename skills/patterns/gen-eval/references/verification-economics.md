@@ -68,14 +68,17 @@ A taxonomy that lives only in prose is the drift class `docs/decisions/determini
 
 ### `error_class` → `failure_class` default mapping
 
-Overridable with qualifying evidence (§3); the default is what routes when no evidence exists:
+The default is what routes when no evidence exists — and per Classification Authority (below), **no
+execution mechanic reduces spend on its own**. `timeout` / `context_overflow` only _nominate_
+`harness-flake`; they **route as `product-defect`** until wrap/`aep-reflect` ratifies the reproduction
+evidence (same-SHA passing re-run or quarantine membership), and only that ratification flips the class:
 
-| `error_class`      | Default `failure_class`      |
-| ------------------ | ---------------------------- |
-| `test_failure`     | `product-defect`             |
-| `timeout`          | `harness-flake`              |
-| `context_overflow` | `harness-flake`              |
-| `merge_conflict`   | sequencing → `/aep-dispatch` |
+| `error_class`      | Default `failure_class`                                      |
+| ------------------ | ------------------------------------------------------------ |
+| `test_failure`     | `product-defect`                                             |
+| `timeout`          | `product-defect` (`harness-flake` **candidate** — see below) |
+| `context_overflow` | `product-defect` (`harness-flake` **candidate** — see below) |
+| `merge_conflict`   | sequencing → `/aep-dispatch`                                 |
 
 ---
 
