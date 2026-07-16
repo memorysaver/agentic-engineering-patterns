@@ -71,12 +71,12 @@ against the `deployed:<url>` target _here_, after merge/deploy, which is what fl
    `scripted_passed`.
 5. **Record the layer budget box.** In `docs/layer-gates/<layer>.md`, record the
    layer's **actual** verification spend — eval rounds across stories, suite runs
-   - `suite_seconds`, journey scenarios, `cost_usd` where known — next to the
-     **expected** values. Expected values are **human-owned** (set at layer
-     planning or accepted from a distillation proposal — never authored by the loop
-     graded against them). **Cold start:** the first instrumented layer has no box
-     — record actuals only; those actuals plus a human-chosen margin become the
-     next layer's expected values.
+   and `suite_seconds`, journey scenarios, `cost_usd` where known — next to the
+   **expected** values. Expected values are **human-owned** (set at layer
+   planning or accepted from a distillation proposal — never authored by the loop
+   graded against them). **Cold start:** the first instrumented layer has no box
+   — record actuals only; those actuals plus a human-chosen margin become the
+   next layer's expected values.
 6. **Human-confirmed advance (observable).** Surface the coverage summary
    (`criteria_covered / criteria_total`, per-tier status, waivers) and get explicit
    user approval to begin the next layer's design. **Record that approval** (in the
