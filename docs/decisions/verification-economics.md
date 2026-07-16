@@ -252,6 +252,35 @@ between planning and merge:
 | **standard** (default) | **2** — one decisive fix-and-reverify cycle | session default   | impacted-surface journey + canary | focused; full once at land    |
 | **deep**               | up to 5 + full recovery ladder              | highest available | full journey + prior-layer replay | full pre-eval **and** at land |
 
+**The derivation outputs a recipe, not just a depth.** The scoring framework already carries the
+other half of verification cost: _which dimensions_ the evaluator scores
+(`scoring-framework.md` → Dimension Presets — UI-heavy, API-only, Security-sensitive, Data
+pipeline, Mixed) and _which dimension-level hard floors_ apply (e.g. the Security-sensitive
+preset's `Security < 4` fail). Today preset selection is an interactive judgment at launch — made
+from the **same signals the tier derives from**, but independently, so a `sensitive_paths` story
+can derive `deep` while its evaluator runs the Mixed preset without the Security hard floor. The
+derivation therefore emits one **verification recipe** — tier + dimension preset + dimension hard
+floors — from one set of inputs:
+
+- `sensitive_paths` match → **Security-sensitive preset**, and its `Security ≥ 4` /
+  `Data Privacy ≥ 4` floors become part of the tier hard floor — they survive any customization;
+- `ui`-kind module / `calibration_type` in {visual-design, ux-flow} / `object_model_refs` →
+  **UI-heavy preset**, and only these stories pay for **Visual Design** — the most expensive
+  dimension (screenshot capture + multimodal evaluation). Dimension cost follows the shipped
+  surface, never habit;
+- data/migration paths → **Data pipeline preset** (Data Integrity floor);
+- story-map / product-context artifacts (walking-skeleton design) → the **Product & Design
+  dimensions**;
+- otherwise → **Mixed** with default thresholds.
+
+Customization keeps the ratchet direction: launch or the human may **add** dimensions or raise
+thresholds, never drop a derived preset's hard-floor dimensions — the same
+tamper-resistance rule as the tier binding. Per tier: `light` scores no dimensions (self-review);
+`standard` runs the derived preset; `deep` runs it with no de-weighted dimensions. The framework's
+existing advice — _"weight dimensions toward areas where the model falls short"_ — becomes
+data-driven through the accounting below: findings and escapes are attributable per dimension, so
+calibration can propose re-weighting from evidence instead of intuition.
+
 **How the tier travels the trigger path.** Gen-eval is not self-triggering — it is configured down
 the chain autopilot → dispatch → launch → build, and the tier must ride that exact chain or it
 governs nothing:
@@ -312,6 +341,7 @@ verification:
   scope_drift: true | false # binding diff left the declared files_affected
   eval_rounds: <n> | null # from signals/eval-response-*.md count
   findings_by_round: [<n>, ...] | null # blocking+important per round; needs per-round persistence
+  finding_dimensions: [<dimension>, ...] | null # dimensions breached across rounds; feeds dimension re-weighting
   journey_scenarios_run: <n> | null # from the dogfood report
   preflight_refusals: [] # named tags, if any; [] when preflight passed
   cost_usd: <n> | null # verification share when separable
@@ -436,16 +466,22 @@ no new required schema fields:**
    persistence. `recovery-ladder.md` (`:3`, `:25-31`, `:59-67`): the second `max_rounds` copy; rungs
    re-keyed relative to the tier cap; "When to Skip the Ladder" reframed as the typed taxonomy step
    with the class mapping. `scoring-framework.md`: zero-blocking threshold semantics; perfect-score
-   gates named as an anti-pattern.
+   gates named as an anti-pattern; the Customization Guide's preset-selection step becomes
+   **recipe-derived** (the derivation-inputs → preset + hard-floor mapping from § Design 2), with
+   the ratchet rule — customization adds dimensions or raises thresholds, never drops a derived
+   hard floor.
 6. **`skills/agentic-development-workflow/launch/`** — `SKILL.md` "Optional: Evaluator (Full
-   Mode)" (`:199-205`): evaluator existence, criteria, and effort become **tier-derived from the
-   dispatch brief** (light → no criteria file; standard → preset criteria; deep → tailored criteria
-   - top effort) — this replaces the workflow-modes full/light heuristics as launch's decision
-     rule and gives autonomous launches a deterministic criteria policy.
-     `references/evaluator.md` (`:73-74`): the third `max_rounds` copy goes tier-derived; the
-     criteria-brainstorm step notes the autonomous fallback per tier.
-     `references/signals-spec.md`: `status.json` gains `verification_tier`, `tier_escalated`, and
-     latest-FAIL `failure_class` — the fields autopilot's tier-aware monitoring reads.
+   Mode)" (`:199-205`): evaluator existence, criteria, and effort become **recipe-derived from the
+   dispatch brief** (light → no criteria file; standard → the derived dimension preset; deep →
+   the derived preset with nothing de-weighted, at top effort) — this replaces the workflow-modes
+   full/light heuristics as launch's decision rule and gives autonomous launches a deterministic
+   criteria policy.
+   `references/evaluator.md` (`:73-74`): the third `max_rounds` copy goes tier-derived; the
+   criteria-brainstorm step assembles `.dev-workflow/evaluator-criteria.md` from the derived
+   recipe, and interactive customization only ratchets up (add dimensions / raise thresholds,
+   never drop derived hard floors).
+   `references/signals-spec.md`: `status.json` gains `verification_tier`, `tier_escalated`, and
+   latest-FAIL `failure_class` — the fields autopilot's tier-aware monitoring reads.
 7. **`skills/agentic-development-workflow/wrap/references/`** — `convergence.md` (`:70-88`): the
    `verification:` block. `layer-advance.md`: full replay + mid-layer checkpoint policy + budget box
    - evidence-class check before flipping `passed`.
@@ -471,7 +507,8 @@ no new required schema fields:**
     guard report; `live_policy` governs the guard's live half.
 11. **`skills/agentic-development-workflow/design/references/workflow-modes.md`** — Light mode's
     eval-loop behavior subsumed into `verification_tier: light`.
-12. **`docs/glossary.md`** — new entries: **Verification Tier**, **Failure Class (Failure
+12. **`docs/glossary.md`** — new entries: **Verification Tier**, **Verification Recipe** (tier +
+    dimension preset + dimension hard floors, one derivation), **Failure Class (Failure
     Taxonomy)**, **Classification Authority**, **Environment Preflight Gate**, **Verification
     Accounting**, **Escape Rate**, **Tamper-Evident Evidence**, **Verification Ratchet**
     (anti-pattern), **Perfect-Score Gate** (anti-pattern) — the Verification Tier entry
