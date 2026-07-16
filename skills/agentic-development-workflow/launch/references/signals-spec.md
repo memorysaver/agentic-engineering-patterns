@@ -74,29 +74,34 @@ MODE=$(cat "$(git rev-parse --show-toplevel)/.dev-workflow/signals/mode" 2>/dev/
   "started_at": "2026-03-25T10:00:00Z",
   "blockers": [],
   "completion_pct": 40,
+  "verification_tier": "standard",
+  "tier_escalated": false,
   "last_updated": "2026-03-25T11:30:00Z"
 }
 ```
 
 **Fields:**
 
-| Field            | Type         | Description                                                                                                                                     |
-| ---------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `phase`          | number       | Current phase number (0–13)                                                                                                                     |
-| `phase_name`     | string       | Human-readable phase name                                                                                                                       |
-| `task_current`   | string       | Current task being worked on (Phase 4 only)                                                                                                     |
-| `task_index`     | number       | 1-based index of current task                                                                                                                   |
-| `task_total`     | number       | Total number of tasks                                                                                                                           |
-| `started_at`     | string       | ISO 8601 timestamp of phase start                                                                                                               |
-| `blockers`       | string[]     | List of blockers preventing progress                                                                                                            |
-| `completion_pct` | number       | Estimated completion percentage (0–100)                                                                                                         |
-| `last_updated`   | string       | ISO 8601 timestamp of last update                                                                                                               |
-| `story_status`   | string       | Story state for `/aep-dispatch` sync: `"in_progress"`, `"in_review"`, `"completed"`, `"failed"`                                                 |
-| `pr_url`         | string       | PR URL once created (Phase 10+)                                                                                                                 |
-| `cost_usd`       | number       | Accumulated cost estimate for this story                                                                                                        |
-| `completed_at`   | string       | ISO 8601 timestamp when story completed (Phase 12)                                                                                              |
-| `failure_log`    | object       | Structured failure record (Phase 12 failure only) — `error_class`, `approach_summary`, `failure_point`, `root_cause`, `unexplored_alternatives` |
-| `blocked_on`     | string\|null | `"human"` while the worker waits on a human decision (paired with a `needs-human.md` entry); null otherwise                                     |
+| Field               | Type         | Description                                                                                                                                                                                                                                                             |
+| ------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `phase`             | number       | Current phase number (0–13)                                                                                                                                                                                                                                             |
+| `phase_name`        | string       | Human-readable phase name                                                                                                                                                                                                                                               |
+| `task_current`      | string       | Current task being worked on (Phase 4 only)                                                                                                                                                                                                                             |
+| `task_index`        | number       | 1-based index of current task                                                                                                                                                                                                                                           |
+| `task_total`        | number       | Total number of tasks                                                                                                                                                                                                                                                   |
+| `started_at`        | string       | ISO 8601 timestamp of phase start                                                                                                                                                                                                                                       |
+| `blockers`          | string[]     | List of blockers preventing progress                                                                                                                                                                                                                                    |
+| `completion_pct`    | number       | Estimated completion percentage (0–100)                                                                                                                                                                                                                                 |
+| `last_updated`      | string       | ISO 8601 timestamp of last update                                                                                                                                                                                                                                       |
+| `story_status`      | string       | Story state for `/aep-dispatch` sync: `"in_progress"`, `"in_review"`, `"completed"`, `"failed"`                                                                                                                                                                         |
+| `pr_url`            | string       | PR URL once created (Phase 10+)                                                                                                                                                                                                                                         |
+| `cost_usd`          | number       | Accumulated cost estimate for this story                                                                                                                                                                                                                                |
+| `completed_at`      | string       | ISO 8601 timestamp when story completed (Phase 12)                                                                                                                                                                                                                      |
+| `failure_log`       | object       | Structured failure record (Phase 12 failure only) — `error_class`, `approach_summary`, `failure_point`, `root_cause`, `unexplored_alternatives`, and `failure_class` (the routing layer above `error_class`: `product-defect \| environment \| harness-flake \| scope`) |
+| `blocked_on`        | string\|null | `"human"` while the worker waits on a human decision (paired with a `needs-human.md` entry); null otherwise                                                                                                                                                             |
+| `verification_tier` | string\|null | `light` \| `standard` \| `deep` — published from `verification-recipe.json` at Phase 5 entry (binding derivation); null before then. What the autopilot's tier-aware ④b nudges read.                                                                                    |
+| `tier_escalated`    | boolean      | True once the cap-exhaustion `standard → deep` auto-escalation has fired — the autopilot's `eval_not_converging` waits for the escalated cap too                                                                                                                        |
+| `failure_class`     | string\|null | The latest FAIL's failure class (evaluator-authored; `/aep-gen-eval` references/verification-economics.md) — lets the orchestrator distinguish an environment refusal from a product defect without reading workspace files                                             |
 
 > **Concurrency protocol:** These story-tracking fields replace direct writes to `product-context.yaml`. The main session (via `/aep-wrap` and `/aep-dispatch` signal sync) reads these fields and updates the YAML. Workspace agents must never write to `product-context.yaml`.
 

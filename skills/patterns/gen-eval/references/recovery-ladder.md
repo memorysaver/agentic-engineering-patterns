@@ -1,6 +1,6 @@
 # Change-Strategy Recovery Ladder
 
-When the Phase 5 gen/eval loop FAILs, the default behavior is for the **same generator to retry the same way** — fix the FAIL items, re-request evaluation, repeat. After `max_rounds` (default 5) it escalates to a human. The failure mode this guards against is **strategy stagnation**: the generator keeps applying the approach that already failed, burning rounds without exploring a genuinely different path.
+When the Phase 5 gen/eval loop FAILs, the default behavior is for the **same generator to retry the same way** — fix the FAIL items, re-request evaluation, repeat. After `max_rounds` (tier-derived — `light` 0 / `standard` 2 / `deep` 5, from `verification-recipe.json`; default 5 with no recipe) it escalates to a human. The failure mode this guards against is **strategy stagnation**: the generator keeps applying the approach that already failed, burning rounds without exploring a genuinely different path.
 
 > **The taxonomy step comes first — at every FAIL, before choosing a rung.** The ladder is repair machinery for `product-defect` findings only. Classify each FAIL finding per `verification-economics.md` → Failure Taxonomy (evaluator-authored, evidence-gated): `environment` → ops checklist, zero rounds spent; `harness-flake` → quarantine + harness story; `scope` → `/aep-reflect` re-slicing; unbuilt in-repo dependency → `/aep-dispatch` re-ordering. Only `product-defect` climbs.
 
@@ -22,7 +22,7 @@ This reference defines an escalating recovery ladder. Each rung tries something 
 
 ## The Ladder
 
-Round numbers are tunable per project; the **shape** is what matters — each rung is a strictly larger change of strategy than the one below it.
+Round numbers are tunable per project; the **shape** is what matters — each rung is a strictly larger change of strategy than the one below it. **Rungs key to position relative to the tier's round cap, not absolute round numbers**: under `standard` (cap 2), exhausting the cap on a genuine `product-defect` auto-escalates the story once to `deep` (`tier_escalated: true`) and the ladder continues from where it left off — round 3 of the escalated story is the re-ground rung, exactly as below. The absolute numbers below are the `deep` / no-recipe (cap 5) rendering.
 
 | Eval round | Rung                   | Strategy                                                                                                                                |
 | ---------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |

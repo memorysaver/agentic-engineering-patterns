@@ -30,6 +30,17 @@ brief: `git checkout -B story/<id> <sha>`. Never let an agent recall or re-type 
 base. See `/aep-autopilot` `references/deterministic-orchestration.md` →
 Machine-assembled dispatch briefs.
 
+## The STEP-0 brief carries the verification tier
+
+Workflow mode bypasses `/aep-launch` entirely, so the tier cannot ride the criteria file — the
+STEP-0 brief carries each story's **provisional verification tier** (from
+`references/context-assembly.md`; grouped stories take the max), and the workflow's **verify
+stage — that mode's evaluator — honors the tier's round cap and dimension preset**
+(`/aep-gen-eval` → `references/verification-economics.md`): `light` → self-review only,
+`standard` → one decisive fix-and-reverify cycle against the derived preset, `deep` → the full
+cap at top effort. The build stage still runs the binding re-derivation at its Phase 5 entry;
+the verify stage reads the resulting `verification-recipe.json` from the story's worktree.
+
 ## WIP limit still applies
 
 Workflow mode does not exempt the wave from the WIP cap: each workflow agent still

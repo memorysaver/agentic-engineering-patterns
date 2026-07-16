@@ -76,7 +76,11 @@ against the `deployed:<url>` target _here_, after merge/deploy, which is what fl
    planning or accepted from a distillation proposal — never authored by the loop
    graded against them). **Cold start:** the first instrumented layer has no box
    — record actuals only; those actuals plus a human-chosen margin become the
-   next layer's expected values.
+   next layer's expected values. **Overrun surfacing:** when actuals exceed the
+   box, surface a **scope-vs-verification tradeoff to the human at the
+   layer-advance gate** (step 6) — "this layer spent N× its verification budget;
+   loosen derivation (via a distillation proposal), re-slice scope, or accept
+   and raise the box?" The loop asks; it never silently grinds.
 6. **Human-confirmed advance (observable).** Surface the coverage summary
    (`criteria_covered / criteria_total`, per-tier status, waivers) and get explicit
    user approval to begin the next layer's design. **Record that approval** (in the

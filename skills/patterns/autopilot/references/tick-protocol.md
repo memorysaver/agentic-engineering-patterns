@@ -187,6 +187,8 @@ gh pr view <number> --json state --jq '.state'
 - `skip_human_eval: backend` → skip the quality gate for stories in non-UI modules (check `story.activity` — if null or infrastructure, skip). UI stories still require eval.
 - `skip_human_eval: none` (default) → apply the full quality gate below
 
+**Then read the workspace's published tier** (`status.json` → `verification_tier` — the only thing autopilot may read; null = no recipe yet = treat as `deep` fail-open). **The nudge must match the tier**: a `light` workspace is nudged to **self-review** ("Run Phase 5 self-review per the build skill light path; document findings in .dev-workflow/code-review-<feature>.md") — never to spawn an evaluator it has no criteria file for. `standard`/`deep` workspaces get the evaluator nudges below.
+
 Check whether a passing evaluation exists:
 
 ```bash
@@ -236,10 +238,10 @@ executor.nudge(<workspace-name>,
 
 ```
 executor.nudge(<workspace-name>,
-  "Code has changed since your last evaluation. Re-run Phase 5 code review on the current state before proceeding with the PR. Write a new eval-request.md and spawn a fresh evaluator.")
+  "Code has changed since your last evaluation. Re-run the Phase 5 binding tier derivation on the updated diff — a drift into sensitive_paths upgrades your tier — then re-run Phase 5 code review at the (possibly upgraded) tier before proceeding with the PR. Write a new eval-request.md and spawn a fresh evaluator.")
 ```
 
-**Escalation:** No eval-response after 6 ticks (30 min) post-trigger → before escalating, the workspace must climb the **recovery ladder** (`/aep-gen-eval` `references/recovery-ladder.md`): nudge it to work the ladder's rungs (re-scope, decompose, relax non-essential criteria, etc.) first. Only emit the `"eval_not_converging"` escalation **after the ladder is exhausted** — i.e. the workspace has reported the ladder spent without a PASS.
+**Escalation is tier-derived:** No eval-response after 6 ticks (30 min) post-trigger → before escalating, the workspace must climb the **recovery ladder** (`/aep-gen-eval` `references/recovery-ladder.md`): nudge it to work the ladder's rungs (re-scope, decompose, relax non-essential criteria, etc.) first. Emit the `"eval_not_converging"` escalation only after the **published tier's round cap AND the automatic `standard → deep` escalation have both been spent** (read `verification_tier` + `tier_escalated` from `status.json`: a `standard` workspace that exhausted 2 rounds is not stuck — it auto-escalates to `deep` and keeps climbing; only a `deep` — or escalated — workspace with its ladder spent escalates to the human).
 
 ### Sub-step ④c: Guide to Merge
 

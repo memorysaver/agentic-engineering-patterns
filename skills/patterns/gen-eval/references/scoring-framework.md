@@ -404,9 +404,25 @@ These are common evaluator failure modes — watch for them:
 
 ### How to use presets
 
+**In the build workflow, preset selection is recipe-derived, not an independent judgment.** The verification-tier derivation (`verification-economics.md`) emits one **verification recipe** — tier + dimension preset + dimension hard floors — from one input set, so depth and rubric never decouple:
+
+| Derivation input                                                                        | Preset                                                                                           |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `sensitive_paths` match                                                                 | **Security-sensitive** (its `Security ≥ 4` / `Data Privacy ≥ 4` floors join the tier hard floor) |
+| `ui`-kind module / `calibration_type` in {visual-design, ux-flow} / `object_model_refs` | **UI-heavy** (only these stories pay for Visual Design — the most expensive dimension)           |
+| data/migration paths                                                                    | **Data pipeline** (Data Integrity floor)                                                         |
+| story-map / product-context artifacts                                                   | **Product & Design dimensions**                                                                  |
+| otherwise                                                                               | **Mixed** with default thresholds                                                                |
+
+Per tier: `light` scores no dimensions (self-review); `standard` runs the derived preset; `deep` runs it with no de-weighted dimensions, preferring a different model family from the generator where available.
+
+**Customization only ratchets up:** the user (or launch) may **add** dimensions or **raise** thresholds — never drop a derived preset's hard-floor dimensions or lower a derived floor. Same tamper-resistance rule as the tier binding.
+
+For **ad-hoc validation** (no recipe — `/aep-validate`, standalone gen/eval):
+
 1. During evaluator setup, identify the artifact type
 2. Select the matching preset from the dimension presets section
-3. Present to the user for customization
+3. Present to the user for customization (ratchet-up rule still applies to hard floors)
 4. Write the final criteria to `.dev-workflow/evaluator-criteria.md` (for workspace evaluation) or use directly in agent prompts (for ad-hoc validation)
 5. The evaluator reads the per-workspace file instead of this default reference
 

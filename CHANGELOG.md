@@ -17,6 +17,73 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 > `/envision`, `/dispatch`, `/reflect`, …), which records product-state history
 > for that project. See [`docs/glossary.md`](docs/glossary.md).
 
+## [3.2.0] - 2026-07-16
+
+The economics half of
+[`docs/decisions/verification-economics.md`](docs/decisions/verification-economics.md)
+(P3 + P4): risk-tiered verification depth, the verification recipe, and the
+dampened calibration loop. Authored back-to-back with v3.1.0 by owner decision;
+the ≥2-layers field-data gate becomes a **downstream activation gate** — the
+calibration loop stays record-only/proposal-only in a consumer until that
+consumer has ≥2 layers of accounting data.
+
+### Added
+
+- **Two-point tier derivation** — `/aep-dispatch` computes a provisional
+  `verification_tier` from plan fields into the machine-assembled brief
+  (grouped changes take the max; `dispatch/references/context-assembly.md`);
+  `/aep-build` Phase 5 entry re-derives **bindingly from the actual diff**,
+  emits `.dev-workflow/verification-recipe.json`, and **refuses to start
+  without it** — tier only ratchets up, `scope_drift` recorded, referee-asset
+  floor + negative-assertion-delta rule applied (`build/SKILL.md`).
+- **Tier-capped evaluation** — `max_rounds` is tier-derived (`light` 0 /
+  `standard` 2 / `deep` 5; 5 with no recipe) with defined cap exhaustion:
+  `standard` auto-escalates once to `deep` (`tier_escalated: true`) and the
+  recovery-ladder rungs re-key to position past the cap (`eval-protocol.md`,
+  `recovery-ladder.md`, `build/SKILL.md` Phase 5). `deep` stories replay the
+  full prior-layer journey set per story (Phase 8 exception); Phase 12 re-runs
+  the derivation on post-eval commits (sensitive-path drift ⇒ one fresh round
+  at the upgraded tier).
+- **Recipe-derived evaluator setup** — `/aep-launch` derives evaluator
+  existence, criteria, and effort from the brief's tier (`light` → no criteria
+  file; `standard` → derived preset; `deep` → nothing de-weighted at top
+  effort), replacing the workflow-modes full/light heuristics as launch's
+  decision rule and giving autonomous launches a deterministic criteria policy
+  (`launch/SKILL.md`, `references/evaluator.md`);
+  `scoring-framework.md`'s preset selection becomes recipe-derived with the
+  ratchet-up-only customization rule; `executor.spawn_evaluator()` accepts a
+  tier-derived effort hint (`deep` → highest available, preferring a different
+  model family from the generator; `executor/references/backends.md`).
+- **Tier-aware signals + autopilot** — `status.json` gains
+  `verification_tier`, `tier_escalated`, and latest-FAIL `failure_class`
+  (`launch/references/signals-spec.md`); autopilot ④b nudges match the
+  published tier (a `light` workspace is nudged to self-review, never to spawn)
+  and `eval_not_converging` fires only after the published cap **plus** the
+  automatic `standard → deep` escalation are spent; the stale-eval nudge
+  carries the sensitive-path-drift upgrade (`tick-protocol.md`). Dynamic
+  Workflow batches carry the tier in the STEP-0 brief and the verify stage
+  honors the cap (`dispatch/references/workflow-mode.md`).
+- **Runnable reference implementation** — the generated e2e skill ships
+  `scripts/derive-verification-recipe.sh` (binding derivation + recipe
+  emission) and `scripts/preflight.sh` (named-refusal probe stubs), both
+  project-owned templates (`e2e-skill-scaffolding`); AEP still ships no
+  runtime.
+- **Dampened calibration** — layer distillation may propose tier-derivation
+  loosening/tightening and journey retirement under the dampers (≥2 layers of
+  `findings_by_round` + zero unresolved escapes, one notch per layer, the
+  `sensitive_paths` floor never loosenable, proposals conditioned on model
+  version; `wrap/references/convergence.md`); the layer budget box surfaces
+  overruns as a scope-vs-verification question at the layer-advance gate
+  (`layer-advance.md`).
+
+### Changed
+
+- **Light mode subsumption** — design-time Light mode's eval-loop behavior
+  selects `verification_tier: light` instead of carrying its own toggle; the
+  full/light selection signals become inputs to the dispatch-time derivation
+  (`design/references/workflow-modes.md`), collapsing the repo's three "light"
+  senses into the one glossary-defined term.
+
 ## [3.1.0] - 2026-07-16
 
 The incident-proven half of

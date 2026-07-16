@@ -234,7 +234,7 @@ The commit happens BEFORE the workspace is created. Two consecutive `/aep-dispat
 
 For each dispatched story, create the OpenSpec change `openspec/changes/<story-id>/` — `proposal.md`, `design.md`, `specs/<module>.md`, `tasks.md`, and a `.context/` package (`stable-prefix.md`, `dependencies.md`, `retrieval.md`). Always create the OpenSpec change, even for a well-specified story — the `.context/` directory is what the agent reads.
 
-Assemble the handoff package per `references/context-assembly.md`, pruned to the role's token budget from topology.
+Assemble the handoff package per `references/context-assembly.md`, pruned to the role's token budget from topology. The package carries the story's **provisional verification tier** (derivation in context-assembly.md); the **binding** re-derivation is build-owned — `/aep-build` runs it at Phase 5 entry from the actual diff, and the tier only ratchets up.
 
 **Dispatch-blocking gates in assembly:** calibrated stories (`calibration_type` set, or `.5` alignment layers — concept canonical in `/aep-map` `references/alignment-layers.md`) require `calibration/<type>.yaml` to exist — else route to `/aep-calibrate`. UI-facing stories (`object_model_refs`, `calibration_type` in {visual-design, ux-flow}, or a `ui`-kind module) require an `approved` Object Map that covers the story — else route to `/aep-model`. Both gates are detailed in `references/context-assembly.md`; if either fails, **do not dispatch**.
 

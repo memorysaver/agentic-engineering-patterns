@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# Verification-recipe derivation — reference implementation ({{PROJECT_NAME}}).
+# Canon: the AEP gen-eval skill's references/verification-economics.md. This script is the
+# project-owned, ADAPTABLE realization (precedent: seed.sh); AEP ships no runtime.
+#
+# Emits .dev-workflow/verification-recipe.json from the ACTUAL diff — the binding derivation
+# /aep-build runs at Phase 5 entry, BEFORE any evaluation round spends the cap.
+#
+#   bash skills/e2e-test/scripts/derive-verification-recipe.sh <BASE> <story-id> [provisional-tier]
+#
+#   BASE              integration-branch ref the diff is computed against (resolved by the caller)
+#   provisional-tier  tier from the dispatch brief (light|standard|deep); binding only ratchets UP
+set -euo pipefail
+
+BASE="${1:?usage: derive-verification-recipe.sh <BASE> <story-id> [provisional-tier]}"
+STORY_ID="${2:?story id required}"
+PROVISIONAL="${3:-standard}"
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+POLICY="$REPO_ROOT/skills/e2e-test/policy.md"
+OUT="$REPO_ROOT/.dev-workflow/verification-recipe.json"
+mkdir -p "$REPO_ROOT/.dev-workflow"
+
+rank() { case "$1" in light) echo 0 ;; standard) echo 1 ;; deep) echo 2 ;; *) echo 2 ;; esac; }
+name() { case "$1" in 0) echo light ;; 1) echo standard ;; *) echo deep ;; esac; }
+max_tier() { [ "$(rank "$1")" -ge "$(rank "$2")" ] && echo "$1" || echo "$2"; }
+
+# ── sensitive_paths: the human-owned deep-tier hard floor, read from policy.md's yaml block ──
+SENSITIVE_GLOBS=$(awk '/^sensitive_paths:/,/^[^ -]/' "$POLICY" 2>/dev/null \
+  | sed -n 's/^ *- *"\{0,1\}\([^"]*\)"\{0,1\} *$/\1/p' || true)
+
+# ── referee assets: never derive light; floor at standard (adapt the list to this project) ──
+REFEREE_RE='(^|/)(tests?|__tests__|spec)/|\.test\.|\.spec\.|^skills/e2e-test/journeys/|^skills/e2e-test/policy\.md$|^\.github/workflows/'
+DOCS_RE='\.(md|mdx|txt)$|^docs/|^README'
+
+DIFF_FILES=$(git diff --name-only "$BASE"...HEAD)
+[ -n "$DIFF_FILES" ] || { echo "REFUSING [empty-diff:$BASE...HEAD] — nothing to derive against" >&2; exit 1; }
+
+TIER=light SENSITIVE_HITS="" REFEREE=false DOCS_ONLY=true
+while IFS= read -r f; do
+  echo "$f" | grep -Eq "$DOCS_RE" || DOCS_ONLY=false
+  echo "$f" | grep -Eq "$REFEREE_RE" && { REFEREE=true; DOCS_ONLY=false; }
+  while IFS= read -r g; do
+    [ -n "$g" ] || continue
+    # shellcheck disable=SC2254
+    case "$f" in $g) SENSITIVE_HITS="$SENSITIVE_HITS$g "; TIER=deep ;; esac
+  done <<< "$SENSITIVE_GLOBS"
+done <<< "$DIFF_FILES"
+
+if [ "$TIER" != "deep" ]; then
+  if [ "$DOCS_ONLY" = true ]; then TIER=light; else TIER=standard; fi
+  [ "$REFEREE" = true ] && TIER=$(max_tier "$TIER" standard)   # referee assets never derive light
+fi
+TIER=$(max_tier "$TIER" "$PROVISIONAL")                        # binding only ratchets UP
+
+# ── negative assertion delta: more test/Verify lines removed than added forces a round ──
+ADDED=$(git diff "$BASE"...HEAD -- '*test*' '*spec*' 'skills/e2e-test/journeys/*' 2>/dev/null \
+  | grep -c '^\+.*\(assert\|expect\|Verify\)' || true)
+REMOVED=$(git diff "$BASE"...HEAD -- '*test*' '*spec*' 'skills/e2e-test/journeys/*' 2>/dev/null \
+  | grep -c '^-.*\(assert\|expect\|Verify\)' || true)
+NEG_DELTA=false; [ "${REMOVED:-0}" -gt "${ADDED:-0}" ] && NEG_DELTA=true
+
+# ── recipe: preset + hard floors travel WITH the tier (one derivation, one artifact) ──
+# Adapt the preset routing to this project's modules (canon: scoring-framework.md presets).
+if [ -n "$SENSITIVE_HITS" ]; then PRESET="security-sensitive"; FLOORS='{ "Security": 4, "Data Privacy": 4 }'
+else PRESET="mixed"; FLOORS='{}'; fi
+case "$TIER" in
+  light)    MAX_ROUNDS=0; EFFORT="none" ;;
+  standard) MAX_ROUNDS=2; EFFORT="default" ;;
+  deep)     MAX_ROUNDS=5; EFFORT="highest" ;;
+esac
+# A negative assertion delta always requires at least one evaluation round, whatever the tier.
+[ "$NEG_DELTA" = true ] && [ "$MAX_ROUNDS" -eq 0 ] && { MAX_ROUNDS=1; TIER=standard; PRESET="${PRESET}"; EFFORT="default"; }
+
+SCOPE_DRIFT=false  # optional: compare $DIFF_FILES against the brief's declared files_affected
+
+cat > "$OUT" <<JSON
+{
+  "story_id": "$STORY_ID",
+  "derived_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "base_sha": "$(git rev-parse "$BASE")",
+  "tier": "$TIER",
+  "tier_provisional": "$PROVISIONAL",
+  "tier_escalated": false,
+  "scope_drift": $SCOPE_DRIFT,
+  "referee_assets_touched": $REFEREE,
+  "negative_assertion_delta": $NEG_DELTA,
+  "dimension_preset": "$PRESET",
+  "hard_floors": $FLOORS,
+  "max_rounds": $MAX_ROUNDS,
+  "evaluator_effort": "$EFFORT",
+  "inputs": {
+    "sensitive_paths_matched": [$(printf '%s\n' $SENSITIVE_HITS | sort -u | sed 's/.*/"&"/' | paste -sd, -)],
+    "files_in_diff": $(printf '%s\n' "$DIFF_FILES" | wc -l | tr -d ' ')
+  }
+}
+JSON
+
+echo "verification-recipe: tier=$TIER preset=$PRESET rounds=$MAX_ROUNDS → $OUT"

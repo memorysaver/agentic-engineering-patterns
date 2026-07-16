@@ -119,8 +119,26 @@ structure and CTA grammar, not taste.
 
 ---
 
+## Provisional Verification Tier (into the brief)
+
+Compute the story's **provisional `verification_tier`** at assembly time and write it (with its
+derived dimension preset + hard floors) into the machine-assembled brief. Derivation function and
+recipe mapping: `/aep-gen-eval` → `references/verification-economics.md`. Inputs are the story's
+**plan fields** — declared `files_affected`, `module`, contract obligations, `complexity`,
+`on_critical_path`, layer kind — plus `policy.md`'s `sensitive_paths`:
+
+- `deep` iff a `sensitive_paths` glob matches the plan, the layer is the walking skeleton, or a
+  human override says so; `light` iff docs-only with no contract obligations (referee assets —
+  tests, journeys, `policy.md`, CI — are **not** docs); `standard` otherwise. Ties resolve upward.
+- **Grouped changes** (`compile_mode: grouped_change`) take the **max** of member tiers.
+- This tier is a **prediction** (plan-authored, gameable) — it prices the build (launch's criteria
+  file, dogfood scope). The **binding** derivation happens at `/aep-build` Phase 5 entry from the
+  actual diff, where the tier may only go up. The brief states both facts so the worker knows the
+  re-derivation is contractual, not optional.
+
 ## Assembly Rules
 
 1. **Dependency outputs = public API only** — types, exports, endpoint signatures, never internals.
 2. **Measure the package** — if it exceeds the role's token budget from topology, prune harder or split the story.
 3. **Stable prefix is cacheable** — when dispatching multiple stories in the same layer, write it once.
+4. **The provisional tier travels in the brief** — never recalled; the worker reads it, it does not re-derive dispatch's half.

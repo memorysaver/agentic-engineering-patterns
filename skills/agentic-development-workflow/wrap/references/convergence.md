@@ -161,6 +161,16 @@ Spawn one **isolated** subagent (fresh context — not the wrap session):
   2. `lessons-learned/distillations/layer-<N>.yaml` — schema below.
 - **Hard rule:** the distiller **never edits skill files, product-context, or
   code**. `skill_amendments` are proposals a human reviews and applies.
+- **Verification-calibration proposals are dampened** (canon: `/aep-gen-eval`
+  `references/verification-economics.md` → Closing the loop). The distiller may
+  propose tier-derivation adjustments in **both** directions and may propose
+  **retiring/merging journeys** that replayed green for N layers with no
+  coverage loss — but loosening proposals require **≥2 layers of
+  `findings_by_round` evidence and zero unresolved escape attributions**, move
+  **at most one notch per layer**, never touch the `sensitive_paths` hard
+  floor, and must **condition on `generator_model`/`evaluator_model`** (a model
+  swap shifts escape rate and findings simultaneously). Tightening has no
+  damper. All of it is proposal-only, like every `skill_amendment`.
 
 ### `distillation.yaml` schema
 
