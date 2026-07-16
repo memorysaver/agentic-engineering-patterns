@@ -209,8 +209,10 @@ Check detection conditions (see `references/review-trigger.md` for full logic):
 ```
 # First trigger (gentle)
 executor.nudge(<workspace-name>,
-  "Run Phase 5 code review now. Write eval-request.md, spawn the evaluator via executor.spawn_evaluator (your mode's recipe), and execute the gen/eval loop per the build skill Phase 5 protocol. Read .dev-workflow/signals/feedback.md for any additional context.")
+  "Run Phase 5 code review now. Write eval-request.md, spawn the evaluator via executor.spawn_evaluator (your mode's recipe), and execute the gen/eval loop per the build skill Phase 5 protocol. The evaluator prompt is machine-assembled per /aep-gen-eval agent-contracts.md — it treats your eval-request.md as the generator's untrusted claim, and the evaluator authors a Failure-Class per FAIL finding. Read .dev-workflow/signals/feedback.md for any additional context.")
 ```
+
+**This nudge IS the orchestrator-owned evaluator spawn** (spawn authority leaves the generator — `/aep-gen-eval` → `references/verification-economics.md`): the orchestrating layer decides _that_ and _when_ the evaluator runs; the workspace executes the mode's spawn recipe mechanically. The orchestrator boundary holds — autopilot still never spawns review agents itself.
 
 Set in state: `code_review_triggered = true`, `code_review_triggered_at = now`, `last_action = "review_triggered"`.
 
@@ -472,8 +474,17 @@ If all stories in the active layer are completed (after wraps):
    - **Qualitative / default pause:** Otherwise (no `auto_outcome_eval`, a qualitative metric, etc.) → **pause** and add an escalation requesting the user to evaluate the outcome contract before advancing — **UNLESS** `topology.routing.full_auto: true`, in which case auto-evaluate via the telemetry-ingestion recipe and advance without pause. Outcome evaluation otherwise requires human judgment (user testing, analytics, qualitative assessment). The user runs `/aep-reflect` which evaluates outcome contracts in Step 2.75. After `/aep-reflect` completes, resume autopilot.
    - Default (no `auto_outcome_eval` / `full_auto` false) preserves the current human pause.
 5. If no outcome contract or outcome evaluation passes: advance to next layer
-6. If gate fails: add escalation, pause autopilot (layer gate failures require human judgment)
-7. If all layers complete: stop autopilot, notify human
+6. **REFUSED ≠ FAIL.** If the gate's environment preflight **refused** (named
+   `REFUSING [...]` tags — an unmet required precondition, not a product
+   failure), the gate has not failed: add an **`environment_repair`** escalation
+   carrying the ops checklist (state-schema.md → Escalation Entry), leave the
+   gate refused, and **re-probe world-derived on each tick** — when the human
+   repairs the environment the probe passes and the gate re-runs without any
+   bookkeeping. Remaining in-layer stories may still dispatch; only
+   gate-dependent advancement waits. Never file a code-fix recovery story for a
+   refusal (`/aep-gen-eval` → `references/verification-economics.md`).
+7. If gate fails: add escalation, pause autopilot (layer gate failures require human judgment)
+8. If all layers complete: stop autopilot, notify human
 
 ### Orchestration Learning Checkpoint
 

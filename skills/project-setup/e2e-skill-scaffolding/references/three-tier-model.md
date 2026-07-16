@@ -78,10 +78,13 @@ Only a genuine `none`-target layer (no runnable surface at all) is journey-less 
 green **plus** every criterion proven by a scripted case / API check.
 
 **The per-project choice is recorded in the generated skill's `policy.md`** (`applicable_tiers`,
-`dogfood_target` = `none`/`cli`/`local`/`deployed:<url>`, `journey_timing`) — confirmed with the user at
+`dogfood_target` = `none`/`cli`/`local`/`deployed:<url>`, `journey_timing`, `live_policy` =
+`every_gate`/`milestone_gates_only`/`none`) — confirmed with the user at
 scaffold time, then read by `/aep-build` and `/aep-wrap`. That's the single source of truth for "which
 tiers gate _this_ project", so a CLI tool is never asked for a Cloudflare/UI check it doesn't need, and a
-pre-release web app can dogfood post-deploy against prod. No copy lives in `AGENTS.md` — the skill is
+pre-release web app can dogfood post-deploy against prod. `live_policy` prices the **cost-bearing** half
+of Tier-2 (live model calls, quota-metered targets): under `milestone_gates_only`, non-milestone gates run
+zero-cost smokes and the absent live half stays SKIP. No copy lives in `AGENTS.md` — the skill is
 canonical cross-tool, so every runtime reads the same `policy.md`.
 
 ## The two-phase gate (coverage, not one green test)
@@ -91,7 +94,14 @@ A layer gate flips through two states, never on a single passing journey:
 - **`scripted_passed`** — the layer's Tier-1 suite is green. Machinery proven; live product not yet. This
   does **not** unblock the next layer.
 - **`passed`** — `scripted_passed` **+** every applicable higher tier green **+** coverage complete **+**
-  prior-layer journeys replay green.
+  prior-layer journeys replay green **+** at least one **tamper-evident evidence class** in the record
+  (a class the generator cannot modify — see `layer-gate-loop.md` and `/aep-gen-eval` →
+  `references/verification-economics.md`).
+
+Before any Tier-2/3 execution spends anything, the **environment preflight** runs the probes `policy.md`
+declares: an unmet required precondition is a named `REFUSING [...]` refusal (`environment` class — ops
+checklist, zero scenarios), distinct from both SKIP (optional capability absent) and FAIL (product
+misbehaved).
 
 `/aep-build` Phase 6 is **journey-first**: Step A **authors a scenario per acceptance criterion before any
 dogfood** (a Tier-2 scenario by default; a Tier-1 case where deterministic; a Tier-3 API check for

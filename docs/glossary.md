@@ -510,6 +510,106 @@ See also: **Typed Gate**, **Layer Distillation**
 
 ---
 
+## Verification Economics
+
+### Classification Authority
+
+The tamper-resistance rule on the **Failure Class** taxonomy: a FAILing party cannot label its own failure into a spend-reducing class. Each cheaper class has an evidence requirement — `environment` needs a **Named Refusal** tag from a preflight probe; `harness-flake` needs world-derivable reproduction evidence ratified by wrap/reflect; `scope` needs a human acknowledgment — and anything without qualifying evidence defaults to `product-defect`, the class that spends verification.
+
+**Where it appears:** `aep-gen-eval` `references/verification-economics.md`; `docs/decisions/verification-economics.md`.
+
+See also: **Failure Class**, **Named Refusal**, **Environment Preflight Gate**
+
+### Environment Preflight Gate
+
+Probes that run **before any journey/dogfood spend**, checking the preconditions a gate requires — deploy-independent probes (secret names in CI, account fingerprint, env-var wiring) pre-merge on every story, target-bound probes (reachable, bindings, seedable) where journey execution runs. An unmet required precondition is a **Named Refusal** (`REFUSING [dogfood-secret-absent:<NAME>]`) — `environment` by construction, zero scenarios spent. REFUSED (required precondition unmet) ≠ SKIP (optional capability absent) ≠ FAIL (product misbehaved). Probes are declared in the generated e2e skill's `policy.md`, derived per gate from **`live_policy`**.
+
+**Where it appears:** `/aep-build` Phase 6 Step B; `/aep-wrap` layer gate; `aep-autopilot` post-merge guard; `policy.md.tmpl`.
+
+See also: **Classification Authority**, **Failure Class**, **Named Refusal**
+
+### Escape Rate
+
+Post-merge defects traced back to the story that introduced them, per story per **Verification Tier** (escapes ÷ stories at that tier — well-defined even for `light`'s zero rounds). `/aep-reflect` appends each classified escape to the introducing story's `escaped_defects` in its **Execution Record**; ambiguous multi-story escapes attribute to the layer, never to no one. The tightening signal of the calibration loop.
+
+**Where it appears:** `execution-record.yaml` → `verification.escaped_defects`; `telemetry-ingestion.md` (escape-rate ingestion).
+
+See also: **Verification Accounting**, **Verification Tier**
+
+### Failure Class (Failure Taxonomy)
+
+The typed routing label every FAIL acquires per finding, **before any repair spend**: `product-defect` (the built thing is wrong → gen-eval/story path), `environment` (unmet precondition outside the worktree → ops checklist, never a code story, never an eval round), `harness-flake` (test machinery misbehaved → quarantine + harness story), `scope` (the criterion/spec itself is wrong → `/aep-reflect` re-slicing). Distinct from `error_class` (execution mechanics), which stays and maps into it. Carried in typed fields: the dogfood report's `**Failure-Class:**` line, the evaluator's `eval-response-<N>.md`, and `status.json` failure logs.
+
+**Where it appears:** `aep-gen-eval` `references/verification-economics.md` (canon); `dogfood-validation.md`; `eval-protocol.md`; `recovery-ladder.md`.
+
+See also: **Classification Authority**, **Environment Preflight Gate**, **Recovery Ladder**
+
+### Perfect-Score Gate (anti-pattern)
+
+A merge gate requiring a perfect aggregate score ("exactly 5.00/5.00 with zero findings"). What Goodhart's law predicts: it trains the generator to satisfy the evaluator rather than the product, and turns ordinary convergence into round exhaustion. PASS is **zero blocking findings** against the hard-failure thresholds — never perfection.
+
+**Where it appears:** `scoring-framework.md` (Hard Failure Thresholds + Anti-Patterns); `docs/decisions/verification-economics.md` (the looplia `l31-014` counterexample).
+
+See also: **Quality Dimension**, **Verification Ratchet**
+
+### Recovery Ladder
+
+The escalating change-strategy ladder for a stalled eval loop: same fix → re-ground (re-read the full spec from scratch) → fresh generator ("the previous approach failed on X") → decompose (smallest viable slice) → human gate (`eval_not_converging`). Rungs key to position relative to the **Verification Tier**'s round cap. The ladder is `product-defect` machinery only — the **Failure Class** taxonomy step runs at every FAIL before any rung is chosen, and security FAILs / spec contradictions / environment refusals skip it entirely.
+
+**Where it appears:** `aep-gen-eval` `references/recovery-ladder.md`; `/aep-build` Phase 5; `aep-autopilot` ④b escalation.
+
+See also: **Failure Class**, **Verification Tier**, **Generator/Evaluator Separation**
+
+### Referee Asset
+
+Any artifact later verification stands on: test directories, journey specs (including their `paths:` front-matter), the e2e skill's `policy.md`, CI workflow definitions. A diff confined to referee assets is a change to the _referee_, not a cheap change — it floors at the `standard` **Verification Tier**, a negative assertion delta (more test/`Verify` lines removed than added) always forces an evaluation round, and generator edits to CI workflows / journey `paths:` re-scoping trigger a scope refusal. "A generator that edits its own referee is not evidence."
+
+**Where it appears:** `aep-gen-eval` `references/verification-economics.md` (derivation function + evidence classes); `policy.md.tmpl`.
+
+See also: **Verification Tier**, **Tamper-Evident Evidence**
+
+### Tamper-Evident Evidence
+
+Evidence the generator cannot modify. A **Layer Gate** flips to `passed` only with at least one such class in its record: a CI run bound to the merged SHA (workflow definitions outside the diff scope), a journey executed by `/aep-wrap` (executes-never-authors), read-only golden fixtures with a ledger-equality oracle (before/after SHA-256 equality of durable state; screenshots stay diagnostic), or production telemetry via `/aep-watch`.
+
+**Where it appears:** `aep-gen-eval` `references/verification-economics.md`; `wrap` `references/layer-advance.md`; `layer-gate-loop.md`.
+
+See also: **Referee Asset**, **Layer Gate**, **Generator/Evaluator Separation**
+
+### Verification Accounting
+
+The priced, recorded half of verification: the `verification:` block in the **Execution Record** (tier, escalation/drift flags, generator/evaluator model ids, rounds, findings-by-round, scenarios, preflight refusals, cost) with a **mandatory file-derivable sensor floor** — fields computable from artifacts the workflow already writes may not be left null. Suite-level economics live in the human-owned **layer budget box** in the gate evidence doc (expected vs. actual; cold start records actuals only). Unpriced verification grows until it displaces the product.
+
+**Where it appears:** `wrap` `references/convergence.md` (schema + gather sources); `layer-gate-evidence.md.tmpl` (budget box).
+
+See also: **Execution Record**, **Escape Rate**, **Verification Ratchet**
+
+### Verification Ratchet (anti-pattern)
+
+A lessons loop that only ever adds verification — thresholds, scripts, evidence docs — and never prunes it, converging on a process that verifies instead of shipping. Broken by dampened bidirectional calibration: loosening proposals need ≥2 layers of findings evidence and zero unresolved escapes, move one notch per layer, never touch the `sensitive_paths` hard floor, and must condition on model version; tightening has no damper. Proposals only; a human applies them.
+
+**Where it appears:** `aep-gen-eval` `references/verification-economics.md` (calibration rules); `docs/decisions/verification-economics.md`.
+
+See also: **Verification Accounting**, **Perfect-Score Gate**, **Layer Distillation**
+
+### Verification Recipe
+
+The complete output of the tier derivation — **Verification Tier + dimension preset + dimension hard floors** — derived from one input set so depth and rubric never decouple (a `sensitive_paths` story cannot derive `deep` while its evaluator runs a preset without the Security floor). Emitted as the typed artifact `.dev-workflow/verification-recipe.json`; `/aep-build` Phase 5 refuses to start without it. Customization only ratchets up: add dimensions or raise thresholds, never drop a derived hard floor.
+
+**Where it appears:** `aep-gen-eval` `references/verification-economics.md`; `scoring-framework.md` (recipe-derived preset selection); `/aep-launch` (criteria assembly).
+
+See also: **Verification Tier**, **Quality Dimension**, **Typed Gate**
+
+### Verification Tier
+
+The risk-derived verification depth of a story — `light` (0 evaluator rounds, generator self-review, render-smoke dogfood) / `standard` (2 rounds — one decisive fix-and-reverify cycle, impacted-surface journey + canary) / `deep` (up to 5 rounds + full **Recovery Ladder**, full journey + prior-layer replay, highest evaluator effort, cross-family judge preferred). Derived **twice**: provisionally at dispatch from plan fields, bindingly at Phase 5 entry from the actual diff — and at binding a tier may only go **up**. `sensitive_paths` matches, walking-skeleton layers, and human overrides force `deep`; **Referee Assets** floor at `standard`; cap exhaustion auto-escalates `standard → deep` once. This entry subsumes the repo's three prior "light" senses: design-time Light mode selects `verification_tier: light`, and launch's full/light evaluator-offer heuristics are inputs to the dispatch-time derivation — one term, one derivation, not three switches.
+
+**Where it appears:** `aep-gen-eval` `references/verification-economics.md` (canon); `verification-recipe.json`; `status.json` → `verification_tier`; the dispatch brief.
+
+See also: **Verification Recipe**, **Referee Asset**, **Recovery Ladder**
+
+---
+
 ## Product / Planning
 
 ### Alignment Layer

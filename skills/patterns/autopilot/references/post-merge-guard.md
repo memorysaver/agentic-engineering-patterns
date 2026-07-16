@@ -75,15 +75,17 @@ A signal is **red** when it fails its declared threshold (non-2xx health, CI `fa
 
 ### (b) Host-aware dogfood
 
-Run the dogfood validation against the deployed environment:
+**Preflight first — before any dogfood spend.** Run the target-bound environment probes declared in the project's `skills/e2e-test/policy.md` (target reachable, bindings present, fixtures seedable; `/aep-gen-eval` → `references/verification-economics.md` → Environment Preflight Gate). An unmet **required** precondition is a named refusal (`REFUSING [auth-identity-mismatch:<got≠want>]`): emit an **`environment_repair`** escalation carrying the ops checklist, skip the dogfood (zero scenarios, zero findings), and **re-probe on the next tick** — repair auto-resumes the guard. A refusal is `environment`, never a Path-1 story and never a Path-2 revert. **`live_policy` governs the guard's live half:** under `milestone_gates_only`, a non-milestone story's guard runs the zero-cost smoke half only — the absent live half is SKIP, not probed and not a finding.
+
+Then run the dogfood validation against the deployed environment:
 
 ```
 method = dogfood_method()                       # host × mode detection (see dogfood-validation.md)
 url    = target_url(post_deploy_env)             # staging | production, from deploy_targets / CI
-run dogfood(method, url) → report (severity/category/repro, signals-only)
+run dogfood(method, url) → report (severity/category/repro/failure-class, signals-only)
 ```
 
-`post_deploy_env` comes from `topology.routing.dogfood.post_deploy_env` (`staging` | `production` | `none`). `target_url()` resolves config-first then CI fallback (see `dogfood-validation.md`). The dogfood report uses the unified `/agent-browser:dogfood` severity/category/repro template, so the downstream classifier is host-agnostic.
+`post_deploy_env` comes from `topology.routing.dogfood.post_deploy_env` (`staging` | `production` | `none`). `target_url()` resolves config-first then CI fallback (see `dogfood-validation.md`). The dogfood report uses the unified `/agent-browser:dogfood` severity/category/repro template **including the required `**Failure-Class:**` line per finding**, so the downstream classifier is host-agnostic and the adapter can route on class.
 
 ---
 
@@ -95,7 +97,7 @@ The design fixes two **distinct** failure shapes (`g4-dogfood-validation-design.
 
 The deploy is healthy at the service level, but the dogfood surfaced a UX or functional defect (broken flow, visual regression, wrong copy, dead link). This is feedback, not an outage.
 
-- Feed the dogfood report to the **`/aep-reflect` classifier** via the **`dogfood_report` adapter** (`/aep-reflect` `references/telemetry-ingestion.md` → Dogfood-report adapter), which classifies severity/category and **auto-creates a bug/refinement story** in `product-context.yaml` (links the G6 self-feeding loop).
+- Feed the dogfood report to the **`/aep-reflect` classifier** via the **`dogfood_report` adapter** (`/aep-reflect` `references/telemetry-ingestion.md` → Dogfood-report adapter), which classifies severity/category and **auto-creates a bug/refinement story** in `product-context.yaml` (links the G6 self-feeding loop). **Auto-filing applies to `product-defect` findings only** — the adapter never auto-files `environment` / `harness-flake` / `scope` findings (those route to the ops checklist / quarantine ratification / human gate respectively).
 - **Stamp `watch_origin: {source: dogfood, external_id: <adapter key>}`** on each story you file, using the adapter's deterministic `external_id`. This is the **same** dedupe key `/aep-watch`'s `dogfood_report` source uses, so if watch also ingests the report neither path double-files — whichever runs first wins and the other no-ops (see the adapter's "No high-water mark — dedupe-only").
 - The new story enters the normal dispatch queue — Step ⑥ picks it up on a later tick by `readiness_score`.
 - **Never revert** for a Path-1 finding. The merged change stays; the fix ships as its own story.

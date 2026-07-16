@@ -17,6 +17,93 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 > `/envision`, `/dispatch`, `/reflect`, …), which records product-state history
 > for that project. See [`docs/glossary.md`](docs/glossary.md).
 
+## [3.1.0] - 2026-07-16
+
+The incident-proven half of
+[`docs/decisions/verification-economics.md`](docs/decisions/verification-economics.md)
+(P1 + P2 + P2.5): failure taxonomy, environment preflight, deterministic
+security gates, regression-replay placement, evaluator-independence fixes, and
+verification-accounting instrumentation. The economics half (tiers, recipes,
+calibration) ships as v3.2.0.
+
+### Added
+
+- **Canonical reference** `gen-eval/references/verification-economics.md` —
+  validator placement matrix, failure taxonomy + classification authority,
+  environment preflight gate, verification tiers + two-point derivation,
+  verification recipe, accounting schema, tamper-evident evidence classes,
+  worked examples, anti-patterns. Registered in the gen-eval SKILL.md tables.
+- **Failure taxonomy carriers** — `failure_class`
+  (`product-defect | environment | harness-flake | scope`) with per-class
+  evidence requirements and the `product-defect` default: a required
+  `**Failure-Class:**` line in the unified dogfood report
+  (`executor/references/dogfood-validation.md`, `tool-selection.md.tmpl`);
+  evaluator-authored `Failure-Class` in `eval-response-<N>.md`
+  (`eval-protocol.md`, `agent-contracts.md`); `failure_class` in
+  `status.json.failure_log` alongside `error_class` so autopilot can route
+  Build/CI FAILs (`launch/references/signals-spec.md`); the `dogfood_report`
+  adapter routes on class and **never auto-files** non-product classes
+  (`_shared/references/telemetry-ingestion.md`); the recovery ladder's "When to
+  Skip" is now the typed taxonomy step, mandatory at every FAIL
+  (`recovery-ladder.md`, `build/SKILL.md` Phase 5).
+- **Environment preflight gate** — deploy-independent probes pre-merge on every
+  story; target-bound probes where journey execution runs; named refusals
+  (`REFUSING [dogfood-secret-absent:<NAME>]`) with REFUSED ≠ SKIP ≠ FAIL
+  semantics (`build/SKILL.md` Phase 6B, `wrap/references/layer-advance.md`,
+  `autopilot/references/post-merge-guard.md`, `policy.md.tmpl`,
+  `layer-gate-loop.md`, `three-tier-model.md`).
+- **Autopilot REFUSED ≠ FAIL** — a refused gate pauses cheaply with an ops
+  checklist via the new `environment_repair` escalation type, re-probes
+  world-derived each tick (repair auto-resumes), and never files a code-fix
+  recovery story (`tick-protocol.md`, `state-schema.md`).
+- **Deterministic security gates** — secret-scan/SAST confirmed at scaffold as
+  inner-loop typed gates (`policy.md.tmpl` `{{SECRET_SCAN_CMD}}`/`{{SAST_CMD}}`,
+  e2e-skill-scaffolding SKILL.md Phase 2).
+- **`live_policy` decision** (`every_gate | milestone_gates_only | none`)
+  upstreamed into `policy.md` as its canonical home, propagated across the full
+  enumerated site list (templates, build/wrap/executor/autopilot references,
+  `product-context-schema.yaml` comments, `map/SKILL.md`,
+  `scaffold/references/resulting-structure.md`).
+- **`sensitive_paths`** — the human-owned deep-tier hard-floor list, seeded and
+  confirmed at scaffold and rendered into `policy.md` via
+  `{{E2E_SENSITIVE_PATHS}}` / `{{E2E_PREFLIGHT_PROBES}}` (`policy.md.tmpl`),
+  with the referee-asset rule (test dirs / journeys / policy / CI never derive
+  `light`).
+- **Verification accounting instrumentation** — the `verification:` block in
+  `execution-record.yaml` with a mandatory file-derivable sensor floor
+  (tier/escalation/drift flags, generator/evaluator model ids, rounds,
+  findings-by-round, scenarios, preflight refusals), per-round eval-response
+  persistence, gather-source table (`wrap/references/convergence.md`), the
+  human-owned layer budget box (record-only cold start;
+  `layer-gate-evidence.md.tmpl`, `layer-advance.md`), and escape-rate ingestion
+  via `/aep-reflect` (`telemetry-ingestion.md`).
+- **Glossary** — new Verification Economics section: Verification Tier,
+  Verification Recipe, Failure Class, Classification Authority, Environment
+  Preflight Gate, Verification Accounting, Escape Rate, Tamper-Evident
+  Evidence, Verification Ratchet, Perfect-Score Gate, Referee Asset, Recovery
+  Ladder.
+
+### Changed
+
+- **Evaluator independence** — spawn authority leaves the generator where an
+  orchestrating layer exists (the autopilot ④b nudge is the orchestrator-owned
+  spawn); the machine-assembled evaluator prompt marks `eval-request.md` as the
+  generator's **untrusted claim** (`build/SKILL.md` Phase 5,
+  `agent-contracts.md`, `tick-protocol.md`).
+- **Regression replay placement** — per-story replay (`build/SKILL.md` Phase 8)
+  is impacted-only (selected against the merged diff, fail-open for journeys
+  with no `paths:`) plus the walking-skeleton canary; **full** prior-layer
+  replay moves to the `/aep-wrap` layer gate with a derived mid-layer
+  checkpoint `k = min(5, ⌈N/3⌉)` (`layer-advance.md`, `layer-gate-loop.md`).
+- **Layer gates require tamper-evident evidence** — `passed` needs at least one
+  evidence class the generator cannot modify (SHA-bound CI with out-of-scope
+  workflow definitions, wrap-executed journey, ledger-equality golden fixtures,
+  telemetry); warning-not-refusal for one release (`layer-advance.md`,
+  `three-tier-model.md`).
+- **Zero-blocking PASS semantics** — a perfect aggregate score is never a gate
+  condition; Perfect-Score Gate added to the scoring anti-patterns
+  (`scoring-framework.md`).
+
 ## [3.0.0] - 2026-07-14
 
 ### Changed
