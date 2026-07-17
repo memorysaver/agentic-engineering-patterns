@@ -17,6 +17,24 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 > `/envision`, `/dispatch`, `/reflect`, …), which records product-state history
 > for that project. See [`docs/glossary.md`](docs/glossary.md).
 
+## [3.2.1] - 2026-07-18
+
+Patch: the `secret_scan` example in the scaffolded `policy.md` named
+`gitleaks protect --staged`. In current gitleaks (8.30.x) `protect` is a
+hidden/deprecated alias absent from the documented command set — the supported
+staged-scan form is `gitleaks git --staged`. This is a doc-string example only
+(the scaffolder renders `{{SECRET_SCAN_CMD}}` from the project's actual tooling,
+and no shipped script executes the comment), but it seeded the deprecated form
+into consumers (surfaced by the MITS v3.2.0 Phase-3 review). Re-pin to `@v3.2.1`
+before the remaining consumer migrations so they inherit the durable form.
+
+### Fixed
+
+- **`policy.md.tmpl` `secret_scan` example** — `gitleaks protect --staged` →
+  `gitleaks git --staged --redact --no-banner`, matching the form SIBYL and
+  looplia already settled on
+  (`skills/project-setup/e2e-skill-scaffolding/templates/policy.md.tmpl`).
+
 ## [3.2.0] - 2026-07-16
 
 The economics half of
