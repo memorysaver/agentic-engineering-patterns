@@ -98,7 +98,7 @@ The mechanically detectable half of security never routes to an LLM judge — it
 every commit, and findings are `product-defect` by construction:
 
 ```
-secret_scan : {{SECRET_SCAN_CMD}}   # e.g. gitleaks protect --staged
+secret_scan : {{SECRET_SCAN_CMD}}   # e.g. gitleaks git --staged --redact --no-banner
 sast        : {{SAST_CMD}}          # e.g. semgrep --config auto; "none" if deliberately not adopted
 ```
 
