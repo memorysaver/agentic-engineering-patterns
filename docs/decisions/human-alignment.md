@@ -33,6 +33,18 @@
 > receipts → delivered companion artifact, embedded in the brief); mermaid remains
 > only for the LIFECYCLE vocabulary mini-diagrams. Proven live in the looplia
 > simulation (evidence in D7).
+>
+> **Revision 6 (2026-07-25):** three owner rulings, all proven in the simulation
+> before writing. (a) Bands are named by **scope, not audience**: Overview ·
+> Product · Project · Engineering. (b) The architecture view's topology comes from
+> a **deterministic code pipeline** (workspace-graph scanner → auditable rules
+> R1–R10 → mechanical receipt consumer → archify), rendered at three tiers
+> (domain overview · full package graph · declared narrative); code is the source
+> of truth for edges, the YAML for meaning, and their gap is a drift fact —
+> `modules[].paths` is recommended as the schema binding that would let them
+> reconcile. (c) The brief is **one file**: every archify artifact embeds via
+> `srcdoc` (five diagrams — architecture ×3, workflow ×1, lifecycle ×1), and the
+> mermaid CDN dependency is eliminated from the primary path.
 
 ## Problem
 
@@ -169,20 +181,22 @@ model is: **every read is a first read.** Two consequences:
   numbers, module ids — lives only in anchors. The diagram/cell channel keeps the
   closed canonical set below; the budget governs prose.
 
-**The audience-depth pyramid (owner ruling, revision 4).** There is exactly one
-document in one fixed order; the `?read=` mechanism and the manifest's order
-arrays are removed. Role adaptation is **scroll depth plus disclosure**: everyone
-enters at the same top, and each band below is deeper and more technical — the
-inverted pyramid. Stopping early is the feature: a stakeholder who reads only
-bands 1–2 has read a complete, honest surface, so no separate stakeholder mode is
-needed.
+**The audience-depth pyramid (owner ruling, revision 4; scope names, revision
+6).** There is exactly one document in one fixed order; the `?read=` mechanism
+and the manifest's order arrays are removed. Role adaptation is **scroll depth
+plus disclosure**: everyone enters at the same top, and each band below is deeper
+and more technical — the inverted pyramid. Stopping early is the feature: a
+stakeholder who reads only the first two bands has read a complete, honest
+surface, so no separate stakeholder mode is needed. Bands are named by **scope,
+not audience** (owner ruling: role names make readers self-exclude; scope names
+only classify depth): **Overview · Product · Project · Engineering**.
 
-| Band                         | Audience                 | Content (block re-homed from)                                                                                                                                                                                                                                                              | Derived from                                                                                                                  | Regeneration gate                              |
-| ---------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| **1 · Everyone**             | every role, 30 seconds   | what this project is, one paragraph (PRIMER's essence) · health + progress in one sentence · the one ask + the while-you-were-away narrative (NOW)                                                                                                                                         | identity fields; the attention set; state diff vs. baseline                                                                   | identity: era · rest: never                    |
-| **2 · Product user**         | whoever uses the product | what works today (shipped, user-visible capabilities) · what recently changed for users · what the current layer will add, in user language                                                                                                                                                | **net-new derivation**: passed `layer_gates` + changelog, translated to user-visible outcomes (authored + anchored, D4 rules) | capability list: gate passes · rest: never     |
-| **3 · Product manager**      | plan and progress        | the full layer strip + current-layer story rows (FRONTIER) · queued layers, one sentence each + disclosure · what moved, where reality drifted, cost (LEDGER's plain layer)                                                                                                                | `stories`, `layer_gates`, `changelog`, the drift facts                                                                        | never (the LEDGER block stays the dark record) |
-| **4 · Engineer / architect** | the system itself        | the embedded archify architecture artifact (semantic types, boundaries, guided views, passport — revision 5) + module-group cards · the loop + story state machine, vocabulary's sole definition (LIFECYCLE) · drift technical detail, gate table, raw story lists, all provenance anchors | `architecture` (+ optional reality probe) → typed IR → archify, the canonical vocabulary                                      | structure change                               |
+| Band                | Audience                 | Content (block re-homed from)                                                                                                                                                                                                                                                              | Derived from                                                                                                                  | Regeneration gate                              |
+| ------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| **1 · Overview**    | every role, 30 seconds   | what this project is, one paragraph (PRIMER's essence) · health + progress in one sentence · the one ask + the while-you-were-away narrative (NOW)                                                                                                                                         | identity fields; the attention set; state diff vs. baseline                                                                   | identity: era · rest: never                    |
+| **2 · Product**     | whoever uses the product | what works today (shipped, user-visible capabilities) · what recently changed for users · what the current layer will add, in user language                                                                                                                                                | **net-new derivation**: passed `layer_gates` + changelog, translated to user-visible outcomes (authored + anchored, D4 rules) | capability list: gate passes · rest: never     |
+| **3 · Project**     | plan and progress        | the full layer strip + current-layer story rows (FRONTIER) · queued layers, one sentence each + disclosure · what moved, where reality drifted, cost (LEDGER's plain layer)                                                                                                                | `stories`, `layer_gates`, `changelog`, the drift facts                                                                        | never (the LEDGER block stays the dark record) |
+| **4 · Engineering** | the system itself        | the embedded archify architecture artifact (semantic types, boundaries, guided views, passport — revision 5) + module-group cards · the loop + story state machine, vocabulary's sole definition (LIFECYCLE) · drift technical detail, gate table, raw story lists, all provenance anchors | `architecture` (+ optional reality probe) → typed IR → archify, the canonical vocabulary                                      | structure change                               |
 
 The six SIBYL jobs all survive — NOW and PRIMER's essence fuse into band 1,
 FRONTIER and LEDGER's plain layer form band 3, SHAPE and LIFECYCLE anchor band 4 —
@@ -246,23 +260,39 @@ Carried over from the SIBYL contract, unchanged in meaning:
   so keys _jump_, they do not _page_. A slim sticky state rail (current layer ·
   open count · needs-you count) keeps the glance overview present at any scroll
   depth.
-- **The architecture view renders through archify** (owner direction, revision 5 —
-  the previously deferred upgrade path, activated). The Author phase writes a
-  typed `<name>.architecture.json` from the `architecture` facts (semantic
-  component types, boundaries for the module groups, ≤ 12 main-path components,
-  detail in cards, `meta.views` as guided readings; labels carry the cold-reader
-  two channels — plain label, real module name as sublabel), then cross-invokes
-  the archify CLI: `validate` (schema + Clean Flow / Clean Label layout gates,
-  consuming repair receipts within the two-round bound) and `deliver` (atomic
-  commit + receipt). The result is a **companion artifact**
-  (`architecture-<date>T<time>Z-<shorthash>.html`) written next to the brief;
-  band 4 embeds it via archify's `?embed=1` mode with an open-full link, so
-  Semantic Passport, guided views, Present mode, and exports come along for free.
-- **Mermaid via CDN survives for the LIFECYCLE vocabulary mini-diagrams only**
-  (≤ 8 nodes each, SIBYL's theming recipe, source-text fallback with a caption
-  naming the degradation). Degrade ladder for the architecture view: archify CLI
-  unavailable → a bounded mermaid diagram under the old author-side guidance
-  (≤ 12 nodes, human glance gate, named as a degraded rendering) → source text.
+- **The architecture view is generated by a deterministic code pipeline and
+  rendered by archify** (owner rulings, revisions 5–6). No agent judgment in the
+  loop: a workspace-graph scanner reads the real package topology (package.json /
+  turbo graph; dependency-cruiser is the later import-level rung; LSP is rejected
+  for batch graph work), a rule table transforms it into typed archify IR —
+  R1 exclude test packages · R2 fold ubiquitous deps (in-degree ≥ 60%) into cards
+  · R3 layered/cascade layout · R4 fixed semantic-type map · R5 boundaries from
+  directory structure · R6 transitive reduction · R7 fixed package→domain table ·
+  R8 domain-level edge aggregation · R9 generated guided views · R10 permutation
+  search for row order — and a **mechanical receipt consumer** applies archify's
+  repair receipts (via/labelAt/labelDy) within the two-round bound. Same commit in,
+  byte-identical artifact out. **Three tiers**: the domain overview (≈9 nodes, the
+  embedded default), the full package graph (deep-dive), and the declared
+  architecture from the YAML (the authored narrative tier — meaning, not
+  verification). Code is the source of truth for edges; the YAML for meaning;
+  their disagreement is a drift fact, never silently reconciled.
+- **All diagrams are archify; mermaid leaves the primary path** (revision 6). The
+  AEP loop renders as an archify `workflow` diagram and the story state machine as
+  an archify `lifecycle` diagram, so the page has one diagram system, one visual
+  language, and no mermaid CDN dependency. Degrade ladder when the archify CLI is
+  absent: a bounded mermaid diagram under author-side guidance (≤ 12 nodes, human
+  glance gate, named as degraded) → labeled source text.
+- **Single-file assembly** (owner ruling, revision 6: one file, nothing else to
+  open). The assembler embeds every delivered artifact into the brief as a
+  JSON-encoded string rendered through a sandboxed `srcdoc` iframe — Engineering
+  shows a tab strip (overview · deep-dive · narrative) over one frame, plus an
+  open-in-window action via a Blob URL; a `localStorage` seed pins the embedded
+  artifacts to the light theme. Full viewer interactivity (guided views, passport,
+  Present, exports) survives embedding. Cost stated honestly: each embedded
+  artifact carries archify's ~600 KB viewer runtime, so a five-diagram brief is
+  ~3 MB — fine for open-from-docs use; if briefs are generated frequently, the
+  prune policy must be real or generated briefs move behind gitignore with only
+  `manifest.json` committed.
 - **Typography** — three roles, stated: serif for section heads and counts; sans
   for body; mono for kickers, chips, ids, and feet; identifiers are mono, never
   italic. This adopts SIBYL's editorial/instrument split and consciously deviates
@@ -288,14 +318,14 @@ Carried over from the SIBYL contract, unchanged in meaning:
 The generation pipeline (each phase ends in a checkable postcondition, per the
 deterministic-orchestration standard):
 
-| Phase         | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Postcondition                                                                              |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| 0 · Preflight | `product-context.yaml` exists (else point to `/aep-envision`); read `docs/human-alignment/manifest.json` for the delta baseline                                                                                                                                                                                                                                                                                                                                                                                              | baseline commit known, or first-run declared                                               |
-| 1 · Derive    | run `scripts/derive.mjs`: extract **facts JSON** from `product-context.yaml` + git — story counts by state and layer, the attention set (D7), the drift facts (D7), the shipped-capability inputs for band 2 (passed layer gates + their summaries), changelog entries since baseline, layer-gate status, cost roll-up — and validate it against `facts.schema.json`                                                                                                                                                         | facts JSON exists and validates; every fact names its YAML path                            |
-| 1.5 · Probe   | _optional_ — architecture-reality probe: derive the actual import graph (madge/ts-morph/LSP-class tooling, per repo toolchain) and diff it against declared `architecture`; results join the drift facts, revision-pinned to HEAD                                                                                                                                                                                                                                                                                            | probe ran and SHAPE is marked `code-verified`, or probe skipped and SHAPE is `unverified`  |
-| 2 · Author    | fill `assets/template.html`: numbers and states come only from facts JSON; narrative (PRIMER, translations, LEDGER prose) is written fresh, tense-chipped, stamped with authored-at + source commit; narrative obeys the evidence-language rule and the cold-reader authoring rules below                                                                                                                                                                                                                                    | every section rendered or stamped                                                          |
-| 3 · Audit     | run `scripts/audit.mjs` for the mechanical checks (number-provenance: every number on the page ∈ facts JSON; class preflight; chip-grammar: every non-fact chipped, no fact chipped, one chip per clause; translation-anchor 1:1 — every plain sentence cites a fact id, every surfaced fact has a plain sentence; prose vocabulary-budget count) plus the judgment checks from `references/checklist.md` (vocabulary audit against the D2 closed set, evidence-language audit, glance gate, cold-reader test, so-what test) | audit passes; failures emit structured receipts; at most two correction rounds             |
-| 4 · Deliver   | write `docs/human-alignment/brief-<date>T<time>Z-<shorthash>.html`; update `manifest.json` (generation record + content SHA-256); report the delta summary + path in-conversation                                                                                                                                                                                                                                                                                                                                            | new file exists; its name's hash equals repo HEAD; `manifest.json` digest matches the file |
+| Phase         | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Postcondition                                                                                               |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| 0 · Preflight | `product-context.yaml` exists (else point to `/aep-envision`); read `docs/human-alignment/manifest.json` for the delta baseline                                                                                                                                                                                                                                                                                                                                                                                              | baseline commit known, or first-run declared                                                                |
+| 1 · Derive    | run `scripts/derive.mjs`: extract **facts JSON** from `product-context.yaml` + git — story counts by state and layer, the attention set (D7), the drift facts (D7), the shipped-capability inputs for band 2 (passed layer gates + their summaries), changelog entries since baseline, layer-gate status, cost roll-up — and validate it against `facts.schema.json`                                                                                                                                                         | facts JSON exists and validates; every fact names its YAML path                                             |
+| 1.5 · Scan    | run the deterministic architecture pipeline (D3): workspace-graph scan → rules R1–R10 → receipt consumer → archify validate/deliver, producing the domain-overview and package-graph artifacts revision-pinned to HEAD; the declared-vs-actual gap joins the drift facts (import-level dependency-cruiser diff is the later rung)                                                                                                                                                                                            | artifacts delivered `code-verified` (package level), or scanner unavailable and the view is marked degraded |
+| 2 · Author    | fill `assets/template.html`: numbers and states come only from facts JSON; narrative (PRIMER, translations, LEDGER prose) is written fresh, tense-chipped, stamped with authored-at + source commit; narrative obeys the evidence-language rule and the cold-reader authoring rules below                                                                                                                                                                                                                                    | every section rendered or stamped                                                                           |
+| 3 · Audit     | run `scripts/audit.mjs` for the mechanical checks (number-provenance: every number on the page ∈ facts JSON; class preflight; chip-grammar: every non-fact chipped, no fact chipped, one chip per clause; translation-anchor 1:1 — every plain sentence cites a fact id, every surfaced fact has a plain sentence; prose vocabulary-budget count) plus the judgment checks from `references/checklist.md` (vocabulary audit against the D2 closed set, evidence-language audit, glance gate, cold-reader test, so-what test) | audit passes; failures emit structured receipts; at most two correction rounds                              |
+| 4 · Deliver   | write `docs/human-alignment/brief-<date>T<time>Z-<shorthash>.html`; update `manifest.json` (generation record + content SHA-256); report the delta summary + path in-conversation                                                                                                                                                                                                                                                                                                                                            | new file exists; its name's hash equals repo HEAD; `manifest.json` digest matches the file                  |
 
 - **Why the derive script is v1, not deferred** (owner ruling: faithful
   representation): OBS-5's trust came from _code-derived_ artifacts, and AEP's own
@@ -398,9 +428,12 @@ skills/human-alignment/
   7. every surfaced item carries a plain-language sentence plus a provenance
      anchor, and the prose channel stays within the seven-word vocabulary budget
      (the cold-reader contract, mechanically counted where possible);
-  8. when the archify CLI is present, the companion architecture artifact passes
-     `validate` and `deliver` (layout gates green, delivery receipt recorded) and
-     the brief embeds it; when absent, band 4 renders the named degraded ladder.
+  8. when the archify CLI is present, every embedded artifact (architecture ×3,
+     workflow, lifecycle) passes `validate` and `deliver` (layout gates green,
+     receipts recorded), the assembled brief is one self-contained file (fonts CDN
+     excepted), and re-running the pipeline at the same commit reproduces the
+     artifacts byte-identically; when absent, the Engineering band renders the
+     named degraded ladder.
 - **Propagation**: visible downstream after the tag is cut and each of the 6
   consumer repos re-pins via the skills CLI. SIBYL adoption is a follow-up in that
   repo: replace its hand-authored Brief generation with the skill and flip its local
@@ -468,11 +501,18 @@ nothing derives, the row is silent, not fabricated). The v1 derivations:
    stories in an unopened layer): the OBS-4 class. Follow-up (separate PR): the
    same check joins `/aep-validate` so incoherence cannot silently pass again —
    SIBYL's own OBS-4 disposition, applied to AEP.
-5. **Declared vs. actual architecture** (optional, Phase 1.5): the import-graph
-   probe — the strongest drift form ("the YAML says A does not depend on B; the
-   code says it does"), and the exact move that earned OBS-5's trust in SIBYL
-   (its architecture graph was the one artifact derived from real imports).
-   Toolchain-dependent, so it degrades honestly: no tool → SHAPE marked
+5. **Declared vs. actual architecture** (Phase 1.5): the strongest drift form
+   ("the YAML says A does not depend on B; the code says it does"), and the exact
+   move that earned OBS-5's trust in SIBYL (its architecture graph was the one
+   artifact derived from real imports). The looplia scan made the gap concrete:
+   the code is 20 workspace packages while the YAML declares 32 conceptual
+   modules — zero name overlap, and no schema field binds a declared module to
+   code paths, so the declared architecture is **not code-addressable at all**
+   today (itself a surfaced drift fact). **Framework recommendation (separate
+   schema PR): add `architecture.modules[].paths`** — a glob binding from
+   declared module to source paths — so dependency-cruiser-class tooling can turn
+   every declared `depends_on` into a lint rule with file:line evidence.
+   Toolchain-dependent, so it degrades honestly: no tool → the view is marked
    `unverified`, never blocked.
 
 **Simulation evidence (2026-07-24).** The full pipeline ran against looplia
@@ -488,6 +528,18 @@ light sections) and real looplia findings (8 layers of all-done stories with
 L32's 38 criteria with zero coverage). The owner's readability verdict on the
 result — system vocabulary is illegible even to a returning owner — produced the
 revision-3 cold-reader contract (D2).
+
+Revisions 5–6 were proven in the same simulation before being written. The
+deterministic pipeline ran end-to-end on looplia: workspace scan (20 packages,
+68 edges) → rules R1–R10 → mechanical receipt consumer (gutter routing, one
+round) → archify `validate` green with **0 errors** → `deliver`. Five artifacts
+shipped in the final single-file brief — the domain overview (9 domains, 7 edges
+after aggregation and transitive reduction), the full package graph, the declared
+narrative, the AEP loop as a `workflow` diagram, and the story state machine as a
+`lifecycle` diagram — every one repaired only through archify's own receipts
+(enum, labelAt/labelDy, channel routes, width). Diagram-type usage is therefore:
+`architecture` ×3 · `workflow` ×1 · `lifecycle` ×1; `sequence` and `dataflow`
+are unused until a structured source exists (recorded in Horizon).
 
 The revision-5 archify integration was then proven in the same simulation: a
 12-component typed IR authored from looplia's declared modules (zh labels, real
@@ -513,8 +565,17 @@ sentence may carry a literal number — all numbers render from facts.
   alerting re-point to the D7 spec.
 - **archify cross-invocation** for SHAPE/LIFECYCLE when the glance gate recurs
   (trigger defined in D3).
-- **Full architecture-reality probe**: LSP-grade scanning across the 6 consumer
-  repos' toolchains.
+- **Import-level verification**: dependency-cruiser (TS/JS) / import-linter
+  (Python) as the second rung of the architecture pipeline — declared boundaries
+  become lint rules with file:line evidence, enabled once `modules[].paths`
+  lands; LSP stays reserved for on-demand point queries (who references X), not
+  batch graph extraction.
+- **Architecture Delta**: archify's `compare` renders Before/Delta/After between
+  two briefs' architecture IRs — "what changed structurally since the last
+  brief" as a validated artifact.
+- **`sequence` and `dataflow` diagrams** when structured sources exist: the
+  newsroom content pipeline (signal → pitch → research → draft → publication) as
+  a dataflow; a single story's dispatch→build→review trace as a sequence.
 - **TUI summary render** of NOW (the terminal-native owner's glance surface);
   one-file-per-language localization; a stable `latest` pointer if a fixed URL is
   ever needed. (A separate stakeholder mode dissolved in revision 4: the pyramid
@@ -561,6 +622,16 @@ sentence may carry a literal number — all numbers render from facts.
   filename must carry generation time and commit hash so a reader knows which
   commit a brief describes without opening it; overwriting also erases the record
   of past briefs. A stable `latest` pointer remains a Horizon option.
+- **Audience-role band names** (revision 4's "everyone / product user / manager /
+  engineer") — replaced in revision 6 by scope names (Overview · Product ·
+  Project · Engineering): role names invite readers to self-exclude; scope names
+  only classify depth.
+- **Agent-authored architecture IR as the primary view** (revision 5) —
+  superseded in revision 6: topology now comes from the deterministic code
+  pipeline; the authored IR survives as the narrative tier only.
+- **Companion artifact files next to the brief** (revision 5) — superseded in
+  revision 6 by single-file `srcdoc` embedding (owner: one file, nothing else to
+  open); the delivered artifacts become build intermediates.
 - **React / three.js now** — deferred with named triggers (D3).
 
 ## References
