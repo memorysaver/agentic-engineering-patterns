@@ -26,6 +26,13 @@
 > where role adaptation is scroll depth and disclosure, not a URL parameter (D2).
 > Band 2 (the product-user view) is net-new content derived from passed layer
 > gates and the changelog.
+>
+> **Revision 5 (2026-07-24):** owner ruling on the engineering band — D3's
+> deferred archify upgrade path activates now. Band 4's architecture view renders
+> through **archify cross-invocation** (typed IR → schema + layout gates + repair
+> receipts → delivered companion artifact, embedded in the brief); mermaid remains
+> only for the LIFECYCLE vocabulary mini-diagrams. Proven live in the looplia
+> simulation (evidence in D7).
 
 ## Problem
 
@@ -170,12 +177,12 @@ inverted pyramid. Stopping early is the feature: a stakeholder who reads only
 bands 1–2 has read a complete, honest surface, so no separate stakeholder mode is
 needed.
 
-| Band                         | Audience                 | Content (block re-homed from)                                                                                                                                                                        | Derived from                                                                                                                  | Regeneration gate                              |
-| ---------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| **1 · Everyone**             | every role, 30 seconds   | what this project is, one paragraph (PRIMER's essence) · health + progress in one sentence · the one ask + the while-you-were-away narrative (NOW)                                                   | identity fields; the attention set; state diff vs. baseline                                                                   | identity: era · rest: never                    |
-| **2 · Product user**         | whoever uses the product | what works today (shipped, user-visible capabilities) · what recently changed for users · what the current layer will add, in user language                                                          | **net-new derivation**: passed `layer_gates` + changelog, translated to user-visible outcomes (authored + anchored, D4 rules) | capability list: gate passes · rest: never     |
-| **3 · Product manager**      | plan and progress        | the full layer strip + current-layer story rows (FRONTIER) · queued layers, one sentence each + disclosure · what moved, where reality drifted, cost (LEDGER's plain layer)                          | `stories`, `layer_gates`, `changelog`, the drift facts                                                                        | never (the LEDGER block stays the dark record) |
-| **4 · Engineer / architect** | the system itself        | architecture diagram + module cards (SHAPE) · the loop + story state machine, vocabulary's sole definition (LIFECYCLE) · drift technical detail, gate table, raw story lists, all provenance anchors | `architecture` (+ optional reality probe), the canonical vocabulary                                                           | structure change                               |
+| Band                         | Audience                 | Content (block re-homed from)                                                                                                                                                                                                                                                              | Derived from                                                                                                                  | Regeneration gate                              |
+| ---------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| **1 · Everyone**             | every role, 30 seconds   | what this project is, one paragraph (PRIMER's essence) · health + progress in one sentence · the one ask + the while-you-were-away narrative (NOW)                                                                                                                                         | identity fields; the attention set; state diff vs. baseline                                                                   | identity: era · rest: never                    |
+| **2 · Product user**         | whoever uses the product | what works today (shipped, user-visible capabilities) · what recently changed for users · what the current layer will add, in user language                                                                                                                                                | **net-new derivation**: passed `layer_gates` + changelog, translated to user-visible outcomes (authored + anchored, D4 rules) | capability list: gate passes · rest: never     |
+| **3 · Product manager**      | plan and progress        | the full layer strip + current-layer story rows (FRONTIER) · queued layers, one sentence each + disclosure · what moved, where reality drifted, cost (LEDGER's plain layer)                                                                                                                | `stories`, `layer_gates`, `changelog`, the drift facts                                                                        | never (the LEDGER block stays the dark record) |
+| **4 · Engineer / architect** | the system itself        | the embedded archify architecture artifact (semantic types, boundaries, guided views, passport — revision 5) + module-group cards · the loop + story state machine, vocabulary's sole definition (LIFECYCLE) · drift technical detail, gate table, raw story lists, all provenance anchors | `architecture` (+ optional reality probe) → typed IR → archify, the canonical vocabulary                                      | structure change                               |
 
 The six SIBYL jobs all survive — NOW and PRIMER's essence fuse into band 1,
 FRONTIER and LEDGER's plain layer form band 3, SHAPE and LIFECYCLE anchor band 4 —
@@ -239,26 +246,23 @@ Carried over from the SIBYL contract, unchanged in meaning:
   so keys _jump_, they do not _page_. A slim sticky state rail (current layer ·
   open count · needs-you count) keeps the glance overview present at any scroll
   depth.
-- **Diagrams: mermaid via CDN, with honest boundaries.** Mermaid is the owner's
-  chosen renderer. What `references/presentation.md` provides is **author-side
-  guidance, not archify's machine validation** — mermaid's auto-layout owns
-  geometry, so edge crossings and edge-through-node cannot be mechanically
-  prevented, only bounded and inspected:
-  - hard size bounds per rendered graph — ≤ 12 nodes, and ≤ 8 nodes in any single
-    subgraph; a graph that wants more is decomposed into multiple diagrams (the
-    OBS-1 guard, applied per rendered graph so subgraph grouping cannot silently
-    rebuild a hairball);
-  - labels only on cross-boundary or non-obvious edges; detail goes to cards;
-  - a human **glance gate** in the checklist: no edge crossing on the main path, no
-    edge passing through an unrelated node — a soft check, named as such;
-  - SIBYL's proven theming recipe (palette-bound theme variables, dashed/dotted
-    edge classes for GOAL/EXP, the `run()` ordering and label-escaping fixes);
-  - fallback when the CDN is blocked: the diagram section renders its pre-formatted
-    source text with a caption naming the degradation — legible, honestly labeled,
-    but not claimed to be a human surface;
-  - **upgrade path**: if glance-gate failures recur, SHAPE/LIFECYCLE rendering
-    moves to cross-invoking archify (validated inline SVG, native focus/guided
-    views); recorded so the trigger is observable, not aspirational.
+- **The architecture view renders through archify** (owner direction, revision 5 —
+  the previously deferred upgrade path, activated). The Author phase writes a
+  typed `<name>.architecture.json` from the `architecture` facts (semantic
+  component types, boundaries for the module groups, ≤ 12 main-path components,
+  detail in cards, `meta.views` as guided readings; labels carry the cold-reader
+  two channels — plain label, real module name as sublabel), then cross-invokes
+  the archify CLI: `validate` (schema + Clean Flow / Clean Label layout gates,
+  consuming repair receipts within the two-round bound) and `deliver` (atomic
+  commit + receipt). The result is a **companion artifact**
+  (`architecture-<date>T<time>Z-<shorthash>.html`) written next to the brief;
+  band 4 embeds it via archify's `?embed=1` mode with an open-full link, so
+  Semantic Passport, guided views, Present mode, and exports come along for free.
+- **Mermaid via CDN survives for the LIFECYCLE vocabulary mini-diagrams only**
+  (≤ 8 nodes each, SIBYL's theming recipe, source-text fallback with a caption
+  naming the degradation). Degrade ladder for the architecture view: archify CLI
+  unavailable → a bounded mermaid diagram under the old author-side guidance
+  (≤ 12 nodes, human glance gate, named as a degraded rendering) → source text.
 - **Typography** — three roles, stated: serif for section heads and counts; sans
   for body; mono for kickers, chips, ids, and feet; identifiers are mono, never
   italic. This adopts SIBYL's editorial/instrument split and consciously deviates
@@ -393,7 +397,10 @@ skills/human-alignment/
      run standalone (independent of the authoring agent);
   7. every surfaced item carries a plain-language sentence plus a provenance
      anchor, and the prose channel stays within the seven-word vocabulary budget
-     (the cold-reader contract, mechanically counted where possible).
+     (the cold-reader contract, mechanically counted where possible);
+  8. when the archify CLI is present, the companion architecture artifact passes
+     `validate` and `deliver` (layout gates green, delivery receipt recorded) and
+     the brief embeds it; when absent, band 4 renders the named degraded ladder.
 - **Propagation**: visible downstream after the tag is cut and each of the 6
   consumer repos re-pins via the skills CLI. SIBYL adoption is a follow-up in that
   repo: replace its hand-authored Brief generation with the skill and flip its local
@@ -481,6 +488,18 @@ light sections) and real looplia findings (8 layers of all-done stories with
 L32's 38 criteria with zero coverage). The owner's readability verdict on the
 result — system vocabulary is illegible even to a returning owner — produced the
 revision-3 cold-reader contract (D2).
+
+The revision-5 archify integration was then proven in the same simulation: a
+12-component typed IR authored from looplia's declared modules (zh labels, real
+module names as sublabels, two boundaries, three guided views) went through
+archify `validate` — which caught two defects with actionable repair receipts (a
+card-dot enum violation; a connection label overlapping the `exec` component,
+fixed with the receipt's suggested `labelAt`) — and `deliver`, producing a 614 KB
+interactive artifact the brief embeds. During the same session looplia's HEAD
+advanced mid-simulation (L32-005 landed; its gate flipped to `scripted_passed`),
+which surfaced two more authoring rules now in D4's spirit: changelog
+translations bind by entry id + kind, never by list position, and no authored
+sentence may carry a literal number — all numbers render from facts.
 
 ## Horizon (recorded, not built)
 
