@@ -19,6 +19,13 @@
 > identifier demoted to a provenance anchor (D2, D4) — and five derivation-spec
 > corrections the simulation surfaced are folded into D7. The simulation evidence
 > is recorded at the end of D7.
+>
+> **Revision 4 (2026-07-24):** owner ruling on reader modes — the `?read=`
+> mechanism is removed. One document, one fixed order: an **audience-depth
+> pyramid** of four bands (everyone → product user → product manager → engineer),
+> where role adaptation is scroll depth and disclosure, not a URL parameter (D2).
+> Band 2 (the product-user view) is net-new content derived from passed layer
+> gates and the changelog.
 
 ## Problem
 
@@ -155,22 +162,25 @@ model is: **every read is a first read.** Two consequences:
   numbers, module ids — lives only in anchors. The diagram/cell channel keeps the
   closed canonical set below; the budget governs prose.
 
-The owner/newcomer dual read survives as an **ordering** difference only; there is
-no longer a separate language level for newcomers, because cold-readable is now
-the only register. A future `?read=stakeholder` mode reduces to hiding the anchor
-channel — recorded in Horizon.
+**The audience-depth pyramid (owner ruling, revision 4).** There is exactly one
+document in one fixed order; the `?read=` mechanism and the manifest's order
+arrays are removed. Role adaptation is **scroll depth plus disclosure**: everyone
+enters at the same top, and each band below is deeper and more technical — the
+inverted pyramid. Stopping early is the feature: a stakeholder who reads only
+bands 1–2 has read a complete, honest surface, so no separate stakeholder mode is
+needed.
 
-Six sections, ported from SIBYL's contract with `product-context.yaml` as the data
-source (attention set and drift facts are defined in D7):
+| Band                         | Audience                 | Content (block re-homed from)                                                                                                                                                                        | Derived from                                                                                                                  | Regeneration gate                              |
+| ---------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| **1 · Everyone**             | every role, 30 seconds   | what this project is, one paragraph (PRIMER's essence) · health + progress in one sentence · the one ask + the while-you-were-away narrative (NOW)                                                   | identity fields; the attention set; state diff vs. baseline                                                                   | identity: era · rest: never                    |
+| **2 · Product user**         | whoever uses the product | what works today (shipped, user-visible capabilities) · what recently changed for users · what the current layer will add, in user language                                                          | **net-new derivation**: passed `layer_gates` + changelog, translated to user-visible outcomes (authored + anchored, D4 rules) | capability list: gate passes · rest: never     |
+| **3 · Product manager**      | plan and progress        | the full layer strip + current-layer story rows (FRONTIER) · queued layers, one sentence each + disclosure · what moved, where reality drifted, cost (LEDGER's plain layer)                          | `stories`, `layer_gates`, `changelog`, the drift facts                                                                        | never (the LEDGER block stays the dark record) |
+| **4 · Engineer / architect** | the system itself        | architecture diagram + module cards (SHAPE) · the loop + story state machine, vocabulary's sole definition (LIFECYCLE) · drift technical detail, gate table, raw story lists, all provenance anchors | `architecture` (+ optional reality probe), the canonical vocabulary                                                           | structure change                               |
 
-| Section       | Job                                                                | Derived from                                     | Altitude              | Regeneration gate             |
-| ------------- | ------------------------------------------------------------------ | ------------------------------------------------ | --------------------- | ----------------------------- |
-| **NOW**       | since-you-last-looked delta band · the one ask · quiet zone        | story-state diff vs. baseline; the attention set | daily                 | never (always fresh)          |
-| **FRONTIER**  | every open story by layer, stage cells + action verb               | `stories`, `layer_gates`                         | daily · both          | never                         |
-| **LEDGER**    | what moved + honest-state block (drift, deferrals, open questions) | `changelog`, `cost`, the drift facts             | daily                 | never (the only dark section) |
-| **SHAPE**     | architecture in space: modules, contracts, one main path           | `architecture` (+ optional reality probe, D4)    | newcomer · reference  | structure change              |
-| **LIFECYCLE** | the story state machine + the AEP workflow loop                    | the canonical vocabulary below                   | newcomer · vocabulary | structure change              |
-| **PRIMER**    | what this product is, for whom, why                                | `opportunity`, `product`                         | newcomer              | era change                    |
+The six SIBYL jobs all survive — NOW and PRIMER's essence fuse into band 1,
+FRONTIER and LEDGER's plain layer form band 3, SHAPE and LIFECYCLE anchor band 4 —
+but the page's spine is audience depth, not section type. The navigation rail
+labels the four bands by audience; keyboard jumps move between bands.
 
 **The canonical vocabulary (P4 as a mechanism, not a citation).** SIBYL's
 architecture-as-vocabulary principle requires a _closed_ word set whose only
@@ -202,14 +212,11 @@ Carried over from the SIBYL contract, unchanged in meaning:
   is the trust gauge, and dilution kills it; an IS chip is legal only to ground a
   fact inside an aspirational sentence) and **one chip governs one clause**, never
   a paragraph.
-- **Delta-gate** — the manifest records per-section `gate` / `changed` / `stamp`.
-  Gated sections that didn't change collapse to a one-line stamp in the owner read;
-  the stamp joins NOW's quiet zone and stays reachable.
-- **Dual reads** — default order serves the returning owner (NOW first);
-  `?read=newcomer` reorders to PRIMER → SHAPE → LIFECYCLE first so the vocabulary is
-  owned before the frontier uses it. The manifest's order arrays are the re-ordering
-  feature. Since revision 3 the reads differ in ordering only — the language
-  register is cold-readable in both.
+- **Delta-gate** — the manifest records per-block `gate` / `changed` / `stamp`.
+  Gated blocks that didn't change collapse to a one-line stamp; the stamp joins
+  band 1's quiet zone and stays reachable. (Revision 4: gates apply per block
+  within the bands — identity and the band-2 capability list are the slow blocks,
+  alongside band 4's architecture and lifecycle.)
 - **Per-section self-legends** — every encoding (stage cells, tense chips, line
   styles) is defined where it is used; no section assumes memory of another.
 - **Language** — one file per run, in the **owner's language** (an invocation
@@ -226,11 +233,12 @@ Carried over from the SIBYL contract, unchanged in meaning:
   when WebGL is unavailable. Visual beauty is the owner's stated requirement for
   this layer; the plainness law governs the content layer only.
 - **Keyboard navigation on a free-scrolling page** — ↑/↓, PageUp/PageDown, j/k,
-  Home/End jump smoothly between sections; a fixed section-dot rail and `#section`
-  anchors make any position shareable. No CSS scroll-snap lock: the page must stay
-  scannable as a whole (the reason deck paging was rejected), so keys _jump_, they
-  do not _page_. A slim sticky state rail (current layer · open count · needs-you
-  count) keeps the glance overview present at any scroll depth.
+  Home/End jump smoothly between bands; a fixed rail labels the four audience
+  bands and `#band` anchors make any position shareable. No CSS scroll-snap lock:
+  the page must stay scannable as a whole (the reason deck paging was rejected),
+  so keys _jump_, they do not _page_. A slim sticky state rail (current layer ·
+  open count · needs-you count) keeps the glance overview present at any scroll
+  depth.
 - **Diagrams: mermaid via CDN, with honest boundaries.** Mermaid is the owner's
   chosen renderer. What `references/presentation.md` provides is **author-side
   guidance, not archify's machine validation** — mermaid's auto-layout owns
@@ -279,7 +287,7 @@ deterministic-orchestration standard):
 | Phase         | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Postcondition                                                                              |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | 0 · Preflight | `product-context.yaml` exists (else point to `/aep-envision`); read `docs/human-alignment/manifest.json` for the delta baseline                                                                                                                                                                                                                                                                                                                                                                                              | baseline commit known, or first-run declared                                               |
-| 1 · Derive    | run `scripts/derive.mjs`: extract **facts JSON** from `product-context.yaml` + git — story counts by state and layer, the attention set (D7), the drift facts (D7), changelog entries since baseline, layer-gate status, cost roll-up — and validate it against `facts.schema.json`                                                                                                                                                                                                                                          | facts JSON exists and validates; every fact names its YAML path                            |
+| 1 · Derive    | run `scripts/derive.mjs`: extract **facts JSON** from `product-context.yaml` + git — story counts by state and layer, the attention set (D7), the drift facts (D7), the shipped-capability inputs for band 2 (passed layer gates + their summaries), changelog entries since baseline, layer-gate status, cost roll-up — and validate it against `facts.schema.json`                                                                                                                                                         | facts JSON exists and validates; every fact names its YAML path                            |
 | 1.5 · Probe   | _optional_ — architecture-reality probe: derive the actual import graph (madge/ts-morph/LSP-class tooling, per repo toolchain) and diff it against declared `architecture`; results join the drift facts, revision-pinned to HEAD                                                                                                                                                                                                                                                                                            | probe ran and SHAPE is marked `code-verified`, or probe skipped and SHAPE is `unverified`  |
 | 2 · Author    | fill `assets/template.html`: numbers and states come only from facts JSON; narrative (PRIMER, translations, LEDGER prose) is written fresh, tense-chipped, stamped with authored-at + source commit; narrative obeys the evidence-language rule and the cold-reader authoring rules below                                                                                                                                                                                                                                    | every section rendered or stamped                                                          |
 | 3 · Audit     | run `scripts/audit.mjs` for the mechanical checks (number-provenance: every number on the page ∈ facts JSON; class preflight; chip-grammar: every non-fact chipped, no fact chipped, one chip per clause; translation-anchor 1:1 — every plain sentence cites a fact id, every surfaced fact has a plain sentence; prose vocabulary-budget count) plus the judgment checks from `references/checklist.md` (vocabulary audit against the D2 closed set, evidence-language audit, glance gate, cold-reader test, so-what test) | audit passes; failures emit structured receipts; at most two correction rounds             |
@@ -372,8 +380,9 @@ skills/human-alignment/
      (one `failed` story + one pending `amendment_log` entry), the brief passes
      every P0 checklist item **and NOW renders the top-priority signal as the one
      ask with its action verb** — NOW provably non-empty;
-  2. re-running with an unchanged YAML produces a new timestamped file whose
-     SHAPE/LIFECYCLE/PRIMER collapse to stamps (delta-gate proof);
+  2. re-running with an unchanged YAML produces a new timestamped file whose slow
+     blocks (identity, capability list, architecture, lifecycle) collapse to
+     stamps (delta-gate proof);
   3. a story-state edit in the YAML surfaces in NOW's delta band on the next run;
   4. with WebGL, mermaid CDN, and font CDN all blocked, the page stays legible and
      the diagram sections show their labeled source-text fallback;
@@ -489,8 +498,8 @@ revision-3 cold-reader contract (D2).
   repos' toolchains.
 - **TUI summary render** of NOW (the terminal-native owner's glance surface);
   one-file-per-language localization; a stable `latest` pointer if a fixed URL is
-  ever needed; `?read=stakeholder` — with the cold-reader contract in place this
-  reduces to hiding the anchor channel and the FRONTIER disclosure detail.
+  ever needed. (A separate stakeholder mode dissolved in revision 4: the pyramid
+  already serves stakeholders — they stop after band 2.)
 
 ## Alternatives considered
 
@@ -521,6 +530,11 @@ revision-3 cold-reader contract (D2).
   gate/layer jargon are illegible even to a returning owner. SIBYL's
   "use the system's own name" survives in the anchor channel only; prose
   translates (D2 cold-reader contract).
+- **URL-parameter reads** (`?read=owner|newcomer|stakeholder`, revisions 1–3) —
+  rejected in revision 4 by the owner: one document for everyone, ordered as an
+  audience-depth pyramid; role adaptation is scroll depth and disclosure. A mode
+  parameter splits the audience into surfaces nobody remembers to use; a pyramid
+  lets each reader stop when their questions run out.
 - **`skills/human-alignment/human-alignment/` category nesting** — rejected by the
   owner (duplicate directory); category grouping revisits when a second theory
   skill exists under the theme (see D1).
