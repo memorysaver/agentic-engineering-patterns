@@ -11,6 +11,14 @@
 > specs (D7), fact derivation is a real script in v1 (D4), the plainness law's
 > scope is split between content and canvas (D2/D3), and the delta baseline is a
 > committed manifest rather than filename sort (D2).
+>
+> **Revision 3 (2026-07-24):** after a full-pipeline simulation against a real
+> consumer (looplia, 395 stories) and the owner's readability verdict on the
+> result. Two changes: the **cold-reader contract** replaces the warm-context
+> reader model — every surfaced item speaks plain language first with the system
+> identifier demoted to a provenance anchor (D2, D4) — and five derivation-spec
+> corrections the simulation surfaced are folded into D7. The simulation evidence
+> is recorded at the end of D7.
 
 ## Problem
 
@@ -129,6 +137,29 @@ oversight; the one binding the wash does keep is tonal — it darkens over the r
 section, so the canvas follows the live/record split rather than decorating at
 random.
 
+**The cold-reader contract (owner ruling, revision 3).** SIBYL's guideline wrote
+for a warm reader — the owner who reads the surface a hundred times and owns its
+vocabulary. The simulation proved that reader does not exist: the real owner runs
+many repos, returns from days away, and meets every brief cold. So the reader
+model is: **every read is a first read.** Two consequences:
+
+- **Two channels, inverted hierarchy.** Every surfaced item is a plain-language
+  sentence first — _what happened, to what, and why the reader cares_ — with the
+  system identifier (story id, YAML path, SHA, PR number) demoted to a small mono
+  **provenance anchor** under it. System names are citations, not prose. SIBYL's
+  "use the system's own name" survives in the anchor channel; the prose channel
+  translates.
+- **A vocabulary budget.** The prose channel may use at most **seven** system
+  words undefined (Miller's bound); each is defined in one clause at first use,
+  not in a legend three screens away. Everything else — epoch, wave, SHA, PR
+  numbers, module ids — lives only in anchors. The diagram/cell channel keeps the
+  closed canonical set below; the budget governs prose.
+
+The owner/newcomer dual read survives as an **ordering** difference only; there is
+no longer a separate language level for newcomers, because cold-readable is now
+the only register. A future `?read=stakeholder` mode reduces to hiding the anchor
+channel — recorded in Horizon.
+
 Six sections, ported from SIBYL's contract with `product-context.yaml` as the data
 source (attention set and drift facts are defined in D7):
 
@@ -155,7 +186,10 @@ definitions are the two LIFECYCLE diagrams. AEP's set is:
   an exception, and collapsing those loses information.
 
 The vocabulary audit (D4 Phase 3) checks that no part or stage is named by any word
-outside this set.
+outside this set — and, since revision 3, that the prose channel stays within the
+cold-reader vocabulary budget. `layer / gate / story / needs-you` are the expected
+budget residents (translated into the brief's output language, defined at first
+use); `epoch / wave / SHA / PR` may appear only in provenance anchors.
 
 Carried over from the SIBYL contract, unchanged in meaning:
 
@@ -174,11 +208,15 @@ Carried over from the SIBYL contract, unchanged in meaning:
 - **Dual reads** — default order serves the returning owner (NOW first);
   `?read=newcomer` reorders to PRIMER → SHAPE → LIFECYCLE first so the vocabulary is
   owned before the frontier uses it. The manifest's order arrays are the re-ordering
-  feature.
+  feature. Since revision 3 the reads differ in ordering only — the language
+  register is cold-readable in both.
 - **Per-section self-legends** — every encoding (stage cells, tense chips, line
   styles) is defined where it is used; no section assumes memory of another.
-- **Language** — one file in the repo's working language. One-file-per-language
-  localization (SIBYL P3) is deferred until a consumer asks.
+- **Language** — one file per run, in the **owner's language** (an invocation
+  parameter, defaulting to the repo's working language); system identifiers stay
+  untranslated in the anchor channel. Native-language prose is the single largest
+  cognitive-load lever for a cold reader. One-file-per-language localization
+  (SIBYL P3) stays deferred.
 
 ### D3 — Presentation stack (owner-directed)
 
@@ -238,14 +276,14 @@ Carried over from the SIBYL contract, unchanged in meaning:
 The generation pipeline (each phase ends in a checkable postcondition, per the
 deterministic-orchestration standard):
 
-| Phase         | Action                                                                                                                                                                                                                                                                                                                                               | Postcondition                                                                              |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| 0 · Preflight | `product-context.yaml` exists (else point to `/aep-envision`); read `docs/human-alignment/manifest.json` for the delta baseline                                                                                                                                                                                                                      | baseline commit known, or first-run declared                                               |
-| 1 · Derive    | run `scripts/derive.mjs`: extract **facts JSON** from `product-context.yaml` + git — story counts by state and layer, the attention set (D7), the drift facts (D7), changelog entries since baseline, layer-gate status, cost roll-up — and validate it against `facts.schema.json`                                                                  | facts JSON exists and validates; every fact names its YAML path                            |
-| 1.5 · Probe   | _optional_ — architecture-reality probe: derive the actual import graph (madge/ts-morph/LSP-class tooling, per repo toolchain) and diff it against declared `architecture`; results join the drift facts, revision-pinned to HEAD                                                                                                                    | probe ran and SHAPE is marked `code-verified`, or probe skipped and SHAPE is `unverified`  |
-| 2 · Author    | fill `assets/template.html`: numbers and states come only from facts JSON; narrative (PRIMER, why-lines, LEDGER prose) is written fresh, tense-chipped, stamped with authored-at + source commit; narrative obeys the evidence-language rule below                                                                                                   | every section rendered or stamped                                                          |
-| 3 · Audit     | run `scripts/audit.mjs` for the mechanical checks (number-provenance: every number on the page ∈ facts JSON; class preflight; chip-grammar: every non-fact chipped, no fact chipped, one chip per clause) plus the judgment checks from `references/checklist.md` (vocabulary audit against the D2 closed set, evidence-language audit, glance gate) | audit passes; failures emit structured receipts; at most two correction rounds             |
-| 4 · Deliver   | write `docs/human-alignment/brief-<date>T<time>Z-<shorthash>.html`; update `manifest.json` (generation record + content SHA-256); report the delta summary + path in-conversation                                                                                                                                                                    | new file exists; its name's hash equals repo HEAD; `manifest.json` digest matches the file |
+| Phase         | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Postcondition                                                                              |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| 0 · Preflight | `product-context.yaml` exists (else point to `/aep-envision`); read `docs/human-alignment/manifest.json` for the delta baseline                                                                                                                                                                                                                                                                                                                                                                                              | baseline commit known, or first-run declared                                               |
+| 1 · Derive    | run `scripts/derive.mjs`: extract **facts JSON** from `product-context.yaml` + git — story counts by state and layer, the attention set (D7), the drift facts (D7), changelog entries since baseline, layer-gate status, cost roll-up — and validate it against `facts.schema.json`                                                                                                                                                                                                                                          | facts JSON exists and validates; every fact names its YAML path                            |
+| 1.5 · Probe   | _optional_ — architecture-reality probe: derive the actual import graph (madge/ts-morph/LSP-class tooling, per repo toolchain) and diff it against declared `architecture`; results join the drift facts, revision-pinned to HEAD                                                                                                                                                                                                                                                                                            | probe ran and SHAPE is marked `code-verified`, or probe skipped and SHAPE is `unverified`  |
+| 2 · Author    | fill `assets/template.html`: numbers and states come only from facts JSON; narrative (PRIMER, translations, LEDGER prose) is written fresh, tense-chipped, stamped with authored-at + source commit; narrative obeys the evidence-language rule and the cold-reader authoring rules below                                                                                                                                                                                                                                    | every section rendered or stamped                                                          |
+| 3 · Audit     | run `scripts/audit.mjs` for the mechanical checks (number-provenance: every number on the page ∈ facts JSON; class preflight; chip-grammar: every non-fact chipped, no fact chipped, one chip per clause; translation-anchor 1:1 — every plain sentence cites a fact id, every surfaced fact has a plain sentence; prose vocabulary-budget count) plus the judgment checks from `references/checklist.md` (vocabulary audit against the D2 closed set, evidence-language audit, glance gate, cold-reader test, so-what test) | audit passes; failures emit structured receipts; at most two correction rounds             |
+| 4 · Deliver   | write `docs/human-alignment/brief-<date>T<time>Z-<shorthash>.html`; update `manifest.json` (generation record + content SHA-256); report the delta summary + path in-conversation                                                                                                                                                                                                                                                                                                                                            | new file exists; its name's hash equals repo HEAD; `manifest.json` digest matches the file |
 
 - **Why the derive script is v1, not deferred** (owner ruling: faithful
   representation): OBS-5's trust came from _code-derived_ artifacts, and AEP's own
@@ -262,6 +300,27 @@ deterministic-orchestration standard):
   may not assert causality or impact — _blocks, breaks, guarantees, unblocks,
   proves_ — without citing a fact id from facts JSON. Tense chips say _when_ a
   claim holds; this rule says _whether it may be claimed at all_.
+- **Cold-reader authoring rules** (revision 3; the D2 contract, operationalized):
+  1. **Answer first.** Every section opens with one plain sentence that _is_ the
+     section's conclusion ("all quiet except two repair tasks waiting on you") —
+     overview-first applied to text, not just layout.
+  2. **The while-you-were-away narrative.** NOW narrates the baseline diff as one
+     continuous paragraph — "last brief, you had just dispatched X; it landed;
+     meanwhile 3 more landed and 2 repairs failed" — not as bare delta chips. On a
+     first run it narrates the newest changelog window and says so.
+  3. **Translation is mandatory.** Story titles and changelog entries never
+     surface verbatim. Each is re-authored as a consequence sentence — _what
+     happened, to what, why the reader cares_ — bound to its source id in the
+     anchor. Translations are re-authored fresh each run from current facts, so
+     their rot window is one generation.
+  4. **No naked numbers.** Every surfaced number sits inside a sentence stating
+     its consequence ("38 acceptance criteria, none verified — the 10 finished
+     tasks have no evidence yet").
+  5. **Fold the queue.** Backlog stories collapse to one plain sentence per layer
+     with the full enumeration behind a disclosure element — the every-open-story
+     contract is preserved, but a cold reader meets nine sentences, not 44 rows.
+  6. **So-what test.** A row that cannot state why the reader should care moves to
+     the anchor/disclosure channel; it does not occupy the surface.
 - Why hybrid: OBS-5 (deterministic derivation is what humans learn to trust) plus
   OBS-3 (unlabeled narrative rots). Rot is contained three ways: regeneration on
   every invocation, authored-at stamps that make staleness visible, and the rule
@@ -322,7 +381,10 @@ skills/human-alignment/
      filename's timestamp matches the manifest's `generated` field, and
      `manifest.json`'s content SHA-256 matches the delivered file;
   6. facts JSON validates against `facts.schema.json`, and `audit.mjs` passes when
-     run standalone (independent of the authoring agent).
+     run standalone (independent of the authoring agent);
+  7. every surfaced item carries a plain-language sentence plus a provenance
+     anchor, and the prose channel stays within the seven-word vocabulary budget
+     (the cold-reader contract, mechanically counted where possible).
 - **Propagation**: visible downstream after the tag is cut and each of the 6
   consumer repos re-pins via the skills CLI. SIBYL adoption is a follow-up in that
   repo: replace its hand-authored Brief generation with the skill and flip its local
@@ -357,6 +419,16 @@ pending` (→ `approve ▸`), object-map `status == draft` (→ `/aep-model ▸`
 - Consumers: this skill now; `/aep-autopilot` escalation and `/aep-watch` alerting
   re-point to the same spec in later PRs (recorded in Horizon; zero behavior change
   in this round).
+- **Schema-version tolerance** (simulation finding): real consumer YAMLs predate
+  parts of the current schema (looplia has no `product` section, no
+  `skip_human_eval` fields, no `status` on `calibration.plan` entries). A predicate
+  whose fields are absent is **skipped and recorded** ("signal not derivable in
+  this schema"), never guessed; the brief surfaces the absence as an open question
+  instead of silently narrowing the attention set.
+- **Field typing** (simulation finding): the derivation field map types every
+  fact — `business_value` is a numeric score in real consumer YAMLs, so a why-line
+  derivation must require prose-typed sources and drop numeric ones rather than
+  render a meaningless "10".
 
 **The drift facts** — the canonical answer to "where did reality drift", as a spec
 in `skills/product-context/_shared/references/drift-facts.md`. Every LEDGER drift
@@ -365,11 +437,17 @@ drift claims are noise or misses, and both spend the surface's credibility — w
 nothing derives, the row is silent, not fabricated). The v1 derivations:
 
 1. **Intent without evidence** — `layer_gates[].coverage.uncovered`: declared
-   acceptance criteria no evidence covers.
+   acceptance criteria no evidence covers. **Scoped to layers with work done or
+   underway** (simulation finding): a future layer whose gate is honestly
+   `not_started` with zero stories done is plan, not drift — flagging it repeats
+   OBS-2's deferred-stories noise. The detector's boundary is stated on the
+   surface when relevant.
 2. **Plan behind the architecture** — `architecture.amendment_log[]` pending:
    stories were mapped against a structure that has since been amended.
-3. **Reality resisting intent** — `failure_logs`: a story that repeatedly fails is
-   evidence the spec and the code disagree.
+3. **Reality resisting intent** — `failure_logs` **on open stories**: a story that
+   repeatedly fails is evidence the spec and the code disagree. Completed stories'
+   failure logs are history — overcome, kept as record, counted separately
+   (simulation finding: 10 of looplia's 12 log-bearing stories were completed).
 4. **Control-plane incoherence** — layer↔story-state disagreement (e.g., completed
    stories in an unopened layer): the OBS-4 class. Follow-up (separate PR): the
    same check joins `/aep-validate` so incoherence cannot silently pass again —
@@ -380,6 +458,20 @@ nothing derives, the row is silent, not fabricated). The v1 derivations:
    (its architecture graph was the one artifact derived from real imports).
    Toolchain-dependent, so it degrades honestly: no tool → SHAPE marked
    `unverified`, never blocked.
+
+**Simulation evidence (2026-07-24).** The full pipeline ran against looplia
+(`product-context.yaml`, 25k lines, 395 stories, at `d5212571`): a derive script
+implementing both specs produced facts JSON (attention set of 2 — both `failed`
+stories, the one ask chosen deterministically; 28 raw drift facts), the brief
+rendered all six sections with every number JS-rendered from embedded facts, and
+the mechanical audit plus a browser render check passed. The run surfaced the
+five spec corrections now folded in above (intent scope; open-vs-historical
+failure logs; schema tolerance; field typing; plus the D3 paper-overlay fix for
+light sections) and real looplia findings (8 layers of all-done stories with
+`not_started` gates; a gate named `completed` outside the two-phase vocabulary;
+L32's 38 criteria with zero coverage). The owner's readability verdict on the
+result — system vocabulary is illegible even to a returning owner — produced the
+revision-3 cold-reader contract (D2).
 
 ## Horizon (recorded, not built)
 
@@ -397,7 +489,8 @@ nothing derives, the row is silent, not fabricated). The v1 derivations:
   repos' toolchains.
 - **TUI summary render** of NOW (the terminal-native owner's glance surface);
   one-file-per-language localization; a stable `latest` pointer if a fixed URL is
-  ever needed.
+  ever needed; `?read=stakeholder` — with the cold-reader contract in place this
+  reduces to hiding the anchor channel and the FRONTIER disclosure detail.
 
 ## Alternatives considered
 
@@ -423,6 +516,11 @@ nothing derives, the row is silent, not fabricated). The v1 derivations:
   are not stories, and stored copies of derivable truth drift silently.
 - **Hand-authored drift rows** — rejected (D7, OBS-2): underived drift is noise or
   a miss; silence over fabrication.
+- **System-vocabulary prose** (revision 1–2's implicit register) — rejected in
+  revision 3 by the owner after reading the simulated brief: story titles and
+  gate/layer jargon are illegible even to a returning owner. SIBYL's
+  "use the system's own name" survives in the anchor channel only; prose
+  translates (D2 cold-reader contract).
 - **`skills/human-alignment/human-alignment/` category nesting** — rejected by the
   owner (duplicate directory); category grouping revisits when a second theory
   skill exists under the theme (see D1).
