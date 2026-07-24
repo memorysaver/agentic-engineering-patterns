@@ -66,11 +66,20 @@ categories, not nested inside one — and syncs as **`/aep-human-alignment`**.
   `/aep-design-lens` for HCI theory (R2: one canonical home; theory is not
   duplicated).
 
-### D2 — The artifact: `docs/human-alignment/brief.html`
+### D2 — The artifact: a timestamped, commit-stamped brief in `docs/human-alignment/`
 
-One self-contained vertical-scroll HTML page per repo, written to
-`docs/human-alignment/brief.html`. Six sections, ported from SIBYL's contract with
-`product-context.yaml` as the data source:
+One self-contained vertical-scroll HTML page per run, written to
+`docs/human-alignment/brief-<YYYY-MM-DD>T<HHMM>Z-<shorthash>.html` — e.g.
+`brief-2026-07-24T0730Z-96a63f7.html`. The filename carries the generation time
+(UTC, no colons, lexicographically sortable) and the git commit the brief was
+generated at, so provenance is visible without opening the file (owner direction).
+Runs accumulate as a reviewable record; pruning old briefs is the owner's choice,
+and the newest file by filename sort is the delta baseline for the next run. A
+stable `latest` pointer is a recorded option if a fixed URL is ever needed (a
+symlink breaks static hosting, so it would be a copy or a redirect stub).
+
+Six sections, ported from SIBYL's contract with `product-context.yaml` as the data
+source:
 
 | Section       | Job                                                                | Derived from                                                    | Regeneration gate             |
 | ------------- | ------------------------------------------------------------------ | --------------------------------------------------------------- | ----------------------------- |
@@ -131,13 +140,13 @@ Carried over from the SIBYL contract, unchanged in meaning:
 The generation pipeline (each phase ends in a checkable postcondition, per the
 deterministic-orchestration standard):
 
-| Phase         | Action                                                                                                                                                                                                                                                   | Postcondition                                                       |
-| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| 0 · Preflight | `product-context.yaml` exists (else point to `/aep-envision`); read previous brief's manifest for the delta baseline                                                                                                                                     | baseline commit known, or first-run declared                        |
-| 1 · Derive    | extract **facts JSON** from `product-context.yaml` + git: story counts by state and layer, the needs-you list, changelog entries since baseline, layer-gate status, cost roll-up                                                                         | facts JSON embedded in the manifest; every fact names its YAML path |
-| 2 · Author    | fill `assets/template.html`: numbers and states come only from facts JSON; narrative (PRIMER, why-lines, LEDGER prose) is written fresh, tense-chipped, stamped with authored-at + source commit                                                         | every section rendered or stamped                                   |
-| 3 · Audit     | run `references/checklist.md`: tense audit (every non-fact chipped), vocabulary audit (AEP canonical words only), class preflight (every class exists in the template), **number-provenance audit** (every number on the page ∈ facts JSON), glance test | all P0 checks pass                                                  |
-| 4 · Deliver   | write `docs/human-alignment/brief.html`; report the delta summary in-conversation                                                                                                                                                                        | file replaced atomically; manifest stamps updated                   |
+| Phase         | Action                                                                                                                                                                                                                                                   | Postcondition                                                              |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| 0 · Preflight | `product-context.yaml` exists (else point to `/aep-envision`); locate the newest existing brief by filename sort and read its manifest for the delta baseline                                                                                            | baseline commit known, or first-run declared                               |
+| 1 · Derive    | extract **facts JSON** from `product-context.yaml` + git: story counts by state and layer, the needs-you list, changelog entries since baseline, layer-gate status, cost roll-up                                                                         | facts JSON embedded in the manifest; every fact names its YAML path        |
+| 2 · Author    | fill `assets/template.html`: numbers and states come only from facts JSON; narrative (PRIMER, why-lines, LEDGER prose) is written fresh, tense-chipped, stamped with authored-at + source commit                                                         | every section rendered or stamped                                          |
+| 3 · Audit     | run `references/checklist.md`: tense audit (every non-fact chipped), vocabulary audit (AEP canonical words only), class preflight (every class exists in the template), **number-provenance audit** (every number on the page ∈ facts JSON), glance test | all P0 checks pass                                                         |
+| 4 · Deliver   | write `docs/human-alignment/brief-<date>T<time>Z-<shorthash>.html`; report the delta summary in-conversation                                                                                                                                             | new file exists; its name's hash equals repo HEAD; manifest stamps updated |
 
 Why hybrid: OBS-5 (deterministic derivation is what humans learn to trust) plus
 OBS-3 (unlabeled narrative rots). Rot is contained three ways: regeneration on every
@@ -181,10 +190,12 @@ skills/human-alignment/
 - **Acceptance** (layer-gate style, checkable):
   1. `/aep-human-alignment` against a fixture `product-context.yaml` produces a
      brief that passes every P0 checklist item;
-  2. re-running with an unchanged YAML collapses SHAPE/LIFECYCLE/PRIMER to stamps
-     (delta-gate proof);
+  2. re-running with an unchanged YAML produces a new timestamped file whose
+     SHAPE/LIFECYCLE/PRIMER collapse to stamps (delta-gate proof);
   3. a story-state edit in the YAML surfaces in NOW's delta band on the next run;
-  4. the page stays readable with WebGL, mermaid CDN, and font CDN all blocked.
+  4. the page stays readable with WebGL, mermaid CDN, and font CDN all blocked;
+  5. the output filename's commit hash equals the repo HEAD at generation time, and
+     the filename's timestamp matches the manifest's `generated` field.
 - **Propagation**: visible downstream after the tag is cut and each of the 6
   consumer repos re-pins via the skills CLI. SIBYL adoption is a follow-up in that
   repo: replace its hand-authored Brief generation with the skill and flip its local
@@ -206,6 +217,10 @@ skills/human-alignment/
 - **`skills/human-alignment/human-alignment/` category nesting** — rejected by the
   owner (duplicate directory); category grouping revisits when a second theory
   skill exists under the theme (see D1).
+- **A single `brief.html` overwritten in place** — rejected by the owner: the
+  filename must carry generation time and commit hash so a reader knows which
+  commit a brief describes without opening it; overwriting also erases the record
+  of past briefs. A stable `latest` pointer remains a recorded option (D2).
 - **React / three.js now** — deferred with named triggers (D3).
 - **Bundled derive script in v1** — deferred; adopt on observed field-map drift
   (D4).
