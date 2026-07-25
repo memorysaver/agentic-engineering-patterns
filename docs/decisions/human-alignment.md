@@ -60,6 +60,24 @@
 > ruled (keep the latest 3); and the revision-6 rulings (scope names, mermaid off
 > the primary path) are propagated to every section that still contradicted them.
 
+> **Revision 8 (2026-07-25):** owner rulings after the implementation run, on
+> what the Engineering band is _for_. (a) The band is **prospective and
+> structural**, not a deeper cut of progress — an engineer needs the current
+> structure and _what the next design does to it_, and "where work happened /
+> what it cost / where it failed" is Project's depth, not Engineering's. Its
+> spine is **Now · Concepts · Next · Options** (D8). (b) The ontology is no
+> longer a deployment taxonomy: nodes are **concept modules measured against the
+> code units that carry them**, because `stories[].module` × `files_affected`
+> makes that binding derivable today. (c) Suggestions are **allowed and
+> welcome**, but only as a **Design Option Set** with a derived trigger, ≥3
+> options including "leave it as is", per-option cost/benefit in the project's
+> own measured terms, a design sketch, and a stated ranking criterion — a bare
+> one-liner recommendation is banned (D8). (d) Trigger thresholds are **fixed in
+> the spec**, not configurable. (e) The mining principle: when deterministic
+> signal looks insufficient, **dig further into what the project actually
+> records** — do not concede the ground to agent judgment. Revision 7's own
+> implementation violated this three times (D7).
+
 ## Problem
 
 AEP's planning layer captures intent and state in `product-context.yaml` — stories,
@@ -218,12 +236,12 @@ surface, so no separate stakeholder mode is needed. Bands are named by **scope,
 not audience** (owner ruling: role names make readers self-exclude; scope names
 only classify depth): **Overview · Product · Project · Engineering**.
 
-| Band                | Audience                 | Content (block re-homed from)                                                                                                                                                                                                                                                              | Derived from                                                                                                                                                                                         | Regeneration gate                                    |
-| ------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| **1 · Overview**    | every role, 30 seconds   | what this project is, one paragraph (PRIMER's essence) · health + progress in one sentence · the one ask + the while-you-were-away narrative (NOW)                                                                                                                                         | identity fields; the attention set; state diff vs. baseline                                                                                                                                          | identity: era · rest: never                          |
-| **2 · Product**     | whoever uses the product | what works today (shipped, user-visible capabilities) · what recently changed for users · what the current layer will add, in user language                                                                                                                                                | **net-new derivation**: `passed` `layer_gates` + changelog, translated to user-visible outcomes (authored + anchored, D4 rules); `scripted_passed` gates admitted only under an EXP chip (see below) | capability list: gate reaches `passed` · rest: never |
-| **3 · Project**     | plan and progress        | the full layer strip + current-layer story rows (FRONTIER) · queued layers, one sentence each + disclosure · what moved, where reality drifted, cost (LEDGER's plain layer)                                                                                                                | `stories`, `layer_gates`, `changelog`, the drift facts                                                                                                                                               | never (the LEDGER block stays the dark record)       |
-| **4 · Engineering** | the system itself        | the embedded archify architecture artifact (semantic types, boundaries, guided views, passport — revision 5) + module-group cards · the loop + story state machine, vocabulary's sole definition (LIFECYCLE) · drift technical detail, gate table, raw story lists, all provenance anchors | `architecture` (+ optional reality probe) → typed IR → archify, the canonical vocabulary                                                                                                             | structure change                                     |
+| Band                | Audience                 | Content (block re-homed from)                                                                                                                                                                                                                                                                                                                             | Derived from                                                                                                                                                                                         | Regeneration gate                                    |
+| ------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| **1 · Overview**    | every role, 30 seconds   | what this project is, one paragraph (PRIMER's essence) · health + progress in one sentence · the one ask + the while-you-were-away narrative (NOW)                                                                                                                                                                                                        | identity fields; the attention set; state diff vs. baseline                                                                                                                                          | identity: era · rest: never                          |
+| **2 · Product**     | whoever uses the product | what works today (shipped, user-visible capabilities) · what recently changed for users · what the current layer will add, in user language                                                                                                                                                                                                               | **net-new derivation**: `passed` `layer_gates` + changelog, translated to user-visible outcomes (authored + anchored, D4 rules); `scripted_passed` gates admitted only under an EXP chip (see below) | capability list: gate reaches `passed` · rest: never |
+| **3 · Project**     | plan and progress        | the full layer strip + current-layer story rows (FRONTIER) · queued layers, one sentence each + disclosure · what moved, where reality drifted, cost (LEDGER's plain layer)                                                                                                                                                                               | `stories`, `layer_gates`, `changelog`, the drift facts                                                                                                                                               | never (the LEDGER block stays the dark record)       |
+| **4 · Engineering** | the system itself        | **Now** the real code structure · **Concepts** the module vocabulary measured onto it · **Next** the queued design projected onto both, and what it needs that does not exist · **Options** only when a D8 trigger fires · the loop + story state machine, vocabulary's sole definition (LIFECYCLE) · gate table, raw story lists, all provenance anchors | code scan → `stories[].module` × `files_affected` binding → typed IR → archify (`compare` for Next), the canonical vocabulary                                                                        | structure change                                     |
 
 The six SIBYL jobs all survive — NOW and PRIMER's essence fuse into band 1,
 FRONTIER and LEDGER's plain layer form band 3, SHAPE and LIFECYCLE anchor band 4 —
@@ -305,21 +323,53 @@ Carried over from the SIBYL contract, unchanged in meaning:
   open count · needs-you count) keeps the glance overview present at any scroll
   depth.
 - **The architecture view is generated by a deterministic code pipeline and
-  rendered by archify** (owner rulings, revisions 5–6). No agent judgment in the
-  loop: a workspace-graph scanner reads the real package topology (package.json /
-  turbo graph; dependency-cruiser is the later import-level rung; LSP is rejected
-  for batch graph work), a rule table transforms it into typed archify IR —
-  R1 exclude test packages · R2 fold ubiquitous deps (in-degree ≥ 60%) into cards
-  · R3 layered/cascade layout · R4 fixed semantic-type map · R5 boundaries from
-  directory structure · R6 transitive reduction · R7 fixed package→domain table ·
-  R8 domain-level edge aggregation · R9 generated guided views · R10 permutation
-  search for row order — and a **mechanical receipt consumer** applies archify's
-  repair receipts (via/labelAt/labelDy) within the two-round bound. Same commit in,
-  byte-identical artifact out. **Three tiers**: the domain overview (≈9 nodes, the
-  embedded default), the full package graph (deep-dive), and the declared
-  architecture from the YAML (the authored narrative tier — meaning, not
-  verification). Code is the source of truth for edges; the YAML for meaning;
-  their disagreement is a drift fact, never silently reconciled.
+  rendered by archify** (owner rulings, revisions 5–6, scope corrected in
+  revision 8). The ruling was never "no agent anywhere in this view" — it is
+  **ground truth comes from code tooling, and translating it into something a
+  human understands is the agent's job**. A workspace-graph scanner reads the
+  real package topology (package.json / turbo graph; dependency-cruiser is the
+  later import-level rung; LSP is rejected for batch graph work); a rule table
+  transforms it into typed archify IR — R1 exclude test packages · R2 fold
+  ubiquitous deps (in-degree ≥ 60%) into cards · R3 layered/cascade layout ·
+  R4 semantic-type map · R5 boundaries from directory structure · R6 transitive
+  reduction · **R7 concept-module ↔ code-unit binding, measured (below)** ·
+  R8 edge aggregation · R9 generated guided views · R10 permutation search for
+  row order — and a **mechanical receipt consumer** applies archify's repair
+  receipts within the two-round bound. Same commit in, byte-identical artifact
+  out.
+- **R7 is a measurement, not a naming convention** (revision 8). The first
+  implementation grouped packages by splitting their names on the first hyphen.
+  That is deterministic and worthless: `db` and `auth` being separate "domains"
+  is an artifact of how packages were named, not a fact about the system, and
+  the grouping threw away the 32 prose module descriptions the project already
+  carries. It produced 14 domains from 19 packages, 11 of them singletons — no
+  compression, no meaning.
+  **The project already states its own ontology and binds it to code:**
+  `stories[].module` (present on 396/396 stories in the reference consumer) says
+  which concept each piece of work belongs to, and `stories[].files_affected`
+  (also 396/396, 84% resolving to a real workspace package) says where that work
+  landed. The concept→code binding is therefore **measured from the work record**,
+  not declared and not guessed. No graph-clustering alternative can replace this:
+  clustering yields groups with no names, and a domain's _name_ is a human
+  concept that exists only in prose.
+- **The Engineering band is prospective and structural** (owner ruling, revision
+  8): **Now · Concepts · Next**, and the payload is the tension between them.
+  - **Now** — the real code structure. Ground truth, tool-derived.
+  - **Concepts** — the module vocabulary humans reason in, bound to Now by the
+    R7 measurement. The gap here is "the boundary you believe in is not the
+    boundary that exists".
+  - **Next** — the queued design projected onto Now: which code units the open
+    stories' modules land in, which concepts are net-new, and whether each has a
+    home. The gap here is "what the next design needs that the structure has
+    not got". This is the question no status surface answers and the one an
+    engineer most needs; archify's `compare` (Before/Delta/After) renders it,
+    pointed **forwards** rather than at the previous brief.
+
+  Progress-shaped annotations — where work happened, what it cost, where it
+  failed — belong to Project's depth and are **excluded** from this band. That
+  separation is what keeps the pyramid honest: each band is the same three
+  questions at higher resolution, not a different subject.
+
 - **All diagrams are archify; mermaid leaves the primary path** (revision 6). The
   AEP loop renders as an archify `workflow` diagram and the story state machine as
   an archify `lifecycle` diagram, so the page has one diagram system, one visual
@@ -665,6 +715,39 @@ vocabulary; L32's 38 criteria with zero coverage). The owner's readability
 verdict on the result — system vocabulary is illegible even to a returning
 owner — produced the revision-3 cold-reader contract (D2).
 
+**Mine deeper before conceding (revision 8).** The rule that governs every
+derivation here: **when a signal looks underivable, the next move is to ask what
+the project actually records — not to hand the question to agent judgment.**
+Checking the field the schema names, finding it empty, and recording
+`schema_absent` is a half-measure that reads as diligence.
+
+Revision 7's own implementation broke this three times against the reference
+consumer, and each error shipped into the delivered example:
+
+| Reported as underivable                         | Actually available                                                                                                                    |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| "cost plane declared but unwired"               | `cost.total_usd` is 0, but **34 stories carry numeric `cost_usd` totalling \$735.15**, attributable per module (`agent` \$543.80)     |
+| "declared architecture is not code-addressable" | **396/396 stories carry `module` + `files_affected`**, 84% of 1,485 paths resolving to a workspace package — the binding is measured  |
+| "32 declared modules, 1 name in common"         | Wrong comparison: declared modules against _package_ names. Against `stories[].module` the real finding is **44 used vs 32 declared** |
+
+A roll-up field being zero is a statement about the roll-up, not about the data.
+Consequently:
+
+- **Cost derives from `stories[].cost_usd`**, rolled up per module and per layer;
+  `cost.*` is used only when it is non-empty and reconciled against the story sum.
+  A disagreement between them is itself a drift fact.
+- **Drift 5 is restated.** The declared architecture _is_ code-addressable — via
+  the work record. `architecture.modules[].paths` remains a worthwhile schema
+  addition, but as a way to **declare** what is already **measurable**, not as a
+  precondition. Measured bindings do not rot the way declared ones do.
+- **New detector — module vocabulary drift.** Compare three sets: modules
+  declared in `architecture.modules[]`, modules that stories are filed against,
+  and modules that resolve to code. In the reference consumer: **13 used but
+  never declared** (`agent-runtime`, `do-agent`, `server`, `infra`, …) and **1
+  declared but never worked**. That is the control plane and the work drifting
+  apart in the project's own vocabulary — sharper than anything the previous
+  name-comparison produced.
+
 **Re-derivation pass (2026-07-25, revision 7).** Every number above was recomputed
 from the looplia repo and the surviving artifacts. The counts hold — 395 stories,
 25,074 lines at `d5212571`, attention set of 2 (both `failed`; zero `in_review`),
@@ -705,6 +788,70 @@ advanced mid-simulation (L32-005 landed; its gate flipped to `scripted_passed`),
 which surfaced two more authoring rules now in D4's spirit: changelog
 translations bind by entry id + kind, never by list position, and no authored
 sentence may carry a literal number — all numbers render from facts.
+
+### D8 — Design Option Sets: suggestions with enough material to disagree with
+
+The Engineering band **may recommend**, and the reason it may is the same reason
+the rest of the surface may not fabricate: what makes a claim safe is the
+material under it. A bare "consider splitting this package" is an unchipped
+assertion with no anchor — the reader can only obey or ignore it. A suggestion
+carrying its option space, its measured costs, and its ranking criterion leaves
+the judgment where it belongs.
+
+So a suggestion is a **first-class surface element with a required grammar**, in
+the same way a drift row is:
+
+| Field                    | Rule                                                                                                                                         |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Trigger**              | A derived signal, cited. **No trigger, no Options block** — the same rule that bans hand-authored drift.                                     |
+| **Measured situation**   | The facts defining the decision space, every number `data-fact` bound.                                                                       |
+| **Options**              | **At least three, one of which must be "leave it as is."** Omitting the null option converts information into pressure.                      |
+| **Cost / benefit**       | Stated in _this project's measured terms_ — files moved, stories touched, runtime hops added — never in generic architectural principle.     |
+| **Design sketch**        | Enough substance to evaluate: which units, which seam, which new edges.                                                                      |
+| **What would settle it** | The measurement or event that makes the choice obvious. The `EXP` chip's discipline, applied to a decision.                                  |
+| **Tense**                | The whole block is non-fact and is chipped, so the page-level honesty meter still reads true.                                                |
+| **Ranking**              | Permitted, but the **criterion must be stated** so the reader can reject it. "On seam cost, C is cheapest" is legal; "I recommend C" is not. |
+
+**The triggers are fixed in this spec, not configurable** (owner ruling). A
+configurable threshold is a knob nobody turns; a fixed one gets reviewed. All
+three run **only against the Next projection** — open stories. Running them over
+history is a category error and was measured to be pure noise (below).
+
+1. **Concept crowding** — a code unit that the queued design plans to fill with
+   **≥ 4 concept modules**, **≥ 30 files**, and whose concepts are **≥ 50%
+   pairwise file-disjoint**. All three conditions are load-bearing: density alone
+   flags shared-type packages, and disjointness alone flags registries where
+   every concept simply adds its own file. Together they say _a lot of separable
+   code is being planned into one unit that has no internal boundary_.
+2. **Homeless concept** — a concept module in the Next projection whose planned
+   paths resolve to no code unit at all: the design has not decided where it
+   lives. Threshold ≥ 1.
+
+**Calibration against the reference consumer** (45 open stories, 8 net-new
+concept modules):
+
+| Detector                  | On the Next projection                                 | On completed work (control)               |
+| ------------------------- | ------------------------------------------------------ | ----------------------------------------- |
+| Concept crowding          | **1** — `do-agent`: 7 concepts, 85 files, 81% disjoint | 5 — noise                                 |
+| Homeless concept          | **0**                                                  | 3 — all false (docs and non-package work) |
+| _Entanglement (rejected)_ | 0                                                      | 68 — no principled cut point              |
+
+The control column is why the scope rule exists. It also killed a third detector
+I intended to ship: "two modules declared independent but sharing ≥ 3 files"
+returned 68 hits on real history with no defensible threshold, so it is
+**rejected from v1** rather than tuned until it looked reasonable.
+
+**The worked example the reference consumer produces.** Trigger: `do-agent` is
+planned to carry seven concept modules across 85 files, of which 17 of 21
+pairs share no file at all. The situation is therefore not "these things are
+entangled" but "**the plan has already partitioned this code seven ways and given
+the partition nothing to enforce it**". Options: keep one unit and enforce the
+seam with import rules (zero migration, unenforceable); split along the measured
+seams into separate runtime units (real isolation, one extra RPC hop on the
+publish path because the authority check sits there); or extract only
+`authority-kernel`, which shares zero files with all six others (highest-value
+isolation for one hop). Ranking criterion stated: seam cost — and explicitly
+_not_ security, which would reorder it.
 
 ## Horizon (recorded, not built)
 
@@ -804,6 +951,32 @@ sentence may carry a literal number — all numbers render from facts.
   upstream, and adding one would store a truth derivable from `plan` ∖ `history`,
   which is the same second-source failure the attention set was designed to avoid
   (D7). The predicate is derived instead.
+- **Name-stem package grouping as R7** (revision 7's implementation) — rejected
+  in revision 8: deterministic but meaningless. It produced 14 domains from 19
+  packages with 11 singletons, and discarded 32 prose module descriptions to
+  split strings on a hyphen. Determinism is a means to trust for _claims about
+  reality_; a grouping is not a claim about reality, so determinism bought
+  nothing there.
+- **A per-repo domain override file, plus a tunable folding threshold** — rejected
+  as the compromise it was: it concedes the rule does not work and asks the user
+  to patch it by hand, or shrinks the picture until it looks acceptable. Neither
+  makes the diagram say what the system is.
+- **Graph-clustering the package topology** (shared-dependent sets, community
+  detection) — rejected: measurable, but it yields `group-1`, `group-2`. A
+  domain's _name_ is a human concept that exists only in prose, and no amount of
+  graph mathematics recovers it.
+- **Annotating the architecture with the fact plane** (work here, spend here,
+  failures here) — rejected by the owner in revision 8 as a **band confusion**:
+  those are Project's questions at greater depth. Engineering's question is
+  structural and forward-looking — what the next design does to what exists.
+- **Entanglement detector** ("declared independent, sharing ≥ 3 files") —
+  rejected from v1 (D8): 68 hits on real history with no principled cut point.
+  Recorded rather than tuned into looking reasonable.
+- **Configurable Option-Set thresholds** — rejected by the owner: a knob nobody
+  turns. Fixed values get reviewed.
+- **Bare one-liner recommendations** — rejected (D8): a suggestion without its
+  option space and measured costs leaves the reader only obedience or dismissal.
+  Suggestions are welcome; unsupported ones are not.
 - **React / three.js now** — deferred with named triggers (D3).
 
 ## References
