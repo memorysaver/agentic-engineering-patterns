@@ -45,6 +45,20 @@
 > reconcile. (c) The brief is **one file**: every archify artifact embeds via
 > `srcdoc` (five diagrams — architecture ×3, workflow ×1, lifecycle ×1), and the
 > mermaid CDN dependency is eliminated from the primary path.
+>
+> **Revision 7 (2026-07-25):** a review pass re-derived every simulation number
+> from the looplia repo and the surviving artifacts, and found three derivation
+> specs that name fields the real consumer never populates. Corrections: drift 1
+> derives from the coverage counters, not `coverage.uncovered` (which is a
+> `/aep-build` worklist, empty precisely when the gate is `not_started`); schema
+> tolerance is **field-level**, not section-level (looplia's `amendment_log`
+> entries carry no `status`, and `calibration.plan` has no `status` field
+> upstream either, so that predicate is respecified as plan-minus-history); band
+> 2 admits `passed` gates as fact and `scripted_passed` only under an EXP chip;
+> the number-provenance audit requires declarative `data-fact` bindings so it is
+> statically checkable; the architecture pipeline gets files in D5; retention is
+> ruled (keep the latest 3); and the revision-6 rulings (scope names, mermaid off
+> the primary path) are propagated to every section that still contradicted them.
 
 ## Problem
 
@@ -134,14 +148,13 @@ categories, not nested inside one — and syncs as **`/aep-human-alignment`**.
 
 ### D2 — The artifact: a timestamped, commit-stamped brief in `docs/human-alignment/`
 
-One vertical-scroll HTML page per run — self-contained except the fonts and mermaid
-CDNs, each with an offline degrade rung (D3) — written to
+One vertical-scroll HTML page per run — self-contained except the font CDN, which
+has an offline degrade rung (D3) — written to
 `docs/human-alignment/brief-<YYYY-MM-DD>T<HHMM>Z-<shorthash>.html`, e.g.
 `brief-2026-07-24T0730Z-96a63f7.html`. The filename carries the generation time
 (UTC, no colons, lexicographically sortable) and the git commit the brief was
 generated at, so provenance is visible without opening the file (owner direction).
-Briefs are committed under `docs/` and accumulate as a reviewable record; pruning
-old briefs is the owner's choice. Delivery is an in-conversation notice (path +
+Delivery is an in-conversation notice (path +
 delta summary) — the owner and newcomers open the file themselves, and the file
 doubles as the thing to hand to anyone asking "what is this project?" (owner
 ruling).
@@ -149,10 +162,24 @@ ruling).
 **The delta baseline is a committed ledger, not filename sort.** A small
 `docs/human-alignment/manifest.json` records the latest generation: timestamp,
 source commit, output filename, per-section gate stamps, and the artifact's content
-SHA-256. Phase 0 reads this file; because it is branch-tracked, every branch carries
-its own correct baseline, and pruning or rebasing brief files never corrupts the
-delta. (Each brief also embeds its own manifest for self-description; the committed
-`manifest.json` is the generation ledger.)
+SHA-256 — plus an append-only `history[]` of the same record for every past
+generation, so the ledger outlives the files it describes. Phase 0 reads this file;
+because it is branch-tracked, every branch carries its own correct baseline, and
+pruning or rebasing brief files never corrupts the delta. (Each brief also embeds
+its own manifest for self-description; the committed `manifest.json` is the
+generation ledger.)
+
+**Retention: the latest three, pruned by the tool (owner ruling, revision 7).**
+Briefs are committed under `docs/` — the file must be openable straight from the
+repo for the hand-it-to-someone use above — but they are **not** left to
+accumulate. Measured cost is ~3 MB per brief (D3: five embedded archify
+runtimes), so Phase 4 deletes every brief beyond the newest **three** as part of
+delivery; the count is an invocation parameter for owners who want a longer tail.
+The record of pruned generations survives in `manifest.json`'s `history[]`
+(timestamp · commit · filename · content SHA-256), which is what a reader
+actually needs to answer "which brief described commit X" — the 3 MB body is not.
+This resolves D3's open caveat: the prune policy is real and mechanical, so
+briefs stay in git rather than moving behind `.gitignore`.
 
 **Scope of the plainness law (owner ruling).** SIBYL's law — every element must
 carry a meaning a human needs — governs the **content layer**: words, diagrams,
@@ -191,17 +218,33 @@ surface, so no separate stakeholder mode is needed. Bands are named by **scope,
 not audience** (owner ruling: role names make readers self-exclude; scope names
 only classify depth): **Overview · Product · Project · Engineering**.
 
-| Band                | Audience                 | Content (block re-homed from)                                                                                                                                                                                                                                                              | Derived from                                                                                                                  | Regeneration gate                              |
-| ------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| **1 · Overview**    | every role, 30 seconds   | what this project is, one paragraph (PRIMER's essence) · health + progress in one sentence · the one ask + the while-you-were-away narrative (NOW)                                                                                                                                         | identity fields; the attention set; state diff vs. baseline                                                                   | identity: era · rest: never                    |
-| **2 · Product**     | whoever uses the product | what works today (shipped, user-visible capabilities) · what recently changed for users · what the current layer will add, in user language                                                                                                                                                | **net-new derivation**: passed `layer_gates` + changelog, translated to user-visible outcomes (authored + anchored, D4 rules) | capability list: gate passes · rest: never     |
-| **3 · Project**     | plan and progress        | the full layer strip + current-layer story rows (FRONTIER) · queued layers, one sentence each + disclosure · what moved, where reality drifted, cost (LEDGER's plain layer)                                                                                                                | `stories`, `layer_gates`, `changelog`, the drift facts                                                                        | never (the LEDGER block stays the dark record) |
-| **4 · Engineering** | the system itself        | the embedded archify architecture artifact (semantic types, boundaries, guided views, passport — revision 5) + module-group cards · the loop + story state machine, vocabulary's sole definition (LIFECYCLE) · drift technical detail, gate table, raw story lists, all provenance anchors | `architecture` (+ optional reality probe) → typed IR → archify, the canonical vocabulary                                      | structure change                               |
+| Band                | Audience                 | Content (block re-homed from)                                                                                                                                                                                                                                                              | Derived from                                                                                                                                                                                         | Regeneration gate                                    |
+| ------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| **1 · Overview**    | every role, 30 seconds   | what this project is, one paragraph (PRIMER's essence) · health + progress in one sentence · the one ask + the while-you-were-away narrative (NOW)                                                                                                                                         | identity fields; the attention set; state diff vs. baseline                                                                                                                                          | identity: era · rest: never                          |
+| **2 · Product**     | whoever uses the product | what works today (shipped, user-visible capabilities) · what recently changed for users · what the current layer will add, in user language                                                                                                                                                | **net-new derivation**: `passed` `layer_gates` + changelog, translated to user-visible outcomes (authored + anchored, D4 rules); `scripted_passed` gates admitted only under an EXP chip (see below) | capability list: gate reaches `passed` · rest: never |
+| **3 · Project**     | plan and progress        | the full layer strip + current-layer story rows (FRONTIER) · queued layers, one sentence each + disclosure · what moved, where reality drifted, cost (LEDGER's plain layer)                                                                                                                | `stories`, `layer_gates`, `changelog`, the drift facts                                                                                                                                               | never (the LEDGER block stays the dark record)       |
+| **4 · Engineering** | the system itself        | the embedded archify architecture artifact (semantic types, boundaries, guided views, passport — revision 5) + module-group cards · the loop + story state machine, vocabulary's sole definition (LIFECYCLE) · drift technical detail, gate table, raw story lists, all provenance anchors | `architecture` (+ optional reality probe) → typed IR → archify, the canonical vocabulary                                                                                                             | structure change                                     |
 
 The six SIBYL jobs all survive — NOW and PRIMER's essence fuse into band 1,
 FRONTIER and LEDGER's plain layer form band 3, SHAPE and LIFECYCLE anchor band 4 —
-but the page's spine is audience depth, not section type. The navigation rail
-labels the four bands by audience; keyboard jumps move between bands.
+but the page's spine is reading depth, not section type. The navigation rail
+labels the four bands by their **scope names** — Overview · Product · Project ·
+Engineering, never by role — and keyboard jumps move between bands. (The
+Audience column above documents who each band serves; it is design rationale,
+not label text.)
+
+**Band 2 honors the two-phase gate (revision 7).** AEP's gate vocabulary is
+`scripted_passed → passed`: `scripted_passed` means the scripted run went green,
+`passed` means coverage was checked and human acceptance ran. A capability list
+derived from `scripted_passed` would assert shipped-ness the evidence does not
+carry — the exact failure the simulation produced, where a `scripted_passed` L32
+surfaced as "acceptance passed" in prose while its own anchor read
+`scripted_passed (human acceptance pending)`. So: **`passed` gates yield facts**
+(unchipped prose, the honesty meter's default), and a `scripted_passed` gate may
+appear in band 2 **only as an `EXP` chip whose settling event is the named human
+acceptance run**. Gates below `scripted_passed` do not reach band 2 at all. This
+is the D4 evidence-language rule applied to the one place a reader most wants to
+over-read.
 
 **The canonical vocabulary (P4 as a mechanism, not a citation).** SIBYL's
 architecture-as-vocabulary principle requires a _closed_ word set whose only
@@ -254,8 +297,9 @@ Carried over from the SIBYL contract, unchanged in meaning:
   when WebGL is unavailable. Visual beauty is the owner's stated requirement for
   this layer; the plainness law governs the content layer only.
 - **Keyboard navigation on a free-scrolling page** — ↑/↓, PageUp/PageDown, j/k,
-  Home/End jump smoothly between bands; a fixed rail labels the four audience
-  bands and `#band` anchors make any position shareable. No CSS scroll-snap lock:
+  Home/End jump smoothly between bands; a fixed rail labels the four bands by
+  their scope names (D2) and `#band` anchors make any position shareable. No CSS
+  scroll-snap lock:
   the page must stay scannable as a whole (the reason deck paging was rejected),
   so keys _jump_, they do not _page_. A slim sticky state rail (current layer ·
   open count · needs-you count) keeps the glance overview present at any scroll
@@ -288,11 +332,12 @@ Carried over from the SIBYL contract, unchanged in meaning:
   shows a tab strip (overview · deep-dive · narrative) over one frame, plus an
   open-in-window action via a Blob URL; a `localStorage` seed pins the embedded
   artifacts to the light theme. Full viewer interactivity (guided views, passport,
-  Present, exports) survives embedding. Cost stated honestly: each embedded
-  artifact carries archify's ~600 KB viewer runtime, so a five-diagram brief is
-  ~3 MB — fine for open-from-docs use; if briefs are generated frequently, the
-  prune policy must be real or generated briefs move behind gitignore with only
-  `manifest.json` committed.
+  Present, exports) survives embedding. Cost stated honestly and now measured:
+  each embedded artifact carries archify's ~600 KB viewer runtime, so a
+  five-diagram brief is ~3 MB (the looplia one-pager is 3,218,172 bytes). That
+  cost is bounded by D2's retention ruling — Phase 4 keeps the newest three
+  briefs and prunes the rest, so `docs/human-alignment/` stays under ~10 MB and
+  briefs stay in git rather than behind `.gitignore`.
 - **Typography** — three roles, stated: serif for section heads and counts; sans
   for body; mono for kickers, chips, ids, and feet; identifiers are mono, never
   italic. This adopts SIBYL's editorial/instrument split and consciously deviates
@@ -309,23 +354,26 @@ Carried over from the SIBYL contract, unchanged in meaning:
 - **three.js admitted only on a named trigger** — a real 3D presentation need (e.g.,
   a layer/module topology that a 2D diagram measurably fails to carry), not by
   default. Recorded so the door is neither open by default nor welded shut.
-- **Degrade ladder**: WebGL → CSS gradient; mermaid CDN blocked → labeled source
-  text (see above); font CDN blocked → system serif/mono/sans. Every rung keeps the
-  page legible offline; the diagram rung is legible but degraded, and says so.
+- **Degrade ladder** (revision 7: mermaid is no longer a primary-path dependency,
+  so it is a rung, not a risk): WebGL → CSS gradient; **archify CLI absent** →
+  bounded mermaid under author-side guidance (≤ 12 nodes, glance gate, named as
+  degraded) → labeled source text; font CDN blocked → system serif/mono/sans. The
+  only network dependency on the primary path is the font CDN. Every rung keeps
+  the page legible offline; the diagram rung is legible but degraded, and says so.
 
 ### D4 — Hybrid honesty model: facts derived by code, narrative authored by agent, both labeled
 
 The generation pipeline (each phase ends in a checkable postcondition, per the
 deterministic-orchestration standard):
 
-| Phase         | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Postcondition                                                                                               |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| 0 · Preflight | `product-context.yaml` exists (else point to `/aep-envision`); read `docs/human-alignment/manifest.json` for the delta baseline                                                                                                                                                                                                                                                                                                                                                                                              | baseline commit known, or first-run declared                                                                |
-| 1 · Derive    | run `scripts/derive.mjs`: extract **facts JSON** from `product-context.yaml` + git — story counts by state and layer, the attention set (D7), the drift facts (D7), the shipped-capability inputs for band 2 (passed layer gates + their summaries), changelog entries since baseline, layer-gate status, cost roll-up — and validate it against `facts.schema.json`                                                                                                                                                         | facts JSON exists and validates; every fact names its YAML path                                             |
-| 1.5 · Scan    | run the deterministic architecture pipeline (D3): workspace-graph scan → rules R1–R10 → receipt consumer → archify validate/deliver, producing the domain-overview and package-graph artifacts revision-pinned to HEAD; the declared-vs-actual gap joins the drift facts (import-level dependency-cruiser diff is the later rung)                                                                                                                                                                                            | artifacts delivered `code-verified` (package level), or scanner unavailable and the view is marked degraded |
-| 2 · Author    | fill `assets/template.html`: numbers and states come only from facts JSON; narrative (PRIMER, translations, LEDGER prose) is written fresh, tense-chipped, stamped with authored-at + source commit; narrative obeys the evidence-language rule and the cold-reader authoring rules below                                                                                                                                                                                                                                    | every section rendered or stamped                                                                           |
-| 3 · Audit     | run `scripts/audit.mjs` for the mechanical checks (number-provenance: every number on the page ∈ facts JSON; class preflight; chip-grammar: every non-fact chipped, no fact chipped, one chip per clause; translation-anchor 1:1 — every plain sentence cites a fact id, every surfaced fact has a plain sentence; prose vocabulary-budget count) plus the judgment checks from `references/checklist.md` (vocabulary audit against the D2 closed set, evidence-language audit, glance gate, cold-reader test, so-what test) | audit passes; failures emit structured receipts; at most two correction rounds                              |
-| 4 · Deliver   | write `docs/human-alignment/brief-<date>T<time>Z-<shorthash>.html`; update `manifest.json` (generation record + content SHA-256); report the delta summary + path in-conversation                                                                                                                                                                                                                                                                                                                                            | new file exists; its name's hash equals repo HEAD; `manifest.json` digest matches the file                  |
+| Phase         | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Postcondition                                                                                                                                                    |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0 · Preflight | `product-context.yaml` exists (else point to `/aep-envision`); read `docs/human-alignment/manifest.json` for the delta baseline                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | baseline commit known, or first-run declared                                                                                                                     |
+| 1 · Derive    | run `scripts/derive.mjs`: extract **facts JSON** from `product-context.yaml` + git — story counts by state and layer, the attention set (D7), the drift facts (D7), the shipped-capability inputs for band 2 (passed layer gates + their summaries), changelog entries since baseline, layer-gate status, cost roll-up — and validate it against `facts.schema.json`                                                                                                                                                                                                                                                                           | facts JSON exists and validates; every fact names its YAML path                                                                                                  |
+| 1.5 · Scan    | run the deterministic architecture pipeline (D3), all three scripts named in D5: `scan-workspace.mjs` (workspace-graph scan) → `arch-rules.mjs` (R1–R10 → typed IR) → `receipt-consumer.mjs` (archify validate → apply receipts → deliver), producing the domain-overview and package-graph artifacts revision-pinned to HEAD; the declared-vs-actual gap joins the drift facts (import-level dependency-cruiser diff is the later rung)                                                                                                                                                                                                       | artifacts delivered `code-verified` (package level), or scanner unavailable and the view is marked degraded                                                      |
+| 2 · Author    | fill `assets/template.html`: no number is ever typed into markup — every one is a `data-fact="<facts-JSON path>"` binding the template's renderer fills at load (see the binding rule below); narrative (PRIMER, translations, LEDGER prose) is written fresh, tense-chipped, stamped with authored-at + source commit; narrative obeys the evidence-language rule and the cold-reader authoring rules below                                                                                                                                                                                                                                   | every section rendered or stamped                                                                                                                                |
+| 3 · Audit     | run `scripts/audit.mjs` for the mechanical checks (number-provenance, statically: every `data-fact` path resolves in facts JSON, and no digit appears in authored markup outside a `data-fact` element or a provenance anchor; class preflight; chip-grammar: every non-fact chipped, no fact chipped, one chip per clause; translation-anchor 1:1 — every plain sentence cites a fact id, every surfaced fact has a plain sentence; prose vocabulary-budget count) plus the judgment checks from `references/checklist.md` (vocabulary audit against the D2 closed set, evidence-language audit, glance gate, cold-reader test, so-what test) | audit passes; failures emit structured receipts; at most two correction rounds                                                                                   |
+| 4 · Deliver   | write `docs/human-alignment/brief-<date>T<time>Z-<shorthash>.html`; update `manifest.json` (generation record + content SHA-256, appending the prior record to `history[]`); **prune** every brief beyond the newest three (D2 retention ruling); report the delta summary + path in-conversation                                                                                                                                                                                                                                                                                                                                              | new file exists; its name's hash equals repo HEAD; `manifest.json` digest matches the file; ≤ 3 brief files remain and every pruned one has a `history[]` record |
 
 - **Why the derive script is v1, not deferred** (owner ruling: faithful
   representation): OBS-5's trust came from _code-derived_ artifacts, and AEP's own
@@ -333,6 +381,18 @@ deterministic-orchestration standard):
   auditing numbers it extracted itself is neither. The countable facts are
   trivially scriptable; the word "deterministic" is used only where a script did
   the work.
+- **The fact binding is declarative, so the audit is static** (revision 7). The
+  simulation's template injected numbers imperatively
+  (`$('ontA').textContent = FACTS.code_graph.nodes`), which is correct at runtime
+  but leaves nothing for a standalone `audit.mjs` to check: a static scan of the
+  delivered HTML finds no prose numbers at all and passes vacuously — an audit
+  that cannot fail. The template therefore binds every number as
+  `<span data-fact="code_graph.nodes">`, filled by one renderer loop over facts
+  JSON. Two mechanical checks become possible without a DOM: **every `data-fact`
+  path resolves** in facts JSON, and **no digit appears in authored markup**
+  outside a `data-fact` element or a provenance anchor. This is what makes
+  acceptance 6 (audit runs standalone, independent of the authoring agent) a real
+  gate rather than a formality.
 - **Structured repair receipts** (archify's contract): an audit failure names a
   stable `code`, the `subject` (element/selector), the measured `evidence`, and the
   `supportedFixes`; the authoring agent applies a listed fix and re-runs, never
@@ -381,13 +441,18 @@ skills/human-alignment/
 │   │                     # cards) + mermaid theming recipe + glance-gate definition
 │   ├── derivation.md     # facts field map: YAML path → fact; delta computation; probe notes
 │   └── checklist.md      # the P0-graded audits (guizang discipline) + receipt format
-├── scripts/
-│   ├── derive.mjs        # deterministic facts extraction (yaml + git) → facts JSON
-│   ├── audit.mjs         # independent mechanical audit (provenance, classes, chip grammar)
+├── scripts/              # Node (.mjs) throughout — one runtime, no extra toolchain
+│   ├── derive.mjs        # Phase 1: deterministic facts extraction (yaml + git) → facts JSON
+│   ├── scan-workspace.mjs # Phase 1.5a: package.json/turbo workspace graph → code-graph JSON
+│   ├── arch-rules.mjs    # Phase 1.5b: rules R1–R10 (code graph → typed archify IR, 3 tiers)
+│   ├── receipt-consumer.mjs # Phase 1.5c: archify validate → apply repair receipts → deliver
+│   ├── assemble.mjs      # Phase 4: embed delivered artifacts as srcdoc; prune to newest 3
+│   ├── audit.mjs         # Phase 3: independent mechanical audit (provenance, classes, chip grammar)
 │   └── facts.schema.json # the typed contract between derive, author, and audit
 └── assets/
     └── template.html     # seed file; the only source of CSS classes AND the palette
-                          # (:root); manifest scaffold; nav + WebGL + degrade JS prebuilt
+                          # (:root); manifest scaffold; nav + WebGL + degrade JS prebuilt;
+                          # every number is a data-fact binding, never typed markup (D4)
 ```
 
 - The **attention-set and drift derivation specs live in
@@ -400,15 +465,30 @@ skills/human-alignment/
 - Rationale lives in this document (R5); SKILL.md carries pointers only.
 - The template is the class-name single source: authoring begins by reading its
   `<style>` block, never by inventing classes (the guizang preflight, promoted to a
-  P0 checklist item).
+  P0 checklist item). It is also the **fact-binding** single source: the renderer
+  loop and the `data-fact` convention live there, so the authoring agent never
+  writes number-rendering JS (D4).
+- **The architecture pipeline is code, and it has files** (revision 7). D3 and
+  D4's Phase 1.5 make the scanner, the R1–R10 rule table, and the receipt consumer
+  load-bearing, but the earlier anatomy listed no home for them, and the
+  simulation ran them as an ad-hoc Python script. They are named above and written
+  in Node, matching `derive.mjs`/`audit.mjs`: one runtime for the whole skill, and
+  the workspace graph comes from `package.json`/turbo, which Node reads natively.
+  `arch-rules.mjs` holds R1–R10 as data (an auditable table), not as prose in a
+  reference file — the rules are the determinism claim, so they must be executable.
 
 ### D6 — Release, acceptance, propagation
 
-- **Implementation PR(s)** against this doc: scaffold the skill (including
-  `scripts/` + schema), author the template, write the two `_shared` specs (D7),
-  add the marketplace entry and skills-index rows, add the routing-eval entry.
-  Additive change → minor bump (v3.3.0); no other skill's step semantics change
-  (the `/aep-validate` coherence rule from D7 is a separate follow-up PR).
+- **Implementation PR(s)** against this doc: scaffold the skill (all seven
+  `scripts/` files from D5 + the facts schema), author the template with its
+  `data-fact` renderer, write the two `_shared` specs (D7), add the marketplace
+  entry and skills-index rows, add the routing-eval entry. Additive change →
+  minor bump (v3.3.0); no other skill's step semantics change (the
+  `/aep-validate` coherence rule from D7 is a separate follow-up PR, and
+  `architecture.modules[].paths` is a separate schema PR — a schema field addition
+  must propagate to every `product-context-schema.yaml` copy under
+  `skills/product-context/*/templates/`, which the build regenerates from
+  `_shared/`).
 - **Acceptance** (layer-gate style, checkable):
   1. against a fixture `product-context.yaml` containing known attention signals
      (one `failed` story + one pending `amendment_log` entry), the brief passes
@@ -418,13 +498,20 @@ skills/human-alignment/
      blocks (identity, capability list, architecture, lifecycle) collapse to
      stamps (delta-gate proof);
   3. a story-state edit in the YAML surfaces in NOW's delta band on the next run;
-  4. with WebGL, mermaid CDN, and font CDN all blocked, the page stays legible and
-     the diagram sections show their labeled source-text fallback;
+  4. with WebGL and the font CDN blocked — the only two network/runtime
+     dependencies left on the primary path — the page stays legible (CSS wash,
+     system fonts) and the embedded diagrams still render, since they are inlined,
+     not fetched; with the **archify CLI absent** at generation time, the diagram
+     sections fall to the named degraded rung (bounded mermaid → labeled source
+     text) and say so on the surface;
   5. the output filename's commit hash equals repo HEAD at generation, the
      filename's timestamp matches the manifest's `generated` field, and
      `manifest.json`'s content SHA-256 matches the delivered file;
   6. facts JSON validates against `facts.schema.json`, and `audit.mjs` passes when
-     run standalone (independent of the authoring agent);
+     run standalone (independent of the authoring agent) — and **provably can
+     fail**: a fixture whose markup contains a hand-typed number outside a
+     `data-fact` element, and one whose `data-fact` path is absent from facts
+     JSON, are both rejected with a structured receipt;
   7. every surfaced item carries a plain-language sentence plus a provenance
      anchor, and the prose channel stays within the seven-word vocabulary budget
      (the cold-reader contract, mechanically counted where possible);
@@ -433,7 +520,20 @@ skills/human-alignment/
      receipts recorded), the assembled brief is one self-contained file (fonts CDN
      excepted), and re-running the pipeline at the same commit reproduces the
      artifacts byte-identically; when absent, the Engineering band renders the
-     named degraded ladder.
+     named degraded ladder;
+  9. after four consecutive runs, `docs/human-alignment/` holds exactly three
+     brief files (the newest three) and `manifest.json`'s `history[]` holds four
+     records — the pruned generation is still addressable by commit and digest
+     (retention proof, D2);
+  10. against a fixture whose `architecture.amendment_log[]` entries carry no
+      `status` and whose `calibration.plan[]` entries carry no `status`, the run
+      **skips those predicates and records the skip** as a derivable-signal
+      absence that reaches the surface as an open question — it neither guesses
+      nor silently narrows the attention set (field-level schema tolerance, D7);
+  11. against a fixture with a `scripted_passed` layer gate, band 2 renders its
+      capabilities under an `EXP` chip naming the pending human acceptance, and
+      the unchipped capability list contains only `passed` gates (two-phase gate
+      honesty, D2).
 - **Propagation**: visible downstream after the tag is cut and each of the 6
   consumer repos re-pins via the skills CLI. SIBYL adoption is a follow-up in that
   repo: replace its hand-authored Brief generation with the skill and flip its local
@@ -454,8 +554,18 @@ implementation in `derive.mjs`** — no schema fields, no new story states.
   `failed → pending`), `stories[].status == in_review` where `skip_human_eval`
   does not waive it (→ `review ▸`), `architecture.amendment_log[].status ==
 pending` (→ `approve ▸`), object-map `status == draft` (→ `/aep-model ▸`),
-  pending `.5` calibration checkpoints (→ `/aep-calibrate ▸`),
+  **calibration checkpoints due** (→ `/aep-calibrate ▸`),
   `product.open_questions[]` (→ `answer ▸`).
+- **Calibration is derived from plan-minus-history, not from a status field**
+  (revision 7). The schema's `calibration.plan[]` entry is
+  `layer · dimensions · trigger` — there is **no `status` field** to test, in
+  looplia or upstream; the earlier "pending `.5` checkpoints" phrasing named a
+  field that has never existed, and the simulation's `calibration_status` came
+  back as fifteen nulls. The derivable predicate is the one `/aep-calibrate` step
+  1 already uses: a plan entry is **due** when its layer is at or below the
+  current layer and no `calibration.history[]` entry matches its
+  `(layer, dimension)` pair. `trigger` is prose and stays advisory — it is
+  surfaced next to the ask, never parsed.
 - A deterministic priority order for choosing **the one ask** (NOW shows one;
   the rest join the quiet zone): failed > amendment pending > in_review >
   calibration > draft object-map > open questions; ties break by layer order then
@@ -468,12 +578,22 @@ pending` (→ `approve ▸`), object-map `status == draft` (→ `/aep-model ▸`
 - Consumers: this skill now; `/aep-autopilot` escalation and `/aep-watch` alerting
   re-point to the same spec in later PRs (recorded in Horizon; zero behavior change
   in this round).
-- **Schema-version tolerance** (simulation finding): real consumer YAMLs predate
-  parts of the current schema (looplia has no `product` section, no
-  `skip_human_eval` fields, no `status` on `calibration.plan` entries). A predicate
-  whose fields are absent is **skipped and recorded** ("signal not derivable in
-  this schema"), never guessed; the brief surfaces the absence as an open question
-  instead of silently narrowing the attention set.
+- **Schema tolerance is field-level, not section-level** (revision 7 correction).
+  Real consumer YAMLs diverge from the current schema in two different ways, and
+  only the first was handled: whole **sections** may be absent (looplia has no
+  `product`, no `opportunity`), and **fields inside present sections** may be
+  absent — looplia's `architecture.amendment_log[]` entries carry only
+  `date` + `summary`, though the schema defines
+  `status: pending | accepted | rejected`. The simulation recorded the two missing
+  sections and silently derived nothing from `amendment_log`, which is exactly the
+  failure this rule exists to prevent: an attention-set predicate _and_ a drift
+  detector both went quiet and the surface said "all clear". So the rule binds per
+  **predicate**, not per section: a predicate whose fields are absent **anywhere
+  in its path** is skipped and recorded ("signal not derivable in this schema"),
+  never guessed, and `derive.mjs` emits one `schema_absent[]` record per skipped
+  predicate — `{ predicate, path, reason }` — which the brief surfaces as an open
+  question. An empty attention set is only trustworthy when `schema_absent[]` is
+  also empty, and the surface must say which of the two it is.
 - **Field typing** (simulation finding): the derivation field map types every
   fact — `business_value` is a numeric score in real consumer YAMLs, so a why-line
   derivation must require prose-typed sources and drop numeric ones rather than
@@ -485,22 +605,38 @@ row must cite a derived fact; **hand-authored drift is banned** (OBS-2: underive
 drift claims are noise or misses, and both spend the surface's credibility — when
 nothing derives, the row is silent, not fabricated). The v1 derivations:
 
-1. **Intent without evidence** — `layer_gates[].coverage.uncovered`: declared
-   acceptance criteria no evidence covers. **Scoped to layers with work done or
-   underway** (simulation finding): a future layer whose gate is honestly
-   `not_started` with zero stories done is plan, not drift — flagging it repeats
-   OBS-2's deferred-stories noise. The detector's boundary is stated on the
-   surface when relevant.
-2. **Plan behind the architecture** — `architecture.amendment_log[]` pending:
-   stories were mapped against a structure that has since been amended.
+1. **Intent without evidence** — `coverage.criteria_total −
+coverage.criteria_covered > 0` on a layer gate: declared acceptance criteria
+   no evidence covers. **The counters are the derivation, not `coverage.uncovered`**
+   (revision 7 correction): `uncovered[]` is the worklist `/aep-build` fills while
+   authoring the missing scenarios, so it is empty precisely when the gate never
+   opened — in looplia all nine coverage-bearing gates have `uncovered: []`,
+   including L32 at 0-of-38 covered. A spec pointed at that field would have
+   derived zero drift from the very case cited as this detector's motivating
+   finding. `uncovered[]` remains the **detail channel**: when populated it names
+   which criteria and their plan/WAIVER, and the anchor cites it. **Scoped to
+   layers with work done or underway** (simulation finding): a future layer whose
+   gate is honestly `not_started` with zero stories done is plan, not drift —
+   flagging it repeats OBS-2's deferred-stories noise. The detector's boundary is
+   stated on the surface when relevant.
+2. **Plan behind the architecture** — `architecture.amendment_log[].status ==
+pending`: stories were mapped against a structure that has since been amended.
+   Subject to the field-level tolerance rule above — looplia's entries carry no
+   `status`, so this detector is _skipped and recorded_, not read as "no pending
+   amendments".
 3. **Reality resisting intent** — `failure_logs` **on open stories**: a story that
-   repeatedly fails is evidence the spec and the code disagree. Completed stories'
+   repeatedly fails is evidence the spec and the code disagree. Closed stories'
    failure logs are history — overcome, kept as record, counted separately
-   (simulation finding: 10 of looplia's 12 log-bearing stories were completed).
-4. **Control-plane incoherence** — layer↔story-state disagreement (e.g., completed
-   stories in an unopened layer): the OBS-4 class. Follow-up (separate PR): the
-   same check joins `/aep-validate` so incoherence cannot silently pass again —
-   SIBYL's own OBS-4 disposition, applied to AEP.
+   (simulation finding: of looplia's 12 log-bearing stories, 10 were closed —
+   8 `completed` and 2 `deferred` — leaving only the 2 `failed` ones as drift).
+4. **Control-plane incoherence** — layer↔story-state disagreement: the OBS-4
+   class. The predicate is **at least one `completed` story in a layer whose gate
+   is `not_started`** — stated explicitly because the simulation prose reported
+   this three different ways (6 layers where _every_ story is completed; 8 if
+   `deferred` counts as done; 9 under the predicate the script actually ran).
+   One reading, written down: 9 in looplia at `d5212571`. Follow-up (separate PR):
+   the same check joins `/aep-validate` so incoherence cannot silently pass again
+   — SIBYL's own OBS-4 disposition, applied to AEP.
 5. **Declared vs. actual architecture** (Phase 1.5): the strongest drift form
    ("the YAML says A does not depend on B; the code says it does"), and the exact
    move that earned OBS-5's trust in SIBYL (its architecture graph was the one
@@ -523,11 +659,28 @@ rendered all six sections with every number JS-rendered from embedded facts, and
 the mechanical audit plus a browser render check passed. The run surfaced the
 five spec corrections now folded in above (intent scope; open-vs-historical
 failure logs; schema tolerance; field typing; plus the D3 paper-overlay fix for
-light sections) and real looplia findings (8 layers of all-done stories with
-`not_started` gates; a gate named `completed` outside the two-phase vocabulary;
-L32's 38 criteria with zero coverage). The owner's readability verdict on the
-result — system vocabulary is illegible even to a returning owner — produced the
-revision-3 cold-reader contract (D2).
+light sections) and real looplia findings (9 layers holding `completed` stories
+under a `not_started` gate; a gate named `completed` outside the two-phase
+vocabulary; L32's 38 criteria with zero coverage). The owner's readability
+verdict on the result — system vocabulary is illegible even to a returning
+owner — produced the revision-3 cold-reader contract (D2).
+
+**Re-derivation pass (2026-07-25, revision 7).** Every number above was recomputed
+from the looplia repo and the surviving artifacts. The counts hold — 395 stories,
+25,074 lines at `d5212571`, attention set of 2 (both `failed`; zero `in_review`),
+28 raw drift facts (12 + 9 + 7), 32 declared modules with zero `paths` fields
+against 20 code packages, code graph 20 nodes / 68 edges, domain overview 9
+components / 7 connections, the delivered archify artifact 613,803 bytes, the
+one-pager 3,218,172 bytes — and the `business_value` typing bug is visible
+verbatim in the facts JSON as `"why": "10"`. Three _derivations_, however, did
+not survive re-derivation, and their corrections are folded into the specs above:
+the coverage field (drift 1), field-level schema tolerance (the attention set and
+drift 2), and the calibration predicate. Two facts are also worth keeping as
+evidence rather than erasing: L32's zero coverage had already flipped to 38-of-38
+by `8641b716`, _within the same simulation session_, and the reference brief's
+Product band rendered that same `scripted_passed` gate as "acceptance passed"
+while its own anchor said otherwise. The first is the argument for regeneration;
+the second is why D2 now binds band 2 to `passed`.
 
 Revisions 5–6 were proven in the same simulation before being written. The
 deterministic pipeline ran end-to-end on looplia: workspace scan (20 packages,
@@ -632,6 +785,25 @@ sentence may carry a literal number — all numbers render from facts.
 - **Companion artifact files next to the brief** (revision 5) — superseded in
   revision 6 by single-file `srcdoc` embedding (owner: one file, nothing else to
   open); the delivered artifacts become build intermediates.
+- **`coverage.uncovered` as the intent-without-evidence source** (revisions 2–6)
+  — corrected in revision 7: the field is a `/aep-build` authoring worklist, so it
+  is empty exactly when the gate never opened. It stays as the detail channel; the
+  counters are the derivation (D7.1).
+- **Unbounded accumulation of briefs under `docs/`** (revisions 2–6) — replaced in
+  revision 7 by keep-the-newest-three with tool-side pruning: at a measured 3.2 MB
+  each, "pruning is the owner's choice" is a policy that will not be executed, and
+  the record readers actually need (which brief described which commit) lives in
+  `manifest.json`'s `history[]`, not in the 3 MB body.
+- **Moving briefs behind `.gitignore`** (D3's alternate caveat) — rejected: it
+  breaks the ruling that the file is what you hand to someone asking "what is this
+  project?" Bounded retention gets the same size control without that cost.
+- **Imperative number injection in the template** (the simulation's shape) —
+  rejected in revision 7: it makes a standalone `audit.mjs` unable to fail on
+  number provenance. Declarative `data-fact` bindings keep the audit static (D4).
+- **A `calibration.plan[].status` field** — rejected: the field does not exist
+  upstream, and adding one would store a truth derivable from `plan` ∖ `history`,
+  which is the same second-source failure the attention set was designed to avoid
+  (D7). The predicate is derived instead.
 - **React / three.js now** — deferred with named triggers (D3).
 
 ## References
