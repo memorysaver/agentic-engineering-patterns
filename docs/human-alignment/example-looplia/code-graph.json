@@ -1,7 +1,33 @@
 {
   "repo": "looplia",
-  "commit": "65e359c6",
+  "commit": "792208b0",
   "tool": "scan-workspace.mjs (package.json workspace graph, deterministic)",
+  "coverage": {
+    "scanned": "JavaScript/TypeScript workspaces declared in the root package.json",
+    "unscanned": [
+      {
+        "path": ".",
+        "language": "Rust",
+        "marker": "Cargo.toml"
+      },
+      {
+        "path": "apps/cli",
+        "language": "Rust",
+        "marker": "Cargo.toml"
+      },
+      {
+        "path": "apps/daemon",
+        "language": "Rust",
+        "marker": "Cargo.toml"
+      },
+      {
+        "path": "packages/proto",
+        "language": "Rust",
+        "marker": "Cargo.toml"
+      }
+    ],
+    "complete": false
+  },
   "nodes": 21,
   "edges": 75,
   "apps": 3,

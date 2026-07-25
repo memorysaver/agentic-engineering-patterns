@@ -769,6 +769,11 @@ export async function derive({
     drift_facts: drift,
     gates: {
       total: gates.length,
+      // Keyed access. Positional indexing into a fact array is the same defect
+      // the changelog binding already bans: `gates.detail[31]` silently means a
+      // different layer the moment a half-step gate is inserted, and the audit
+      // cannot catch it because the path still resolves.
+      by_layer: Object.fromEntries(gateDetail.map((g) => [String(g.layer), g])),
       by_status: gateByStatus,
       vocabulary_violations: vocabularyViolations,
       detail: gateDetail,

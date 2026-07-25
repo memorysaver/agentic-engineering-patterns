@@ -272,6 +272,49 @@
               }
             }
           }
+        },
+        "by_layer": {
+          "type": "object",
+          "description": "gate detail keyed by layer \u2014 bind by key, never by array position",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["layer", "status"],
+            "properties": {
+              "layer": {
+                "type": "number"
+              },
+              "status": {
+                "type": "string"
+              },
+              "criteria_total": {
+                "type": ["integer", "null"]
+              },
+              "criteria_covered": {
+                "type": ["integer", "null"]
+              },
+              "completed_at": {
+                "type": ["string", "null"]
+              },
+              "shippable": {
+                "type": "boolean",
+                "description": "true only for status == passed; scripted_passed is EXP, never fact"
+              },
+              "closure_status": {
+                "type": ["string", "null"]
+              },
+              "sign_off_withdrawn": {
+                "type": "boolean",
+                "description": "a retired acceptance is not a pending one"
+              },
+              "successor_layer": {
+                "type": ["number", "null"]
+              },
+              "retired_acceptance": {
+                "type": ["string", "null"]
+              }
+            }
+          }
         }
       }
     },

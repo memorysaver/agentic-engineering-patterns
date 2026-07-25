@@ -1,20 +1,20 @@
 {
   "schema_version": 1,
   "generated_from": "product-context.yaml",
-  "commit": "65e359c6",
+  "commit": "60f4d754",
   "baseline_commit": null,
   "project": "looplia-run",
   "version": "0.5.3",
   "updated_at": "2026-07-24",
   "story_total": 396,
   "by_status": {
-    "completed": 333,
+    "completed": 334,
     "deferred": 16,
     "failed": 2,
-    "ready": 2,
+    "ready": 1,
     "pending": 43
   },
-  "open_total": 47,
+  "open_total": 46,
   "current_layer": 32,
   "attention_set": [
     {
@@ -25,7 +25,14 @@
       "title": "Diagnose non-contract Sandbox canary 502 envelope",
       "layer": 32,
       "path": "stories[id=FIX-L32-CANARY-502-001].status",
-      "why": null
+      "why": null,
+      "predicates": {
+        "retries_exhausted": false,
+        "attempts_used": 0,
+        "attempts_allowed": 2,
+        "failure_log_count": 1,
+        "root_cause_stated": false
+      }
     },
     {
       "rank": 1,
@@ -35,7 +42,14 @@
       "title": "Stabilize fresh-identity Sandbox supervisor start",
       "layer": 32,
       "path": "stories[id=FIX-L32-SUPERVISOR-START-001].status",
-      "why": null
+      "why": null,
+      "predicates": {
+        "retries_exhausted": false,
+        "attempts_used": 0,
+        "attempts_allowed": 4,
+        "failure_log_count": 1,
+        "root_cause_stated": false
+      }
     },
     {
       "rank": 4,
@@ -266,7 +280,14 @@
     "title": "Diagnose non-contract Sandbox canary 502 envelope",
     "layer": 32,
     "path": "stories[id=FIX-L32-CANARY-502-001].status",
-    "why": null
+    "why": null,
+    "predicates": {
+      "retries_exhausted": false,
+      "attempts_used": 0,
+      "attempts_allowed": 2,
+      "failure_log_count": 1,
+      "root_cause_stated": false
+    }
   },
   "schema_absent": [
     {
@@ -396,6 +417,17 @@
     },
     {
       "kind": "control_plane_incoherence",
+      "layer": 41,
+      "detail": "1 completed story under a not_started gate",
+      "path": "layer_gates[layer=41].status",
+      "level": "derived",
+      "counters": {
+        "completed_stories": 1,
+        "layer_stories": 1
+      }
+    },
+    {
+      "kind": "control_plane_incoherence",
       "layer": null,
       "detail": "cost roll-up declares 0 while 34 stories sum to 735.15",
       "path": "cost.total_usd vs stories[].cost_usd",
@@ -418,13 +450,13 @@
     {
       "kind": "declared_vs_actual",
       "layer": null,
-      "detail": "30 of 44 concept modules resolve to real code through the work record; 14 carry no resolvable path. The binding is measured, not declared — architecture.modules[].paths would record it, and 0 modules carry it today",
+      "detail": "31 of 44 concept modules resolve to real code through the work record; 13 carry no resolvable path. The binding is measured, not declared — architecture.modules[].paths would record it, and 0 modules carry it today",
       "path": "stories[].module × stories[].files_affected",
       "level": "code-verified",
       "counters": {
         "code_units": 21,
         "concepts_used": 44,
-        "concepts_code_bound": 30,
+        "concepts_code_bound": 31,
         "declared_modules": 32,
         "paths_declared": 0
       }
@@ -432,6 +464,512 @@
   ],
   "gates": {
     "total": 42,
+    "by_layer": {
+      "0": {
+        "layer": 0,
+        "status": "passed",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": "2026-04-07",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": true
+      },
+      "1": {
+        "layer": 1,
+        "status": "passed",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": "2026-04-09",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": true
+      },
+      "2": {
+        "layer": 2,
+        "status": "passed",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": "2026-05-04",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": true
+      },
+      "3": {
+        "layer": 3,
+        "status": "not_started",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": false
+      },
+      "4": {
+        "layer": 4,
+        "status": "passed",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": "2026-05-27T10:13:59Z",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": true
+      },
+      "5": {
+        "layer": 5,
+        "status": "not_started",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": false
+      },
+      "8": {
+        "layer": 8,
+        "status": "passed",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": "2026-06-10",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": true
+      },
+      "9": {
+        "layer": 9,
+        "status": "passed",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": "2026-06-10",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": true
+      },
+      "10": {
+        "layer": 10,
+        "status": "scripted_passed",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": false
+      },
+      "11": {
+        "layer": 11,
+        "status": "passed",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": "2026-06-12",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": true
+      },
+      "12": {
+        "layer": 12,
+        "status": "scripted_passed",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": false
+      },
+      "13": {
+        "layer": 13,
+        "status": "not_started",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": false
+      },
+      "14": {
+        "layer": 14,
+        "status": "deferred",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": false
+      },
+      "18": {
+        "layer": 18,
+        "status": "passed",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": "2026-06-17",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": true
+      },
+      "19": {
+        "layer": 19,
+        "status": "passed",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": "2026-06-18",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": true
+      },
+      "20": {
+        "layer": 20,
+        "status": "completed",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": false
+      },
+      "21": {
+        "layer": 21,
+        "status": "passed",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": "2026-06-20",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": true
+      },
+      "23": {
+        "layer": 23,
+        "status": "passed",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": "2026-06-24",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": true
+      },
+      "24": {
+        "layer": 24,
+        "status": "passed",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": "2026-06-28",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": true
+      },
+      "25": {
+        "layer": 25,
+        "status": "passed",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": "2026-06-30",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": true
+      },
+      "26": {
+        "layer": 26,
+        "status": "scripted_passed",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": "2026-07-02T10:02:00Z",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": false
+      },
+      "27": {
+        "layer": 27,
+        "status": "not_started",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": false
+      },
+      "28": {
+        "layer": 28,
+        "status": "not_started",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": false
+      },
+      "29": {
+        "layer": 29,
+        "status": "not_started",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": false
+      },
+      "31": {
+        "layer": 31,
+        "status": "passed",
+        "criteria_total": 75,
+        "criteria_covered": 75,
+        "completed_at": "2026-07-18T10:44:00Z",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": true
+      },
+      "32": {
+        "layer": 32,
+        "status": "scripted_passed",
+        "criteria_total": 38,
+        "criteria_covered": 38,
+        "completed_at": null,
+        "closure_status": "closed_realigned",
+        "sign_off_withdrawn": true,
+        "successor_layer": 41,
+        "retired_acceptance": "The former signed-in Tier-2/3 source-link journey is no longer a remaining L32 acceptance criterion; it is replaced by L41's target-bound dynamic-source evidence gate.",
+        "shippable": false
+      },
+      "33": {
+        "layer": 33,
+        "status": "not_started",
+        "criteria_total": 39,
+        "criteria_covered": 0,
+        "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": false
+      },
+      "34": {
+        "layer": 34,
+        "status": "not_started",
+        "criteria_total": 33,
+        "criteria_covered": 0,
+        "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": false
+      },
+      "35": {
+        "layer": 35,
+        "status": "not_started",
+        "criteria_total": 26,
+        "criteria_covered": 0,
+        "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": false
+      },
+      "36": {
+        "layer": 36,
+        "status": "not_started",
+        "criteria_total": 16,
+        "criteria_covered": 0,
+        "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": false
+      },
+      "37": {
+        "layer": 37,
+        "status": "not_started",
+        "criteria_total": 24,
+        "criteria_covered": 0,
+        "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": false
+      },
+      "38": {
+        "layer": 38,
+        "status": "not_started",
+        "criteria_total": 20,
+        "criteria_covered": 0,
+        "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": false
+      },
+      "39": {
+        "layer": 39,
+        "status": "not_started",
+        "criteria_total": 25,
+        "criteria_covered": 0,
+        "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": false
+      },
+      "41": {
+        "layer": 41,
+        "status": "not_started",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": false
+      },
+      "0.5": {
+        "layer": 0.5,
+        "status": "passed",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": "2026-04-07",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": true
+      },
+      "2.5": {
+        "layer": 2.5,
+        "status": "not_started",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": false
+      },
+      "4.5": {
+        "layer": 4.5,
+        "status": "passed",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": "2026-05-29",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": true
+      },
+      "7.5": {
+        "layer": 7.5,
+        "status": "not_started",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": false
+      },
+      "10.5": {
+        "layer": 10.5,
+        "status": "passed",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": "2026-06-11",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": true
+      },
+      "11.5": {
+        "layer": 11.5,
+        "status": "passed",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": "2026-06-12",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": true
+      },
+      "14.5": {
+        "layer": 14.5,
+        "status": "deferred",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": false
+      },
+      "18.5": {
+        "layer": 18.5,
+        "status": "passed",
+        "criteria_total": null,
+        "criteria_covered": null,
+        "completed_at": "2026-06-26",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
+        "shippable": true
+      }
+    },
     "by_status": {
       "passed": 19,
       "not_started": 16,
@@ -453,6 +991,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": "2026-04-07",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": true
       },
       {
@@ -461,6 +1003,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": "2026-04-07",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": true
       },
       {
@@ -469,6 +1015,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": "2026-04-09",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": true
       },
       {
@@ -477,6 +1027,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": "2026-05-04",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": true
       },
       {
@@ -485,6 +1039,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": false
       },
       {
@@ -493,6 +1051,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": false
       },
       {
@@ -501,6 +1063,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": "2026-05-27T10:13:59Z",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": true
       },
       {
@@ -509,6 +1075,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": "2026-05-29",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": true
       },
       {
@@ -517,6 +1087,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": false
       },
       {
@@ -525,6 +1099,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": false
       },
       {
@@ -533,6 +1111,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": "2026-06-10",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": true
       },
       {
@@ -541,6 +1123,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": "2026-06-10",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": true
       },
       {
@@ -549,6 +1135,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": false
       },
       {
@@ -557,6 +1147,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": "2026-06-11",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": true
       },
       {
@@ -565,6 +1159,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": "2026-06-12",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": true
       },
       {
@@ -573,6 +1171,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": "2026-06-12",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": true
       },
       {
@@ -581,6 +1183,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": false
       },
       {
@@ -589,6 +1195,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": false
       },
       {
@@ -597,6 +1207,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": false
       },
       {
@@ -605,6 +1219,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": false
       },
       {
@@ -613,6 +1231,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": "2026-06-17",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": true
       },
       {
@@ -621,6 +1243,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": "2026-06-26",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": true
       },
       {
@@ -629,6 +1255,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": "2026-06-18",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": true
       },
       {
@@ -637,6 +1267,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": false
       },
       {
@@ -645,6 +1279,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": "2026-06-20",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": true
       },
       {
@@ -653,6 +1291,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": "2026-06-24",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": true
       },
       {
@@ -661,6 +1303,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": "2026-06-28",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": true
       },
       {
@@ -669,6 +1315,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": "2026-06-30",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": true
       },
       {
@@ -677,6 +1327,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": "2026-07-02T10:02:00Z",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": false
       },
       {
@@ -685,6 +1339,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": false
       },
       {
@@ -693,6 +1351,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": false
       },
       {
@@ -701,6 +1363,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": false
       },
       {
@@ -709,6 +1375,10 @@
         "criteria_total": 75,
         "criteria_covered": 75,
         "completed_at": "2026-07-18T10:44:00Z",
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": true
       },
       {
@@ -717,6 +1387,10 @@
         "criteria_total": 38,
         "criteria_covered": 38,
         "completed_at": null,
+        "closure_status": "closed_realigned",
+        "sign_off_withdrawn": true,
+        "successor_layer": 41,
+        "retired_acceptance": "The former signed-in Tier-2/3 source-link journey is no longer a remaining L32 acceptance criterion; it is replaced by L41's target-bound dynamic-source evidence gate.",
         "shippable": false
       },
       {
@@ -725,6 +1399,10 @@
         "criteria_total": 39,
         "criteria_covered": 0,
         "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": false
       },
       {
@@ -733,6 +1411,10 @@
         "criteria_total": 33,
         "criteria_covered": 0,
         "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": false
       },
       {
@@ -741,6 +1423,10 @@
         "criteria_total": 26,
         "criteria_covered": 0,
         "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": false
       },
       {
@@ -749,6 +1435,10 @@
         "criteria_total": 16,
         "criteria_covered": 0,
         "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": false
       },
       {
@@ -757,6 +1447,10 @@
         "criteria_total": 24,
         "criteria_covered": 0,
         "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": false
       },
       {
@@ -765,6 +1459,10 @@
         "criteria_total": 20,
         "criteria_covered": 0,
         "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": false
       },
       {
@@ -773,6 +1471,10 @@
         "criteria_total": 25,
         "criteria_covered": 0,
         "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": false
       },
       {
@@ -781,6 +1483,10 @@
         "criteria_total": null,
         "criteria_covered": null,
         "completed_at": null,
+        "closure_status": null,
+        "sign_off_withdrawn": false,
+        "successor_layer": null,
+        "retired_acceptance": null,
         "shippable": false
       }
     ]
@@ -4494,7 +5200,7 @@
     {
       "layer": 41,
       "counts": {
-        "ready": 1
+        "completed": 1
       },
       "total": 1,
       "gate_status": "not_started",
@@ -4503,8 +5209,8 @@
         {
           "id": "L41-001",
           "title": "Cloudflare-only autonomous newsroom dynamic exploration, source reading and information integration",
-          "status": "ready",
-          "stage": 2,
+          "status": "completed",
+          "stage": 5,
           "exception": null,
           "why": null
         }
@@ -4512,46 +5218,6 @@
     }
   ],
   "changelog_recent": [
-    {
-      "id": "2026-07-22-dispatch-204",
-      "date": "2026-07-22",
-      "kind": "dispatch",
-      "author": "aep-dispatch",
-      "summary": "Dispatched L32-010 (Governed E0/Workspace driver and professional tool rollout) as Layer-32 Wave-2 at epoch 85. It is the highest-scoring ready story (95), depends only on completed L32-001, and unlocks the verification convergence story L32-004. The full design preserves the compact execution facade, binds qualified professional turns server-side, uses exact descriptor-bound WorkEffectPermit admission, and forbids arbitrary model code, shell, runtime selectors, privilege escalation, artifact promotion and direct success.",
-      "since_baseline": false
-    },
-    {
-      "id": "2026-07-23-reflection-205",
-      "date": "2026-07-23",
-      "kind": "reflection",
-      "author": "aep-wrap",
-      "summary": "L32-010 completed in PR #341 at merge SHA 476e5400. The implementation adds a closed deterministic E0/Workspace driver, descriptor-bound WorkEffectPermit admission, a concrete authenticated production registration reachable from LoopliaAgent stream and agent_run turns, fail-closed stale/assessment-error routing, durable same-D1 replay with one Workspace mutation, and a stable host-owned per-run selection token. Independent evaluation required four rounds after a standard-to-deep escalation: Round 1 found unreachable production registration, Round 2 found initial stale fallback plus missing durable replay and stale manifest, Round 3 found token identity and a lint race, and fresh-generator Round 4 passed with zero blocking/important findings. Final evidence: 190 story-scoped tests (1,488 expectations), evaluator subset 36 pass, typecheck/oxlint/oxfmt/frozen install, 214-callsite admission manifest, diff integrity and secret scan all pass. Tier-2/3 post-deploy journey evidence was refused because target-bound owner credentials/preflight were unavailable; no production deploy, reset, seed, browser journey or CI mutation was attempted. Layer 32 remains open because L32-003 and downstream stories are not yet completed.",
-      "since_baseline": false
-    },
-    {
-      "id": "2026-07-23-dispatch-206",
-      "date": "2026-07-23",
-      "kind": "dispatch",
-      "author": "aep-dispatch",
-      "summary": "Dispatched L32-004 (Immutable input/artifact manifests, verification, replay and reap) at epoch 87. It is the sole ready Layer-32 Wave-3 story after L32-002, L32-003 and L32-010 completed; it will bind licensed immutable manifests, deterministic verification, replay comparison and cleanup receipts without changing the frozen broker or provider surfaces.",
-      "since_baseline": false
-    },
-    {
-      "id": "2026-07-23-dispatch-207",
-      "date": "2026-07-23",
-      "kind": "dispatch",
-      "author": "aep-dispatch",
-      "summary": "Dispatched L32-003 (Scholarly Codemode driver and provider surface) as Layer-32 Wave-2 at epoch 86. It is the only remaining ready story (readiness 1.0, dispatch score 94) after L32-010 completed; it will route scholarly work through the shared E1 Codemode broker/driver with provider-neutral compact namespaces, typed ambiguity/freshness/license outcomes, and no daemon fallback.",
-      "since_baseline": false
-    },
-    {
-      "id": "2026-07-23-reflection-208",
-      "date": "2026-07-23",
-      "kind": "reflection",
-      "author": "aep-wrap",
-      "summary": "L32-003 completed in PR #342 at merge SHA 36384e256de09adc676d64781826e73a3bff4d3a. The E1 Codemode scholarly surface adds exact broker-registered execution, compact provider-neutral papers/search/resolve/status and sources/fetchMetadata operations, Crossref/Crossmark status authority, Semantic Scholar discovery-only fallback, normalized/hash/freshness/license-bounded metadata, and durable tenant-scoped lifecycle reconciliation across stale markers, cancel/reap crashes and actor restarts. Independent deep evaluation required six rounds plus one explicitly human-approved post-cap round: R1–R5 progressively found and fixed authority, identity, privacy, timeout, durable replay, tenant isolation and cleanup-intent crash gaps; Round 6 passed with zero blocking/important/minor findings and all hard floors 4. Final evidence: focused 39/39, affected execution 249/249, cancel/reap crash harnesses, cross-tenant/stale-marker regressions, typecheck/oxlint/oxfmt, strict OpenSpec, 214-callsite admission manifest, diff integrity and gitleaks. No live credentials, network calls, local deploy, D1 reset/seed or production mutation occurred; post-deploy scholarly dogfood remains a Layer-32 gate concern. L32-004 is now ready because L32-002, L32-003 and L32-010 are complete.",
-      "since_baseline": false
-    },
     {
       "id": "2026-07-23-reflection-209",
       "date": "2026-07-23",
@@ -4585,6 +5251,30 @@
       "since_baseline": false
     },
     {
+      "id": "2026-07-24-design-2",
+      "date": "2026-07-24",
+      "kind": "design",
+      "author": "aep-design",
+      "summary": "Created the research/design-gated Layer 41 handoff for Cloudflare-only autonomous newsroom source discovery. Hermes review confirms that core search/browser and the optional RSS/Atom watcher do not provide a tenant-bound discover→verify→promote→update registry: the watcher requires an explicit URL and stores only watermark files. The new design uses Browser Run on fixed discovery origins, Worker fetch() for host verification, closed Code Mode composition, tenant-bound DO/D1 provenance and bounded polling, with exact human approval only for ambiguous/high-risk recurring sources. No feed URL, runtime adapter, binding/secret, source registration or deployment was added.",
+      "since_baseline": false
+    },
+    {
+      "id": "2026-07-24-dispatch-3",
+      "date": "2026-07-24",
+      "kind": "dispatch",
+      "author": "aep-autopilot",
+      "summary": "Dispatched L32-005 (Professional newsroom execution integration gate) as Layer 32 Wave 8 at dispatch epoch 92 after L32-008 completed. The story will drive the host-owned signal scan, COO prioritization/commission, qualified Paper Researcher E1/E2 dossier, Startup Writer ArticleDraft/package, and independent exact-version fact-check as one bounded qualification journey; unknown egress, package drift, revoked identity, generic shell/daemon fallback, and publication authority remain fail-closed. Full/deep evaluation and the project's Tier-1/2/3 post-deploy gate apply.",
+      "since_baseline": false
+    },
+    {
+      "id": "2026-07-24-build-4",
+      "date": "2026-07-24",
+      "kind": "build",
+      "author": "aep-wrap",
+      "summary": "L32-008 completed, independently evaluated, merged and wrapped. PR #347 merged exact evaluated head cc242568 at 66ddca23. The fact-check service now binds exact assignment/ledger/dossier/draft/package versions, produces immutable claim-level reports, persists replayable receipts, and routes malformed or tampered handoffs to typed park outcomes before any generic or Paper Research fallback. Final evidence: focused fact-check/index 15/15 (76 expectations), routing 21/21 (60), full newsroom/index 101/101 (1 snapshot, 463 expectations), admission 215, oxlint/oxfmt/OpenSpec/diff green; typecheck has only the pre-existing paper-analysis sandbox baseline. No deploy, OAuth, live credential, Wrangler, D1 or production mutation was performed. L32-005 is now ready as the final Layer-32 autonomous newsroom integration gate.",
+      "since_baseline": false
+    },
+    {
       "id": "2026-07-24-reflection-213",
       "date": "2026-07-24",
       "kind": "reflection",
@@ -4606,6 +5296,22 @@
       "kind": "reflection",
       "author": "aep-wrap",
       "summary": "L32-005 completed in PR #348 at merge SHA cfd5431c, after independent deep evaluation PASS on exact feature head 6f26012f. The production composition now proves host-owned signal→pitch→research E1/E2→central immutable dossier handoff→claim-linked writer package→independent reviewer fact-check, including seeded overclaim/non-publish, immutable report/draft history, response-loss/cadence replay, stale requirements/readiness/route binding, revoked/package/egress/cross-tenant fail-closed parks, writer-shaped receipt protection, qualification-only authority/grant/roster/publication/effect stability and zero unauthorized effect counters. Focused 1/1, newsroom 97/97, routed/admission/index 14/14, protocol 19/19, admission 30/30, generated manifest 216 exact callsites; exact 32-path scope and strict OpenSpec/gitleaks/static gates passed. Exact product-merge Deploy run 30082737299 passed deployment, paper-analysis canary, evidence upload and supply-chain retention; a later docs-only wrap SHA 7e62f753 deployed but its separate paper-analysis canary failed at cancel_start, with no newsroom journey evidence. Layer 32 remains scripted_passed with 38/38 criteria covered; the signed-in newsroom Tier-2/3 journey is still pending, with no local deploy, reset, OAuth or live credential mutation. Lessons and all evaluator rounds are archived under the L32-005 convergence record.",
+      "since_baseline": false
+    },
+    {
+      "id": "2026-07-25-decision-0",
+      "date": "2026-07-25",
+      "kind": "decision",
+      "author": "human",
+      "summary": "Closed Layer 32 at its completed internal scripted boundary and re-aligned the product decision: the paywalled-magazine demonstration no longer depends on a human-supplied source link. The higher-level autonomous discovery/read/integration capability is now owned by Layer 41, with the approved Cloudflare-only safety defaults and no claim of live dynamic-source production evidence.",
+      "since_baseline": false
+    },
+    {
+      "id": "2026-07-25-design-1",
+      "date": "2026-07-25",
+      "kind": "design",
+      "author": "human",
+      "summary": "Connected the completed L32-005 internal newsroom execution gate directly to the research/design-gated Layer 41 dynamic source plane. L41 now explicitly consumes the host-owned NewsSignalScanRequest envelope, discovers candidates, verifies sources, reads bounded locator-bound excerpts/claims, integrates typed evidence into the existing signal/pitch path, and then governs promotion/polling. Full bodies, hidden DOM, credentials and arbitrary network authority remain excluded; no runtime, source, binding, secret or deployment change was made.",
       "since_baseline": false
     }
   ],
@@ -4807,15 +5513,6 @@
       "definition": "Hire paper-researcher@v1 and startup-writer@v1 through exact BlueprintV2 approvals. Both lock the shared newsroom core plus distinct role packs, qualify without manual setup, and become routable only after pass. A failed/stale qualification receives zero recurring/assignment wakes; a Data Analyst requirement produces capability_gap rather than generic fallback. Real scholarly compute is L32, authority L33 and publication L39.",
       "completed_at": "2026-07-18T10:44:00Z",
       "source": "layer_gates[layer=31]"
-    },
-    {
-      "layer": 32,
-      "gate_status": "scripted_passed",
-      "tense": "EXP",
-      "settles_on": "layer 32 human acceptance run",
-      "definition": "A bounded beat/source scan autonomously produces and prioritizes a pitch; qualified Paper Researcher resolves current scholarly status and produces a versioned ClaimLedger/ResearchDossier with reproducible Sandbox evidence; Startup Writer produces a claim-linked reader-useful article/package with no Sandbox/generic-shell/daemon route; an independent researcher fact-check catches a seeded overclaim and binds the exact draft.",
-      "completed_at": null,
-      "source": "layer_gates[layer=32]"
     }
   ],
   "cost": {
@@ -4834,11 +5531,54 @@
     "rollup_disagrees": true,
     "instrumented": true
   },
+  "completions": [
+    {
+      "days": 7,
+      "since": "2026-07-17",
+      "count": 16,
+      "ids": [
+        "FIX-L31-AGUI-TOOL-RESULT-TIMEOUT-010",
+        "FIX-L31-COMPLETED-REPLAY-MUTATION-009",
+        "FIX-L31-FRESH-COMPANY-INIT-004",
+        "FIX-L31-NEWSROOM-V2-LINEAGE-011",
+        "FIX-L32-CANARY-502-002",
+        "L32-001",
+        "L32-002",
+        "L32-003",
+        "L32-004",
+        "L32-005",
+        "L32-006",
+        "L32-007",
+        "L32-008",
+        "L32-009",
+        "L32-010",
+        "L41-001"
+      ]
+    },
+    {
+      "days": 2,
+      "since": "2026-07-22",
+      "count": 11,
+      "ids": [
+        "FIX-L32-CANARY-502-002",
+        "L32-002",
+        "L32-003",
+        "L32-004",
+        "L32-005",
+        "L32-006",
+        "L32-007",
+        "L32-008",
+        "L32-009",
+        "L32-010",
+        "L41-001"
+      ]
+    }
+  ],
   "modules": {
     "declared_count": 32,
     "path_bound_count": 0,
     "used_count": 44,
-    "code_bound_count": 30,
+    "code_bound_count": 31,
     "used_not_declared": [
       "agent",
       "agent-email",
@@ -4896,7 +5636,7 @@
     "now": {
       "units": 21,
       "edges": 75,
-      "commit": "65e359c6"
+      "commit": "792208b0"
     },
     "concepts": [
       {
@@ -5024,8 +5764,11 @@
         "module": "business-system-adapters",
         "declared": true,
         "responsibility": "Close the first professional vertical through CMS draft/version/preview/publish/update/hold/withdraw/correction, then separately gated newsletter/social distribution, reader analytics and correction intake. Later business systems reuse the stable query/propose/execute/reconcile adapter contract.",
-        "files": 0,
-        "units": []
+        "files": 4,
+        "units": [
+          "@looplia/do-agent",
+          "@looplia/infra"
+        ]
       },
       {
         "module": "cli",
@@ -5354,7 +6097,7 @@
       }
     ],
     "concepts_total": 44,
-    "concepts_code_bound": 30,
+    "concepts_code_bound": 31,
     "used_not_declared": [
       "agent",
       "agent-email",
@@ -5395,14 +6138,13 @@
       {
         "module": "business-system-adapters",
         "declared": true,
-        "net_new": true,
+        "net_new": false,
         "responsibility": "Close the first professional vertical through CMS draft/version/preview/publish/update/hold/withdraw/correction, then separately gated newsletter/social distribution, reader analytics and correction intake. Later business systems reuse the stable query/propose/execute/reconcile adapter contract.",
-        "files": 19,
+        "files": 15,
         "units": [
           "@looplia/agent-e2e-test",
           "@looplia/api",
           "@looplia/do-agent",
-          "@looplia/infra",
           "@looplia/protocol"
         ],
         "homeless": false
@@ -5490,7 +6232,6 @@
     ],
     "next_net_new": [
       "authority-kernel",
-      "business-system-adapters",
       "company-assurance-incident-ops",
       "company-deliberation",
       "company-event-workflow-backbone",
@@ -5512,7 +6253,7 @@
           "professional-learning-loop"
         ],
         "concept_count": 7,
-        "files": 85,
+        "files": 84,
         "pairs": 21,
         "disjoint_pairs": 17,
         "disjoint_share": 0.81,
@@ -5531,7 +6272,16 @@
     "packages": 17,
     "name_overlap": 1,
     "tool": "scan-workspace.mjs (package.json workspace graph, deterministic)",
-    "commit": "65e359c6"
+    "commit": "792208b0",
+    "coverage_complete": false,
+    "unscanned_count": 4
+  },
+  "reading_coverage": {
+    "populated_paths": 486,
+    "derived_count": 55,
+    "ignored_count": 431,
+    "unhandled_count": 0,
+    "read_coverage": 0.113
   },
   "delta": {
     "first_run": true,

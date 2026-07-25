@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "generated": "2026-07-25T0745Z",
-  "commit": "65e359c6",
-  "output": "brief-2026-07-25T0745Z-65e359c6.html",
-  "facts_sha256": "b1396d5c490de1b69f31a7db2c17bde4488f60a7b3e5300baf686be20c6b5882",
+  "generated": "2026-07-25T1705Z",
+  "commit": "60f4d754",
+  "output": "brief-2026-07-25T1705Z-60f4d754.html",
+  "facts_sha256": "e1e6a1be5dc09cc52898fd7b9cc94aa4607220e8b17c465dd206e475eba663dc",
   "artifacts": [
     "aep-loop",
     "architecture-declared",
@@ -12,6 +12,6 @@
     "story-states"
   ],
   "degraded": [],
-  "content_sha256": "b8b53ad21a10e58a5779bad82e6a73f133f894102b7c36ddd3288c02bd2fc51b",
+  "content_sha256": "6d9a9972b194ddf446ce6e0f132c237895bc92d0e83fef79c8784e3868e5efb6",
   "history": []
 }

@@ -1,4 +1,9 @@
-# Reference example: a real brief
+# Reference example: a real brief — **currently failing evaluation**
+
+> Two independent generator/evaluator rounds have failed this artifact. Read
+> [`eval-findings.md`](eval-findings.md) before treating anything here as
+> exemplary. It is committed as evidence of where the pipeline stands, not as a
+> model to copy.
 
 These files are the **unedited output** of `/aep-human-alignment` run against a
 real consumer repo (looplia, 396 stories, 41 layer gates, 21 workspace packages)

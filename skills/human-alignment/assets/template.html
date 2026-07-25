@@ -499,27 +499,26 @@
       <div class="band-inner">
         <p class="band-kicker">Overview · the whole thing at a glance</p>
         <h1 class="band-title">{{PROJECT_TITLE}}</h1>
-        <p class="answer-first">{{OVERVIEW_ANSWER_FIRST}}</p>
+        {{OVERVIEW_ANSWER_FIRST}}
 
         <div data-gate="identity" data-changed="{{GATE_IDENTITY}}">
-          <p>{{PRIMER_ESSENCE}}</p>
+          {{PRIMER_ESSENCE}}
           <p class="anchor">{{PRIMER_ANCHOR}}</p>
           <p class="stamp">Overview · unchanged since {{IDENTITY_STAMP}}</p>
         </div>
 
         <div class="ask" id="one-ask">
           <p class="verb">{{ASK_VERB}}</p>
-          <p>{{ASK_SENTENCE}}</p>
-          <p class="how">{{ASK_HOW}}</p>
+          {{ASK_SENTENCE}} {{ASK_HOW}}
           <p class="anchor">{{ASK_ANCHOR}}</p>
         </div>
 
-        <p class="quiet">{{QUIET_ZONE}}</p>
+        {{QUIET_ZONE}}
         <p class="anchor">{{QUIET_ANCHOR}}</p>
 
         <div class="section">
           <h3>{{AWAY_HEADING}}</h3>
-          <p>{{AWAY_NARRATIVE}}</p>
+          {{AWAY_NARRATIVE}}
           <p class="anchor">{{AWAY_ANCHOR}}</p>
         </div>
 
@@ -536,7 +535,7 @@
       <div class="band-inner">
         <p class="band-kicker">Product · what it can do</p>
         <h2 class="band-title">{{PRODUCT_TITLE}}</h2>
-        <p class="answer-first">{{PRODUCT_ANSWER_FIRST}}</p>
+        {{PRODUCT_ANSWER_FIRST}}
 
         <div data-gate="capabilities" data-changed="{{GATE_CAPABILITIES}}">
           <div class="section">
@@ -567,7 +566,7 @@
       <div class="band-inner">
         <p class="band-kicker">Project · plan and progress</p>
         <h2 class="band-title">{{PROJECT_BAND_TITLE}}</h2>
-        <p class="answer-first">{{PROJECT_ANSWER_FIRST}}</p>
+        {{PROJECT_ANSWER_FIRST}}
 
         <div class="strip" id="layer-strip"></div>
         <div class="rows" id="frontier-rows"></div>
@@ -580,7 +579,7 @@
       <div class="band-inner">
         <p class="band-kicker">Project · ledger · facts that expire live here</p>
         <h2 class="band-title">{{LEDGER_TITLE}}</h2>
-        <p class="answer-first">{{LEDGER_ANSWER_FIRST}}</p>
+        {{LEDGER_ANSWER_FIRST}}
 
         <div class="section">
           <h3>{{MOVED_HEADING}}</h3>
@@ -604,7 +603,7 @@
       <div class="band-inner">
         <p class="band-kicker">Engineering · the system itself</p>
         <h2 class="band-title">{{ENGINEERING_TITLE}}</h2>
-        <p class="answer-first">{{ENGINEERING_ANSWER_FIRST}}</p>
+        {{ENGINEERING_ANSWER_FIRST}}
 
         <div data-gate="architecture" data-changed="{{GATE_ARCHITECTURE}}">
           <div class="tabs" id="arch-tabs"></div>
@@ -618,7 +617,7 @@
 
         <div class="section" data-gate="lifecycle" data-changed="{{GATE_LIFECYCLE}}">
           <h3>{{LIFECYCLE_HEADING}}</h3>
-          <p>{{LIFECYCLE_INTRO}}</p>
+          {{LIFECYCLE_INTRO}}
           <div id="loop-host"></div>
           <div id="states-host"></div>
           <p class="stamp">Engineering · loop and states unchanged since {{LIFECYCLE_STAMP}}</p>

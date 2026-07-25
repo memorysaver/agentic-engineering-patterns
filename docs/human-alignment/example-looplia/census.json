@@ -1,0 +1,2394 @@
+{
+  "schema_version": 1,
+  "populated_paths": 486,
+  "derived_count": 55,
+  "ignored_count": 431,
+  "unhandled_count": 0,
+  "read_coverage": 0.113,
+  "derived": [
+    {
+      "path": "architecture.amendment_log[].date",
+      "populated": 6
+    },
+    {
+      "path": "architecture.amendment_log[].summary",
+      "populated": 6
+    },
+    {
+      "path": "architecture.modules[].depends_on[]",
+      "populated": 67
+    },
+    {
+      "path": "architecture.modules[].kind",
+      "populated": 1
+    },
+    {
+      "path": "architecture.modules[].name",
+      "populated": 32
+    },
+    {
+      "path": "architecture.modules[].responsibility",
+      "populated": 32
+    },
+    {
+      "path": "architecture.modules[].technology",
+      "populated": 32
+    },
+    {
+      "path": "architecture.overview",
+      "populated": 1
+    },
+    {
+      "path": "architecture.style",
+      "populated": 1
+    },
+    {
+      "path": "calibration.history[].artifact_path",
+      "populated": 7
+    },
+    {
+      "path": "calibration.history[].calibrated_at",
+      "populated": 9
+    },
+    {
+      "path": "calibration.history[].calibrated_from_layer",
+      "populated": 9
+    },
+    {
+      "path": "calibration.history[].dimension",
+      "populated": 9
+    },
+    {
+      "path": "calibration.history[].mode",
+      "populated": 9
+    },
+    {
+      "path": "calibration.history[].sections_updated[]",
+      "populated": 9
+    },
+    {
+      "path": "calibration.history[].summary",
+      "populated": 9
+    },
+    {
+      "path": "calibration.plan[].dimensions[]",
+      "populated": 29
+    },
+    {
+      "path": "calibration.plan[].layer",
+      "populated": 15
+    },
+    {
+      "path": "calibration.plan[].trigger",
+      "populated": 15
+    },
+    {
+      "path": "changelog[].author",
+      "populated": 213
+    },
+    {
+      "path": "changelog[].date",
+      "populated": 216
+    },
+    {
+      "path": "changelog[].summary",
+      "populated": 216
+    },
+    {
+      "path": "changelog[].type",
+      "populated": 212
+    },
+    {
+      "path": "cost.total_usd",
+      "populated": 1
+    },
+    {
+      "path": "layer_gates[].closure_status",
+      "populated": 1
+    },
+    {
+      "path": "layer_gates[].completed_at",
+      "populated": 20
+    },
+    {
+      "path": "layer_gates[].coverage.criteria_covered",
+      "populated": 9
+    },
+    {
+      "path": "layer_gates[].coverage.criteria_total",
+      "populated": 9
+    },
+    {
+      "path": "layer_gates[].decision_realignment.decided_at",
+      "populated": 1
+    },
+    {
+      "path": "layer_gates[].decision_realignment.decision",
+      "populated": 1
+    },
+    {
+      "path": "layer_gates[].decision_realignment.evidence_boundary",
+      "populated": 1
+    },
+    {
+      "path": "layer_gates[].decision_realignment.rationale",
+      "populated": 1
+    },
+    {
+      "path": "layer_gates[].decision_realignment.retired_acceptance",
+      "populated": 1
+    },
+    {
+      "path": "layer_gates[].decision_realignment.successor_layer",
+      "populated": 1
+    },
+    {
+      "path": "layer_gates[].layer",
+      "populated": 42
+    },
+    {
+      "path": "layer_gates[].status",
+      "populated": 42
+    },
+    {
+      "path": "layer_gates[].test_definition",
+      "populated": 42
+    },
+    {
+      "path": "project",
+      "populated": 1
+    },
+    {
+      "path": "schema",
+      "populated": 1
+    },
+    {
+      "path": "stories[].attempt_count",
+      "populated": 396
+    },
+    {
+      "path": "stories[].business_value",
+      "populated": 350
+    },
+    {
+      "path": "stories[].completed_at",
+      "populated": 334
+    },
+    {
+      "path": "stories[].cost_usd",
+      "populated": 37
+    },
+    {
+      "path": "stories[].failure_logs[]",
+      "populated": 20
+    },
+    {
+      "path": "stories[].files_affected[]",
+      "populated": 1485
+    },
+    {
+      "path": "stories[].id",
+      "populated": 396
+    },
+    {
+      "path": "stories[].layer",
+      "populated": 396
+    },
+    {
+      "path": "stories[].max_retries",
+      "populated": 396
+    },
+    {
+      "path": "stories[].module",
+      "populated": 396
+    },
+    {
+      "path": "stories[].pr_url",
+      "populated": 327
+    },
+    {
+      "path": "stories[].started_at",
+      "populated": 250
+    },
+    {
+      "path": "stories[].status",
+      "populated": 396
+    },
+    {
+      "path": "stories[].title",
+      "populated": 396
+    },
+    {
+      "path": "updated_at",
+      "populated": 1
+    },
+    {
+      "path": "version",
+      "populated": 1
+    }
+  ],
+  "ignored": [
+    {
+      "path": "architecture.adrs[].consequences",
+      "populated": 10,
+      "reason": "Architecture decision records: how the structure came to be chosen. The Engineering band answers what the structure IS and what the next design does to it; the reasoning behind past decisions is /aep-design's record and would double the band's length."
+    },
+    {
+      "path": "architecture.adrs[].context",
+      "populated": 10,
+      "reason": "Architecture decision records: how the structure came to be chosen. The Engineering band answers what the structure IS and what the next design does to it; the reasoning behind past decisions is /aep-design's record and would double the band's length."
+    },
+    {
+      "path": "architecture.adrs[].decision",
+      "populated": 10,
+      "reason": "Architecture decision records: how the structure came to be chosen. The Engineering band answers what the structure IS and what the next design does to it; the reasoning behind past decisions is /aep-design's record and would double the band's length."
+    },
+    {
+      "path": "architecture.adrs[].id",
+      "populated": 10,
+      "reason": "Architecture decision records: how the structure came to be chosen. The Engineering band answers what the structure IS and what the next design does to it; the reasoning behind past decisions is /aep-design's record and would double the band's length."
+    },
+    {
+      "path": "architecture.adrs[].reasoning",
+      "populated": 10,
+      "reason": "Architecture decision records: how the structure came to be chosen. The Engineering band answers what the structure IS and what the next design does to it; the reasoning behind past decisions is /aep-design's record and would double the band's length."
+    },
+    {
+      "path": "architecture.adrs[].title",
+      "populated": 10,
+      "reason": "Architecture decision records: how the structure came to be chosen. The Engineering band answers what the structure IS and what the next design does to it; the reasoning behind past decisions is /aep-design's record and would double the band's length."
+    },
+    {
+      "path": "architecture.api_conventions.bearer_token_format.env_split",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.bearer_token_format.rationale",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.bearer_token_format.shape",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.cli_auth_precedence.login_behavior",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.cli_auth_precedence.logout",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.cli_auth_precedence.order[]",
+      "populated": 3,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.error_catalog.codes[].code",
+      "populated": 23,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.error_catalog.codes[].http",
+      "populated": 20,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.error_catalog.codes[].meaning",
+      "populated": 23,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.error_catalog.shape",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.error_catalog.transport_mapping.mcp",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.error_catalog.transport_mapping.orpc",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.error_catalog.transport_mapping.rest",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.mcp_annotations.destructive_irreversible[]",
+      "populated": 3,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.mcp_annotations.destructive_only[]",
+      "populated": 5,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.mcp_annotations.rationale",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.mcp_annotations.safe[]",
+      "populated": 4,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.pagination.cursor_opaque",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.pagination.limit_default",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.pagination.limit_max",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.pagination.shape",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.pagination.style",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.privilege_escalation_guards[].reason",
+      "populated": 3,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.privilege_escalation_guards[].rule",
+      "populated": 3,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.query_param_casing.examples[]",
+      "populated": 2,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.query_param_casing.rationale",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.query_param_casing.rule",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.rate_limit_headers.headers[]",
+      "populated": 3,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.rate_limit_headers.on_429",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.rate_limit_headers.scope",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.rate_limit_headers.style",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.resource_naming.cli",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.resource_naming.mcp",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.resource_naming.rationale",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.resource_naming.rest",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.resource_naming.rule",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.scopes.catalog[].grants",
+      "populated": 3,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.scopes.catalog[].id",
+      "populated": 3,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.scopes.cross_scope_rule",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.scopes.default_on_issuance",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.versioning.cli.binary_version",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.versioning.mcp.version_negotiation",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.versioning.rest.evolution",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.versioning.rest.prefix",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.versioning.sdk.package_version",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.webhook_events.catalog[].event",
+      "populated": 4,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.webhook_events.catalog[].payload_includes[]",
+      "populated": 16,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.webhook_events.catalog[].trigger",
+      "populated": 4,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.webhook_events.per_attempt_timeout_seconds",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.webhook_events.replay_window_seconds",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.webhook_events.retry_schedule_seconds[]",
+      "populated": 4,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.api_conventions.webhook_events.signature",
+      "populated": 1,
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    {
+      "path": "architecture.data_flows[].journey",
+      "populated": 6,
+      "reason": "Named journey paths through the modules. A dataflow diagram is a recorded Horizon item awaiting a structured source; as prose these would restate the declared architecture the band already shows."
+    },
+    {
+      "path": "architecture.data_flows[].path",
+      "populated": 6,
+      "reason": "Named journey paths through the modules. A dataflow diagram is a recorded Horizon item awaiting a structured source; as prose these would restate the declared architecture the band already shows."
+    },
+    {
+      "path": "architecture.deployment.environments[]",
+      "populated": 2,
+      "reason": "Declared environment and runtime mapping. Relevant to an Option Set's split-versus-keep tradeoff, but as declaration rather than measurement; the Option Set states runtime cost from the code scan instead."
+    },
+    {
+      "path": "architecture.deployment.module_runtime.api",
+      "populated": 1,
+      "reason": "Declared environment and runtime mapping. Relevant to an Option Set's split-versus-keep tradeoff, but as declaration rather than measurement; the Option Set states runtime cost from the code scan instead."
+    },
+    {
+      "path": "architecture.deployment.module_runtime.cli",
+      "populated": 1,
+      "reason": "Declared environment and runtime mapping. Relevant to an Option Set's split-versus-keep tradeoff, but as declaration rather than measurement; the Option Set states runtime cost from the code scan instead."
+    },
+    {
+      "path": "architecture.deployment.module_runtime.daemon",
+      "populated": 1,
+      "reason": "Declared environment and runtime mapping. Relevant to an Option Set's split-versus-keep tradeoff, but as declaration rather than measurement; the Option Set states runtime cost from the code scan instead."
+    },
+    {
+      "path": "architecture.deployment.module_runtime.email-api",
+      "populated": 1,
+      "reason": "Declared environment and runtime mapping. Relevant to an Option Set's split-versus-keep tradeoff, but as declaration rather than measurement; the Option Set states runtime cost from the code scan instead."
+    },
+    {
+      "path": "architecture.deployment.module_runtime.email-cli",
+      "populated": 1,
+      "reason": "Declared environment and runtime mapping. Relevant to an Option Set's split-versus-keep tradeoff, but as declaration rather than measurement; the Option Set states runtime cost from the code scan instead."
+    },
+    {
+      "path": "architecture.deployment.module_runtime.email-ingress",
+      "populated": 1,
+      "reason": "Declared environment and runtime mapping. Relevant to an Option Set's split-versus-keep tradeoff, but as declaration rather than measurement; the Option Set states runtime cost from the code scan instead."
+    },
+    {
+      "path": "architecture.deployment.module_runtime.email-outbound",
+      "populated": 1,
+      "reason": "Declared environment and runtime mapping. Relevant to an Option Set's split-versus-keep tradeoff, but as declaration rather than measurement; the Option Set states runtime cost from the code scan instead."
+    },
+    {
+      "path": "architecture.deployment.module_runtime.email-webhooks",
+      "populated": 1,
+      "reason": "Declared environment and runtime mapping. Relevant to an Option Set's split-versus-keep tradeoff, but as declaration rather than measurement; the Option Set states runtime cost from the code scan instead."
+    },
+    {
+      "path": "architecture.deployment.module_runtime.looplia-agent",
+      "populated": 1,
+      "reason": "Declared environment and runtime mapping. Relevant to an Option Set's split-versus-keep tradeoff, but as declaration rather than measurement; the Option Set states runtime cost from the code scan instead."
+    },
+    {
+      "path": "architecture.deployment.module_runtime.relay",
+      "populated": 1,
+      "reason": "Declared environment and runtime mapping. Relevant to an Option Set's split-versus-keep tradeoff, but as declaration rather than measurement; the Option Set states runtime cost from the code scan instead."
+    },
+    {
+      "path": "architecture.deployment.module_runtime.web",
+      "populated": 1,
+      "reason": "Declared environment and runtime mapping. Relevant to an Option Set's split-versus-keep tradeoff, but as declaration rather than measurement; the Option Set states runtime cost from the code scan instead."
+    },
+    {
+      "path": "architecture.deployment.persistence.agent_email_routing",
+      "populated": 1,
+      "reason": "Declared environment and runtime mapping. Relevant to an Option Set's split-versus-keep tradeoff, but as declaration rather than measurement; the Option Set states runtime cost from the code scan instead."
+    },
+    {
+      "path": "architecture.deployment.persistence.audit",
+      "populated": 1,
+      "reason": "Declared environment and runtime mapping. Relevant to an Option Set's split-versus-keep tradeoff, but as declaration rather than measurement; the Option Set states runtime cost from the code scan instead."
+    },
+    {
+      "path": "architecture.deployment.persistence.daemons",
+      "populated": 1,
+      "reason": "Declared environment and runtime mapping. Relevant to an Option Set's split-versus-keep tradeoff, but as declaration rather than measurement; the Option Set states runtime cost from the code scan instead."
+    },
+    {
+      "path": "architecture.deployment.persistence.email_messages",
+      "populated": 1,
+      "reason": "Declared environment and runtime mapping. Relevant to an Option Set's split-versus-keep tradeoff, but as declaration rather than measurement; the Option Set states runtime cost from the code scan instead."
+    },
+    {
+      "path": "architecture.deployment.persistence.email_raw",
+      "populated": 1,
+      "reason": "Declared environment and runtime mapping. Relevant to an Option Set's split-versus-keep tradeoff, but as declaration rather than measurement; the Option Set states runtime cost from the code scan instead."
+    },
+    {
+      "path": "architecture.deployment.persistence.sessions",
+      "populated": 1,
+      "reason": "Declared environment and runtime mapping. Relevant to an Option Set's split-versus-keep tradeoff, but as declaration rather than measurement; the Option Set states runtime cost from the code scan instead."
+    },
+    {
+      "path": "architecture.deployment.persistence.users",
+      "populated": 1,
+      "reason": "Declared environment and runtime mapping. Relevant to an Option Set's split-versus-keep tradeoff, but as declaration rather than measurement; the Option Set states runtime cost from the code scan instead."
+    },
+    {
+      "path": "architecture.domain_model[].fields[].default",
+      "populated": 15,
+      "reason": "Entity and relationship model. Object-level structure is /aep-model's surface; this band is about code units and the concepts carried in them."
+    },
+    {
+      "path": "architecture.domain_model[].fields[].name",
+      "populated": 116,
+      "reason": "Entity and relationship model. Object-level structure is /aep-model's surface; this band is about code units and the concepts carried in them."
+    },
+    {
+      "path": "architecture.domain_model[].fields[].notes",
+      "populated": 113,
+      "reason": "Entity and relationship model. Object-level structure is /aep-model's surface; this band is about code units and the concepts carried in them."
+    },
+    {
+      "path": "architecture.domain_model[].fields[].required",
+      "populated": 116,
+      "reason": "Entity and relationship model. Object-level structure is /aep-model's surface; this band is about code units and the concepts carried in them."
+    },
+    {
+      "path": "architecture.domain_model[].fields[].type",
+      "populated": 116,
+      "reason": "Entity and relationship model. Object-level structure is /aep-model's surface; this band is about code units and the concepts carried in them."
+    },
+    {
+      "path": "architecture.domain_model[].invariants[]",
+      "populated": 35,
+      "reason": "Entity and relationship model. Object-level structure is /aep-model's surface; this band is about code units and the concepts carried in them."
+    },
+    {
+      "path": "architecture.domain_model[].name",
+      "populated": 20,
+      "reason": "Entity and relationship model. Object-level structure is /aep-model's surface; this band is about code units and the concepts carried in them."
+    },
+    {
+      "path": "architecture.domain_model[].normalization_rules[]",
+      "populated": 18,
+      "reason": "Entity and relationship model. Object-level structure is /aep-model's surface; this band is about code units and the concepts carried in them."
+    },
+    {
+      "path": "architecture.domain_model[].purpose",
+      "populated": 20,
+      "reason": "Entity and relationship model. Object-level structure is /aep-model's surface; this band is about code units and the concepts carried in them."
+    },
+    {
+      "path": "architecture.interfaces[].authz",
+      "populated": 11,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].contract_fixture",
+      "populated": 11,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].endpoint",
+      "populated": 25,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].errors[].code",
+      "populated": 51,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].errors[].meaning",
+      "populated": 51,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].from",
+      "populated": 25,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].idempotency",
+      "populated": 11,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].protocol",
+      "populated": 25,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.action.actionId",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.action.expectedVersion",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.action.input",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.action.targetRef",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.action.type",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.approvalId",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.archetypeRef",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.articleRef",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.blueprintId",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.blueprintVersion",
+      "populated": 2,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.body",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.budget",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.budgetPolicy",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.companyBriefVersion",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.companyId",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.constraints",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.daemon_id",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.decisionBrief",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.decisionKey",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.delegationChain",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.desiredOutcome",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.draft.businessModel",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.draft.mission",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.draft.operatingModel",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.draft.sources",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.draft.values",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.draft.vision",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.evidencePatch",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.evidenceSnapshotRefs",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.expectedDigests",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.expectedProviderVersion",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.factUpdates",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.formationId",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.headers",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.hostEnvelope",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.idempotencyKey",
+      "populated": 3,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.includeEvidence",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.inputVersions",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.intent",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.kind",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.mime",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.modelInput",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.mountId",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.name",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.operatingContractRef",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.participantIds",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.platform",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.publicationDecisionRef",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.qualificationSuiteRef",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.requiredSources",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.roleName",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.sourceId",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.sourceTurnId",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.spec",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.surfaceId",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].request.version",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.ack",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.actions",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.agentId",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.archetype",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.artifactManifestRef",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.bindings",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.blueprint",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.blueprintId",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.blueprints",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.briefPath",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.budgetPolicy",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.connectorAcls",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.daemon_id",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.decision",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.decisionOwner",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.decisionRecordRef",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.dissentRefs",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.executionReceiptRef",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.facts",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.firstTaskIds",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.firstTasks",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.formationId",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.freshness",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.grantedMountAcls",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.grantedSkillPacks",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.hires",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.jobId",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.mailboxAlias",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.memorySeed",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.obligations",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.openQuestions",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.phase",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.previewDigest",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.provenance",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.providerVersion",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.publicUrl",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.qualification",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.readiness",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.readinessScore.components",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.readinessScore.overall",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.receipt",
+      "populated": 2,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.receiptId",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.receiptRef",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.rejectionEvidence",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.relay_url",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.risks",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.role",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.rollbackState",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.selectedProfileDigest",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.sessionId",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.skillPacks",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.soulSeed",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.sourceHealth",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.sources",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.spec",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.status",
+      "populated": 4,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.surfaceId",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.synthesisRef",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.taskOutcomes",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.ticket",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.valueEvidence",
+      "populated": 1,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].response.version",
+      "populated": 2,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].sla",
+      "populated": 15,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.interfaces[].to",
+      "populated": 25,
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    {
+      "path": "architecture.modules[].does_not",
+      "populated": 32,
+      "reason": "Module detail beyond name, responsibility, dependencies and technology (owns, does_not, key_concepts). Rich material, but the concept-to-code binding is measured from the work record, and layering declarative detail on top would blur measured with declared."
+    },
+    {
+      "path": "architecture.modules[].key_concepts[]",
+      "populated": 122,
+      "reason": "Module detail beyond name, responsibility, dependencies and technology (owns, does_not, key_concepts). Rich material, but the concept-to-code binding is measured from the work record, and layering declarative detail on top would blur measured with declared."
+    },
+    {
+      "path": "architecture.modules[].owns[]",
+      "populated": 150,
+      "reason": "Module detail beyond name, responsibility, dependencies and technology (owns, does_not, key_concepts). Rich material, but the concept-to-code binding is measured from the work record, and layering declarative detail on top would blur measured with declared."
+    },
+    {
+      "path": "architecture.protocol_sequences[].error_behavior",
+      "populated": 12,
+      "reason": "Wire-level message sequences. Sequence diagrams are Horizon; this is detail for implementers reading the spec, not for a reader establishing where the project is."
+    },
+    {
+      "path": "architecture.protocol_sequences[].name",
+      "populated": 12,
+      "reason": "Wire-level message sequences. Sequence diagrams are Horizon; this is detail for implementers reading the spec, not for a reader establishing where the project is."
+    },
+    {
+      "path": "architecture.protocol_sequences[].participants[]",
+      "populated": 56,
+      "reason": "Wire-level message sequences. Sequence diagrams are Horizon; this is detail for implementers reading the spec, not for a reader establishing where the project is."
+    },
+    {
+      "path": "architecture.protocol_sequences[].steps[].message_type",
+      "populated": 63,
+      "reason": "Wire-level message sequences. Sequence diagrams are Horizon; this is detail for implementers reading the spec, not for a reader establishing where the project is."
+    },
+    {
+      "path": "architecture.protocol_sequences[].steps[].payload_example",
+      "populated": 6,
+      "reason": "Wire-level message sequences. Sequence diagrams are Horizon; this is detail for implementers reading the spec, not for a reader establishing where the project is."
+    },
+    {
+      "path": "architecture.protocol_sequences[].steps[].sender",
+      "populated": 63,
+      "reason": "Wire-level message sequences. Sequence diagrams are Horizon; this is detail for implementers reading the spec, not for a reader establishing where the project is."
+    },
+    {
+      "path": "architecture.protocol_sequences[].steps[].timeout_ms",
+      "populated": 15,
+      "reason": "Wire-level message sequences. Sequence diagrams are Horizon; this is detail for implementers reading the spec, not for a reader establishing where the project is."
+    },
+    {
+      "path": "architecture.protocol_sequences[].timeout_behavior",
+      "populated": 12,
+      "reason": "Wire-level message sequences. Sequence diagrams are Horizon; this is detail for implementers reading the spec, not for a reader establishing where the project is."
+    },
+    {
+      "path": "architecture.protocol_sequences[].trigger",
+      "populated": 12,
+      "reason": "Wire-level message sequences. Sequence diagrams are Horizon; this is detail for implementers reading the spec, not for a reader establishing where the project is."
+    },
+    {
+      "path": "architecture.technical_spec",
+      "populated": 1,
+      "reason": "Pointer to a standalone spec document. Anchor-channel provenance."
+    },
+    {
+      "path": "architecture.third_party[].failure_mode",
+      "populated": 7,
+      "reason": "External service inventory. Real external dependencies appear in the code scan; the declared list adds services with no code presence, which would overstate the structure."
+    },
+    {
+      "path": "architecture.third_party[].integration_point",
+      "populated": 7,
+      "reason": "External service inventory. Real external dependencies appear in the code scan; the declared list adds services with no code presence, which would overstate the structure."
+    },
+    {
+      "path": "architecture.third_party[].name",
+      "populated": 7,
+      "reason": "External service inventory. Real external dependencies appear in the code scan; the declared list adds services with no code presence, which would overstate the structure."
+    },
+    {
+      "path": "architecture.third_party[].provides",
+      "populated": 7,
+      "reason": "External service inventory. Real external dependencies appear in the code scan; the declared list adds services with no code presence, which would overstate the structure."
+    },
+    {
+      "path": "changelog[].calibration_note",
+      "populated": 1,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].cost_observations",
+      "populated": 39,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].feedback.bugs[].description",
+      "populated": 52,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].feedback.bugs[].severity",
+      "populated": 1,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].feedback.bugs[].story_id",
+      "populated": 52,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].feedback.confirmed_fixed[]",
+      "populated": 2,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].feedback.cost_observations",
+      "populated": 2,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].feedback.discoveries[].affected_section",
+      "populated": 48,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].feedback.discoveries[].description",
+      "populated": 48,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].feedback.discoveries[].followup_story",
+      "populated": 1,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].feedback.opportunity_shifts[].description",
+      "populated": 2,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].feedback.opportunity_shifts[].rationale",
+      "populated": 1,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].feedback.process[].description",
+      "populated": 7,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].feedback.process[].lesson",
+      "populated": 1,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].feedback.process[].recorded_in",
+      "populated": 2,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].feedback.process_learning",
+      "populated": 1,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].feedback.refinements[].affected_section",
+      "populated": 1,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].feedback.refinements[].description",
+      "populated": 48,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].feedback.refinements[].story_id",
+      "populated": 41,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].feedback.refinements[].target_layer",
+      "populated": 47,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].feedback.verifications[].description",
+      "populated": 1,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].forward_plan[].id",
+      "populated": 1,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].forward_plan[].status",
+      "populated": 1,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].forward_plan[].summary",
+      "populated": 1,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].next_action",
+      "populated": 16,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].next_actions[]",
+      "populated": 5,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].outcome_evaluation.contract",
+      "populated": 1,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].outcome_evaluation.layer",
+      "populated": 1,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].outcome_evaluation.status",
+      "populated": 1,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].outcome_evaluation.summary",
+      "populated": 1,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].process_learnings_added",
+      "populated": 4,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].process_learnings_added[]",
+      "populated": 2,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].process_observations[].description",
+      "populated": 3,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].process_observations[].lesson",
+      "populated": 3,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].process_observations[].proposed_skill_changes[].change",
+      "populated": 7,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].process_observations[].proposed_skill_changes[].rationale",
+      "populated": 7,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].process_observations[].proposed_skill_changes[].skill",
+      "populated": 7,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].proposed_changes[].change",
+      "populated": 8,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].proposed_changes[].rationale",
+      "populated": 8,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].proposed_changes[].skill",
+      "populated": 8,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].research_notes_added[]",
+      "populated": 1,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].sections_changed[]",
+      "populated": 657,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "changelog[].stories_added",
+      "populated": 18,
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    {
+      "path": "cost.alerts[]",
+      "populated": 1,
+      "reason": "Budget alert thresholds. The brief reports what has been spent and whether the accounting is wired; whether an alert is configured is /aep-watch's concern."
+    },
+    {
+      "path": "cost.by_story.L10-002",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L10-003",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L10-004",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L10-005",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L105-001",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L105-002",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L105-003",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L105-004",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L105-005",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L105-006",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L11-001",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L11-002",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L11-003",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L11-004",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L11-005",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L11-006",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L115-001",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L115-002",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L115-003",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L115-004",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L115-005",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L115-006",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L115-007",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L115-008",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "cost.by_story.L115-009",
+      "populated": 1,
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    {
+      "path": "dispatch_epoch",
+      "populated": 1,
+      "reason": "Dispatch bookkeeping. The brief reports what moved, not which dispatch round moved it; the epoch is an anchor-channel identifier at most."
+    },
+    {
+      "path": "layer_gates[].design_approved_at",
+      "populated": 1,
+      "reason": "As design_gate."
+    },
+    {
+      "path": "layer_gates[].design_gate",
+      "populated": 1,
+      "reason": "Pre-implementation design approval flag. A second gate vocabulary on the same surface would compete with the two-phase model band 2 depends on."
+    },
+    {
+      "path": "layer_gates[].evidence.api_driver",
+      "populated": 1,
+      "reason": "Evidence artifacts proving a gate (journeys, dogfood receipts, matrices). The brief reports whether the gate passed and cites it; reproducing the evidence bundle is /aep-build's record."
+    },
+    {
+      "path": "layer_gates[].evidence.auth_recovery",
+      "populated": 1,
+      "reason": "Evidence artifacts proving a gate (journeys, dogfood receipts, matrices). The brief reports whether the gate passed and cites it; reproducing the evidence bundle is /aep-build's record."
+    },
+    {
+      "path": "layer_gates[].evidence.journey",
+      "populated": 2,
+      "reason": "Evidence artifacts proving a gate (journeys, dogfood receipts, matrices). The brief reports whether the gate passed and cites it; reproducing the evidence bundle is /aep-build's record."
+    },
+    {
+      "path": "layer_gates[].evidence.journeys",
+      "populated": 1,
+      "reason": "Evidence artifacts proving a gate (journeys, dogfood receipts, matrices). The brief reports whether the gate passed and cites it; reproducing the evidence bundle is /aep-build's record."
+    },
+    {
+      "path": "layer_gates[].evidence.journeys[]",
+      "populated": 5,
+      "reason": "Evidence artifacts proving a gate (journeys, dogfood receipts, matrices). The brief reports whether the gate passed and cites it; reproducing the evidence bundle is /aep-build's record."
+    },
+    {
+      "path": "layer_gates[].evidence.manual_checklist",
+      "populated": 15,
+      "reason": "Evidence artifacts proving a gate (journeys, dogfood receipts, matrices). The brief reports whether the gate passed and cites it; reproducing the evidence bundle is /aep-build's record."
+    },
+    {
+      "path": "layer_gates[].evidence.manual_pending",
+      "populated": 28,
+      "reason": "Evidence artifacts proving a gate (journeys, dogfood receipts, matrices). The brief reports whether the gate passed and cites it; reproducing the evidence bundle is /aep-build's record."
+    },
+    {
+      "path": "layer_gates[].evidence.matrix",
+      "populated": 9,
+      "reason": "Evidence artifacts proving a gate (journeys, dogfood receipts, matrices). The brief reports whether the gate passed and cites it; reproducing the evidence bundle is /aep-build's record."
+    },
+    {
+      "path": "layer_gates[].evidence.prod_dogfood",
+      "populated": 6,
+      "reason": "Evidence artifacts proving a gate (journeys, dogfood receipts, matrices). The brief reports whether the gate passed and cites it; reproducing the evidence bundle is /aep-build's record."
+    },
+    {
+      "path": "layer_gates[].evidence.production_dogfood.binding_mode",
+      "populated": 1,
+      "reason": "Evidence artifacts proving a gate (journeys, dogfood receipts, matrices). The brief reports whether the gate passed and cites it; reproducing the evidence bundle is /aep-build's record."
+    },
+    {
+      "path": "layer_gates[].evidence.production_dogfood.from",
+      "populated": 1,
+      "reason": "Evidence artifacts proving a gate (journeys, dogfood receipts, matrices). The brief reports whether the gate passed and cites it; reproducing the evidence bundle is /aep-build's record."
+    },
+    {
+      "path": "layer_gates[].evidence.production_dogfood.r2_key",
+      "populated": 1,
+      "reason": "Evidence artifacts proving a gate (journeys, dogfood receipts, matrices). The brief reports whether the gate passed and cites it; reproducing the evidence bundle is /aep-build's record."
+    },
+    {
+      "path": "layer_gates[].evidence.production_dogfood.rfc822_message_id",
+      "populated": 1,
+      "reason": "Evidence artifacts proving a gate (journeys, dogfood receipts, matrices). The brief reports whether the gate passed and cites it; reproducing the evidence bundle is /aep-build's record."
+    },
+    {
+      "path": "layer_gates[].evidence.production_dogfood.sent_at",
+      "populated": 1,
+      "reason": "Evidence artifacts proving a gate (journeys, dogfood receipts, matrices). The brief reports whether the gate passed and cites it; reproducing the evidence bundle is /aep-build's record."
+    },
+    {
+      "path": "layer_gates[].evidence.production_dogfood.sent_message_id",
+      "populated": 1,
+      "reason": "Evidence artifacts proving a gate (journeys, dogfood receipts, matrices). The brief reports whether the gate passed and cites it; reproducing the evidence bundle is /aep-build's record."
+    },
+    {
+      "path": "layer_gates[].evidence.production_dogfood.status",
+      "populated": 1,
+      "reason": "Evidence artifacts proving a gate (journeys, dogfood receipts, matrices). The brief reports whether the gate passed and cites it; reproducing the evidence bundle is /aep-build's record."
+    },
+    {
+      "path": "layer_gates[].evidence.production_dogfood.to",
+      "populated": 1,
+      "reason": "Evidence artifacts proving a gate (journeys, dogfood receipts, matrices). The brief reports whether the gate passed and cites it; reproducing the evidence bundle is /aep-build's record."
+    },
+    {
+      "path": "layer_gates[].evidence.scripted",
+      "populated": 19,
+      "reason": "Evidence artifacts proving a gate (journeys, dogfood receipts, matrices). The brief reports whether the gate passed and cites it; reproducing the evidence bundle is /aep-build's record."
+    },
+    {
+      "path": "layer_gates[].journeys[]",
+      "populated": 10,
+      "reason": "BDD journey references. Same disposition as evidence — the proof, not the state."
+    },
+    {
+      "path": "layer_gates[].notes",
+      "populated": 24,
+      "reason": "Free-text gate commentary. Where it records a closure decision, the structured closure_status and decision_realignment fields carry it; unstructured prose would have to be translated before it could be trusted."
+    },
+    {
+      "path": "layer_gates[].outcome_contract_ref",
+      "populated": 2,
+      "reason": "Pointer to an outcome contract document. Anchor-channel provenance."
+    },
+    {
+      "path": "layer_gates[].release",
+      "populated": 4,
+      "reason": "Release tag for the layer. The gate status is what decides whether a capability may be stated as fact; the tag is provenance beneath it."
+    },
+    {
+      "path": "layer_gates[].results.failures[]",
+      "populated": 1,
+      "reason": "Raw test counts from the gate run. The coverage counters are the drift-bearing numbers; pass/fail totals restate the gate status the brief already reports."
+    },
+    {
+      "path": "layer_gates[].results.notes",
+      "populated": 3,
+      "reason": "Raw test counts from the gate run. The coverage counters are the drift-bearing numbers; pass/fail totals restate the gate status the brief already reports."
+    },
+    {
+      "path": "layer_gates[].results.tests_failed",
+      "populated": 42,
+      "reason": "Raw test counts from the gate run. The coverage counters are the drift-bearing numbers; pass/fail totals restate the gate status the brief already reports."
+    },
+    {
+      "path": "layer_gates[].results.tests_passed",
+      "populated": 41,
+      "reason": "Raw test counts from the gate run. The coverage counters are the drift-bearing numbers; pass/fail totals restate the gate status the brief already reports."
+    },
+    {
+      "path": "layer_gates[].results.tests_run",
+      "populated": 41,
+      "reason": "Raw test counts from the gate run. The coverage counters are the drift-bearing numbers; pass/fail totals restate the gate status the brief already reports."
+    },
+    {
+      "path": "stories[].acceptance_criteria[]",
+      "populated": 1667,
+      "reason": "Criteria are counted through layer_gates[].coverage, which is the plane the drift detector reads. The criterion text belongs to /aep-build, not to a status surface."
+    },
+    {
+      "path": "stories[].acceptance_criteria[].The web app renders the spec from a trusted catalog",
+      "populated": 1,
+      "reason": "As above; a consumer that wrote a criterion as a mapping rather than a string does not change the disposition."
+    },
+    {
+      "path": "stories[].activity",
+      "populated": 349,
+      "reason": "Product-activity tag from /aep-map. Band 2 derives capabilities from passed gates instead, which is evidence-backed rather than label-backed."
+    },
+    {
+      "path": "stories[].assigned_to",
+      "populated": 176,
+      "reason": "Agent assignment. The brief's ask is addressed to the human; which agent holds a task is answered by /aep-watch."
+    },
+    {
+      "path": "stories[].calibration_type",
+      "populated": 42,
+      "reason": "Marks which taste dimension a story feeds. Calibration is surfaced through plan-minus-history, which covers every checkpoint rather than only those with stories."
+    },
+    {
+      "path": "stories[].capability",
+      "populated": 79,
+      "reason": "Present on 79 of 396 stories in the reference consumer. A partially populated grouping key would make band 2 look authoritative about a fifth of the work; gates cover all of it."
+    },
+    {
+      "path": "stories[].change_group",
+      "populated": 90,
+      "reason": "Batching key for dispatch. Operational, not descriptive."
+    },
+    {
+      "path": "stories[].commit_sha",
+      "populated": 3,
+      "reason": "As merge_sha — provenance detail below the altitude any of the three questions reaches."
+    },
+    {
+      "path": "stories[].compile_mode",
+      "populated": 396,
+      "reason": "Harness execution setting. It says nothing about project state."
+    },
+    {
+      "path": "stories[].complexity",
+      "populated": 396,
+      "reason": "Estimation input. The brief reports what happened, not what was expected to be hard."
+    },
+    {
+      "path": "stories[].dependencies[]",
+      "populated": 561,
+      "reason": "Story-level sequencing. The brief folds the queue to one sentence per layer; a dependency graph is /aep-dispatch's input, and surfacing it would re-import the row list the fold exists to remove."
+    },
+    {
+      "path": "stories[].description.what_changes",
+      "populated": 396,
+      "reason": "Story descriptions are specification input for the implementing agent. The brief translates outcomes and never restates specs — surfacing them verbatim is the system-vocabulary failure the cold-reader contract exists to prevent."
+    },
+    {
+      "path": "stories[].description.why",
+      "populated": 396,
+      "reason": "Story descriptions are specification input for the implementing agent. The brief translates outcomes and never restates specs — surfacing them verbatim is the system-vocabulary failure the cold-reader contract exists to prevent."
+    },
+    {
+      "path": "stories[].dispatch_score",
+      "populated": 193,
+      "reason": "As readiness_score — an input to choosing work, not a fact about the work."
+    },
+    {
+      "path": "stories[].dispatched_at_epoch",
+      "populated": 178,
+      "reason": "Dispatch bookkeeping, as dispatch_epoch."
+    },
+    {
+      "path": "stories[].dogfood_status",
+      "populated": 1,
+      "reason": "Present on 1 of 396 stories. Too sparse to found a surface claim on."
+    },
+    {
+      "path": "stories[].downstream_handoff.consumer",
+      "populated": 1,
+      "reason": "Cross-project handoff record, present once. It belongs to the receiving project's brief, not this one's."
+    },
+    {
+      "path": "stories[].downstream_handoff.contract",
+      "populated": 1,
+      "reason": "Cross-project handoff record, present once. It belongs to the receiving project's brief, not this one's."
+    },
+    {
+      "path": "stories[].downstream_handoff.status",
+      "populated": 1,
+      "reason": "Cross-project handoff record, present once. It belongs to the receiving project's brief, not this one's."
+    },
+    {
+      "path": "stories[].gate_note",
+      "populated": 1,
+      "reason": "Single-instance annotation; layer_gates is the field of record for gate state."
+    },
+    {
+      "path": "stories[].interface_obligations.consumes[]",
+      "populated": 442,
+      "reason": "Contract obligations between stories. Relevant to the Engineering band in principle, but absent on all queued work in the reference consumer (0 of 45), so deriving it today would render an empty view that reads as 'no obligations' rather than 'not recorded'. Revisit when a consumer populates it for open work."
+    },
+    {
+      "path": "stories[].interface_obligations.contract_tests_required",
+      "populated": 330,
+      "reason": "Contract obligations between stories. Relevant to the Engineering band in principle, but absent on all queued work in the reference consumer (0 of 45), so deriving it today would render an empty view that reads as 'no obligations' rather than 'not recorded'. Revisit when a consumer populates it for open work."
+    },
+    {
+      "path": "stories[].interface_obligations.implements[]",
+      "populated": 295,
+      "reason": "Contract obligations between stories. Relevant to the Engineering band in principle, but absent on all queued work in the reference consumer (0 of 45), so deriving it today would render an empty view that reads as 'no obligations' rather than 'not recorded'. Revisit when a consumer populates it for open work."
+    },
+    {
+      "path": "stories[].interface_obligations[]",
+      "populated": 58,
+      "reason": "As above; older consumers wrote this as a list rather than a mapping."
+    },
+    {
+      "path": "stories[].merge_sha",
+      "populated": 59,
+      "reason": "Merge provenance. Belongs in an anchor beside a translated changelog line; the PR reference already gives the reader a way in."
+    },
+    {
+      "path": "stories[].object_model_refs[]",
+      "populated": 3,
+      "reason": "Links to object maps, which live outside the plan file. The attention set already records object-map signals as underivable from this document alone."
+    },
+    {
+      "path": "stories[].on_critical_path",
+      "populated": 396,
+      "reason": "Derived from the dependency graph this manifest already declines to read. Surfacing it alone would assert a criticality the brief cannot substantiate."
+    },
+    {
+      "path": "stories[].openspec_change",
+      "populated": 192,
+      "reason": "Pointer to the OpenSpec proposal. The brief cites the story id instead, which resolves to the same work."
+    },
+    {
+      "path": "stories[].priority",
+      "populated": 396,
+      "reason": "Author-assigned ordering. The attention set has its own deterministic priority order (attention-set.md); a second ranking on the same surface would compete with it."
+    },
+    {
+      "path": "stories[].readiness_score",
+      "populated": 174,
+      "reason": "Dispatch-time scoring. It ranks what to start next, which is /aep-dispatch's judgment, not a statement about where the project is."
+    },
+    {
+      "path": "stories[].redogfood_note",
+      "populated": 1,
+      "reason": "As dogfood_status — a single-instance field."
+    },
+    {
+      "path": "stories[].resolution",
+      "populated": 37,
+      "reason": "Free-text closing note on deferred or superseded work. As narrative it would need translation; as data it has no schema. The status transition already carries the outcome."
+    },
+    {
+      "path": "stories[].slice",
+      "populated": 393,
+      "reason": "Vertical-slice tag from /aep-map. Same disposition as activity."
+    },
+    {
+      "path": "stories[].technical_notes",
+      "populated": 396,
+      "reason": "Implementation guidance for the building agent. None of the three reader questions depends on it."
+    },
+    {
+      "path": "stories[].verification",
+      "populated": 66,
+      "reason": "As above, for consumers that wrote it as a scalar."
+    },
+    {
+      "path": "stories[].verification.contract[]",
+      "populated": 152,
+      "reason": "Per-story test plan. Coverage is reported at the gate level, which is where the two-phase acceptance model lives; per-story test lists would double-count it."
+    },
+    {
+      "path": "stories[].verification.integration[]",
+      "populated": 280,
+      "reason": "Per-story test plan. Coverage is reported at the gate level, which is where the two-phase acceptance model lives; per-story test lists would double-count it."
+    },
+    {
+      "path": "stories[].verification.production[]",
+      "populated": 3,
+      "reason": "Per-story test plan. Coverage is reported at the gate level, which is where the two-phase acceptance model lives; per-story test lists would double-count it."
+    },
+    {
+      "path": "stories[].verification.unit[]",
+      "populated": 373,
+      "reason": "Per-story test plan. Coverage is reported at the gate level, which is where the two-phase acceptance model lives; per-story test lists would double-count it."
+    },
+    {
+      "path": "topology.handoffs[].from",
+      "populated": 4,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.handoffs[].on_validation_failure",
+      "populated": 4,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.handoffs[].payload",
+      "populated": 4,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.handoffs[].to",
+      "populated": 4,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.handoffs[].trigger",
+      "populated": 4,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.handoffs[].validation[]",
+      "populated": 8,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].context_composition[]",
+      "populated": 4,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].cost_budget.alert_threshold_total",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].cost_budget.input_tokens_max",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].cost_budget.output_tokens_max",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].does[]",
+      "populated": 16,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].does_not[]",
+      "populated": 13,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].input_contract.build",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].input_contract.context_slice",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].input_contract.context_slice.adjacent_interfaces",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].input_contract.context_slice.context_document",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].input_contract.context_slice.dependency_artifacts",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].input_contract.context_slice.system_map_module",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].input_contract.failure_history",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].input_contract.fixtures",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].input_contract.journey",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].input_contract.rubric",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].input_contract.story_spec",
+      "populated": 3,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].name",
+      "populated": 5,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].output_contract.diagnosis",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].output_contract.evidence",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].output_contract.evidence_bundle",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].output_contract.findings",
+      "populated": 2,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].output_contract.implementation.branch_name",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].output_contract.implementation.files_changed",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].output_contract.implementation.pr_url",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].output_contract.recovery_rung",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].output_contract.result",
+      "populated": 3,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].output_contract.status_report.error_summary",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].output_contract.status_report.outcome",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].output_contract.status_report.story_id",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].output_contract.status_report.what_was_not_tried",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].output_contract.verification.all_passing",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].output_contract.verification.contract_tests",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].output_contract.verification.unit_tests",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.roles[].purpose",
+      "populated": 5,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.routing.auto_design",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.routing.auto_outcome_eval",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.routing.autonomous",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.routing.concurrency_limit",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.routing.conflict_detection",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.routing.dispatch",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.routing.full_auto",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.routing.per_module_limit",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.routing.process_learnings[]",
+      "populated": 26,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.routing.retry",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.routing.skip_human_eval",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.routing.watch.auto_create",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.routing.watch.interval",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.routing.watch.sources[].glob",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "topology.routing.watch.sources[].type",
+      "populated": 1,
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    {
+      "path": "waves[].layer",
+      "populated": 190,
+      "reason": "Dispatch batching across layers. The reader is told which layer is current and what is queued behind it, not how the work will be batched."
+    },
+    {
+      "path": "waves[].stories[]",
+      "populated": 307,
+      "reason": "Dispatch batching across layers. The reader is told which layer is current and what is queued behind it, not how the work will be batched."
+    },
+    {
+      "path": "waves[].theme",
+      "populated": 190,
+      "reason": "Dispatch batching across layers. The reader is told which layer is current and what is queued behind it, not how the work will be batched."
+    },
+    {
+      "path": "waves[].wave",
+      "populated": 190,
+      "reason": "Dispatch batching across layers. The reader is told which layer is current and what is queued behind it, not how the work will be batched."
+    }
+  ],
+  "unhandled": [],
+  "declared_but_absent": [
+    "architecture.modules[].paths[]",
+    "layer_gates[].coverage.uncovered[]",
+    "layer_gates[].skip_human_eval"
+  ],
+  "reasonless_ignores": []
+}
