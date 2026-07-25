@@ -21,8 +21,8 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { basename, join, resolve } from "node:path";
 
 const ARTIFACT_KEYS = [
-  "architecture-overview",
-  "architecture-packages",
+  "architecture-now",
+  "architecture-next",
   "architecture-declared",
   "aep-loop",
   "story-states",

@@ -364,6 +364,189 @@ export function deriveDriftFacts(ctx) {
   return facts;
 }
 
+// ─── Structure: Now · Concepts · Next · Options (D3/D8) ────────────────────
+// The Engineering band's plane. Every value here is measured from the work
+// record — `stories[].module` says which concept a piece of work belongs to,
+// `stories[].files_affected` says where it landed. The concept-to-code binding
+// is therefore observed, never declared and never guessed.
+
+const OPEN_WORK = new Set(["pending", "ready", "in_progress"]);
+
+// Fixed thresholds (D8). Configurable thresholds are knobs nobody turns.
+export const OPTION_TRIGGERS = {
+  CROWDING_MIN_CONCEPTS: 4,
+  CROWDING_MIN_FILES: 30,
+  CROWDING_MIN_DISJOINT: 0.5,
+};
+
+const resolverFor = (codeGraph) => {
+  const dirs = (codeGraph?.nodes_detail ?? [])
+    .map((n) => [n.dir, n.name])
+    .sort((a, b) => b[0].length - a[0].length);
+  return (p) => dirs.find(([dir]) => String(p).startsWith(dir + "/"))?.[1] ?? null;
+};
+
+export function deriveStructure(ctx, codeGraph) {
+  if (!codeGraph) return null;
+  const toUnit = resolverFor(codeGraph);
+  const stories = ctx.stories ?? [];
+  const declared = new Set((ctx.architecture?.modules ?? []).map((m) => String(m.name)));
+  const responsibility = new Map(
+    (ctx.architecture?.modules ?? []).map((m) => [String(m.name), m.responsibility ?? null]),
+  );
+
+  // Concept → files, split by whether the work is done or still queued.
+  const filesOf = (pool) => {
+    const out = new Map();
+    for (const s of pool) {
+      const mod = s.module == null ? null : String(s.module);
+      if (!mod) continue;
+      if (!out.has(mod)) out.set(mod, new Set());
+      for (const p of s.files_affected ?? []) out.get(mod).add(String(p));
+    }
+    return out;
+  };
+  const doneFiles = filesOf(stories.filter((s) => s.status === "completed"));
+  const nextFiles = filesOf(stories.filter((s) => OPEN_WORK.has(s.status)));
+  const used = new Set(
+    stories.map((s) => (s.module == null ? null : String(s.module))).filter(Boolean),
+  );
+
+  // Concepts: the vocabulary, bound to the code units that actually carry it.
+  const concepts = [...used].sort().map((m) => {
+    const files = doneFiles.get(m) ?? new Set();
+    const units = [...new Set([...files].map(toUnit).filter(Boolean))].sort();
+    return {
+      module: m,
+      declared: declared.has(m),
+      responsibility: isProse(responsibility.get(m)) ? String(responsibility.get(m)) : null,
+      files: files.size,
+      units,
+    };
+  });
+
+  // Next: the queued design projected onto what exists.
+  const nextConcepts = [...nextFiles.keys()].sort().map((m) => {
+    const files = nextFiles.get(m);
+    const units = [...new Set([...files].map(toUnit).filter(Boolean))].sort();
+    return {
+      module: m,
+      declared: declared.has(m),
+      net_new: !doneFiles.has(m),
+      responsibility: isProse(responsibility.get(m)) ? String(responsibility.get(m)) : null,
+      files: files.size,
+      units,
+      homeless: units.length === 0,
+    };
+  });
+
+  // Concept load per code unit, restricted to the Next projection (D8 scope:
+  // running these detectors over history is measured noise, not signal).
+  const perUnit = new Map();
+  for (const m of nextFiles.keys()) {
+    for (const p of nextFiles.get(m)) {
+      const unit = toUnit(p);
+      if (!unit) continue;
+      if (!perUnit.has(unit)) perUnit.set(unit, new Map());
+      if (!perUnit.get(unit).has(m)) perUnit.get(unit).set(m, new Set());
+      perUnit.get(unit).get(m).add(p);
+    }
+  }
+
+  const options = [];
+  for (const [unit, byModule] of [...perUnit].sort()) {
+    const mods = [...byModule.keys()].sort();
+    const mass = new Set([...byModule.values()].flatMap((s) => [...s])).size;
+    if (mods.length < OPTION_TRIGGERS.CROWDING_MIN_CONCEPTS) continue;
+    if (mass < OPTION_TRIGGERS.CROWDING_MIN_FILES) continue;
+    let pairs = 0;
+    let disjoint = 0;
+    const seams = [];
+    for (let i = 0; i < mods.length; i++) {
+      for (let j = i + 1; j < mods.length; j++) {
+        pairs++;
+        const shared = [...byModule.get(mods[i])].filter((p) =>
+          byModule.get(mods[j]).has(p),
+        ).length;
+        if (shared === 0) disjoint++;
+        seams.push({ a: mods[i], b: mods[j], shared });
+      }
+    }
+    const share = pairs === 0 ? 1 : disjoint / pairs;
+    if (share < OPTION_TRIGGERS.CROWDING_MIN_DISJOINT) continue;
+    // The cleanest first cut: the concept sharing fewest files with the rest.
+    const sharedTotal = new Map(mods.map((m) => [m, 0]));
+    for (const s of seams) {
+      sharedTotal.set(s.a, sharedTotal.get(s.a) + s.shared);
+      sharedTotal.set(s.b, sharedTotal.get(s.b) + s.shared);
+    }
+    const cleanest = [...sharedTotal].sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0]))[0];
+    options.push({
+      trigger: "concept_crowding",
+      unit,
+      concepts: mods,
+      concept_count: mods.length,
+      files: mass,
+      pairs,
+      disjoint_pairs: disjoint,
+      disjoint_share: Number(share.toFixed(2)),
+      cleanest_seam: { module: cleanest[0], shared_files: cleanest[1] },
+      path: "stories[status=open].module × files_affected",
+    });
+  }
+  for (const c of nextConcepts.filter((c) => c.homeless)) {
+    options.push({
+      trigger: "homeless_concept",
+      unit: null,
+      concepts: [c.module],
+      concept_count: 1,
+      files: c.files,
+      pairs: 0,
+      disjoint_pairs: 0,
+      disjoint_share: 1,
+      cleanest_seam: null,
+      path: `stories[module=${c.module}].files_affected`,
+    });
+  }
+
+  const codeBound = concepts.filter((c) => c.units.length > 0).length;
+  return {
+    now: { units: codeGraph.nodes, edges: codeGraph.edges, commit: codeGraph.commit },
+    concepts,
+    concepts_total: concepts.length,
+    concepts_code_bound: codeBound,
+    used_not_declared: [...used].filter((m) => !declared.has(m)).sort(),
+    declared_not_used: [...declared].filter((m) => !used.has(m)).sort(),
+    next: nextConcepts,
+    next_net_new: nextConcepts.filter((c) => c.net_new).map((c) => c.module),
+    options,
+  };
+}
+
+// ─── Cost: roll up from the work record, not the roll-up field ─────────────
+export function deriveCost(ctx) {
+  const stories = ctx.stories ?? [];
+  const priced = stories.filter((s) => typeof s.cost_usd === "number" && s.cost_usd > 0);
+  const derivedTotal = priced.reduce((sum, s) => sum + s.cost_usd, 0);
+  const byModule = {};
+  for (const s of priced) {
+    const m = s.module == null ? "unattributed" : String(s.module);
+    byModule[m] = Number(((byModule[m] ?? 0) + s.cost_usd).toFixed(2));
+  }
+  const declaredTotal = num(ctx.cost?.total_usd);
+  return {
+    total_usd: declaredTotal,
+    derived_total_usd: Number(derivedTotal.toFixed(2)),
+    priced_story_count: priced.length,
+    story_total: stories.length,
+    by_module: byModule,
+    // A zeroed roll-up beside a non-zero story sum is a statement about the
+    // roll-up, not about the data — and their disagreement is itself drift.
+    rollup_disagrees: declaredTotal !== null && Math.abs(declaredTotal - derivedTotal) > 0.01,
+    instrumented: derivedTotal > 0,
+  };
+}
+
 // ─── Main derivation ───────────────────────────────────────────────────────
 export async function derive({ contextPath, manifestPath, repoRoot, codeGraph = null }) {
   const ctx = await loadYaml(contextPath);
@@ -496,10 +679,8 @@ export async function derive({ contextPath, manifestPath, repoRoot, codeGraph = 
       source: `layer_gates[layer=${g.layer}]`,
     }));
 
-  const cost = ctx.cost ?? {};
-  const byStory = cost.by_story ?? {};
-  const byLayerCost = cost.by_layer ?? {};
-  const totalUsd = num(cost.total_usd);
+  const cost = deriveCost(ctx);
+  const structure = deriveStructure(ctx, codeGraph);
   const facts = {
     schema_version: 1,
     generated_from: "product-context.yaml",
@@ -525,26 +706,49 @@ export async function derive({ contextPath, manifestPath, repoRoot, codeGraph = 
     layers,
     changelog_recent: changelogRecent,
     capabilities,
-    cost: {
-      total_usd: totalUsd,
-      instrumented: totalUsd !== null && totalUsd > 0,
-      by_layer_count: Object.keys(byLayerCost).length,
-      by_story_count: Object.keys(byStory).length,
-      note:
-        totalUsd === 0 && Object.keys(byStory).length > 0
-          ? "cost plane declared but unwired"
-          : null,
-    },
+    cost,
     modules: {
       declared_count: (ctx.architecture?.modules ?? []).length,
       path_bound_count: (ctx.architecture?.modules ?? []).filter(
         (m) => Array.isArray(m.paths) && m.paths.length > 0,
       ).length,
+      used_count: structure ? structure.concepts_total : null,
+      code_bound_count: structure ? structure.concepts_code_bound : null,
+      used_not_declared: structure ? structure.used_not_declared : [],
+      declared_not_used: structure ? structure.declared_not_used : [],
       names: (ctx.architecture?.modules ?? []).map((m) => String(m.name)),
     },
+    structure,
     code_graph: codeGraph,
     delta,
   };
+
+  // Cost drift: a zeroed roll-up beside a non-zero story sum.
+  if (cost.rollup_disagrees) {
+    facts.drift_facts.push({
+      kind: "control_plane_incoherence",
+      layer: null,
+      detail: `cost roll-up declares ${cost.total_usd} while ${cost.priced_story_count} stories sum to ${cost.derived_total_usd}`,
+      path: "cost.total_usd vs stories[].cost_usd",
+      level: "derived",
+      counters: { priced_stories: cost.priced_story_count },
+    });
+  }
+
+  // Module vocabulary drift: the control plane and the work using different words.
+  if (structure && (structure.used_not_declared.length || structure.declared_not_used.length)) {
+    facts.drift_facts.push({
+      kind: "control_plane_incoherence",
+      layer: null,
+      detail: `${structure.used_not_declared.length} module names are used by stories but never declared, and ${structure.declared_not_used.length} declared modules have never been worked`,
+      path: "architecture.modules[].name vs stories[].module",
+      level: "derived",
+      counters: {
+        used_not_declared: structure.used_not_declared.length,
+        declared_not_used: structure.declared_not_used.length,
+      },
+    });
+  }
 
   // 5 · declared vs actual — only when a scan is present
   if (codeGraph) {
@@ -565,17 +769,23 @@ export async function derive({ contextPath, manifestPath, repoRoot, codeGraph = 
         commit: codeGraph.commit,
       }).filter(([, v]) => v !== undefined),
     );
-    if (facts.modules.path_bound_count === 0) {
+    // Drift 5 restated (revision 8). The declared architecture IS
+    // code-addressable — through the work record. Report what the measurement
+    // found, not the absence of a schema field.
+    if (structure) {
+      const unbound = structure.concepts.filter((c) => c.units.length === 0).length;
       facts.drift_facts.push({
         kind: "declared_vs_actual",
         layer: null,
-        detail: `code has ${codeGraph.nodes} workspace packages, the YAML declares ${facts.modules.declared_count} conceptual modules, ${overlap} names in common; no architecture.modules[].paths binds them, so declared edges are not code-addressable`,
-        path: "architecture.modules[].paths",
+        detail: `${structure.concepts_code_bound} of ${structure.concepts_total} concept modules resolve to real code through the work record; ${unbound} carry no resolvable path. The binding is measured, not declared — architecture.modules[].paths would record it, and ${facts.modules.path_bound_count} modules carry it today`,
+        path: "stories[].module × stories[].files_affected",
         level: "code-verified",
         counters: {
-          code_packages: codeGraph.nodes,
+          code_units: codeGraph.nodes,
+          concepts_used: structure.concepts_total,
+          concepts_code_bound: structure.concepts_code_bound,
           declared_modules: facts.modules.declared_count,
-          name_overlap: overlap,
+          paths_declared: facts.modules.path_bound_count,
         },
       });
     }

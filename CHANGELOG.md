@@ -62,14 +62,25 @@ brief ships as the reference example.
 
 ### Notes
 
-- Two derivations were corrected before shipping, both surfaced by running
-  against real data rather than a fixture: intent-without-evidence derives from
-  the coverage counters (not `coverage.uncovered`, which is empty precisely when
-  a gate never opened), and its layer scope excludes `ready` as well as
-  `pending` — a dispatchable task is not a started one.
-- Only a `passed` gate yields an unchipped capability. A `scripted_passed` gate
-  appears solely under an `EXP` chip naming the acceptance run that would settle
-  it, so the product band cannot claim a sign-off that has not happened.
+- **Engineering is prospective and structural** (decision doc revision 8):
+  Now (what exists) · Concepts (the vocabulary measured onto it) · Next (where
+  the queued design lands) · Options. Progress-shaped questions stay in Project.
+- **R7 binds concepts to code units; it does not invent domains.**
+  `stories[].module` × `stories[].files_affected` makes the binding measurable,
+  so no naming-convention grouping is needed or wanted.
+- **Design Option Sets** — the Engineering band may recommend, but only with a
+  derived trigger, at least three options including "leave it as is", costs in
+  the project's own measured terms, a design sketch, what would settle it, and a
+  stated ranking criterion. Bare one-liner recommendations fail the grammar.
+  Thresholds are fixed in the spec: concept crowding fires at >=4 concepts,
+  > =30 files, >=50% pairwise-disjoint, on the queued-work projection only.
+- **Mine before conceding.** A field the schema names being empty is not proof a
+  signal is underivable. Three claims in the first implementation were wrong for
+  that reason and are now derived: spend from `stories[].cost_usd`, the
+  concept-to-code binding from the work record, and the plan-versus-work
+  vocabulary gap.
+- Only a `passed` gate yields an unchipped capability; `scripted_passed` appears
+  solely under an EXP chip naming the acceptance run that would settle it.
 - Consumers must re-pin to `@v3.3.0` before `/aep-human-alignment` is available.
 
 ## [3.2.1] - 2026-07-18

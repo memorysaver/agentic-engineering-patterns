@@ -47,7 +47,6 @@ const ROW_Y = 90;
 const ROW_STEP = 130;
 
 const unscoped = (name) => name.replace(/^@[^/]+\//, "");
-const stem = (name) => unscoped(name).split("-")[0];
 
 // archify ids must match ^[a-zA-Z][a-zA-Z0-9_-]*$. Scoped package names
 // (@scope/pkg) would otherwise produce a leading dash and fail validation, so
@@ -298,103 +297,85 @@ export function buildPackageTier(graph) {
   };
 }
 
-export function buildOverviewTier(graph) {
-  const kept = graph.nodes_detail.filter(
-    (n) => !RULES.R1_EXCLUDE.test(`${n.dir}/${unscoped(n.name)}`),
-  );
-  const keptNames = new Set(kept.map((n) => n.name));
-
-  // R7 — domain = the deployment unit for apps, the name stem for packages.
-  const domainOf = new Map();
-  for (const n of kept) {
-    const top = n.dir.split("/")[0];
-    domainOf.set(n.name, top === "apps" ? unscoped(n.name) : stem(n.name));
+// R7 — concepts are BOUND to code units, never grouped by name. The binding is
+// measured in derive.mjs from stories[].module x files_affected; this tier only
+// renders it. There is no synthesized "domain" layer: inventing one from naming
+// conventions produced 14 groups from 19 packages, 11 of them singletons, and
+// discarded the project's own prose vocabulary (decision doc, revision 8).
+export function buildNowTier(graph, structure) {
+  const base = buildPackageTier(graph);
+  const carried = new Map();
+  for (const c of structure?.concepts ?? []) {
+    for (const u of c.units) {
+      if (!carried.has(u)) carried.set(u, []);
+      carried.get(u).push(c.module);
+    }
   }
-  const domains = [...new Set(domainOf.values())].sort();
-  const membersOf = new Map(
-    domains.map((d) => [d, kept.filter((n) => domainOf.get(n.name) === d).map((n) => n.name)]),
-  );
-
-  // R8 — aggregate package edges to domain edges, dropping self-loops
-  let edges = [];
-  const seen = new Set();
-  for (const e of graph.edges_detail) {
-    if (!keptNames.has(e.from) || !keptNames.has(e.to)) continue;
-    const a = domainOf.get(e.from);
-    const b = domainOf.get(e.to);
-    if (a === b) continue;
-    const key = `${a}|${b}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    edges.push({ from: a, to: b });
+  for (const comp of base.components) {
+    const unit = (graph.nodes_detail ?? []).find((n) => slug(n.name) === comp.id)?.name;
+    const concepts = (carried.get(unit) ?? []).sort();
+    if (concepts.length) comp.sublabel = `${comp.sublabel} · ${concepts.length} concepts`;
   }
-
-  // R2' — a domain everything depends on is chrome, not structure
-  const inDeg = new Map(domains.map((d) => [d, 0]));
-  for (const e of edges) inDeg.set(e.to, (inDeg.get(e.to) ?? 0) + 1);
-  const threshold = Math.ceil(domains.length * RULES.R2_UBIQUITY);
-  const folded = domains.filter((d) => (inDeg.get(d) ?? 0) >= threshold);
-  const foldedSet = new Set(folded);
-  const nodes = domains.filter((d) => !foldedSet.has(d));
-  edges = edges.filter((e) => !foldedSet.has(e.from) && !foldedSet.has(e.to));
-
-  // R6
-  edges = transitiveReduction(nodes, edges);
-  const pos = place(nodes, edges);
-
-  const typeOfDomain = (d) => {
-    const members = membersOf.get(d) ?? [];
-    const types = members.map((m) => semanticType(m, kept.find((n) => n.name === m)?.dir ?? ""));
-    return types.find((t) => t !== RULES.R4_DEFAULT) ?? RULES.R4_DEFAULT;
-  };
-
-  return {
-    schema_version: 1,
-    diagram_type: "architecture",
-    meta: {
-      title: `${graph.repo} · domain overview`,
-      subtitle: `deterministic aggregation @ ${graph.commit} · ${graph.nodes} packages grouped into ${nodes.length} domains · code-verified`,
-      output: "architecture-overview.html",
-      quality_profile: "standard",
-      views: guidedViews(nodes, edges, (n) => n),
+  base.meta.title = `${graph.repo} · what exists now`;
+  base.meta.subtitle = `code-verified @ ${graph.commit} · ${base.components.length} units · concepts measured from the work record`;
+  base.meta.output = "architecture-now.html";
+  base.cards = [
+    base.cards[0],
+    {
+      dot: "emerald",
+      title: "Concepts carried, measured not declared",
+      items: [
+        `${structure?.concepts_code_bound ?? 0} of ${structure?.concepts_total ?? 0} concept modules resolve to a real unit`,
+        `binding source: stories[].module x stories[].files_affected`,
+        `${(structure?.used_not_declared ?? []).length} concepts are used by work but never declared`,
+      ],
     },
-    components: nodes
-      .map((d) => ({
-        id: slug(d),
-        type: typeOfDomain(d),
-        label: d,
-        sublabel: `${(membersOf.get(d) ?? []).length} package${(membersOf.get(d) ?? []).length === 1 ? "" : "s"}`,
-        pos: pos.get(d),
-        size: sizeFor(d),
-      }))
-      .sort((a, b) => a.id.localeCompare(b.id)),
-    boundaries: [],
-    connections: edges
-      .map((e) => ({ from: slug(e.from), to: slug(e.to) }))
-      .sort((a, b) => a.from.localeCompare(b.from) || a.to.localeCompare(b.to)),
-    cards: [
-      {
-        dot: "cyan",
-        title: "How domains were formed (rule R7, auditable)",
-        items: [
-          "apps/* — each deployment unit is its own domain",
-          "packages/* — grouped by the first token of the package name",
-          folded.length
-            ? `R2' folded (depended on by everyone): ${folded.join(" · ")}`
-            : "R2' folded nothing",
-        ],
-      },
-      {
-        dot: "emerald",
-        title: "Scan receipt",
-        items: [
-          `commit ${graph.commit} · ${graph.nodes} packages, ${graph.edges} edges`,
-          `→ ${nodes.length} domains, ${edges.length} edges after R7/R8/R2'/R6`,
-          `tool: ${graph.tool}`,
-        ],
-      },
-    ],
-  };
+  ];
+  return base;
+}
+
+// Next — the queued design projected onto what exists. Units receiving net-new
+// concepts are marked; this is the tier archify `compare` reads as "After".
+export function buildNextTier(graph, structure) {
+  const base = buildPackageTier(graph);
+  const incoming = new Map();
+  for (const c of structure?.next ?? []) {
+    for (const u of c.units) {
+      if (!incoming.has(u)) incoming.set(u, []);
+      incoming.get(u).push(c.module);
+    }
+  }
+  const byId = new Map((graph.nodes_detail ?? []).map((n) => [slug(n.name), n.name]));
+  const untouched = [];
+  for (const comp of base.components) {
+    const unit = byId.get(comp.id);
+    const arriving = (incoming.get(unit) ?? []).sort();
+    if (arriving.length === 0) {
+      untouched.push(comp.id);
+      continue;
+    }
+    comp.sublabel = `${arriving.length} arriving`;
+  }
+  base.meta.title = `${graph.repo} · where the next design lands`;
+  base.meta.subtitle = `${(structure?.next ?? []).length} concept modules in queued work · ${(structure?.next_net_new ?? []).length} of them net-new · projected from open stories`;
+  base.meta.output = "architecture-next.html";
+  base.cards = [
+    {
+      dot: "amber",
+      title: "Net-new concepts the queued design introduces",
+      items: (structure?.next_net_new ?? []).slice(0, 6).map((m) => m),
+    },
+    {
+      dot: "cyan",
+      title: "How this projection was made",
+      items: [
+        "open stories -> stories[].module -> stories[].files_affected -> code unit",
+        `${untouched.length} existing units receive no queued work`,
+        "no new code units are planned; every concept lands in something that exists",
+      ],
+    },
+  ];
+  return base;
 }
 
 export function buildDeclaredTier(ctx, graph) {
@@ -471,9 +452,14 @@ if (process.argv[1] && process.argv[1].endsWith("arch-rules.mjs")) {
   const graph = JSON.parse(readFileSync(graphPath, "utf8"));
   const ctx = contextPath && existsSync(contextPath) ? await loadYaml(contextPath) : null;
 
+  const factsPath = arg("facts");
+  const structure =
+    factsPath && existsSync(factsPath)
+      ? (JSON.parse(readFileSync(factsPath, "utf8")).structure ?? null)
+      : null;
   const tiers = {
-    "architecture-overview": buildOverviewTier(graph),
-    "architecture-packages": buildPackageTier(graph),
+    "architecture-now": buildNowTier(graph, structure),
+    "architecture-next": buildNextTier(graph, structure),
     "architecture-declared": buildDeclaredTier(ctx, graph),
   };
   for (const [name, ir] of Object.entries(tiers)) {

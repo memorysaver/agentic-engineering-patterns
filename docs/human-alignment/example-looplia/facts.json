@@ -11,8 +11,8 @@
     "completed": 333,
     "deferred": 16,
     "failed": 2,
-    "ready": 1,
-    "pending": 44
+    "ready": 2,
+    "pending": 43
   },
   "open_total": 47,
   "current_layer": 32,
@@ -395,15 +395,38 @@
       }
     },
     {
+      "kind": "control_plane_incoherence",
+      "layer": null,
+      "detail": "cost roll-up declares 0 while 34 stories sum to 735.15",
+      "path": "cost.total_usd vs stories[].cost_usd",
+      "level": "derived",
+      "counters": {
+        "priced_stories": 34
+      }
+    },
+    {
+      "kind": "control_plane_incoherence",
+      "layer": null,
+      "detail": "13 module names are used by stories but never declared, and 1 declared modules have never been worked",
+      "path": "architecture.modules[].name vs stories[].module",
+      "level": "derived",
+      "counters": {
+        "used_not_declared": 13,
+        "declared_not_used": 1
+      }
+    },
+    {
       "kind": "declared_vs_actual",
       "layer": null,
-      "detail": "code has 21 workspace packages, the YAML declares 32 conceptual modules, 1 names in common; no architecture.modules[].paths binds them, so declared edges are not code-addressable",
-      "path": "architecture.modules[].paths",
+      "detail": "30 of 44 concept modules resolve to real code through the work record; 14 carry no resolvable path. The binding is measured, not declared — architecture.modules[].paths would record it, and 0 modules carry it today",
+      "path": "stories[].module × stories[].files_affected",
       "level": "code-verified",
       "counters": {
-        "code_packages": 21,
+        "code_units": 21,
+        "concepts_used": 44,
+        "concepts_code_bound": 30,
         "declared_modules": 32,
-        "name_overlap": 1
+        "paths_declared": 0
       }
     }
   ],
@@ -4471,7 +4494,7 @@
     {
       "layer": 41,
       "counts": {
-        "pending": 1
+        "ready": 1
       },
       "total": 1,
       "gate_status": "not_started",
@@ -4480,8 +4503,8 @@
         {
           "id": "L41-001",
           "title": "Cloudflare-only autonomous newsroom dynamic exploration, source reading and information integration",
-          "status": "pending",
-          "stage": 1,
+          "status": "ready",
+          "stage": 2,
           "exception": null,
           "why": null
         }
@@ -4490,7 +4513,7 @@
   ],
   "changelog_recent": [
     {
-      "id": "2026-07-22-dispatch-203",
+      "id": "2026-07-22-dispatch-204",
       "date": "2026-07-22",
       "kind": "dispatch",
       "author": "aep-dispatch",
@@ -4498,7 +4521,7 @@
       "since_baseline": false
     },
     {
-      "id": "2026-07-23-reflection-204",
+      "id": "2026-07-23-reflection-205",
       "date": "2026-07-23",
       "kind": "reflection",
       "author": "aep-wrap",
@@ -4506,7 +4529,7 @@
       "since_baseline": false
     },
     {
-      "id": "2026-07-23-dispatch-205",
+      "id": "2026-07-23-dispatch-206",
       "date": "2026-07-23",
       "kind": "dispatch",
       "author": "aep-dispatch",
@@ -4514,7 +4537,7 @@
       "since_baseline": false
     },
     {
-      "id": "2026-07-23-dispatch-206",
+      "id": "2026-07-23-dispatch-207",
       "date": "2026-07-23",
       "kind": "dispatch",
       "author": "aep-dispatch",
@@ -4522,7 +4545,7 @@
       "since_baseline": false
     },
     {
-      "id": "2026-07-23-reflection-207",
+      "id": "2026-07-23-reflection-208",
       "date": "2026-07-23",
       "kind": "reflection",
       "author": "aep-wrap",
@@ -4530,7 +4553,7 @@
       "since_baseline": false
     },
     {
-      "id": "2026-07-23-reflection-208",
+      "id": "2026-07-23-reflection-209",
       "date": "2026-07-23",
       "kind": "reflection",
       "author": "aep-wrap",
@@ -4538,7 +4561,7 @@
       "since_baseline": false
     },
     {
-      "id": "2026-07-23-dispatch-209",
+      "id": "2026-07-23-dispatch-210",
       "date": "2026-07-23",
       "kind": "dispatch",
       "author": "aep-dispatch",
@@ -4546,7 +4569,7 @@
       "since_baseline": false
     },
     {
-      "id": "2026-07-23-reflection-210",
+      "id": "2026-07-23-reflection-211",
       "date": "2026-07-23",
       "kind": "reflection",
       "author": "aep-wrap",
@@ -4554,7 +4577,7 @@
       "since_baseline": false
     },
     {
-      "id": "2026-07-23-dispatch-211",
+      "id": "2026-07-23-dispatch-212",
       "date": "2026-07-23",
       "kind": "dispatch",
       "author": "aep-dispatch",
@@ -4562,7 +4585,7 @@
       "since_baseline": false
     },
     {
-      "id": "2026-07-24-reflection-212",
+      "id": "2026-07-24-reflection-213",
       "date": "2026-07-24",
       "kind": "reflection",
       "author": "aep-wrap",
@@ -4570,7 +4593,7 @@
       "since_baseline": false
     },
     {
-      "id": "2026-07-24-dispatch-213",
+      "id": "2026-07-24-dispatch-214",
       "date": "2026-07-24",
       "kind": "dispatch",
       "author": "aep-dispatch",
@@ -4578,7 +4601,7 @@
       "since_baseline": false
     },
     {
-      "id": "2026-07-24-reflection-214",
+      "id": "2026-07-24-reflection-215",
       "date": "2026-07-24",
       "kind": "reflection",
       "author": "aep-wrap",
@@ -4797,14 +4820,43 @@
   ],
   "cost": {
     "total_usd": 0,
-    "instrumented": false,
-    "by_layer_count": 0,
-    "by_story_count": 25,
-    "note": "cost plane declared but unwired"
+    "derived_total_usd": 735.15,
+    "priced_story_count": 34,
+    "story_total": 396,
+    "by_module": {
+      "web": 105.77,
+      "agent": 543.8,
+      "api": 14.37,
+      "daemon": 55.09,
+      "protocol": 9.76,
+      "auth": 6.36
+    },
+    "rollup_disagrees": true,
+    "instrumented": true
   },
   "modules": {
     "declared_count": 32,
     "path_bound_count": 0,
+    "used_count": 44,
+    "code_bound_count": 30,
+    "used_not_declared": [
+      "agent",
+      "agent-email",
+      "agent-memory-and-skills",
+      "agent-platform",
+      "agent-runtime",
+      "deployment-infrastructure",
+      "do-agent",
+      "docs",
+      "e2e",
+      "e2e-test",
+      "e2e-verification",
+      "infra",
+      "server"
+    ],
+    "declared_not_used": [
+      "workload-identity-secrets-execution"
+    ],
     "names": [
       "api",
       "auth",
@@ -4838,6 +4890,638 @@
       "company-assurance-incident-ops",
       "data-governance-continuity",
       "business-system-adapters"
+    ]
+  },
+  "structure": {
+    "now": {
+      "units": 21,
+      "edges": 75,
+      "commit": "65e359c6"
+    },
+    "concepts": [
+      {
+        "module": "agent",
+        "declared": false,
+        "responsibility": null,
+        "files": 68,
+        "units": [
+          "@looplia/agent",
+          "@looplia/agent-e2e-test",
+          "@looplia/agent-runtime",
+          "@looplia/api",
+          "@looplia/db",
+          "@looplia/do-agent",
+          "@looplia/do-relay",
+          "@looplia/infra",
+          "@looplia/protocol",
+          "server",
+          "web"
+        ]
+      },
+      {
+        "module": "agent-email",
+        "declared": false,
+        "responsibility": null,
+        "files": 13,
+        "units": [
+          "@looplia/agent-e2e-test",
+          "@looplia/api",
+          "@looplia/db",
+          "@looplia/do-agent",
+          "@looplia/infra"
+        ]
+      },
+      {
+        "module": "agent-memory",
+        "declared": true,
+        "responsibility": "Single-agent durable memory and skill lifecycle: Workspace-backed identity, people memory, org context, agent notes, machine familiarity, thread summaries, skill recall, scheduled consolidation, MemoryManager orchestration, and curator safety. Layer 26 (memory-through-execution): the AUTONOMOUS execution loop (agent_run_step turns) also routes back into durable memory — closing the today-only-chat write-back gap — and the person store becomes RELATIONAL (owner / peer-agent / external-counterparty keyed by channel id, with task-relevant retrieval of the current counterparty, not only the primary person). Layer 28 (Hermes-grade durability, research-note/22): standing goals get goal-scoped working memory (/memory/goals/<goalId>.md, a new goal-state taxonomy class — bounded replace-in-place, trigger-goal-scoped writes, task-relevant injection, archived on retirement); the 1500-token cap stops failing silently (in-turn usage header + dropped-source notice, over-cap targeted consolidation, distill circuit breaker, per-phase report retention); relationships get a lifecycle (hot/warm/cold _index.json sidecar, daily cold archival with transparent restore, an unresolved/ home for display-name-only parties merged on email discovery); and deprovisioning exports the agent Workspace as an OKF bundle before a two-phase teardown (memory becomes a company asset at exit).",
+        "files": 14,
+        "units": [
+          "@looplia/agent-e2e-test",
+          "@looplia/api",
+          "@looplia/do-agent",
+          "web"
+        ]
+      },
+      {
+        "module": "agent-memory-and-skills",
+        "declared": false,
+        "responsibility": null,
+        "files": 23,
+        "units": [
+          "@looplia/agent-e2e-test",
+          "@looplia/api",
+          "@looplia/do-agent",
+          "web"
+        ]
+      },
+      {
+        "module": "agent-platform",
+        "declared": false,
+        "responsibility": null,
+        "files": 8,
+        "units": [
+          "@looplia/api",
+          "@looplia/db",
+          "@looplia/do-agent",
+          "web"
+        ]
+      },
+      {
+        "module": "agent-runtime",
+        "declared": false,
+        "responsibility": null,
+        "files": 3,
+        "units": [
+          "@looplia/agent-runtime"
+        ]
+      },
+      {
+        "module": "agent-self-improve",
+        "declared": true,
+        "responsibility": "The learning engine on top of agent-memory (Layer 8, Hermes background-review pattern): alarm-scheduled post-turn review runs, cadence counters, capacity-forced consolidation, review prompt pack, curator lifecycle states, learning-event surfacing, and per-agent review budgets. Layer 26 extends the review/skill-from-experience engine — today wired only to the /agui chat path — onto the EXECUTION loop (agent_run_step), and schedules the skill-curator lifecycle pass (which today never fires), so employees compound reusable skills from the work they DO. FIX-SKILL-REVIEW-001 (2026-07-07): the review tool gate must admit manage_skill — the L15-005 skill-write guard closed the generic write/edit route and the allowlist was never updated, leaving prod skill-authoring dead; the gate test must dispatch through the REAL guarded registry. Layer 28 (skill circulation): the skill-curator daily pass surfaces promotion proposals (usage+age thresholds); the COO supervision turn publishes proven skills to /company/wiki/skills/<name>/SKILL.md with provenance; hires seed from default pack UNION role-relevant library skills.",
+        "files": 9,
+        "units": [
+          "@looplia/agent-e2e-test",
+          "@looplia/agent-runtime",
+          "@looplia/do-agent"
+        ]
+      },
+      {
+        "module": "api",
+        "declared": true,
+        "responsibility": "HTTP API gateway, WebSocket upgrade routing, daemon CRUD, session ticket generation, per-user session count guard",
+        "files": 34,
+        "units": [
+          "@looplia/api",
+          "@looplia/db",
+          "@looplia/do-agent",
+          "@looplia/env",
+          "@looplia/infra",
+          "@looplia/protocol",
+          "server",
+          "web"
+        ]
+      },
+      {
+        "module": "auth",
+        "declared": true,
+        "responsibility": "User signup/login (Better Auth), daemon API key generation/validation",
+        "files": 9,
+        "units": [
+          "@looplia/auth",
+          "@looplia/db"
+        ]
+      },
+      {
+        "module": "authority-kernel",
+        "declared": true,
+        "responsibility": "Normalize every material effect from chat, heartbeat, workflow, REST/MCP, UI and deterministic consumers into a typed ActionIntent; intersect company policy, Agent Operating Contract and scoped grant; enforce decision-right tiers and the CEO→COO/Managing Editor→employee command chain; emit machine-verifiable Decision Receipts.",
+        "files": 0,
+        "units": []
+      },
+      {
+        "module": "business-system-adapters",
+        "declared": true,
+        "responsibility": "Close the first professional vertical through CMS draft/version/preview/publish/update/hold/withdraw/correction, then separately gated newsletter/social distribution, reader analytics and correction intake. Later business systems reuse the stable query/propose/execute/reconcile adapter contract.",
+        "files": 0,
+        "units": []
+      },
+      {
+        "module": "cli",
+        "declared": true,
+        "responsibility": "User-facing CLI (looplia-run), OAuth login flow, interactive terminal session, daemon listing",
+        "files": 5,
+        "units": []
+      },
+      {
+        "module": "company-assurance-incident-ops",
+        "declared": true,
+        "responsibility": "Correlate company events, workflows, agent/model/tool calls, policy decisions, external effects, receipts and verifiers with OpenTelemetry; define company SLOs and Evaluation Registry promotion gates; manage first-class incidents with automatic containment, recovery and replay.",
+        "files": 0,
+        "units": []
+      },
+      {
+        "module": "company-context",
+        "declared": true,
+        "responsibility": "The virtual workspace mount layer (Layer 10): a dedicated CompanyContext DO running a Mirage-contract mount-table dispatcher that presents scoped external sources (Notion database/page subtree, Drive folder) as read-through paths under /company/* inside agent workspaces, with cache-on-read, per-mount ACL, and per-tenant OAuth. Layer 29 (living shared context, research-note/23): the wiki becomes the company operating library — briefing archive, goal dossiers, a daily-gated wiki curator pass and a per-mount sources digest; freshness markers reach every agent turn and the bounded projection remains protected. Meeting transcripts, raw paper full text and skill catalogs stay out of the always-on projection. route/receiveHandoff//org/handoff:* are permanently deprecated; Layer 36 deliberation uses typed durable artifacts instead of reviving them.",
+        "files": 20,
+        "units": [
+          "@looplia/agent-e2e-test",
+          "@looplia/api",
+          "@looplia/do-agent",
+          "@looplia/infra",
+          "server",
+          "web"
+        ]
+      },
+      {
+        "module": "company-deliberation",
+        "declared": true,
+        "responsibility": "Run bounded independent-first deliberation: qualified participant selection, scoped evidence snapshots, independent positions, one targeted cross-exam, claim verification, synthesis with dissent, authority routing and follow-up tasks.",
+        "files": 0,
+        "units": []
+      },
+      {
+        "module": "company-event-workflow-backbone",
+        "declared": true,
+        "responsibility": "Provide the canonical CompanyEvent contract, per-company outbox/inbox dedup, Queue DLQ/replay operations, and Cloudflare Workflows bridge for durable multi-step business processes that wait for events, deadlines and approvals.",
+        "files": 0,
+        "units": []
+      },
+      {
+        "module": "company-formation-and-hiring",
+        "declared": true,
+        "responsibility": "Layer 13 company-agent formation and employee design boundary: turns a new account's company-agent interview into confirmed company facts, a canonical company brief, employee-agent blueprints, approval-backed hire_agent provisioning, and first-task receipts. Layer 27 (hire-for-goal): the blueprint carries an optional standingGoal {title, body, cadenceSeconds}; when present, provisioning mints an owned-goal anchor instead of the one-shot firstTask (rollback-safe, markHireConsumed last), and the hire approval shows the mission the employee will own.",
+        "files": 21,
+        "units": [
+          "@looplia/api",
+          "@looplia/do-agent",
+          "web"
+        ]
+      },
+      {
+        "module": "company-interaction-canvas",
+        "declared": true,
+        "responsibility": "Layer 13.5 human-machine interface for the company agent: company-agent-authored voice/text turns become durable declarative company UI surfaces, rendered from a trusted component catalog and bound to live company task/context/approval/blueprint/readiness projections.",
+        "files": 0,
+        "units": []
+      },
+      {
+        "module": "company-work-system",
+        "declared": true,
+        "responsibility": "The auto-company work ledger on the LoopliaCompany supervisor DO (Layer 9a): company_task / task_run / task_comment / approval tables, atomic checkout, heartbeat wake protocol, run liveness supervision, failure taxonomy, and the task board + approval card surfaces. Layer 26 (goal-ownership recursion): goal-ownership generalizes from the single COO north-star anchor to any goal-owner (owned-goal marker + generalized routeHeartbeatWake + parametrized goal-pursuit assembler); the single cron fans out schedule-wakes to each goal-owning EMPLOYEE (wiring the dead wakeForSchedule seam through the existing one-active-run coalescing) on a per-goal cadence (active/awaiting_reply/paused); the COO throttles to a planner (#needsSupervision); heartbeat + event unify into one trigger taxonomy (buildTurnTrigger). No new clock, no per-facet scheduleEvery; trust hierarchy (hire/mission COO-only) preserved. Layer 27 (topology closure, research-note/21): the cadence lifecycle gets its WRITE paths (set_goal_cadence own-goal-scoped verb, inbound-reply reactivation, per-goal cadence_seconds honored by the fan-out enumeration); owned goals get a completion lifecycle (employee proposes in_review -> a new #needsSupervision arm wakes the COO to verify -> done + cadence done, or feedback-return); the COO gains assign_standing_goal (kind:plan approval-gated, graduating to direct-mint via a per-company autonomy setting — goal-tree depth stays 2 by construction); employees escalate structurally (tagged @default comments counted by supervision); and the strategy surface lands (strategic-tier decision-log calls, cadenced CEO briefing email, approval-gated autonomous mission changes). Layer 29 adds a read-only scoped board verb (list_company_work: own subtree full, foreign goals summary-only) and the goal-portfolio operating-state projection v2 refreshed by EMPLOYEE owned-goal turns.",
+        "files": 33,
+        "units": [
+          "@looplia/agent-e2e-test",
+          "@looplia/api",
+          "@looplia/db",
+          "@looplia/do-agent",
+          "@looplia/infra",
+          "server",
+          "web"
+        ]
+      },
+      {
+        "module": "connector-observer",
+        "declared": true,
+        "responsibility": "Layer 13 company-context freshness check (minimal slice): the company agent can ask which watched /company/wiki + scoped Notion sources changed since the brief was last confirmed, by reading the EXISTING mount warmer's fingerprints.",
+        "files": 3,
+        "units": [
+          "@looplia/do-agent"
+        ]
+      },
+      {
+        "module": "daemon",
+        "declared": true,
+        "responsibility": "PTY spawning (portable-pty), WebSocket client with auto-reconnect, daemon registration, API key storage in ~/.looplia/credentials",
+        "files": 32,
+        "units": [
+          "@looplia/api",
+          "@looplia/db",
+          "@looplia/do-relay",
+          "@looplia/protocol",
+          "web"
+        ]
+      },
+      {
+        "module": "data-governance-continuity",
+        "declared": true,
+        "responsibility": "Attach source/version/trust/classification/purpose/retention/jurisdiction metadata to company data, memories and derived artifacts; manage correction, quarantine, deletion and legal hold; create residency-aware company state and D1/DO/R2 recovery manifests with tested restore procedures.",
+        "files": 0,
+        "units": []
+      },
+      {
+        "module": "deployment-infrastructure",
+        "declared": false,
+        "responsibility": null,
+        "files": 0,
+        "units": []
+      },
+      {
+        "module": "do-agent",
+        "declared": false,
+        "responsibility": null,
+        "files": 43,
+        "units": [
+          "@looplia/agent-e2e-test",
+          "@looplia/api",
+          "@looplia/do-agent",
+          "server"
+        ]
+      },
+      {
+        "module": "docs",
+        "declared": false,
+        "responsibility": null,
+        "files": 2,
+        "units": []
+      },
+      {
+        "module": "e2e",
+        "declared": false,
+        "responsibility": null,
+        "files": 4,
+        "units": [
+          "@looplia/agent-e2e-test",
+          "@looplia/api",
+          "@looplia/do-agent",
+          "web"
+        ]
+      },
+      {
+        "module": "e2e-test",
+        "declared": false,
+        "responsibility": null,
+        "files": 23,
+        "units": [
+          "@looplia/agent-e2e-test",
+          "@looplia/do-agent"
+        ]
+      },
+      {
+        "module": "e2e-verification",
+        "declared": false,
+        "responsibility": null,
+        "files": 12,
+        "units": []
+      },
+      {
+        "module": "email-api",
+        "declared": true,
+        "responsibility": "External agent surface. /v1/email/* REST and /mcp MCP server, mounted on apps/server. Validates Bearer aelk_… API keys, checks scope + rate limit + quota, RPCs into LoopliaAgent.",
+        "files": 12,
+        "units": [
+          "@looplia/do-agent",
+          "@looplia/email-sdk-ts",
+          "@looplia/infra",
+          "server",
+          "web"
+        ]
+      },
+      {
+        "module": "email-cli",
+        "declared": true,
+        "responsibility": "`looplia email` subcommand tree extending the existing apps/cli binary. Stateless commands, --json output, wraps email-api REST.",
+        "files": 12,
+        "units": [
+          "server"
+        ]
+      },
+      {
+        "module": "email-ingress",
+        "declared": true,
+        "responsibility": "MX-level inbound handler mounted on apps/server. Resolves <alias> → userId via a single D1 lookup; dispatches into LoopliaAgent.onEmail through routeAgentEmail.",
+        "files": 3,
+        "units": [
+          "server"
+        ]
+      },
+      {
+        "module": "email-outbound",
+        "declared": true,
+        "responsibility": "Adapter over Cloudflare Email Sending (public beta). Builds MIME with PostalMime, attaches HMAC-signed routing headers, calls env.EMAIL.send. Invoked only from LoopliaAgent.sendEmail.",
+        "files": 2,
+        "units": [
+          "@looplia/email-protocol"
+        ]
+      },
+      {
+        "module": "email-webhooks",
+        "declared": true,
+        "responsibility": "Outbound delivery of email events (email.received, email.delivered, email.bounced) to user-registered URLs. Signs payloads with HMAC-SHA256 + timestamp.",
+        "files": 3,
+        "units": [
+          "@looplia/infra",
+          "server"
+        ]
+      },
+      {
+        "module": "employee-capability-foundation",
+        "declared": true,
+        "responsibility": "Own the versioned professional employee product contract: archetypes, skill-bundle manifests and locks, EmployeeBlueprintV2 resolution, qualification suites, capability evidence, readiness status and routing eligibility.",
+        "files": 63,
+        "units": [
+          "@looplia/agent-e2e-test",
+          "@looplia/api",
+          "@looplia/db",
+          "@looplia/do-agent",
+          "@looplia/protocol"
+        ]
+      },
+      {
+        "module": "fde-transformation-cockpit",
+        "declared": true,
+        "responsibility": "Layer 13 operator/FDE control surface: evaluates company readiness, maps first AI-employee opportunities, tracks rollout plan/progress/value evidence, and captures field learnings back into reusable product playbooks.",
+        "files": 0,
+        "units": []
+      },
+      {
+        "module": "infra",
+        "declared": false,
+        "responsibility": null,
+        "files": 3,
+        "units": [
+          "@looplia/infra",
+          "server"
+        ]
+      },
+      {
+        "module": "looplia-agent",
+        "declared": true,
+        "responsibility": "Per-user agent Durable Object (extends Cloudflare Agents SDK). Already orchestrates stories and runs Claude inference via CF AI Gateway. Layer 4 adds onEmail / sendEmail / listMessages / getMessage methods — LoopliaAgent is now also the canonical execution surface for inbound + outbound mail.",
+        "files": 10,
+        "units": [
+          "@looplia/do-agent",
+          "server",
+          "web"
+        ]
+      },
+      {
+        "module": "professional-execution-plane",
+        "declared": true,
+        "responsibility": "Accept capability-shaped professional execution intents through a compact facade, then resolve and run reproducible E0/E1/E2/E3 jobs through one broker/driver port; Workspace, packages and browser are additive governed capabilities rather than runtimes.",
+        "files": 77,
+        "units": [
+          "@looplia/agent-e2e-test",
+          "@looplia/do-agent",
+          "@looplia/env",
+          "@looplia/infra",
+          "@looplia/protocol"
+        ]
+      },
+      {
+        "module": "professional-learning-loop",
+        "declared": true,
+        "responsibility": "Normalize qualification, routing and verified task outcomes into typed learning evidence; deterministically compute evidence sufficiency, workforce diagnosis and allowed interventions; let a version-locked COO planning skill rank/explain inside that boundary; turn approved retraining evidence into learned-overlay candidates, replay/canary/releases/rollback/requalification, or portfolio evidence into bounded team-composition proposals.",
+        "files": 0,
+        "units": []
+      },
+      {
+        "module": "protocol",
+        "declared": true,
+        "responsibility": "Wire format definitions (frame types, control messages, resize events)",
+        "files": 9,
+        "units": [
+          "@looplia/do-relay",
+          "@looplia/email-protocol",
+          "@looplia/protocol"
+        ]
+      },
+      {
+        "module": "relay",
+        "declared": true,
+        "responsibility": "WebSocket pair management (client + daemon), byte relay, heartbeat alarm, buffered audit log writes to D1",
+        "files": 5,
+        "units": [
+          "@looplia/db",
+          "@looplia/do-relay",
+          "@looplia/e2e-test"
+        ]
+      },
+      {
+        "module": "server",
+        "declared": false,
+        "responsibility": null,
+        "files": 0,
+        "units": []
+      },
+      {
+        "module": "voice",
+        "declared": true,
+        "responsibility": "Real-time voice pipeline (Layer 12): packages/voice exports VoiceGateway — a withVoice(Agent) DO (per userId:agentId:threadId) that terminates the browser voice WebSocket (PCM16 16kHz), validates a single-use voice ticket, streams ASR via Workers AI @cf/deepgram/flux, bridges final transcripts into the facet's voice-shaped turn entry point, sentence-streams TTS back (ONE provider, spike-chosen), enforces call guardrails (10-min cap, 60s idle hangup, unmuted-only ASR socket, per-user daily voice-minute quota), and emits per-stage latency metrics.",
+        "files": 11,
+        "units": [
+          "@looplia/infra",
+          "@looplia/voice",
+          "server"
+        ]
+      },
+      {
+        "module": "web",
+        "declared": true,
+        "responsibility": "Browser UI for signup, daemon listing, audit logs, guardrail config",
+        "files": 141,
+        "units": [
+          "@looplia/agent-e2e-test",
+          "@looplia/api",
+          "@looplia/do-agent",
+          "@looplia/protocol",
+          "@looplia/ui",
+          "server",
+          "web"
+        ]
+      }
+    ],
+    "concepts_total": 44,
+    "concepts_code_bound": 30,
+    "used_not_declared": [
+      "agent",
+      "agent-email",
+      "agent-memory-and-skills",
+      "agent-platform",
+      "agent-runtime",
+      "deployment-infrastructure",
+      "do-agent",
+      "docs",
+      "e2e",
+      "e2e-test",
+      "e2e-verification",
+      "infra",
+      "server"
+    ],
+    "declared_not_used": [
+      "workload-identity-secrets-execution"
+    ],
+    "next": [
+      {
+        "module": "authority-kernel",
+        "declared": true,
+        "net_new": true,
+        "responsibility": "Normalize every material effect from chat, heartbeat, workflow, REST/MCP, UI and deterministic consumers into a typed ActionIntent; intersect company policy, Agent Operating Contract and scoped grant; enforce decision-right tiers and the CEO→COO/Managing Editor→employee command chain; emit machine-verifiable Decision Receipts.",
+        "files": 33,
+        "units": [
+          "@looplia/agent-e2e-test",
+          "@looplia/api",
+          "@looplia/db",
+          "@looplia/do-agent",
+          "@looplia/infra",
+          "@looplia/protocol",
+          "server",
+          "web"
+        ],
+        "homeless": false
+      },
+      {
+        "module": "business-system-adapters",
+        "declared": true,
+        "net_new": true,
+        "responsibility": "Close the first professional vertical through CMS draft/version/preview/publish/update/hold/withdraw/correction, then separately gated newsletter/social distribution, reader analytics and correction intake. Later business systems reuse the stable query/propose/execute/reconcile adapter contract.",
+        "files": 19,
+        "units": [
+          "@looplia/agent-e2e-test",
+          "@looplia/api",
+          "@looplia/do-agent",
+          "@looplia/infra",
+          "@looplia/protocol"
+        ],
+        "homeless": false
+      },
+      {
+        "module": "company-assurance-incident-ops",
+        "declared": true,
+        "net_new": true,
+        "responsibility": "Correlate company events, workflows, agent/model/tool calls, policy decisions, external effects, receipts and verifiers with OpenTelemetry; define company SLOs and Evaluation Registry promotion gates; manage first-class incidents with automatic containment, recovery and replay.",
+        "files": 15,
+        "units": [
+          "@looplia/api",
+          "@looplia/do-agent",
+          "server"
+        ],
+        "homeless": false
+      },
+      {
+        "module": "company-deliberation",
+        "declared": true,
+        "net_new": true,
+        "responsibility": "Run bounded independent-first deliberation: qualified participant selection, scoped evidence snapshots, independent positions, one targeted cross-exam, claim verification, synthesis with dissent, authority routing and follow-up tasks.",
+        "files": 12,
+        "units": [
+          "@looplia/agent-e2e-test",
+          "@looplia/do-agent",
+          "@looplia/protocol"
+        ],
+        "homeless": false
+      },
+      {
+        "module": "company-event-workflow-backbone",
+        "declared": true,
+        "net_new": true,
+        "responsibility": "Provide the canonical CompanyEvent contract, per-company outbox/inbox dedup, Queue DLQ/replay operations, and Cloudflare Workflows bridge for durable multi-step business processes that wait for events, deadlines and approvals.",
+        "files": 19,
+        "units": [
+          "@looplia/agent-e2e-test",
+          "@looplia/do-agent",
+          "@looplia/env",
+          "@looplia/infra",
+          "@looplia/protocol",
+          "server"
+        ],
+        "homeless": false
+      },
+      {
+        "module": "data-governance-continuity",
+        "declared": true,
+        "net_new": true,
+        "responsibility": "Attach source/version/trust/classification/purpose/retention/jurisdiction metadata to company data, memories and derived artifacts; manage correction, quarantine, deletion and legal hold; create residency-aware company state and D1/DO/R2 recovery manifests with tested restore procedures.",
+        "files": 14,
+        "units": [
+          "@looplia/api",
+          "@looplia/db",
+          "@looplia/do-agent",
+          "@looplia/protocol"
+        ],
+        "homeless": false
+      },
+      {
+        "module": "deployment-infrastructure",
+        "declared": false,
+        "net_new": true,
+        "responsibility": null,
+        "files": 6,
+        "units": [
+          "@looplia/infra"
+        ],
+        "homeless": false
+      },
+      {
+        "module": "professional-learning-loop",
+        "declared": true,
+        "net_new": true,
+        "responsibility": "Normalize qualification, routing and verified task outcomes into typed learning evidence; deterministically compute evidence sufficiency, workforce diagnosis and allowed interventions; let a version-locked COO planning skill rank/explain inside that boundary; turn approved retraining evidence into learned-overlay candidates, replay/canary/releases/rollback/requalification, or portfolio evidence into bounded team-composition proposals.",
+        "files": 27,
+        "units": [
+          "@looplia/agent-e2e-test",
+          "@looplia/do-agent",
+          "@looplia/protocol"
+        ],
+        "homeless": false
+      }
+    ],
+    "next_net_new": [
+      "authority-kernel",
+      "business-system-adapters",
+      "company-assurance-incident-ops",
+      "company-deliberation",
+      "company-event-workflow-backbone",
+      "data-governance-continuity",
+      "deployment-infrastructure",
+      "professional-learning-loop"
+    ],
+    "options": [
+      {
+        "trigger": "concept_crowding",
+        "unit": "@looplia/do-agent",
+        "concepts": [
+          "authority-kernel",
+          "business-system-adapters",
+          "company-assurance-incident-ops",
+          "company-deliberation",
+          "company-event-workflow-backbone",
+          "data-governance-continuity",
+          "professional-learning-loop"
+        ],
+        "concept_count": 7,
+        "files": 85,
+        "pairs": 21,
+        "disjoint_pairs": 17,
+        "disjoint_share": 0.81,
+        "cleanest_seam": {
+          "module": "company-assurance-incident-ops",
+          "shared_files": 0
+        },
+        "path": "stories[status=open].module × files_affected"
+      }
     ]
   },
   "code_graph": {

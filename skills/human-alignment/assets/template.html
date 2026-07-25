@@ -340,6 +340,57 @@
         margin: 0 0 4px;
       }
 
+      /* ── Design Option Sets (D8): suggestions carrying their material ──── */
+      .options {
+        border: 1px solid var(--rule);
+        border-radius: 4px;
+        padding: 20px 22px;
+        margin: 24px 0;
+      }
+      .options > h4 {
+        font-family: var(--serif);
+        font-size: 19px;
+        font-weight: 600;
+        margin: 0 0 4px;
+      }
+      .option {
+        border-top: 1px solid var(--rule);
+        padding-top: 14px;
+        margin-top: 16px;
+      }
+      .option h5 {
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ink-2);
+        margin: 0 0 6px;
+      }
+      .option dl {
+        margin: 0;
+        display: grid;
+        grid-template-columns: 5.5rem 1fr;
+        gap: 2px 14px;
+        font-size: 15px;
+      }
+      .option dt {
+        font-family: var(--mono);
+        font-size: 11px;
+        text-transform: uppercase;
+        color: var(--ink-3);
+        padding-top: 4px;
+      }
+      .option dd {
+        margin: 0;
+      }
+      .criterion {
+        border-top: 1px solid var(--rule);
+        margin-top: 18px;
+        padding-top: 12px;
+        font-size: 14px;
+        color: var(--ink-2);
+      }
+
       /* ── Disclosure: the folded queue ───────────────────────────────────── */
       details {
         margin: 8px 0 18px;
@@ -563,6 +614,8 @@
           <p class="stamp">Engineering · architecture unchanged since {{ARCHITECTURE_STAMP}}</p>
         </div>
 
+        {{OPTIONS_BLOCK}}
+
         <div class="section" data-gate="lifecycle" data-changed="{{GATE_LIFECYCLE}}">
           <h3>{{LIFECYCLE_HEADING}}</h3>
           <p>{{LIFECYCLE_INTRO}}</p>
@@ -717,8 +770,8 @@
           show(available[0]);
         }
         mountFrame("arch-host", [
-          { key: "architecture-overview", label: "domain overview" },
-          { key: "architecture-packages", label: "package deep-dive" },
+          { key: "architecture-now", label: "what exists now" },
+          { key: "architecture-next", label: "where the next design lands" },
           { key: "architecture-declared", label: "declared narrative" },
         ]);
         mountFrame("loop-host", [{ key: "aep-loop", label: "the loop" }]);

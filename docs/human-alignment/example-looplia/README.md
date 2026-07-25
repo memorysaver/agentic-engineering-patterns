@@ -20,34 +20,38 @@ font CDN, which degrades to system fonts.
 ## What it demonstrates
 
 - **The honesty model.** Open `facts.json` and grep the HTML for any number: all
-  22 are `data-fact` bindings resolved at load. The agent wrote no digit.
+  31 are `data-fact` bindings resolved at load. The agent wrote no digit.
 - **Two-phase gate honesty.** The current layer's gate is `scripted_passed`, so
   the Product band renders it under an `EXP` chip naming the acceptance run that
-  would settle it — not as a shipped capability. An earlier prototype of this
-  design asserted "acceptance passed" for exactly this gate; the rule exists
-  because of that failure.
-- **Silence over fabrication.** `facts.json`'s `schema_absent` records three
-  predicates that could not be derived from this repo's schema at all (no
-  `product` section, no `status` on amendment-log entries, object maps live
-  outside the plan file). The brief surfaces the absence instead of reporting
-  "nothing needs you".
-- **Derived drift only.** Eleven drift facts, every one with a YAML path. The
-  most interesting: the code is 21 packages while the plan file declares 32
-  conceptual modules with **one** name in common and no path binding — so the
-  declared architecture is not code-addressable, and the brief says so rather
-  than pretending the two accounts agree.
-- **Deterministic architecture.** The Engineering band's diagrams came from
-  `scan-workspace.mjs` → rules R1–R10 → archify `validate`/`deliver`, repaired
-  only through archify's own receipts (one round for the overview, two for the
-  package graph).
+  would settle it — not as a shipped capability.
+- **Mining before conceding.** Three things an earlier build reported as
+  underivable are derived here instead: spend comes from `stories[].cost_usd`
+  (\$735.15 across 34 tasks) rather than the zeroed roll-up; the concept-to-code
+  binding is measured from `stories[].module` × `files_affected` rather than
+  waiting on a schema field; and the plan-versus-work vocabulary gap (44 modules
+  in use, 32 declared) replaces a meaningless comparison against package names.
+- **Silence over fabrication.** `schema_absent` still records the predicates
+  that genuinely cannot be derived, so an empty result is distinguishable from
+  an unasked question.
+- **Engineering is prospective.** The band answers what exists now, what the
+  work record says each unit carries, and where the queued design lands — eight
+  net-new subsystems, none of which gets a new home.
+- **A Design Option Set with its material.** One trigger fired: seven subsystems
+  planned into one unit across 85 files, 17 of 21 pairings sharing no file. The
+  brief gives three options including leaving it alone, each with what it buys,
+  what it costs in this project's terms, a design sketch, and what would settle
+  it — plus the ranking criterion, stated so it can be rejected.
 
 ## Known limitation, stated rather than hidden
 
-The domain overview lays out as a wide, shallow chain: looplia's dependency
-graph is deep, and longest-path layering gives each depth its own column. It
-passes archify's layout gates and it is honest, but a chain of that width is a
-scan, not a glance — the glance gate in `references/checklist.md` is a P1 the
-example only partly meets. Improving R7's grouping is the obvious next move.
+The "what exists now" view is 18 units laid out by longest-path layering, which
+for a deep dependency graph reads wide and shallow. It passes archify's layout
+gates and every edge is real, but a graph that wide is a scan, not a glance —
+the P1 glance gate in `references/checklist.md` is only partly met. The earlier
+attempt to fix it by synthesizing a "domain" layer from package-name prefixes
+was rejected (decision doc, revision 8): it compressed 19 packages into 14
+groups, 11 of them singletons, and discarded the project's own prose vocabulary
+to do it. Better compression has to come from something that carries meaning.
 
 ## Reproducing it
 
