@@ -78,6 +78,22 @@
 > records** — do not concede the ground to agent judgment. Revision 7's own
 > implementation violated this three times (D7).
 
+> **Revision 9 (2026-07-25):** after an independent generator/evaluator pass on
+> the generated brief returned **FAIL**. Nine content defects, and all but one
+> share a single shape: **the prose needed a fact the derivation had not
+> produced, so the authoring agent supplied it from a diagram label, from
+> ambient knowledge, or by counting manually — and the audit could not see it,
+> because its unit of check was the digit rather than the claim.** The root
+> cause is that the facts plane was designed top-down (what should the brief
+> show?) against a source carrying **483 populated key paths**, of which the
+> derivation read about **thirty**. Revision 9 replaces hole-by-hole patching
+> with four mechanisms that make the gap visible and the omission illegal (D9):
+> a **source census**, **claims that bind** rather than numbers that bind,
+> facts that carry **predicates** rather than raw fields, and tools that
+> **declare their own coverage**. Owner rulings: the census classifies at
+> **path-template level**, and an `ignored` entry must carry a **reason**, not
+> a checkmark.
+
 ## Problem
 
 AEP's planning layer captures intent and state in `product-context.yaml` — stories,
@@ -416,14 +432,14 @@ Carried over from the SIBYL contract, unchanged in meaning:
 The generation pipeline (each phase ends in a checkable postcondition, per the
 deterministic-orchestration standard):
 
-| Phase         | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Postcondition                                                                                                                                                    |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0 · Preflight | `product-context.yaml` exists (else point to `/aep-envision`); read `docs/human-alignment/manifest.json` for the delta baseline                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | baseline commit known, or first-run declared                                                                                                                     |
-| 1 · Derive    | run `scripts/derive.mjs`: extract **facts JSON** from `product-context.yaml` + git — story counts by state and layer, the attention set (D7), the drift facts (D7), the shipped-capability inputs for band 2 (passed layer gates + their summaries), changelog entries since baseline, layer-gate status, cost roll-up — and validate it against `facts.schema.json`                                                                                                                                                                                                                                                                           | facts JSON exists and validates; every fact names its YAML path                                                                                                  |
-| 1.5 · Scan    | run the deterministic architecture pipeline (D3), all three scripts named in D5: `scan-workspace.mjs` (workspace-graph scan) → `arch-rules.mjs` (R1–R10 → typed IR) → `receipt-consumer.mjs` (archify validate → apply receipts → deliver), producing the domain-overview and package-graph artifacts revision-pinned to HEAD; the declared-vs-actual gap joins the drift facts (import-level dependency-cruiser diff is the later rung)                                                                                                                                                                                                       | artifacts delivered `code-verified` (package level), or scanner unavailable and the view is marked degraded                                                      |
-| 2 · Author    | fill `assets/template.html`: no number is ever typed into markup — every one is a `data-fact="<facts-JSON path>"` binding the template's renderer fills at load (see the binding rule below); narrative (PRIMER, translations, LEDGER prose) is written fresh, tense-chipped, stamped with authored-at + source commit; narrative obeys the evidence-language rule and the cold-reader authoring rules below                                                                                                                                                                                                                                   | every section rendered or stamped                                                                                                                                |
-| 3 · Audit     | run `scripts/audit.mjs` for the mechanical checks (number-provenance, statically: every `data-fact` path resolves in facts JSON, and no digit appears in authored markup outside a `data-fact` element or a provenance anchor; class preflight; chip-grammar: every non-fact chipped, no fact chipped, one chip per clause; translation-anchor 1:1 — every plain sentence cites a fact id, every surfaced fact has a plain sentence; prose vocabulary-budget count) plus the judgment checks from `references/checklist.md` (vocabulary audit against the D2 closed set, evidence-language audit, glance gate, cold-reader test, so-what test) | audit passes; failures emit structured receipts; at most two correction rounds                                                                                   |
-| 4 · Deliver   | write `docs/human-alignment/brief-<date>T<time>Z-<shorthash>.html`; update `manifest.json` (generation record + content SHA-256, appending the prior record to `history[]`); **prune** every brief beyond the newest three (D2 retention ruling); report the delta summary + path in-conversation                                                                                                                                                                                                                                                                                                                                              | new file exists; its name's hash equals repo HEAD; `manifest.json` digest matches the file; ≤ 3 brief files remain and every pruned one has a `history[]` record |
+| Phase         | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Postcondition                                                                                                                                                    |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0 · Preflight | `product-context.yaml` exists (else point to `/aep-envision`); read `docs/human-alignment/manifest.json` for the delta baseline                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | baseline commit known, or first-run declared                                                                                                                     |
+| 1 · Derive    | run `scripts/census.mjs` first: enumerate every populated key path in the plan file and classify it against `scripts/source-census.json` (`derived` / `ignored` **with a reason** / `unhandled`), reporting unhandled paths that carry data. Then run `scripts/derive.mjs`: extract **facts JSON** from `product-context.yaml` + git — story counts by state and layer, the attention set (D7), the drift facts (D7), the shipped-capability inputs for band 2 (passed layer gates + their summaries), changelog entries since baseline, layer-gate status, cost roll-up — and validate it against `facts.schema.json`                                                                                                | census reported; facts JSON exists and validates; every fact names its YAML path                                                                                 |
+| 1.5 · Scan    | run the deterministic architecture pipeline (D3), all three scripts named in D5: `scan-workspace.mjs` (workspace-graph scan) → `arch-rules.mjs` (R1–R10 → typed IR) → `receipt-consumer.mjs` (archify validate → apply receipts → deliver), producing the domain-overview and package-graph artifacts revision-pinned to HEAD; the declared-vs-actual gap joins the drift facts (import-level dependency-cruiser diff is the later rung)                                                                                                                                                                                                                                                                              | artifacts delivered `code-verified` (package level), or scanner unavailable and the view is marked degraded                                                      |
+| 2 · Author    | fill `assets/template.html`: no number is ever typed into markup — every one is a `data-fact="<facts-JSON path>"` binding the template's renderer fills at load — and **every assertive block carries `data-claims="<fact paths>"`** naming the facts it rests on (D9). A block that can cite nothing is marked visibly as authored; narrative (PRIMER, translations, LEDGER prose) is written fresh, tense-chipped, stamped with authored-at + source commit; narrative obeys the evidence-language rule and the cold-reader authoring rules below                                                                                                                                                                   | every section rendered or stamped                                                                                                                                |
+| 3 · Audit     | run `scripts/audit.mjs` for the mechanical checks (claim-provenance, statically: every `data-fact` and `data-claims` path resolves in facts JSON; no assertive block exists without citations; and **no digit _or number-word_** appears in authored markup outside a binding or a provenance anchor; class preflight; chip-grammar: every non-fact chipped, no fact chipped, one chip per clause; translation-anchor 1:1 — every plain sentence cites a fact id, every surfaced fact has a plain sentence; prose vocabulary-budget count) plus the judgment checks from `references/checklist.md` (vocabulary audit against the D2 closed set, evidence-language audit, glance gate, cold-reader test, so-what test) | audit passes; failures emit structured receipts; at most two correction rounds                                                                                   |
+| 4 · Deliver   | write `docs/human-alignment/brief-<date>T<time>Z-<shorthash>.html`; update `manifest.json` (generation record + content SHA-256, appending the prior record to `history[]`); **prune** every brief beyond the newest three (D2 retention ruling); report the delta summary + path in-conversation                                                                                                                                                                                                                                                                                                                                                                                                                     | new file exists; its name's hash equals repo HEAD; `manifest.json` digest matches the file; ≤ 3 brief files remain and every pruned one has a `history[]` record |
 
 - **Why the derive script is v1, not deferred** (owner ruling: faithful
   representation): OBS-5's trust came from _code-derived_ artifacts, and AEP's own
@@ -498,6 +514,8 @@ skills/human-alignment/
 │   ├── receipt-consumer.mjs # Phase 1.5c: archify validate → apply repair receipts → deliver
 │   ├── assemble.mjs      # Phase 4: embed delivered artifacts as srcdoc; prune to newest 3
 │   ├── audit.mjs         # Phase 3: independent mechanical audit (provenance, classes, chip grammar)
+│   ├── census.mjs        # Phase 1a: populated-path census vs the classification manifest
+│   ├── source-census.json # path-template → derived | ignored(reason); the completeness contract
 │   └── facts.schema.json # the typed contract between derive, author, and audit
 └── assets/
     └── template.html     # seed file; the only source of CSS classes AND the palette
@@ -853,6 +871,100 @@ publish path because the authority check sits there); or extract only
 isolation for one hop). Ranking criterion stated: seam cost — and explicitly
 _not_ security, which would reorder it.
 
+### D9 — Completeness by construction
+
+An independent evaluator scored the generated brief and failed it. The findings
+matter less than their shape: **eight of nine were the same defect wearing
+different clothes.**
+
+| Surface symptom                             | What was actually missing                                                                              |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| "spend is zero, this brief cannot say"      | `stories[].cost_usd` was never read                                                                    |
+| "the declared architecture is unverifiable" | `stories[].files_affected` was never read                                                              |
+| "one module name in common"                 | the wrong two sets were compared                                                                       |
+| "automatic repair has already given up"     | `attempt_count` / `max_retries` never read — filled from a diagram's generic label                     |
+| "five tasks in two days" (it was eight)     | no fact for _completions in a window_ — counted by hand                                                |
+| "the last thing before sign-off"            | `closure_status` / `decision_realignment` never read; the sign-off had been **withdrawn**, not delayed |
+| "the newest stretch of work"                | the changelog was sliced from the tail without sorting — **a plain bug**                               |
+| "the system is 21 code units"               | the scanner covers one ecosystem and never said so                                                     |
+| "the cleanest cut available"                | two concepts tied at zero shared files; the fact returned one                                          |
+
+The pattern: **the prose needed a fact the derivation had not produced, and the
+agent supplied it anyway.** The audit could not object because its unit of check
+was the digit — and "already given up", "the newest stretch", and "five" are not
+digits.
+
+Underneath that sits the real cause. The facts plane was designed **top-down** —
+_what should the brief show?_ — against a source carrying **483 populated key
+paths**, of which the derivation reads about **thirty**. Every hole was a path
+nobody had looked at. Patching them one at a time treats the symptom.
+
+Four mechanisms replace the patching. Each is deterministic.
+
+**1 · Source census — the system must know what it has not looked at.** Walk the
+consumer's plan file, enumerate every populated key path, and classify each
+against a committed manifest:
+
+- `derived` — reaches facts JSON
+- `ignored` — listed with a **reason**, never a bare checkmark (owner ruling)
+- `unhandled` — neither, and therefore a reported gap
+
+Classification is at **path-template level** (`stories[].readiness_score`, not
+396 leaf paths) — roughly a hundred entries, authored once (owner ruling). The
+run reports unhandled paths carrying data, and the brief states its own reading
+coverage on the page. Completeness stops being a hope and becomes a number.
+This mechanism alone closes rows 1, 2, 4 and 6 above.
+
+**2 · Claims bind, not numbers.** The audit's unit changes from the digit to the
+claim. Every assertive block declares the facts it rests on:
+
+```html
+<p data-claims="cost.derived_total_usd cost.rollup_disagrees">…</p>
+```
+
+The audit then enforces three things: every cited path resolves; **no assertive
+block may exist without citations**; and number-words (`five`, `eight`,
+`three quarters`) are treated exactly as digits are. One rule closes both the
+unbound numeral and the uncited causal claim — the two defects that produced the
+worst sentences on the page.
+
+**3 · Facts carry predicates, not just fields.** Prose wants to say _"retries are
+exhausted"_, _"the sign-off was withdrawn"_, _"eight landed in two days"_. Those
+must be **derived predicates**, not agent inferences:
+
+- `retries_exhausted` = `attempt_count >= max_retries`
+- `sign_off_withdrawn` = `closure_status` present
+- `root_cause_stated` = whether a failure log asserts a cause or disclaims one
+- `completions_in_window(days)`
+
+When the predicate does not exist, mechanism 2 forbids the sentence. The two
+planes are forced to co-evolve instead of drifting apart.
+
+A corollary, from the tied-seam defect: **a fact may not collapse ambiguity.**
+Where a derivation has ties or several valid answers, the fact carries all of
+them — otherwise the prose will assert a uniqueness the data does not support.
+
+**4 · Every tool declares its own coverage.** A scanner reports what it covered
+_and what it did not_: `21 JS/TS workspaces; 2 Cargo crates unscanned`. The
+coverage statement is itself a fact the prose must use. **No tool is permitted to
+imply totality** — the brief priced work on a Rust daemon in one band while
+excluding it from "the system" in another, and nothing in the pipeline noticed.
+
+**What this does not fix.** Row 7 — the unsorted changelog slice — is an ordinary
+bug. No mechanism above would have caught it; only the evaluator did. That is
+recorded rather than papered over: **eight of nine become structurally
+impossible, one was simply wrong code.**
+
+**What stays agent-authored.** The essence paragraph (no product-vision field
+exists), the translation of module responsibilities into plain language, and the
+option-set framing. Each must still cite; whatever can cite nothing is marked
+visibly as authored, as the brief already does for its opening paragraph.
+
+**Acceptance for this revision.** Re-running against the reference consumer, the
+census must _report_ the unhandled paths that produced the original defects, and
+the audit must _reject_ the sentences that shipped. The bar is not "the defects
+are gone" — it is "the defects cannot be authored".
+
 ## Horizon (recorded, not built)
 
 - **Workflow 2 — comprehension check** (owner request): a second skill workflow
@@ -977,6 +1089,25 @@ _not_ security, which would reorder it.
 - **Bare one-liner recommendations** — rejected (D8): a suggestion without its
   option space and measured costs leaves the reader only obedience or dismissal.
   Suggestions are welcome; unsupported ones are not.
+- **Fixing the evaluator's nine findings one at a time** — rejected in revision 9. Eight of them were one defect wearing different clothes; a patch list would
+  have shipped a tenth. The mechanisms in D9 are chosen so the defects cannot be
+  authored, not so that these particular nine are absent.
+- **A digit-only provenance audit** (revisions 7–8) — superseded: it certifies
+  "every number is bound" while `five`, `eight` and `three quarters` walk past
+  it, and while an uncited causal claim is not a number at all. The unit of
+  check is the claim.
+- **Full-path census** (all 483 leaf paths) — rejected by the owner in favour of
+  **path-template** classification: leaf-level entries would be dominated by
+  per-consumer schema noise, and the review burden would fall on the wrong
+  thing. Roughly a hundred templates, authored once.
+- **A checkbox `ignored` list** — rejected by the owner: an ignore entry must
+  carry a **reason**. A checkmark records that someone clicked past a field; a
+  reason records why the field does not matter, and is reviewable when it starts
+  to matter.
+- **Letting the scanner report only what it found** — rejected: a tool that
+  states its finds without stating its blind spots licenses "the system is 21
+  units" while two Cargo crates sit outside the scan and get priced elsewhere on
+  the same page.
 - **React / three.js now** — deferred with named triggers (D3).
 
 ## References
