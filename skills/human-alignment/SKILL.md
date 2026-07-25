@@ -109,6 +109,18 @@ node scripts/audit.mjs --html <authored.html> --facts docs/human-alignment/facts
   --template assets/template.html
 ```
 
+After Phase 4, audit the **delivered** file too — Phase 3 runs before assembly
+injects the diagrams, and nothing else re-checks afterwards:
+
+```bash
+node scripts/audit.mjs --html <delivered.html> --facts <facts.json> \
+  --template assets/template.html --delivered
+```
+
+`--delivered` excludes embedded artifact payloads from the claim rules (they are
+archify's prose, validated separately) while still checking that the diagrams
+and the facts describe the same commit.
+
 Failures are structured receipts (`code` · `subject` · `evidence` ·
 `supportedFixes`). Apply a **listed** fix and re-run. Never guess, and never
 exceed **two** correction rounds — a third failure is reported, not retried.
@@ -122,6 +134,12 @@ Then walk the judgment checks in [`references/checklist.md`](references/checklis
 node scripts/assemble.mjs --authored <authored.html> --facts docs/human-alignment/facts.json \
   --artifacts <build-dir> --out-dir docs/human-alignment --keep 3
 ```
+
+Run it **in the output directory**; never move briefs by hand. Removing one
+outside this script discards the delta baseline, and the next run then reports
+itself as the first. `assemble.mjs` refuses to run when the ledger names a brief
+that is no longer present, and when the facts and the code graph disagree about
+which commit they describe.
 
 Writes `brief-<date>T<time>Z-<shorthash>.html`, updates `manifest.json`
 (appending the prior record to `history[]`), and prunes every brief beyond the

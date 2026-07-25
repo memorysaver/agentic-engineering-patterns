@@ -317,7 +317,7 @@ export function buildNowTier(graph, structure) {
     if (concepts.length) comp.sublabel = `${comp.sublabel} · ${concepts.length} concepts`;
   }
   base.meta.title = `${graph.repo} · what exists now`;
-  base.meta.subtitle = `code-verified @ ${graph.commit} · ${base.components.length} units · concepts measured from the work record`;
+  base.meta.subtitle = `code-verified @ ${graph.commit} · ${base.components.length} of ${graph.nodes} units shown after R1/R2 reduction · ${structure?.concepts_code_bound ?? 0} of ${structure?.concepts_total ?? 0} concepts bound to code`;
   base.meta.output = "architecture-now.html";
   base.cards = [
     base.cards[0],
@@ -357,7 +357,7 @@ export function buildNextTier(graph, structure) {
     comp.sublabel = `${arriving.length} arriving`;
   }
   base.meta.title = `${graph.repo} · where the next design lands`;
-  base.meta.subtitle = `${(structure?.next ?? []).length} concept modules in queued work · ${(structure?.next_net_new ?? []).length} of them net-new · projected from open stories`;
+  base.meta.subtitle = `${(structure?.next ?? []).length} concept modules in queued work, ${(structure?.next_net_new ?? []).length} of them net-new · ${base.components.length} of ${graph.nodes} units shown · projected from open stories`;
   base.meta.output = "architecture-next.html";
   base.cards = [
     {

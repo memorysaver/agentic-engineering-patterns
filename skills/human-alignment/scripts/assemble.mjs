@@ -86,12 +86,44 @@ if (process.argv[1] && process.argv[1].endsWith("assemble.mjs")) {
   const stamp = `${now.toISOString().slice(0, 10)}T${now.toISOString().slice(11, 13)}${now.toISOString().slice(14, 16)}Z`;
   const filename = `brief-${stamp}-${commit}.html`;
 
+  // (2) Diagrams and facts must describe the same commit. Round 2 shipped a
+  // code graph one commit behind the facts, and three diagram captions
+  // contradicted the prose beside them as a result.
+  const graphPath = join(artifactsDir ?? ".", "code-graph.json");
+  if (existsSync(graphPath)) {
+    const graphCommit = JSON.parse(readFileSync(graphPath, "utf8")).commit;
+    if (graphCommit && facts.commit && graphCommit !== facts.commit) {
+      console.error(
+        `ERROR: commit skew — facts are at ${facts.commit}, the code graph at ${graphCommit}.\n` +
+          `  Re-run scan-workspace.mjs + arch-rules.mjs, or re-run derive.mjs, so both describe one commit.`,
+      );
+      process.exit(1);
+    }
+  }
+
   const artifacts = collectArtifacts(artifactsDir);
   const missing = ARTIFACT_KEYS.filter((k) => !artifacts[k]);
   const factsSha = createHash("sha256").update(JSON.stringify(facts)).digest("hex");
 
   const manifestPath = join(outDir, "manifest.json");
   const previous = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, "utf8")) : null;
+
+  // (3) A destroyed baseline makes "this is the first brief" true by accident.
+  // If the ledger names a previous generation whose file is gone and whose
+  // history is empty, the delta was lost — almost always because a brief was
+  // removed by hand instead of pruned by this script.
+  if (
+    previous?.output &&
+    !existsSync(join(outDir, previous.output)) &&
+    (previous.history ?? []).length === 0
+  ) {
+    console.error(
+      `ERROR: the delta baseline was lost. manifest.json names ${previous.output}, which is not in ${outDir},` +
+        ` and history[] is empty.\n  Regenerate through this script rather than removing briefs by hand,` +
+        ` or restore the manifest from version control.`,
+    );
+    process.exit(1);
+  }
 
   const manifest = {
     schema_version: 1,

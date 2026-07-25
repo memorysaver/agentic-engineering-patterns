@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generated_from": "product-context.yaml",
-  "commit": "60f4d754",
+  "commit": "a28fec13",
   "baseline_commit": null,
   "project": "looplia-run",
   "version": "0.5.3",
@@ -308,6 +308,18 @@
   ],
   "drift_facts": [
     {
+      "kind": "intent_without_evidence",
+      "layer": 41,
+      "detail": "7 acceptance criteria declared, 6 covered",
+      "path": "layer_gates[layer=41].coverage",
+      "level": "derived",
+      "counters": {
+        "criteria_total": 7,
+        "criteria_covered": 6,
+        "uncovered_listed": 1
+      }
+    },
+    {
       "kind": "reality_resisting_intent",
       "layer": 32,
       "detail": "FIX-L32-SUPERVISOR-START-001 has 1 failure log and is still open (failed)",
@@ -413,17 +425,6 @@
       "counters": {
         "completed_stories": 4,
         "layer_stories": 4
-      }
-    },
-    {
-      "kind": "control_plane_incoherence",
-      "layer": 41,
-      "detail": "1 completed story under a not_started gate",
-      "path": "layer_gates[layer=41].status",
-      "level": "derived",
-      "counters": {
-        "completed_stories": 1,
-        "layer_stories": 1
       }
     },
     {
@@ -863,9 +864,9 @@
       },
       "41": {
         "layer": 41,
-        "status": "not_started",
-        "criteria_total": null,
-        "criteria_covered": null,
+        "status": "scripted_passed",
+        "criteria_total": 7,
+        "criteria_covered": 6,
         "completed_at": null,
         "closure_status": null,
         "sign_off_withdrawn": false,
@@ -972,8 +973,8 @@
     },
     "by_status": {
       "passed": 19,
-      "not_started": 16,
-      "scripted_passed": 4,
+      "not_started": 15,
+      "scripted_passed": 5,
       "deferred": 2,
       "completed": 1
     },
@@ -1479,9 +1480,9 @@
       },
       {
         "layer": 41,
-        "status": "not_started",
-        "criteria_total": null,
-        "criteria_covered": null,
+        "status": "scripted_passed",
+        "criteria_total": 7,
+        "criteria_covered": 6,
         "completed_at": null,
         "closure_status": null,
         "sign_off_withdrawn": false,
@@ -5203,7 +5204,7 @@
         "completed": 1
       },
       "total": 1,
-      "gate_status": "not_started",
+      "gate_status": "scripted_passed",
       "is_current": false,
       "stories": [
         {
@@ -5513,6 +5514,15 @@
       "definition": "Hire paper-researcher@v1 and startup-writer@v1 through exact BlueprintV2 approvals. Both lock the shared newsroom core plus distinct role packs, qualify without manual setup, and become routable only after pass. A failed/stale qualification receives zero recurring/assignment wakes; a Data Analyst requirement produces capability_gap rather than generic fallback. Real scholarly compute is L32, authority L33 and publication L39.",
       "completed_at": "2026-07-18T10:44:00Z",
       "source": "layer_gates[layer=31]"
+    },
+    {
+      "layer": 41,
+      "gate_status": "scripted_passed",
+      "tense": "EXP",
+      "settles_on": "layer 41 human acceptance run",
+      "definition": "Design-approved runtime/admission gate, directly following L32-005: the exact L32 NewsSignalScanRequest envelope yields bounded candidates from fixed Cloudflare discovery origins; host verification enforces public HTTPS, DNS/IP and redirect safety, RSS/Atom/page-read bounds, publisher/provenance/terms evidence and context revalidation; verified sources yield locator-bound excerpts/claims that Code Mode can integrate without network/tenant/DB authority; ambiguous/high-risk recurring sources require an exact approval receipt; and no production adapter, source, binding, secret or deploy is changed before the target-bound discovery-origin and Browser Run CI policy checks are green.",
+      "completed_at": null,
+      "source": "layer_gates[layer=41]"
     }
   ],
   "cost": {
@@ -5636,7 +5646,7 @@
     "now": {
       "units": 21,
       "edges": 75,
-      "commit": "792208b0"
+      "commit": "a28fec13"
     },
     "concepts": [
       {
@@ -6272,16 +6282,16 @@
     "packages": 17,
     "name_overlap": 1,
     "tool": "scan-workspace.mjs (package.json workspace graph, deterministic)",
-    "commit": "792208b0",
+    "commit": "a28fec13",
     "coverage_complete": false,
     "unscanned_count": 4
   },
   "reading_coverage": {
-    "populated_paths": 486,
-    "derived_count": 55,
-    "ignored_count": 431,
+    "populated_paths": 488,
+    "derived_count": 56,
+    "ignored_count": 432,
     "unhandled_count": 0,
-    "read_coverage": 0.113
+    "read_coverage": 0.115
   },
   "delta": {
     "first_run": true,

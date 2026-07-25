@@ -1,6 +1,6 @@
 {
   "repo": "looplia",
-  "commit": "792208b0",
+  "commit": "a28fec13",
   "tool": "scan-workspace.mjs (package.json workspace graph, deterministic)",
   "coverage": {
     "scanned": "JavaScript/TypeScript workspaces declared in the root package.json",

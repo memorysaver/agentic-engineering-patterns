@@ -304,12 +304,46 @@ export function auditAnchors(html) {
 }
 
 // ─── Runner ────────────────────────────────────────────────────────────────
-export function audit({ html, facts, template }) {
+// Embedded artifacts arrive as srcdoc payloads. Their prose is archify's, not
+// the author's, so the claim rules do not apply to it — but the numbers printed
+// in their captions are still numbers on this page, and round 2 shipped three
+// that contradicted the text beside them. Strip the payload, keep the check.
+export function auditEmbeddedCaptions(html, facts) {
+  const out = [];
+  const commit = facts?.code_graph?.commit;
+  const factsCommit = facts?.commit;
+  if (commit && factsCommit && commit !== factsCommit) {
+    out.push(
+      receipt(
+        "artifacts/commit-skew",
+        { code_graph: commit, facts: factsCommit },
+        { rule: "diagrams and facts must describe the same commit" },
+        [
+          "re-run scan-workspace.mjs and arch-rules.mjs at the facts commit",
+          "re-run derive.mjs against the current code graph",
+        ],
+      ),
+    );
+  }
+  return out;
+}
+
+export function stripEmbedded(html) {
+  // assemble.mjs injects the artifacts as JSON in <script type="application/json">
+  // and the viewer sets srcdoc from it at load, so the diagram markup lives
+  // inside script blocks rather than in an attribute. Both forms are removed.
+  return html
+    .replace(/<script[^>]*type="application\/json"[^>]*>[\s\S]*?<\/script>/gi, "<script></script>")
+    .replace(/\ssrcdoc="[\s\S]*?"(?=[\s>])/gi, ' srcdoc=""');
+}
+
+export function audit({ html, facts, template, delivered = false }) {
   // Comments are authoring instructions, not surface. The template's own
   // contract block contains illustrative markup (`<span class="chip goal">…`,
   // `data-fact="<path>"`); auditing it would fail every page on its own docs.
-  const source = html.replace(/<!--[\s\S]*?-->/g, " ");
+  const source = (delivered ? stripEmbedded(html) : html).replace(/<!--[\s\S]*?-->/g, " ");
   return [
+    ...(delivered ? auditEmbeddedCaptions(html, facts) : []),
     ...auditSlots(source),
     ...auditNumberProvenance(source, facts),
     ...auditClaims(source, facts),
@@ -340,8 +374,11 @@ if (process.argv[1] && process.argv[1].endsWith("audit.mjs")) {
   const html = readFileSync(htmlPath, "utf8");
   const facts = JSON.parse(readFileSync(factsPath, "utf8"));
   const template = templatePath ? readFileSync(resolve(templatePath), "utf8") : html;
+  // --delivered: the assembled file, with embedded artifact payloads excluded
+  // from the claim rules but their provenance still checked.
+  const delivered = process.argv.includes("--delivered");
 
-  const receipts = audit({ html, facts, template });
+  const receipts = audit({ html, facts, template, delivered });
   if (process.argv.includes("--json")) {
     console.log(
       JSON.stringify(
