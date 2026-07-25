@@ -104,6 +104,28 @@
           "why": {
             "type": ["string", "null"],
             "description": "prose-typed only; numeric sources are dropped, never rendered"
+          },
+          "predicates": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "retries_exhausted": {
+                "type": ["boolean", "null"]
+              },
+              "attempts_used": {
+                "type": ["integer", "null"]
+              },
+              "attempts_allowed": {
+                "type": ["integer", "null"]
+              },
+              "failure_log_count": {
+                "type": "integer"
+              },
+              "root_cause_stated": {
+                "type": ["boolean", "null"],
+                "description": "false when a failure log disclaims its own root cause \u2014 the surface may then not assert one"
+              }
+            }
           }
         }
       }
@@ -234,6 +256,19 @@
               "shippable": {
                 "type": "boolean",
                 "description": "true only for status == passed; scripted_passed is EXP, never fact"
+              },
+              "closure_status": {
+                "type": ["string", "null"]
+              },
+              "sign_off_withdrawn": {
+                "type": "boolean",
+                "description": "a retired acceptance is not a pending one"
+              },
+              "successor_layer": {
+                "type": ["number", "null"]
+              },
+              "retired_acceptance": {
+                "type": ["string", "null"]
               }
             }
           }
@@ -471,6 +506,13 @@
             },
             "commit": {
               "type": "string"
+            },
+            "coverage_complete": {
+              "type": "boolean",
+              "description": "false when the scanner left an ecosystem unread \u2014 no tool may imply totality"
+            },
+            "unscanned_count": {
+              "type": "integer"
             }
           }
         }
@@ -689,6 +731,61 @@
                   }
                 }
               }
+            }
+          }
+        }
+      ]
+    },
+    "completions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["days", "since", "count", "ids"],
+        "properties": {
+          "days": {
+            "type": "integer"
+          },
+          "since": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer"
+          },
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "reading_coverage": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["populated_paths", "derived_count", "ignored_count", "unhandled_count"],
+          "description": "What the census found: how much of the source this brief actually read (D9).",
+          "properties": {
+            "populated_paths": {
+              "type": "integer"
+            },
+            "derived_count": {
+              "type": "integer"
+            },
+            "ignored_count": {
+              "type": "integer"
+            },
+            "unhandled_count": {
+              "type": "integer"
+            },
+            "read_coverage": {
+              "type": "number"
             }
           }
         }

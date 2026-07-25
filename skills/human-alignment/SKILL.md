@@ -40,6 +40,7 @@ predecessor's postcondition is unmet.
 ### 1 · Derive
 
 ```bash
+node scripts/census.mjs --context product-context.yaml   # what am I blind to?
 node scripts/derive.mjs --context product-context.yaml --repo . \
   --out docs/human-alignment/facts.json [--code-graph docs/human-alignment/code-graph.json]
 ```
@@ -47,7 +48,12 @@ node scripts/derive.mjs --context product-context.yaml --repo . \
 The facts JSON is the **only legal source of numbers**. It validates against
 `scripts/facts.schema.json` or the run stops.
 
-→ _facts JSON exists and validates._
+The census classifies every populated path in the plan file against
+`scripts/source-census.json` as `derived` / `ignored` (**with a reason**) /
+`unhandled`. An unhandled path is a field this brief cannot see — every content
+defect the first implementation shipped was one. Add a rule before proceeding.
+
+→ _census reports zero unhandled paths; facts JSON exists and validates._
 
 ### 1.5 · Scan (architecture)
 
@@ -82,11 +88,16 @@ The five that fail an audit fastest:
    section's conclusion.
 2. **Translate** — story titles and changelog entries never surface verbatim;
    re-author each as a consequence sentence bound to its id in the anchor.
-3. **No naked numbers** — every number is `data-fact`, inside a sentence that
-   states its consequence.
-4. **Fold the queue** — backlog collapses to one sentence per layer, full list
+3. **No naked numbers, in digits or in words.** Every number is `data-fact`.
+   `five`, `eight`, `three quarters` are numbers too — that hole once shipped
+   "five tasks in two days" when the truth was eight.
+4. **Every assertive block cites what it rests on** — `data-claims="<paths>"`,
+   or `data-authored` if it is narrative that can cite nothing. A claim the
+   facts do not carry is not a sentence to write more carefully; it is a fact to
+   derive first.
+5. **Fold the queue** — backlog collapses to one sentence per layer, full list
    behind a disclosure.
-5. **Never chip a fact** — an unchipped page is a page of facts; diluting that
+6. **Never chip a fact** — an unchipped page is a page of facts; diluting that
    destroys the only trust gauge the reader has.
 
 → _every section rendered or stamped; no `{{SLOT}}` left._

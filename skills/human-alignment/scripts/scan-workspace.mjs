@@ -12,7 +12,7 @@
 
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 
 const readJson = (p) => JSON.parse(readFileSync(p, "utf8"));
 
@@ -85,11 +85,42 @@ export function scanWorkspace(repoRoot) {
     /* not a git repo — the graph is still valid, its provenance is not */
   }
 
+  // D9 mechanism 4: a tool must declare what it did NOT cover. Without this the
+  // brief said "the system today is 21 code units" while two Cargo crates sat
+  // outside the scan — and priced work on one of them elsewhere on the page.
+  const otherEcosystems = [
+    ["Cargo.toml", "Rust"],
+    ["pyproject.toml", "Python"],
+    ["go.mod", "Go"],
+    ["Gemfile", "Ruby"],
+    ["pom.xml", "Java"],
+  ];
+  const unscanned = [];
+  for (const [marker, language] of otherEcosystems) {
+    for (const dir of ["", "apps", "packages", "crates", "services"]) {
+      const base = dir ? join(repoRoot, dir) : repoRoot;
+      if (!existsSync(base)) continue;
+      const entries = dir ? readdirSync(base) : [""];
+      for (const e of entries) {
+        const candidate = dir ? join(base, e, marker) : join(base, marker);
+        if (!existsSync(candidate)) continue;
+        const rel = relative(repoRoot, dirname(candidate));
+        if (dirs.some((d) => relative(repoRoot, d) === rel)) continue;
+        unscanned.push({ path: rel || ".", language, marker });
+      }
+    }
+  }
+
   const topDir = (d) => d.split("/")[0];
   return {
     repo: rootPkg.name ?? relative(resolve(repoRoot, ".."), repoRoot),
     commit,
     tool: "scan-workspace.mjs (package.json workspace graph, deterministic)",
+    coverage: {
+      scanned: "JavaScript/TypeScript workspaces declared in the root package.json",
+      unscanned,
+      complete: unscanned.length === 0,
+    },
     nodes: packages.length,
     edges: edges.length,
     apps: packages.filter((p) => topDir(p.dir) === "apps").length,

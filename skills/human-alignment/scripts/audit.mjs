@@ -31,6 +31,11 @@ export function authoredText(html) {
   return s.replace(/&[a-z]+;/gi, " ").replace(/\s+/g, " ");
 }
 
+// Spelled-out quantities are numbers. Ordinals and "one" as an article are
+// excluded — "one ask" and "the first cut" are structural language, not counts.
+const NUMBER_WORD_RE =
+  /\b(two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|dozen|half|quarter|quarters|third|thirds|most of|nearly all)\b/gi;
+
 const receipt = (code, subject, evidence, supportedFixes) => ({
   code,
   subject,
@@ -63,7 +68,10 @@ export function auditNumberProvenance(html, facts) {
     }
   }
 
-  // no digit may appear in authored prose
+  // No digit AND no number-word may appear in authored prose. The word form is
+  // the hole that let "five tasks in two days" ship when the truth was eight:
+  // the digit audit certified "every number is bound" while spelled-out numerals
+  // walked straight past it.
   const text = authoredText(html);
   for (const m of text.matchAll(/(?<![\w.])(\d[\d,.]*)(?![\w])/g)) {
     const around = text.slice(Math.max(0, m.index - 45), m.index + 45).trim();
@@ -71,6 +79,16 @@ export function auditNumberProvenance(html, facts) {
       receipt("provenance/hardcoded-number", { number: m[1] }, { context: around }, [
         'replace the literal with <span data-fact="<path>"></span>',
         "move the number into the provenance anchor if it is a citation",
+      ]),
+    );
+  }
+  for (const m of text.matchAll(NUMBER_WORD_RE)) {
+    const around = text.slice(Math.max(0, m.index - 45), m.index + 45).trim();
+    out.push(
+      receipt("provenance/number-word", { word: m[0] }, { context: around }, [
+        'bind the count with <span data-fact="<path>"></span> and let the renderer write it',
+        "derive the count in derive.mjs if no fact carries it yet",
+        "rewrite the sentence so it makes no quantitative claim",
       ]),
     );
   }
@@ -155,6 +173,66 @@ export function auditChipGrammar(html) {
   return out;
 }
 
+// D9 mechanism 2: the unit of check is the CLAIM, not the number.
+// A block that asserts something about the project must declare which facts it
+// rests on. This is what makes an uncited causal claim — "the shape of a
+// specification and an implementation disagreeing" — a build failure rather
+// than prose nobody can question.
+const ASSERTIVE_BLOCK_RE = /<(p|li|dd)\b([^>]*)>([\s\S]*?)<\/\1>/gi;
+const EXEMPT_CLASS_RE = /class="[^"]*\b(anchor|stamp|criterion|band-kicker)\b/;
+
+export function auditClaims(html, facts) {
+  const out = [];
+  const resolvePath = (path) =>
+    path
+      .split(".")
+      .reduce((o, k) => (o == null ? undefined : k === "length" ? o.length : o[k]), facts);
+
+  for (const m of html.matchAll(ASSERTIVE_BLOCK_RE)) {
+    const attrs = m[2] ?? "";
+    const inner = m[3] ?? "";
+    if (EXEMPT_CLASS_RE.test(attrs)) continue;
+    const textOnly = inner
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (textOnly.length < 40) continue; // labels and fragments assert nothing
+
+    const claims = /data-claims="([^"]*)"/.exec(attrs)?.[1]?.trim();
+    const hasFactBinding = /data-fact="/.test(inner);
+    const markedAuthored = /data-authored/.test(attrs);
+
+    if (!claims && !hasFactBinding && !markedAuthored) {
+      out.push(
+        receipt(
+          "claims/uncited-assertion",
+          { excerpt: textOnly.slice(0, 90) },
+          { rule: "an assertive block must cite the facts it rests on" },
+          [
+            'add data-claims="<fact paths>" naming what this rests on',
+            "derive the fact in derive.mjs if none carries this claim yet",
+            "mark the block data-authored if it is narrative that cites nothing",
+          ],
+        ),
+      );
+      continue;
+    }
+    for (const path of (claims ?? "").split(/\s+/).filter(Boolean)) {
+      if (resolvePath(path) === undefined) {
+        out.push(
+          receipt(
+            "claims/unresolved-path",
+            { path, excerpt: textOnly.slice(0, 60) },
+            { resolved: null },
+            ["correct the path", "add the field to derive.mjs so the claim has ground"],
+          ),
+        );
+      }
+    }
+  }
+  return out;
+}
+
 export function auditSlots(html) {
   const out = [];
   for (const m of html.matchAll(/\{\{([A-Z0-9_]+)\}\}/g)) {
@@ -234,6 +312,7 @@ export function audit({ html, facts, template }) {
   return [
     ...auditSlots(source),
     ...auditNumberProvenance(source, facts),
+    ...auditClaims(source, facts),
     ...auditClasses(source, template ?? source),
     ...auditChipGrammar(source),
     ...auditAnchors(source),

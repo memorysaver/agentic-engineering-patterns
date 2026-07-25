@@ -152,6 +152,7 @@ export function deriveAttentionSet(ctx, currentLayer) {
         layer: num(s.layer),
         path: `stories[id=${s.id}].status`,
         why: isProse(s.business_value) ? String(s.business_value) : null,
+        predicates: storyPredicates(s),
       });
     }
   }
@@ -523,6 +524,59 @@ export function deriveStructure(ctx, codeGraph) {
   };
 }
 
+// ─── Predicates (D9 mechanism 3) ───────────────────────────────────────────
+// Prose wants to say "retries are exhausted", "the sign-off was withdrawn",
+// "eight landed in two days". Each of those must exist as a derived predicate,
+// because an agent asked to state something the facts do not carry will supply
+// it from a diagram label or by counting manually — which is exactly how this
+// pipeline shipped four false sentences.
+
+const DISCLAIMS_ROOT =
+  /\b(unproven|not (?:yet )?(?:proven|established|determined)|undetermined|unknown|inconclusive|requires? (?:a )?(?:bounded |focused )?(?:diagnostic |transport-boundary )?follow-up)\b/i;
+
+export function storyPredicates(s) {
+  const attempts = num(s.attempt_count);
+  const max = num(s.max_retries);
+  const logs = s.failure_logs ?? [];
+  const logText = logs.map((l) => (typeof l === "string" ? l : JSON.stringify(l))).join(" ");
+  return {
+    // "automatic repair has already given up" is only true when this is true.
+    retries_exhausted: attempts !== null && max !== null ? attempts >= max : null,
+    attempts_used: attempts,
+    attempts_allowed: max,
+    failure_log_count: logs.length,
+    // A failure log that disclaims its own root cause forbids the surface from
+    // asserting one. Silence over diagnosis.
+    root_cause_stated: logs.length === 0 ? null : !DISCLAIMS_ROOT.test(logText),
+  };
+}
+
+export function gatePredicates(g) {
+  const closure = g.closure_status ? String(g.closure_status) : null;
+  const realign = g.decision_realignment ?? null;
+  return {
+    closure_status: closure,
+    // A withdrawn sign-off is not a pending one. Without this the brief says
+    // "the last thing standing before sign-off" about a layer whose acceptance
+    // criterion an owner has retired.
+    sign_off_withdrawn: closure !== null && closure !== "open",
+    successor_layer: realign ? num(realign.successor_layer) : null,
+    retired_acceptance:
+      realign && isProse(realign.retired_acceptance) ? String(realign.retired_acceptance) : null,
+  };
+}
+
+// "N landed in the last M days" must be counted by the deriver, never by hand.
+export function completionsInWindow(stories, days, asOf) {
+  const cutoff = new Date(asOf);
+  cutoff.setDate(cutoff.getDate() - days);
+  const iso = cutoff.toISOString().slice(0, 10);
+  const landed = stories.filter(
+    (s) => s.status === "completed" && String(s.completed_at ?? "").slice(0, 10) >= iso,
+  );
+  return { days, since: iso, count: landed.length, ids: landed.map((s) => String(s.id)).sort() };
+}
+
 // ─── Cost: roll up from the work record, not the roll-up field ─────────────
 export function deriveCost(ctx) {
   const stories = ctx.stories ?? [];
@@ -548,7 +602,13 @@ export function deriveCost(ctx) {
 }
 
 // ─── Main derivation ───────────────────────────────────────────────────────
-export async function derive({ contextPath, manifestPath, repoRoot, codeGraph = null }) {
+export async function derive({
+  contextPath,
+  manifestPath,
+  repoRoot,
+  codeGraph = null,
+  censusResult = null,
+}) {
   const ctx = await loadYaml(contextPath);
   const stories = ctx.stories ?? [];
   const gates = ctx.layer_gates ?? [];
@@ -614,7 +674,10 @@ export async function derive({ contextPath, manifestPath, repoRoot, codeGraph = 
     criteria_total: num(g.coverage?.criteria_total),
     criteria_covered: num(g.coverage?.criteria_covered),
     completed_at: g.completed_at ? String(g.completed_at) : null,
-    shippable: g.status === "passed",
+    ...gatePredicates(g),
+    // A withdrawn sign-off is not shippable either — closure retires the
+    // acceptance rather than granting it.
+    shippable: g.status === "passed" && !gatePredicates(g).sign_off_withdrawn,
   }));
   const gateByStatus = {};
   for (const g of gateDetail) gateByStatus[g.status] = (gateByStatus[g.status] ?? 0) + 1;
@@ -653,18 +716,25 @@ export async function derive({ contextPath, manifestPath, repoRoot, codeGraph = 
     };
   });
 
-  const changelog = ctx.changelog ?? [];
-  const changelogRecent = changelog.slice(-12).map((e, i) => ({
-    id: `${e.date ?? "undated"}-${e.type ?? "entry"}-${changelog.length - 12 + i < 0 ? i : changelog.length - Math.min(12, changelog.length) + i}`,
+  // The changelog is NOT stored in date order (26 out-of-order adjacent pairs in
+  // the reference consumer). Slicing the tail therefore misses the newest
+  // entries — including, once, the owner decision that closed the current layer.
+  // Sort before slicing; keep the original index so ids stay stable.
+  const changelog = (ctx.changelog ?? []).map((e, i) => ({ e, i }));
+  const changelogSorted = [...changelog].sort(
+    (a, b) => String(a.e.date ?? "").localeCompare(String(b.e.date ?? "")) || a.i - b.i,
+  );
+  const changelogRecent = changelogSorted.slice(-12).map(({ e, i }) => ({
+    id: `${e.date ?? "undated"}-${e.type ?? "entry"}-${i}`,
     date: String(e.date ?? ""),
     kind: e.type ? String(e.type) : null,
     author: e.author ? String(e.author) : null,
     summary: String(e.summary ?? ""),
-    since_baseline:
-      delta.changelog_new > 0 && i >= Math.min(12, changelog.length) - delta.changelog_new,
+    since_baseline: delta.changelog_new > 0 && i >= changelog.length - delta.changelog_new,
   }));
 
   const capabilities = gateDetail
+    .filter((g) => !g.sign_off_withdrawn)
     .filter((g) => g.status === "passed" || g.status === "scripted_passed")
     .map((g) => ({
       layer: g.layer,
@@ -707,6 +777,9 @@ export async function derive({ contextPath, manifestPath, repoRoot, codeGraph = 
     changelog_recent: changelogRecent,
     capabilities,
     cost,
+    completions: [7, 2].map((d) =>
+      completionsInWindow(stories, d, ctx.updated_at ?? new Date().toISOString().slice(0, 10)),
+    ),
     modules: {
       declared_count: (ctx.architecture?.modules ?? []).length,
       path_bound_count: (ctx.architecture?.modules ?? []).filter(
@@ -720,6 +793,15 @@ export async function derive({ contextPath, manifestPath, repoRoot, codeGraph = 
     },
     structure,
     code_graph: codeGraph,
+    reading_coverage: censusResult
+      ? {
+          populated_paths: censusResult.populated_paths,
+          derived_count: censusResult.derived_count,
+          ignored_count: censusResult.ignored_count,
+          unhandled_count: censusResult.unhandled_count,
+          read_coverage: censusResult.read_coverage,
+        }
+      : null,
     delta,
   };
 
@@ -767,6 +849,8 @@ export async function derive({ contextPath, manifestPath, repoRoot, codeGraph = 
         name_overlap: overlap,
         tool: codeGraph.tool,
         commit: codeGraph.commit,
+        coverage_complete: codeGraph.coverage?.complete,
+        unscanned_count: codeGraph.coverage?.unscanned?.length,
       }).filter(([, v]) => v !== undefined),
     );
     // Drift 5 restated (revision 8). The declared architecture IS
@@ -816,7 +900,10 @@ if (isMain) {
   const codeGraph =
     graphPath && existsSync(graphPath) ? JSON.parse(readFileSync(graphPath, "utf8")) : null;
 
-  const facts = await derive({ contextPath, manifestPath, repoRoot, codeGraph });
+  const { census } = await import("./census.mjs");
+  const censusManifest = JSON.parse(readFileSync(resolve(HERE, "source-census.json"), "utf8"));
+  const censusResult = census(await loadYaml(contextPath), censusManifest);
+  const facts = await derive({ contextPath, manifestPath, repoRoot, codeGraph, censusResult });
   const schema = JSON.parse(readFileSync(resolve(HERE, "facts.schema.json"), "utf8"));
   const errors = validate(schema, facts);
   if (errors.length) {

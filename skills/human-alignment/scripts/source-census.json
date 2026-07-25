@@ -1,0 +1,384 @@
+{
+  "schema_version": 1,
+  "_doc": "The completeness contract (decision doc D9). Every populated path template in a consumer's plan file must match a rule here, or census.mjs reports it as UNHANDLED — a field this brief is blind to. `derived` means the path reaches facts JSON. `ignored` means it is deliberately not read, and MUST carry a reason: a checkmark records that someone clicked past a field, a reason records why it does not matter and is reviewable when it starts to. A rule may name an exact template or a subtree (`a.b[].*`); the most specific rule wins, so an exception inside an ignored subtree is always expressible.",
+  "paths": {
+    "schema": {
+      "status": "derived"
+    },
+    "project": {
+      "status": "derived"
+    },
+    "version": {
+      "status": "derived"
+    },
+    "updated_at": {
+      "status": "derived"
+    },
+    "dispatch_epoch": {
+      "status": "ignored",
+      "reason": "Dispatch bookkeeping. The brief reports what moved, not which dispatch round moved it; the epoch is an anchor-channel identifier at most."
+    },
+    "stories[].id": {
+      "status": "derived"
+    },
+    "stories[].title": {
+      "status": "derived"
+    },
+    "stories[].status": {
+      "status": "derived"
+    },
+    "stories[].layer": {
+      "status": "derived"
+    },
+    "stories[].module": {
+      "status": "derived"
+    },
+    "stories[].files_affected[]": {
+      "status": "derived"
+    },
+    "stories[].cost_usd": {
+      "status": "derived"
+    },
+    "stories[].failure_logs[]": {
+      "status": "derived"
+    },
+    "stories[].failure_logs[].*": {
+      "status": "derived"
+    },
+    "stories[].attempt_count": {
+      "status": "derived"
+    },
+    "stories[].max_retries": {
+      "status": "derived"
+    },
+    "stories[].completed_at": {
+      "status": "derived"
+    },
+    "stories[].started_at": {
+      "status": "derived"
+    },
+    "stories[].business_value": {
+      "status": "derived"
+    },
+    "stories[].pr_url": {
+      "status": "derived"
+    },
+    "stories[].dependencies[]": {
+      "status": "ignored",
+      "reason": "Story-level sequencing. The brief folds the queue to one sentence per layer; a dependency graph is /aep-dispatch's input, and surfacing it would re-import the row list the fold exists to remove."
+    },
+    "stories[].acceptance_criteria[]": {
+      "status": "ignored",
+      "reason": "Criteria are counted through layer_gates[].coverage, which is the plane the drift detector reads. The criterion text belongs to /aep-build, not to a status surface."
+    },
+    "stories[].acceptance_criteria[].*": {
+      "status": "ignored",
+      "reason": "As above; a consumer that wrote a criterion as a mapping rather than a string does not change the disposition."
+    },
+    "stories[].description.*": {
+      "status": "ignored",
+      "reason": "Story descriptions are specification input for the implementing agent. The brief translates outcomes and never restates specs — surfacing them verbatim is the system-vocabulary failure the cold-reader contract exists to prevent."
+    },
+    "stories[].technical_notes": {
+      "status": "ignored",
+      "reason": "Implementation guidance for the building agent. None of the three reader questions depends on it."
+    },
+    "stories[].interface_obligations.*": {
+      "status": "ignored",
+      "reason": "Contract obligations between stories. Relevant to the Engineering band in principle, but absent on all queued work in the reference consumer (0 of 45), so deriving it today would render an empty view that reads as 'no obligations' rather than 'not recorded'. Revisit when a consumer populates it for open work."
+    },
+    "stories[].interface_obligations[]": {
+      "status": "ignored",
+      "reason": "As above; older consumers wrote this as a list rather than a mapping."
+    },
+    "stories[].verification.*": {
+      "status": "ignored",
+      "reason": "Per-story test plan. Coverage is reported at the gate level, which is where the two-phase acceptance model lives; per-story test lists would double-count it."
+    },
+    "stories[].verification": {
+      "status": "ignored",
+      "reason": "As above, for consumers that wrote it as a scalar."
+    },
+    "stories[].merge_sha": {
+      "status": "ignored",
+      "reason": "Merge provenance. Belongs in an anchor beside a translated changelog line; the PR reference already gives the reader a way in."
+    },
+    "stories[].commit_sha": {
+      "status": "ignored",
+      "reason": "As merge_sha — provenance detail below the altitude any of the three questions reaches."
+    },
+    "stories[].readiness_score": {
+      "status": "ignored",
+      "reason": "Dispatch-time scoring. It ranks what to start next, which is /aep-dispatch's judgment, not a statement about where the project is."
+    },
+    "stories[].dispatch_score": {
+      "status": "ignored",
+      "reason": "As readiness_score — an input to choosing work, not a fact about the work."
+    },
+    "stories[].on_critical_path": {
+      "status": "ignored",
+      "reason": "Derived from the dependency graph this manifest already declines to read. Surfacing it alone would assert a criticality the brief cannot substantiate."
+    },
+    "stories[].priority": {
+      "status": "ignored",
+      "reason": "Author-assigned ordering. The attention set has its own deterministic priority order (attention-set.md); a second ranking on the same surface would compete with it."
+    },
+    "stories[].complexity": {
+      "status": "ignored",
+      "reason": "Estimation input. The brief reports what happened, not what was expected to be hard."
+    },
+    "stories[].activity": {
+      "status": "ignored",
+      "reason": "Product-activity tag from /aep-map. Band 2 derives capabilities from passed gates instead, which is evidence-backed rather than label-backed."
+    },
+    "stories[].slice": {
+      "status": "ignored",
+      "reason": "Vertical-slice tag from /aep-map. Same disposition as activity."
+    },
+    "stories[].capability": {
+      "status": "ignored",
+      "reason": "Present on 79 of 396 stories in the reference consumer. A partially populated grouping key would make band 2 look authoritative about a fifth of the work; gates cover all of it."
+    },
+    "stories[].object_model_refs[]": {
+      "status": "ignored",
+      "reason": "Links to object maps, which live outside the plan file. The attention set already records object-map signals as underivable from this document alone."
+    },
+    "stories[].compile_mode": {
+      "status": "ignored",
+      "reason": "Harness execution setting. It says nothing about project state."
+    },
+    "stories[].change_group": {
+      "status": "ignored",
+      "reason": "Batching key for dispatch. Operational, not descriptive."
+    },
+    "stories[].assigned_to": {
+      "status": "ignored",
+      "reason": "Agent assignment. The brief's ask is addressed to the human; which agent holds a task is answered by /aep-watch."
+    },
+    "stories[].dispatched_at_epoch": {
+      "status": "ignored",
+      "reason": "Dispatch bookkeeping, as dispatch_epoch."
+    },
+    "stories[].openspec_change": {
+      "status": "ignored",
+      "reason": "Pointer to the OpenSpec proposal. The brief cites the story id instead, which resolves to the same work."
+    },
+    "stories[].calibration_type": {
+      "status": "ignored",
+      "reason": "Marks which taste dimension a story feeds. Calibration is surfaced through plan-minus-history, which covers every checkpoint rather than only those with stories."
+    },
+    "stories[].resolution": {
+      "status": "ignored",
+      "reason": "Free-text closing note on deferred or superseded work. As narrative it would need translation; as data it has no schema. The status transition already carries the outcome."
+    },
+    "stories[].dogfood_status": {
+      "status": "ignored",
+      "reason": "Present on 1 of 396 stories. Too sparse to found a surface claim on."
+    },
+    "stories[].redogfood_note": {
+      "status": "ignored",
+      "reason": "As dogfood_status — a single-instance field."
+    },
+    "stories[].gate_note": {
+      "status": "ignored",
+      "reason": "Single-instance annotation; layer_gates is the field of record for gate state."
+    },
+    "stories[].downstream_handoff.*": {
+      "status": "ignored",
+      "reason": "Cross-project handoff record, present once. It belongs to the receiving project's brief, not this one's."
+    },
+    "layer_gates[].layer": {
+      "status": "derived"
+    },
+    "layer_gates[].status": {
+      "status": "derived"
+    },
+    "layer_gates[].coverage.criteria_total": {
+      "status": "derived"
+    },
+    "layer_gates[].coverage.criteria_covered": {
+      "status": "derived"
+    },
+    "layer_gates[].coverage.uncovered[]": {
+      "status": "derived"
+    },
+    "layer_gates[].coverage.uncovered[].*": {
+      "status": "derived"
+    },
+    "layer_gates[].closure_status": {
+      "status": "derived"
+    },
+    "layer_gates[].decision_realignment.*": {
+      "status": "derived"
+    },
+    "layer_gates[].completed_at": {
+      "status": "derived"
+    },
+    "layer_gates[].test_definition": {
+      "status": "derived"
+    },
+    "layer_gates[].skip_human_eval": {
+      "status": "derived"
+    },
+    "layer_gates[].release": {
+      "status": "ignored",
+      "reason": "Release tag for the layer. The gate status is what decides whether a capability may be stated as fact; the tag is provenance beneath it."
+    },
+    "layer_gates[].notes": {
+      "status": "ignored",
+      "reason": "Free-text gate commentary. Where it records a closure decision, the structured closure_status and decision_realignment fields carry it; unstructured prose would have to be translated before it could be trusted."
+    },
+    "layer_gates[].evidence.*": {
+      "status": "ignored",
+      "reason": "Evidence artifacts proving a gate (journeys, dogfood receipts, matrices). The brief reports whether the gate passed and cites it; reproducing the evidence bundle is /aep-build's record."
+    },
+    "layer_gates[].results.*": {
+      "status": "ignored",
+      "reason": "Raw test counts from the gate run. The coverage counters are the drift-bearing numbers; pass/fail totals restate the gate status the brief already reports."
+    },
+    "layer_gates[].journeys[]": {
+      "status": "ignored",
+      "reason": "BDD journey references. Same disposition as evidence — the proof, not the state."
+    },
+    "layer_gates[].design_gate": {
+      "status": "ignored",
+      "reason": "Pre-implementation design approval flag. A second gate vocabulary on the same surface would compete with the two-phase model band 2 depends on."
+    },
+    "layer_gates[].design_approved_at": {
+      "status": "ignored",
+      "reason": "As design_gate."
+    },
+    "layer_gates[].outcome_contract_ref": {
+      "status": "ignored",
+      "reason": "Pointer to an outcome contract document. Anchor-channel provenance."
+    },
+    "changelog[].date": {
+      "status": "derived"
+    },
+    "changelog[].type": {
+      "status": "derived"
+    },
+    "changelog[].author": {
+      "status": "derived"
+    },
+    "changelog[].summary": {
+      "status": "derived"
+    },
+    "changelog[].*": {
+      "status": "ignored",
+      "reason": "Consumers extend changelog entries with per-type detail (story ids, PR numbers, evidence links). The brief translates the summary and anchors to the entry, from which that detail is already reachable."
+    },
+    "cost.total_usd": {
+      "status": "derived"
+    },
+    "cost.by_story.*": {
+      "status": "ignored",
+      "reason": "Free-text token notes in the reference consumer, not currency. Derivable spend comes from stories[].cost_usd; reading prose here would reintroduce the field-typing bug that once rendered a numeric score as a reason."
+    },
+    "cost.by_layer.*": {
+      "status": "ignored",
+      "reason": "Roll-up mirror of a truth the story record already carries. A stored copy of a derivable value drifts silently — the same argument that keeps the attention set a derived view."
+    },
+    "cost.by_module.*": {
+      "status": "ignored",
+      "reason": "As by_layer; spend is rolled up per module from the story record instead."
+    },
+    "calibration.plan[].*": {
+      "status": "derived"
+    },
+    "calibration.history[].*": {
+      "status": "derived"
+    },
+    "architecture.style": {
+      "status": "derived"
+    },
+    "architecture.overview": {
+      "status": "derived"
+    },
+    "architecture.modules[].name": {
+      "status": "derived"
+    },
+    "architecture.modules[].responsibility": {
+      "status": "derived"
+    },
+    "architecture.modules[].depends_on[]": {
+      "status": "derived"
+    },
+    "architecture.modules[].technology": {
+      "status": "derived"
+    },
+    "architecture.modules[].paths[]": {
+      "status": "derived"
+    },
+    "architecture.modules[].kind": {
+      "status": "derived"
+    },
+    "architecture.modules[].*": {
+      "status": "ignored",
+      "reason": "Module detail beyond name, responsibility, dependencies and technology (owns, does_not, key_concepts). Rich material, but the concept-to-code binding is measured from the work record, and layering declarative detail on top would blur measured with declared."
+    },
+    "architecture.amendment_log[].*": {
+      "status": "derived"
+    },
+    "architecture.adrs[].*": {
+      "status": "ignored",
+      "reason": "Architecture decision records: how the structure came to be chosen. The Engineering band answers what the structure IS and what the next design does to it; the reasoning behind past decisions is /aep-design's record and would double the band's length."
+    },
+    "architecture.interfaces.*": {
+      "status": "ignored",
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    "architecture.data_flows[].*": {
+      "status": "ignored",
+      "reason": "Named journey paths through the modules. A dataflow diagram is a recorded Horizon item awaiting a structured source; as prose these would restate the declared architecture the band already shows."
+    },
+    "architecture.protocol_sequences.*": {
+      "status": "ignored",
+      "reason": "Wire-level message sequences. Sequence diagrams are Horizon; this is detail for implementers reading the spec, not for a reader establishing where the project is."
+    },
+    "architecture.domain_model.*": {
+      "status": "ignored",
+      "reason": "Entity and relationship model. Object-level structure is /aep-model's surface; this band is about code units and the concepts carried in them."
+    },
+    "architecture.deployment.*": {
+      "status": "ignored",
+      "reason": "Declared environment and runtime mapping. Relevant to an Option Set's split-versus-keep tradeoff, but as declaration rather than measurement; the Option Set states runtime cost from the code scan instead."
+    },
+    "architecture.third_party[].*": {
+      "status": "ignored",
+      "reason": "External service inventory. Real external dependencies appear in the code scan; the declared list adds services with no code presence, which would overstate the structure."
+    },
+    "architecture.technical_spec": {
+      "status": "ignored",
+      "reason": "Pointer to a standalone spec document. Anchor-channel provenance."
+    },
+    "architecture.api_conventions.*": {
+      "status": "ignored",
+      "reason": "Naming and shape conventions for APIs. Authoring guidance for implementers; no reader question depends on it."
+    },
+    "topology.*": {
+      "status": "ignored",
+      "reason": "Declared layer graph and wave assignment. The brief derives the layer strip and the current layer from story state, which reflects what actually happened; where the declared topology and that state disagree, the control-plane drift detector already reports it."
+    },
+    "waves[].*": {
+      "status": "ignored",
+      "reason": "Dispatch batching across layers. The reader is told which layer is current and what is queued behind it, not how the work will be batched."
+    },
+    "architecture.interfaces[].*": {
+      "status": "ignored",
+      "reason": "Declared interface contracts. The band derives real edges from code and declared edges from depends_on; interface bodies add signature detail below the altitude of the three questions."
+    },
+    "architecture.domain_model[].*": {
+      "status": "ignored",
+      "reason": "Entity and relationship model. Object-level structure is /aep-model's surface; this band is about code units and the concepts carried in them."
+    },
+    "architecture.protocol_sequences[].*": {
+      "status": "ignored",
+      "reason": "Wire-level message sequences. Sequence diagrams are Horizon; this is detail for implementers reading the spec, not for a reader establishing where the project is."
+    },
+    "cost.alerts[].*": {
+      "status": "ignored",
+      "reason": "Budget alert thresholds. The brief reports what has been spent and whether the accounting is wired; whether an alert is configured is /aep-watch's concern."
+    }
+  }
+}
