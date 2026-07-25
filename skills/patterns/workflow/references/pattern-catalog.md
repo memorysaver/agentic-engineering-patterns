@@ -54,7 +54,10 @@ that sends simple stories to a cheaper tier and hard ones to Opus.
 const klass = await agent(`Classify this task: ${task}. Return {type, complexity}.`, {
   schema: {
     type: "object",
-    properties: { type: { type: "string" }, complexity: { enum: ["low", "high"] } },
+    properties: {
+      type: { type: "string" },
+      complexity: { enum: ["low", "high"] },
+    },
     required: ["type", "complexity"],
   },
 });
@@ -141,7 +144,9 @@ const kept = (
   await parallel(
     unique.map(
       (i) => () =>
-        agent(`Score "${i}" against the rubric; keep only if it passes.`, { schema: SCORE }),
+        agent(`Score "${i}" against the rubric; keep only if it passes.`, {
+          schema: SCORE,
+        }),
     ),
   )
 )
@@ -212,7 +217,9 @@ const seen = new Set();
 let dry = 0;
 while (dry < 2 && (!budget.total || budget.remaining() > 50_000)) {
   const found = (
-    await agent("Find the next distinct issue; return [] if none.", { schema: ISSUES })
+    await agent("Find the next distinct issue; return [] if none.", {
+      schema: ISSUES,
+    })
   ).issues;
   const fresh = found.filter((i) => !seen.has(key(i)));
   if (!fresh.length) {

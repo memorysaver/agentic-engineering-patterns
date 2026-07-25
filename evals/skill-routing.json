@@ -222,6 +222,24 @@
       "kind": "boundary",
       "prompt": "Monitoring already produced one concrete observation; classify that learning and decide which product phase changes.",
       "expected": "aep-reflect"
+    },
+    {
+      "id": "human-alignment-direct",
+      "kind": "direct",
+      "prompt": "Give me a one-page brief of where this project stands, what is waiting on me, and where reality drifted from the plan.",
+      "expected": "aep-human-alignment"
+    },
+    {
+      "id": "human-alignment-vs-envision",
+      "kind": "boundary",
+      "prompt": "The plan file already exists and is current; render its state as a project status one-pager somebody new could read cold.",
+      "expected": "aep-human-alignment"
+    },
+    {
+      "id": "human-alignment-vs-watch",
+      "kind": "boundary",
+      "prompt": "Do not ingest telemetry or open a monitoring tick — just render the plan file's current state into a human-readable brief.",
+      "expected": "aep-human-alignment"
     }
   ]
 }

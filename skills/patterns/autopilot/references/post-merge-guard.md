@@ -173,7 +173,11 @@ The guard records its progress **per merged story** so a re-fired tick never dou
   "merged_at": "<ISO8601>",
   "deploy_status": "deployed", // pending | deploying | deployed | failed
   "window_opened_at": "<ISO8601>",
-  "health": { "ci_status": "green", "health_endpoint": "green", "error_rate": "green" },
+  "health": {
+    "ci_status": "green",
+    "health_endpoint": "green",
+    "error_rate": "green"
+  },
   "red_streak": { "error_rate": 0 }, // consecutive red ticks per signal (confirm rule)
   "dogfood": { "report_path": null, "issues_created": [] },
   "reverted": false,

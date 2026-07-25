@@ -1,0 +1,312 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/memorysaver/agentic-engineering-patterns/skills/human-alignment/facts.schema.json",
+  "title": "Human-alignment facts JSON",
+  "description": "The typed contract between derive.mjs (producer), the authoring agent (consumer), and audit.mjs (checker). Every number rendered on a brief must resolve to a path in this document.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "generated_from",
+    "commit",
+    "project",
+    "story_total",
+    "by_status",
+    "open_total",
+    "attention_set",
+    "schema_absent",
+    "drift_facts",
+    "gates",
+    "layers",
+    "changelog_recent",
+    "cost",
+    "modules"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "generated_from": { "type": "string" },
+    "commit": { "type": "string", "description": "short git SHA of HEAD at derivation" },
+    "baseline_commit": {
+      "type": ["string", "null"],
+      "description": "commit of the previous generation, or null on first run"
+    },
+    "project": { "type": "string" },
+    "version": { "type": ["string", "null"] },
+    "updated_at": { "type": ["string", "null"] },
+    "story_total": { "type": "integer", "minimum": 0 },
+    "by_status": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "open_total": { "type": "integer", "minimum": 0 },
+    "current_layer": { "type": ["number", "null"] },
+
+    "attention_set": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rank", "kind", "verb", "id", "title", "path"],
+        "properties": {
+          "rank": { "type": "integer", "minimum": 1, "maximum": 6 },
+          "kind": {
+            "enum": [
+              "failed",
+              "amendment_pending",
+              "in_review",
+              "calibration_due",
+              "draft_object_map",
+              "open_question"
+            ]
+          },
+          "verb": { "type": "string" },
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "layer": { "type": ["number", "null"] },
+          "path": { "type": "string" },
+          "why": {
+            "type": ["string", "null"],
+            "description": "prose-typed only; numeric sources are dropped, never rendered"
+          }
+        }
+      }
+    },
+    "one_ask": {
+      "oneOf": [{ "type": "null" }, { "$ref": "#/properties/attention_set/items" }]
+    },
+
+    "schema_absent": {
+      "type": "array",
+      "description": "One record per predicate skipped because its fields are absent. An empty attention_set is only trustworthy when this array is also empty.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["predicate", "path", "reason"],
+        "properties": {
+          "predicate": { "type": "string" },
+          "path": { "type": "string" },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+
+    "drift_facts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "detail", "path", "level"],
+        "properties": {
+          "kind": {
+            "enum": [
+              "intent_without_evidence",
+              "plan_behind_architecture",
+              "reality_resisting_intent",
+              "control_plane_incoherence",
+              "declared_vs_actual"
+            ]
+          },
+          "layer": { "type": ["number", "null"] },
+          "detail": { "type": "string" },
+          "path": { "type": "string" },
+          "level": { "enum": ["derived", "code-verified", "unverified"] },
+          "counters": {
+            "type": "object",
+            "additionalProperties": { "type": "integer" }
+          }
+        }
+      }
+    },
+
+    "gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "by_status", "detail"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "by_status": { "type": "object", "additionalProperties": { "type": "integer" } },
+        "vocabulary_violations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["layer", "status", "path"],
+            "properties": {
+              "layer": { "type": "number" },
+              "status": { "type": "string" },
+              "path": { "type": "string" }
+            }
+          }
+        },
+        "detail": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["layer", "status"],
+            "properties": {
+              "layer": { "type": "number" },
+              "status": { "type": "string" },
+              "criteria_total": { "type": ["integer", "null"] },
+              "criteria_covered": { "type": ["integer", "null"] },
+              "completed_at": { "type": ["string", "null"] },
+              "shippable": {
+                "type": "boolean",
+                "description": "true only for status == passed; scripted_passed is EXP, never fact"
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "layers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["layer", "counts", "gate_status"],
+        "properties": {
+          "layer": { "type": "number" },
+          "counts": { "type": "object", "additionalProperties": { "type": "integer" } },
+          "total": { "type": "integer" },
+          "gate_status": { "type": ["string", "null"] },
+          "is_current": { "type": "boolean" },
+          "stories": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "title", "status", "stage"],
+              "properties": {
+                "id": { "type": "string" },
+                "title": { "type": "string" },
+                "status": { "type": "string" },
+                "stage": { "type": "integer", "minimum": 0, "maximum": 5 },
+                "exception": { "type": ["string", "null"] },
+                "why": { "type": ["string", "null"] }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "changelog_recent": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "date", "summary"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "stable binding key: date + kind + index; translations bind by id, never by list position"
+          },
+          "date": { "type": "string" },
+          "kind": { "type": ["string", "null"] },
+          "author": { "type": ["string", "null"] },
+          "summary": { "type": "string" },
+          "since_baseline": { "type": "boolean" }
+        }
+      }
+    },
+
+    "capabilities": {
+      "type": "array",
+      "description": "Band 2 inputs. passed gates yield facts; scripted_passed gates are EXP-chipped and never unchipped.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["layer", "gate_status", "tense", "source"],
+        "properties": {
+          "layer": { "type": "number" },
+          "gate_status": { "enum": ["passed", "scripted_passed"] },
+          "tense": { "enum": ["IS", "EXP"] },
+          "settles_on": { "type": ["string", "null"] },
+          "definition": { "type": ["string", "null"] },
+          "completed_at": { "type": ["string", "null"] },
+          "source": { "type": "string" }
+        }
+      }
+    },
+
+    "cost": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total_usd", "instrumented"],
+      "properties": {
+        "total_usd": { "type": ["number", "null"] },
+        "instrumented": {
+          "type": "boolean",
+          "description": "false when the cost plane is declared but unwired"
+        },
+        "by_layer_count": { "type": "integer" },
+        "by_story_count": { "type": "integer" },
+        "note": { "type": ["string", "null"] }
+      }
+    },
+
+    "modules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["declared_count", "path_bound_count"],
+      "properties": {
+        "declared_count": { "type": "integer" },
+        "path_bound_count": {
+          "type": "integer",
+          "description": "modules carrying architecture.modules[].paths"
+        },
+        "names": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "code_graph": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["nodes", "edges", "tool"],
+          "properties": {
+            "nodes": { "type": "integer" },
+            "edges": { "type": "integer" },
+            "apps": { "type": "integer" },
+            "packages": { "type": "integer" },
+            "domains": { "type": "integer" },
+            "domain_edges": { "type": "integer" },
+            "name_overlap": {
+              "type": "integer",
+              "description": "declared module names that match a real package name"
+            },
+            "tool": { "type": "string" },
+            "commit": { "type": "string" }
+          }
+        }
+      ]
+    },
+
+    "delta": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "first_run": { "type": "boolean" },
+        "commits_since_baseline": { "type": ["integer", "null"] },
+        "status_changes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "from", "to"],
+            "properties": {
+              "id": { "type": "string" },
+              "from": { "type": ["string", "null"] },
+              "to": { "type": "string" }
+            }
+          }
+        },
+        "changelog_new": { "type": "integer" }
+      }
+    }
+  }
+}

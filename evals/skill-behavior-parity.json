@@ -204,6 +204,20 @@
         "references/workspace-hook.md"
       ],
       "observed_postcondition": "Audit detects layout drift, confirmed mechanical fixes converge idempotently, and ambiguous copies fail closed."
+    },
+    {
+      "skill": "aep-human-alignment",
+      "scenario": "Render a real consumer's product-context.yaml (396 stories, 41 layer gates, 21 workspace packages) into a one-page brief, end to end: derive, scan, author, audit, deliver.",
+      "result": "pass",
+      "loaded_references": [
+        "references/guideline.md",
+        "references/derivation.md",
+        "references/presentation.md",
+        "references/checklist.md",
+        "references/attention-set.md",
+        "references/drift-facts.md"
+      ],
+      "observed_postcondition": "facts JSON validated against facts.schema.json; all five archify artifacts reached validate-green and delivered inside the two-round receipt bound; audit.mjs passed standalone; the assembled 3.2 MB single file resolved all 22 data-fact bindings with zero unresolved, mounted three srcdoc frames, and recorded a content SHA-256 in manifest.json matching the delivered bytes."
     }
   ]
 }

@@ -17,6 +17,61 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 > `/envision`, `/dispatch`, `/reflect`, …), which records product-state history
 > for that project. See [`docs/glossary.md`](docs/glossary.md).
 
+## [3.3.0] - 2026-07-25
+
+`/aep-human-alignment` — the planning layer finally has a human-facing surface.
+One command turns `product-context.yaml` into a single self-contained HTML page
+that answers the three questions a returning human actually has: _where are we,
+what needs me, where did reality drift from intent?_ Implemented against
+[`docs/decisions/human-alignment.md`](docs/decisions/human-alignment.md) (PR #28,
+revision 7) and proven end-to-end on a real 396-story consumer, whose generated
+brief ships as the reference example.
+
+### Added
+
+- **`skills/human-alignment/`** — a standalone top-level skill (`/aep-human-alignment`),
+  a fifth marketplace plugin. Seven Node scripts, one template, two archify IRs:
+  - `derive.mjs` — the only legal source of numbers; validates its own output
+    against `facts.schema.json` before anything reads it.
+  - `scan-workspace.mjs` → `arch-rules.mjs` → `receipt-consumer.mjs` — the
+    deterministic architecture pipeline. The workspace graph is read from the
+    package manifest, transformed by the auditable rule table R1–R10, and
+    repaired **only** through archify's own structured receipts, bounded at two
+    rounds. Same commit in, same artifact out.
+  - `audit.mjs` — the independent mechanical audit. Evaluator independence: the
+    agent that wrote the prose does not grade it.
+  - `assemble.mjs` — embeds every delivered diagram via `srcdoc` into one file,
+    then prunes to the newest three briefs.
+- **Two framework specs** in `skills/product-context/_shared/references/` —
+  `attention-set.md` ("what needs a human", with a deterministic one-ask order)
+  and `drift-facts.md` ("where reality drifted", five derivations). Framework
+  vocabulary with future consumers, not skill-private logic; `/aep-autopilot`
+  escalation and `/aep-watch` alerting re-point to them in a later release.
+- **Reference example** — [`docs/human-alignment/example-looplia/`](docs/human-alignment/example-looplia/):
+  the unedited brief generated from a real consumer repo, plus its facts JSON,
+  code graph, and manifest. It lives in `docs/`, not inside the skill, so a
+  3.2 MB artifact does not ship with every install.
+
+### Changed
+
+- **`scripts/build-skills.sh` materializes shared resources into top-level
+  skills**, not only `skills/product-context/*`. A standalone skill that reads
+  `references/attention-set.md` must carry its own copy, because the skills CLI
+  installs one directory at a time. Existing consumers are unaffected — the
+  corpus check is byte-identical before and after.
+
+### Notes
+
+- Two derivations were corrected before shipping, both surfaced by running
+  against real data rather than a fixture: intent-without-evidence derives from
+  the coverage counters (not `coverage.uncovered`, which is empty precisely when
+  a gate never opened), and its layer scope excludes `ready` as well as
+  `pending` — a dispatchable task is not a started one.
+- Only a `passed` gate yields an unchipped capability. A `scripted_passed` gate
+  appears solely under an `EXP` chip naming the acceptance run that would settle
+  it, so the product band cannot claim a sign-off that has not happened.
+- Consumers must re-pin to `@v3.3.0` before `/aep-human-alignment` is available.
+
 ## [3.2.1] - 2026-07-18
 
 Patch: the `secret_scan` example in the scaffolded `policy.md` named

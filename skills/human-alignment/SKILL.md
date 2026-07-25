@@ -1,0 +1,152 @@
+---
+name: aep-human-alignment
+description: >-
+  Renders product-context.yaml into a one-page HTML project brief: where we are,
+  what needs a human, where reality drifted. Use for project brief, status
+  one-pager, or onboarding a cold reader; not planning (/aep-envision).
+---
+
+# Human Alignment
+
+Turn `product-context.yaml` into **one self-contained HTML page** that answers the
+three questions a returning human actually has: _where are we, what needs me,
+where did reality drift from intent?_
+
+Numbers are derived by code. Prose is written by you. Both are labeled, and an
+independent audit refuses to ship a page that blurs the line.
+
+Rationale and the decisions behind every rule:
+[`docs/decisions/human-alignment.md`](https://github.com/memorysaver/agentic-engineering-patterns/blob/main/docs/decisions/human-alignment.md).
+
+## The contract in one paragraph
+
+Every read is a **first read**. Each surfaced item is a plain-language sentence
+first — what happened, to what, why the reader cares — with the system
+identifier demoted to a small provenance anchor beneath it. Facts are unchipped;
+only non-facts carry a tense chip. **You never author a number.**
+
+## Steps
+
+Each phase ends in a checkable postcondition. Do not start a phase whose
+predecessor's postcondition is unmet.
+
+### 0 · Preflight
+
+`product-context.yaml` must exist (else stop and point to `/aep-envision`). Read
+`docs/human-alignment/manifest.json` for the delta baseline.
+
+→ _baseline commit known, or first run declared._
+
+### 1 · Derive
+
+```bash
+node scripts/derive.mjs --context product-context.yaml --repo . \
+  --out docs/human-alignment/facts.json [--code-graph docs/human-alignment/code-graph.json]
+```
+
+The facts JSON is the **only legal source of numbers**. It validates against
+`scripts/facts.schema.json` or the run stops.
+
+→ _facts JSON exists and validates._
+
+### 1.5 · Scan (architecture)
+
+```bash
+node scripts/scan-workspace.mjs --repo . --out docs/human-alignment/code-graph.json
+node scripts/arch-rules.mjs --code-graph docs/human-alignment/code-graph.json \
+  --context product-context.yaml --out-dir <build-dir>
+for tier in overview packages declared; do
+  node scripts/receipt-consumer.mjs --type architecture \
+    --in <build-dir>/architecture-$tier.architecture.json --out <build-dir>/architecture-$tier.html
+done
+node scripts/receipt-consumer.mjs --type workflow  --in assets/aep-loop.workflow.json      --out <build-dir>/aep-loop.html
+node scripts/receipt-consumer.mjs --type lifecycle --in assets/story-states.lifecycle.json --out <build-dir>/story-states.html
+```
+
+Re-run `derive.mjs` with `--code-graph` afterwards so the declared-vs-actual
+drift fact is included. No workspace manifest, or no archify CLI (exit 3)? The
+architecture view **degrades and says so on the page** — it never blocks.
+
+→ _artifacts delivered `code-verified`, or the view is marked degraded._
+
+### 2 · Author
+
+Copy `assets/template.html` and fill its `{{SLOTS}}`. **Read the template's
+contract comment before writing a single section** — it is the only source of
+CSS class names and of the `data-fact` binding convention.
+
+The authoring rules are in [`references/guideline.md`](references/guideline.md).
+The five that fail an audit fastest:
+
+1. **Answer first** — every section opens with one plain sentence that _is_ the
+   section's conclusion.
+2. **Translate** — story titles and changelog entries never surface verbatim;
+   re-author each as a consequence sentence bound to its id in the anchor.
+3. **No naked numbers** — every number is `data-fact`, inside a sentence that
+   states its consequence.
+4. **Fold the queue** — backlog collapses to one sentence per layer, full list
+   behind a disclosure.
+5. **Never chip a fact** — an unchipped page is a page of facts; diluting that
+   destroys the only trust gauge the reader has.
+
+→ _every section rendered or stamped; no `{{SLOT}}` left._
+
+### 3 · Audit
+
+```bash
+node scripts/audit.mjs --html <authored.html> --facts docs/human-alignment/facts.json \
+  --template assets/template.html
+```
+
+Failures are structured receipts (`code` · `subject` · `evidence` ·
+`supportedFixes`). Apply a **listed** fix and re-run. Never guess, and never
+exceed **two** correction rounds — a third failure is reported, not retried.
+Then walk the judgment checks in [`references/checklist.md`](references/checklist.md).
+
+→ _audit passes; judgment checks walked._
+
+### 4 · Deliver
+
+```bash
+node scripts/assemble.mjs --authored <authored.html> --facts docs/human-alignment/facts.json \
+  --artifacts <build-dir> --out-dir docs/human-alignment --keep 3
+```
+
+Writes `brief-<date>T<time>Z-<shorthash>.html`, updates `manifest.json`
+(appending the prior record to `history[]`), and prunes every brief beyond the
+newest three. Report the path and the delta summary in conversation — the owner
+opens the file.
+
+→ _new file exists; its name's hash equals HEAD; ≤ 3 briefs remain._
+
+## What the framework specs own
+
+Two derivations are **framework vocabulary**, not skill-private logic. Do not
+re-invent them here:
+
+- [`references/attention-set.md`](references/attention-set.md) — what needs a
+  human, its priority order, and the per-predicate schema-tolerance rule.
+- [`references/drift-facts.md`](references/drift-facts.md) — the five drift
+  derivations. Hand-authored drift is banned: when nothing derives, the row is
+  silent, not fabricated.
+
+`derive.mjs` implements both. If a predicate's fields are absent, it is skipped
+**and recorded** — an empty attention set is only trustworthy when the skip list
+is empty too, and the page must say which it is.
+
+## Boundaries
+
+- **Gates**: only `passed` yields an unchipped capability. A `scripted_passed`
+  gate may appear **only** under an `EXP` chip naming the acceptance run that
+  would settle it. Anything lower does not reach the product band.
+- **Language**: one file per run in the owner's language (an invocation
+  parameter, defaulting to the repo's working language). System identifiers stay
+  untranslated in anchors.
+- **Not this skill**: planning (`/aep-envision`), decomposition (`/aep-map`),
+  design theory (`/aep-design-lens`).
+
+## Layout notes
+
+Presentation bounds, the glance gate, and the degrade ladder live in
+[`references/presentation.md`](references/presentation.md). The field map from
+YAML path to fact is in [`references/derivation.md`](references/derivation.md).

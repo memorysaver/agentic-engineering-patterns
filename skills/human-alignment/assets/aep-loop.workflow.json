@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "How the project moves",
+    "subtitle": "The AEP loop · dispatch and wrap write the plan file · this brief is derived from it",
+    "output": "aep-loop.html",
+    "quality_profile": "standard"
+  },
+  "lanes": [
+    { "id": "loop", "label": "The six-step loop" },
+    { "id": "data", "label": "Plan file and outputs" }
+  ],
+  "mainPath": ["envision", "map", "dispatch", "build", "wrap", "reflect"],
+  "nodes": [
+    {
+      "id": "envision",
+      "lane": "loop",
+      "col": 0,
+      "type": "frontend",
+      "label": "Envision",
+      "sublabel": "ENVISION",
+      "width": 60
+    },
+    {
+      "id": "map",
+      "lane": "loop",
+      "col": 1,
+      "type": "frontend",
+      "label": "Map",
+      "sublabel": "MAP",
+      "width": 60
+    },
+    {
+      "id": "dispatch",
+      "lane": "loop",
+      "col": 2,
+      "type": "backend",
+      "label": "Dispatch",
+      "sublabel": "DISPATCH",
+      "width": 60
+    },
+    {
+      "id": "build",
+      "lane": "loop",
+      "col": 3,
+      "type": "backend",
+      "label": "Build",
+      "sublabel": "BUILD",
+      "width": 60
+    },
+    {
+      "id": "wrap",
+      "lane": "loop",
+      "col": 4,
+      "type": "backend",
+      "label": "Wrap",
+      "sublabel": "WRAP",
+      "width": 60
+    },
+    {
+      "id": "reflect",
+      "lane": "loop",
+      "col": 5,
+      "type": "frontend",
+      "label": "Reflect",
+      "sublabel": "REFLECT",
+      "width": 60
+    },
+    {
+      "id": "context",
+      "lane": "data",
+      "col": 2,
+      "type": "database",
+      "label": "Plan file",
+      "sublabel": "CONTEXT"
+    },
+    {
+      "id": "view",
+      "lane": "data",
+      "col": 5,
+      "type": "frontend",
+      "label": "This brief",
+      "sublabel": "VIEW"
+    }
+  ],
+  "edges": [
+    { "id": "e1", "from": "envision", "to": "map" },
+    { "id": "e2", "from": "map", "to": "dispatch", "route": "bottom-channel" },
+    { "id": "e3", "from": "dispatch", "to": "build" },
+    { "id": "e4", "from": "build", "to": "wrap", "route": "bottom-channel" },
+    { "id": "e5", "from": "wrap", "to": "reflect" },
+    { "id": "e6", "from": "reflect", "to": "envision", "label": "loop", "route": "bottom-channel" },
+    { "id": "e7", "from": "dispatch", "to": "context", "label": "writes", "route": "drop" },
+    { "id": "e8", "from": "wrap", "to": "context", "label": "writes", "route": "drop" },
+    { "id": "e9", "from": "context", "to": "view", "label": "derives", "variant": "emphasis" }
+  ],
+  "cards": []
+}

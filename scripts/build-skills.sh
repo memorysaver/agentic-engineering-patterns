@@ -63,6 +63,20 @@ if [ ! -d "$SHARED" ]; then
   exit 1
 fi
 
+# Consumers of the shared corpus: every skill directory in the repo, whether it
+# sits under skills/product-context/ (the original category) or directly under
+# skills/ as a standalone top-level skill. A directory is a skill iff it holds a
+# SKILL.md, which excludes the category dirs and _shared itself. Standalone
+# skills need this because the `skills` CLI installs one directory at a time —
+# a skill that reads references/attention-set.md must carry its own copy.
+consumer_dirs() {
+  local d
+  for d in "$PC"/*/ "$REPO"/skills/*/; do
+    [ -f "$d/SKILL.md" ] || continue
+    printf '%s\n' "$d"
+  done | sort -u
+}
+
 # Desired managed files (relative paths within the shared dir) for one consumer.
 desired_files() {
   local skillmd="$1" shared="$2"
@@ -139,9 +153,8 @@ preflight_destinations() {
   local skill_dir name skillmd shared src dst desired recorded rel seen marker
   local failures=0
 
-  for skill_dir in "$PC"/*/; do
+  while IFS= read -r skill_dir; do
     name="$(basename "$skill_dir")"
-    [ "$name" = "_shared" ] && continue
     skillmd="$skill_dir/SKILL.md"
     [ -f "$skillmd" ] || continue
 
@@ -183,7 +196,7 @@ preflight_destinations() {
         fi
       done <<< "$desired"
     done
-  done
+  done <<< "$(consumer_dirs)"
 
   [ "$failures" -eq 0 ] || {
     echo "ERROR: $failures unsafe generated-resource destination(s); nothing was changed." >&2
@@ -198,9 +211,8 @@ WROTE=0
 CONFLICT=0
 CHANGED_FILES=""
 
-for skill_dir in "$PC"/*/; do
+while IFS= read -r skill_dir; do
   name="$(basename "$skill_dir")"
-  [ "$name" = "_shared" ] && continue
   skillmd="$skill_dir/SKILL.md"
   [ -f "$skillmd" ] || continue
 
@@ -307,7 +319,7 @@ $desired"
       WROTE=$((WROTE + 1))
     fi
   done
-done
+done <<< "$(consumer_dirs)"
 
 # Stage exactly what this run changed (lefthook's stage_fixed only re-stages
 # files that were already staged, so the hook passes --stage instead).

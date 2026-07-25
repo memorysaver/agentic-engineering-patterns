@@ -60,7 +60,11 @@ Machine-readable state file. Read and written by the autopilot tick.
       "pr_number": 142,
       "deploy_status": "deployed",
       "monitor_until": "2026-04-01T10:40:00Z",
-      "health": { "ci_status": "green", "error_rate": "ok", "health_endpoint": "ok" },
+      "health": {
+        "ci_status": "green",
+        "error_rate": "ok",
+        "health_endpoint": "ok"
+      },
       "dogfood_done": true,
       "reverted": false,
       "escalated": false

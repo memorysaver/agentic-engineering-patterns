@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "generated": "2026-07-25T0308Z",
+  "commit": "65e359c6",
+  "output": "brief-2026-07-25T0308Z-65e359c6.html",
+  "facts_sha256": "028ac7ee9dea5970791e4020da8a20699b17e3712d1323bc440cb427244b271f",
+  "artifacts": [
+    "aep-loop",
+    "architecture-declared",
+    "architecture-overview",
+    "architecture-packages",
+    "story-states"
+  ],
+  "degraded": [],
+  "content_sha256": "05571cf8e5bbcee886089ad00280445c65e0c0c6d1f08d5f1a42371c22ab01f6",
+  "history": []
+}
