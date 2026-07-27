@@ -94,6 +94,22 @@
 > **path-template level**, and an `ignored` entry must carry a **reason**, not
 > a checkmark.
 
+> **Revision 10 (2026-07-26):** after two independent reviews of the design
+> itself and a re-measurement of the velocity premise revision 9 rested on.
+>
+> **Scope note, because revisions 7–9 blurred it.** This revision is about **the
+> surface's own design**. The reference consumer's plan-file hygiene — stale
+> calibration entries, gates never flipped, an unwired cost roll-up, undeclared
+> modules — is that consumer's business and `/aep-validate`'s. Those findings are
+> evidence about _what this surface does and does not make visible_; they are not
+> requirements on it, and treating them as such is how a rendering skill grew a
+> detector suite.
+>
+> Three rulings: the unit of delivery is the **clock, not the page** (D10); the
+> skill **renders and does not detect** (D11); and it **never keeps a private
+> store** (D12). Plus corrections to D7 and D9 that are the design's own, not the
+> consumer's.
+
 ## Problem
 
 AEP's planning layer captures intent and state in `product-context.yaml` — stories,
@@ -965,6 +981,155 @@ census must _report_ the unhandled paths that produced the original defects, and
 the audit must _reject_ the sentences that shipped. The bar is not "the defects
 are gone" — it is "the defects cannot be authored".
 
+### D10 — The unit of delivery is the clock, not the page
+
+Revision 9 diagnosed a velocity problem and got the number wrong. The 1.1-hour
+figure is the **interval between edits**, not the **survival time of a fact**.
+Re-measured across sixty plan-file commits, the facts this surface rests on do
+not share a clock at all:
+
+| Fact class                          | Median survival | Band |
+| ----------------------------------- | --------------- | ---- |
+| changelog length                    | 0.3 h           | 3    |
+| story status distribution           | 1.3 h           | 3    |
+| gates passed                        | 14.7 h          | 2    |
+| gate status map · coverage          | 33.5 h          | 2    |
+| **the attention set · the one ask** | **110 h**       | 1    |
+
+Rolled up: **band 1 ≈ 100 h · band 2 ≈ 29 h · band 3 ≈ 10 h · band 4 ≈ 10 h.**
+The band split from revision 6 turns out to be almost exactly the seam in the
+survival curve — that decomposition was right.
+
+**What is wrong is fusing the bands into one file.** D3's revision-6 ruling
+("one file, nothing else to open") welds four clocks together. To keep band 3
+true you regenerate at band 3's rate; every regeneration re-authors band 1's
+prose, whose facts move a hundred times more slowly. **You pay roughly a hundred
+authoring passes per band-1 fact change**, and each pass is an independent draw
+from a defect distribution that has so far produced several content defects per
+draw. Regeneration is not the cure for staleness here — it is the delivery
+mechanism for the actual failure mode.
+
+The evidence that this, and not staleness, is the failure: of the eighteen
+findings across two evaluation rounds, **two or three are staleness**. The rest
+are authoring failures against a fact plane that was correct, complete, and
+twenty-two minutes old — including a claim that a stage had not started while
+three separate correct representations of that stage's completion sat in the
+file the sentence cited.
+
+**Ruling: emit three things on three clocks, not one thing on the fastest.**
+
+1. **The fact plane, prose-free, per plan-file commit.** Deterministic, cheap,
+   no authoring surface, therefore no defect surface. It already exists.
+2. **A read-time answer to "what happened since I last looked"** — computed when
+   asked, never written down, dealing in **events rather than states**. "The
+   canary recovered at 17:0x" stays true forever; "the canary is broken" had a
+   26-hour half-life. A report of states rots; a log of events can at worst be
+   incomplete.
+3. **The orientation document, per layer rather than per invocation.** Bands 1,
+   2 and the Concepts half of 4. That clock comfortably supports careful prose,
+   translation, archify and a multi-megabyte body, because it is generated on
+   the order of weekly.
+
+The design's own answer to velocity — the delta baseline, the
+while-you-were-away narrative — has **never produced a line of output** in any
+generation (`delta.first_run` was true both times). Nine revisions hardened the
+components that had already run; the one that never ran is the one this ruling
+promotes to a first-class emission.
+
+### D11 — Render; do not detect
+
+The skill has been accumulating detectors. Control-plane incoherence, cost
+roll-up disagreement, module-vocabulary drift, concept crowding — each was added
+here because this was the surface that noticed. That is the wrong home.
+
+**A detector that finds a defect in the plan file belongs where it can block**
+— `/aep-validate` — not in a document where it narrates. The distinction is
+whether the finding wants an action or a reader: incoherent gates want fixing,
+and a brief that reports them every week without stopping anything is a
+subscription to a problem rather than a fix for it.
+
+What stays here: **rendering**, and the reader-facing judgment about what
+deserves the surface. What moves: the detectors themselves, as
+`/aep-validate` rules. What is shared: the derived-view specs
+(`attention-set.md`, `drift-facts.md`) remain **framework vocabulary** that both
+skills consume — that was always their stated status and it is now load-bearing.
+
+This shrinks the skill to its actual job and removes the pressure that produced
+the detector suite: the surface no longer has to be the place a problem is
+caught in order for the problem to be caught.
+
+### D12 — Never a private store
+
+One reviewer proposed a dedicated ledger file for the owner's rulings,
+obligations and invariants — the durable objects a fast-moving project loses
+track of. The insight is right and the mechanism is not, because **the framework
+already has homes for most of it**:
+
+| Durable object  | Framework home                                              | Status                                                  |
+| --------------- | ----------------------------------------------------------- | ------------------------------------------------------- |
+| A ruling        | `product.decisions[]` — decision · reasoning · alternatives | exists                                                  |
+| A deferred call | `product.open_questions[]` — with `revisit_trigger`         | exists; this is premise-rot handling, already specified |
+| An obligation   | —                                                           | **genuine gap**                                         |
+
+A private ledger would be a **third home** for something the schema defines, and
+a stored copy of a derivable truth is exactly what D7 rejects: a second source
+validation will not catch when it drifts.
+
+So the rule: **this skill derives and surfaces; it does not store.** Three
+consequences.
+
+- Where the framework has the field, derive from it. If a consumer leaves
+  `product.decisions[]` empty and records rulings in prose elsewhere, that is
+  the consumer's practice, and the surface reports the absence — it does not
+  invent a place to put them.
+- Where a consumer has **invented fields the schema does not define**, that is
+  itself drift worth surfacing. The reference consumer added `closure_status`,
+  `decision_realignment`, `notes` and `release` to its layer gates; those carry
+  real meaning and no framework consumer can read them.
+- Where the framework genuinely lacks the field, **recommend it** — the
+  `architecture.modules[].paths` precedent. The gap here is **obligations**:
+  `evidence.manual_pending` is a boolean with no `owed_by` and no `since`, so
+  nothing can age it or escalate it. An obligation that has been true for
+  weeks is indistinguishable from one raised this morning.
+
+**Recommendation to the framework (separate schema PR):** give an obligation a
+shape — what is owed, by whom, since when, what it blocks, and what discharges
+it. Age is the missing dimension; "what needs a human" without duration is a
+list, not a signal.
+
+### D7 corrections (the design's own, not the consumer's)
+
+Two defects in the attention-set spec, both found by review of the spec rather
+than of the data:
+
+- **The one ask must respect dependencies.** The tie-break is "layer order, then
+  id". In the reference consumer both candidates sat in the same layer and the
+  alphabetically-first one **depends on the other** — so the rule selected the
+  blocked item over its blocker and told the reader to restart it. Ordering
+  within a rank must be topological before it is alphabetical.
+- **Every signal carries `since`, and age can be the alarm.** OBS-2 says a
+  detector that lists intentional deferrals is noise. A signal continuously true
+  for months is that noise — unless its **age** is the finding, which for an
+  obligation it usually is. Both require a `since`, which the spec does not
+  currently demand.
+
+### D9 corrections (the design's own)
+
+- **The census postcondition must be adversarial.** `unhandled_count == 0` was
+  satisfied at 11.5% read coverage, with the great majority of ignores sharing a
+  handful of templated reasons — and one of those ignores (`stories[].dependencies[]`,
+  populated on 77% of stories) is the direct cause of the one-ask defect above.
+  The owner's ruling that an ignore must carry a reason was satisfied in letter
+  by writing a few reasons and fanning them out. A stronger postcondition: a
+  path populated across most of a collection may not be `ignored` without a
+  named consumer that reads it elsewhere.
+- **Claim-binding raises apparent verification without raising verification.**
+  Mechanism 2 makes citation mandatory; nothing makes the sentence follow from
+  the citation, and a citation that resolves without bearing its claim reads
+  _verified_. On a surface whose only product is trust this is net-negative as
+  it stands. Either the binding gains a checkable relation between claim and
+  fact, or the mechanism is downgraded from a guarantee to a lint.
+
 ## Horizon (recorded, not built)
 
 - **Workflow 2 — comprehension check** (owner request): a second skill workflow
@@ -1108,6 +1273,20 @@ are gone" — it is "the defects cannot be authored".
   states its finds without stating its blind spots licenses "the system is 21
   units" while two Cargo crates sit outside the scan and get priced elsewhere on
   the same page.
+- **A dedicated owner-ledger file** for rulings, obligations and invariants —
+  rejected in revision 10 (D12). The insight behind it is correct, but the
+  framework already defines `product.decisions[]` and
+  `product.open_questions[].revisit_trigger`; a private file would be a third
+  home for a truth the schema owns, which is the second-source failure D7 exists
+  to prevent. The part that is genuinely missing — an obligation with an age —
+  is recommended to the schema instead.
+- **Keeping the detectors in this skill** — rejected (D11): a finding that wants
+  an action belongs where it can block. Reporting incoherent gates in a document
+  every week is a subscription to a problem, not a fix.
+- **Regenerating the whole page to keep its fastest band true** — rejected
+  (D10): it pays a hundred authoring passes per slow-band fact change, and each
+  pass is an independent draw from the defect distribution. The measured failure
+  is authoring, not staleness.
 - **React / three.js now** — deferred with named triggers (D3).
 
 ## References
