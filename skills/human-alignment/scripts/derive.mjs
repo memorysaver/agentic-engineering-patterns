@@ -269,10 +269,18 @@ export function deriveAttentionSet(ctx, currentLayer) {
     reason: "object maps are separate artifacts — not derivable from product-context.yaml alone",
   });
 
+  // D7 correction (revision 10): within a rank and layer, an item that another
+  // candidate DEPENDS ON must come first. The alphabetical tie-break alone once
+  // selected a blocked story over its own blocker and told the reader to restart
+  // it. Topology before alphabet.
+  const byId = new Map(stories.map((s) => [String(s.id), s]));
+  const dependsOnCandidate = (a, b) =>
+    (byId.get(a.id)?.dependencies ?? []).map(String).includes(String(b.id));
   items.sort(
     (a, b) =>
       a.rank - b.rank ||
       (a.layer ?? Infinity) - (b.layer ?? Infinity) ||
+      (dependsOnCandidate(a, b) ? 1 : dependsOnCandidate(b, a) ? -1 : 0) ||
       (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
   );
   return { attention_set: items, schema_absent: absent };

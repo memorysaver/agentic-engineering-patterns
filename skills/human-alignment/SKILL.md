@@ -25,6 +25,34 @@ first — what happened, to what, why the reader cares — with the system
 identifier demoted to a small provenance anchor beneath it. Facts are unchipped;
 only non-facts carry a tense chip. **You never author a number.**
 
+## Three emissions, three clocks
+
+The facts this surface rests on do not share a clock (decision doc D10). The
+attention set survives ~110 hours; story-status counts survive ~1. Fusing them
+into one artifact means re-authoring the slow prose at the fast plane's rate,
+and every re-authoring is a fresh chance to write something wrong. So there are
+three outputs, not one:
+
+| Emission                                           | Clock                         | Form                                              |
+| -------------------------------------------------- | ----------------------------- | ------------------------------------------------- |
+| **1 · the fact plane** (`derive.mjs` → facts JSON) | every plan-file commit        | data, no prose                                    |
+| **2 · the pulse** (`pulse.mjs`)                    | whenever you ask              | events, computed at read time, never written down |
+| **3 · the orientation document** (the brief)       | per layer, not per invocation | careful prose                                     |
+
+Emission 2 is the one to reach for when the question is _what happened since I
+last looked_. It asserts nothing, so it cannot assert wrongly:
+
+```bash
+node scripts/pulse.mjs --repo . [--since <commit>] [--json]
+```
+
+It prints what you are owed and for how long, the transitions since your cursor,
+what needs you (dependency-ordered), and open work that has stopped moving. The
+cursor defaults to the last orientation document's commit.
+
+Emission 3 — the rest of this file — is worth its cost only at its own clock.
+Generating it per invocation is the mistake revisions 1–9 made.
+
 ## Steps
 
 Each phase ends in a checkable postcondition. Do not start a phase whose
