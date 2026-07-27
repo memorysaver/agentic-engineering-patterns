@@ -17,70 +17,72 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 > `/envision`, `/dispatch`, `/reflect`, …), which records product-state history
 > for that project. See [`docs/glossary.md`](docs/glossary.md).
 
-## [3.3.0] - 2026-07-25
+## [3.3.0] - 2026-07-27
 
-`/aep-human-alignment` — the planning layer finally has a human-facing surface.
-One command turns `product-context.yaml` into a single self-contained HTML page
-that answers the three questions a returning human actually has: _where are we,
-what needs me, where did reality drift from intent?_ Implemented against
-[`docs/decisions/human-alignment.md`](docs/decisions/human-alignment.md) (PR #28,
-revision 7) and proven end-to-end on a real 396-story consumer, whose generated
-brief ships as the reference example.
+`/aep-human-alignment` — a project pulse. One command answers where a project
+stands, what is owed to a human and for how long, and what changed since you
+last looked, derived from `product-context.yaml`.
+
+The design went through ten revisions and two independent generator/evaluator
+rounds, both of which failed the artifact it originally set out to produce. What
+ships is what survived that: the deterministic half.
 
 ### Added
 
-- **`skills/human-alignment/`** — a standalone top-level skill (`/aep-human-alignment`),
-  a fifth marketplace plugin. Seven Node scripts, one template, two archify IRs:
-  - `derive.mjs` — the only legal source of numbers; validates its own output
-    against `facts.schema.json` before anything reads it.
-  - `scan-workspace.mjs` → `arch-rules.mjs` → `receipt-consumer.mjs` — the
-    deterministic architecture pipeline. The workspace graph is read from the
-    package manifest, transformed by the auditable rule table R1–R10, and
-    repaired **only** through archify's own structured receipts, bounded at two
-    rounds. Same commit in, same artifact out.
-  - `audit.mjs` — the independent mechanical audit. Evaluator independence: the
-    agent that wrote the prose does not grade it.
-  - `assemble.mjs` — embeds every delivered diagram via `srcdoc` into one file,
-    then prunes to the newest three briefs.
+- **`skills/human-alignment/`** — a standalone top-level skill, a fifth
+  marketplace plugin, emitting on three clocks rather than one:
+  - **The fact plane** (`derive.mjs` + `census.mjs` + `facts.schema.json`) —
+    every number the surface can state, derived from the plan file and git,
+    validated against its own schema. `census.mjs` classifies every populated
+    path in the consumer's plan file as derived / ignored-with-a-reason /
+    unhandled, so what the tooling cannot see is a number rather than a
+    surprise.
+  - **The pulse** (`pulse.mjs`) — the read-time answer to _what happened since I
+    last looked_. It writes nothing, asserts nothing, and deals in events rather
+    than states. Four sections: obligations with their age, transitions since
+    your cursor, what needs a human, and open work that has stopped moving.
+  - **The deterministic architecture pipeline** (`scan-workspace.mjs` →
+    `arch-rules.mjs` → `receipt-consumer.mjs`) — the real package topology, with
+    concepts bound to code units by measurement from the work record, rendered
+    through archify's layout gates and repaired only by its own receipts.
 - **Two framework specs** in `skills/product-context/_shared/references/` —
-  `attention-set.md` ("what needs a human", with a deterministic one-ask order)
-  and `drift-facts.md` ("where reality drifted", five derivations). Framework
-  vocabulary with future consumers, not skill-private logic; `/aep-autopilot`
-  escalation and `/aep-watch` alerting re-point to them in a later release.
-- **Reference example** — [`docs/human-alignment/example-looplia/`](docs/human-alignment/example-looplia/):
-  the unedited brief generated from a real consumer repo, plus its facts JSON,
-  code graph, and manifest. It lives in `docs/`, not inside the skill, so a
-  3.2 MB artifact does not ship with every install.
+  `attention-set.md` (what needs a human, its priority order, per-predicate
+  schema tolerance) and `drift-facts.md` (where reality drifted).
 
 ### Changed
 
+- **`/aep-validate` gains a blocking coherence precheck.** Five plan-file
+  defects that want an action rather than a reader — completed work under a gate
+  recorded as never started, an undefined gate status, a roll-up that disagrees
+  with the record it summarizes, a module used but never declared, and fields a
+  consumer invented — now run mechanically before any agent is spawned, and
+  fail. They were previously narrated in a document while nothing stopped.
 - **`scripts/build-skills.sh` materializes shared resources into top-level
-  skills**, not only `skills/product-context/*`. A standalone skill that reads
-  `references/attention-set.md` must carry its own copy, because the skills CLI
-  installs one directory at a time. Existing consumers are unaffected — the
-  corpus check is byte-identical before and after.
+  skills and shared `scripts/`**, on the same per-file rule it has always used
+  for references. The coherence detector is shared rather than copied: two
+  copies of a drift detector drift.
+- **Pre-commit hooks no longer fail a docs-only commit.** oxlint and oxfmt error
+  rather than no-op when handed nothing they handle; both now carry a glob and
+  oxfmt guards on the post-filter set.
+
+### Not yet ready
+
+- **The one-page HTML brief (emission 3) ships unproven and is documented as
+  such.** Two independent evaluations failed it — not on machinery, which
+  passes, but on prose asserting more than the facts carried. Its per-layer
+  regeneration trigger is unbuilt; today it generates per invocation, which the
+  decision doc identifies as the central design error. Findings and a generated
+  example are committed at `docs/human-alignment/example-looplia/` as evidence,
+  not as a model to copy. Use the pulse.
 
 ### Notes
 
-- **Engineering is prospective and structural** (decision doc revision 8):
-  Now (what exists) · Concepts (the vocabulary measured onto it) · Next (where
-  the queued design lands) · Options. Progress-shaped questions stay in Project.
-- **R7 binds concepts to code units; it does not invent domains.**
-  `stories[].module` × `stories[].files_affected` makes the binding measurable,
-  so no naming-convention grouping is needed or wanted.
-- **Design Option Sets** — the Engineering band may recommend, but only with a
-  derived trigger, at least three options including "leave it as is", costs in
-  the project's own measured terms, a design sketch, what would settle it, and a
-  stated ranking criterion. Bare one-liner recommendations fail the grammar.
-  Thresholds are fixed in the spec: concept crowding fires at >=4 concepts,
-  > =30 files, >=50% pairwise-disjoint, on the queued-work projection only.
-- **Mine before conceding.** A field the schema names being empty is not proof a
-  signal is underivable. Three claims in the first implementation were wrong for
-  that reason and are now derived: spend from `stories[].cost_usd`, the
-  concept-to-code binding from the work record, and the plan-versus-work
-  vocabulary gap.
 - Only a `passed` gate yields an unchipped capability; `scripted_passed` appears
-  solely under an EXP chip naming the acceptance run that would settle it.
+  solely under an EXP chip naming the acceptance run that would settle it, and a
+  gate whose sign-off was withdrawn yields neither.
+- A roll-up field being zero is a statement about the roll-up, not about the
+  data. Spend derives from `stories[].cost_usd`; the concept-to-code binding
+  derives from `stories[].module` × `files_affected`.
 - Consumers must re-pin to `@v3.3.0` before `/aep-human-alignment` is available.
 
 ## [3.2.1] - 2026-07-18

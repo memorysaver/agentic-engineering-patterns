@@ -12,7 +12,10 @@ Every failure, mechanical or judgment, is reported as a structured receipt:
   "code": "provenance/hardcoded-number",
   "subject": { "number": "38" },
   "evidence": { "context": "…38 acceptance criteria, none verified…" },
-  "supportedFixes": ["replace the literal with <span data-fact=\"<path>\">", "…"]
+  "supportedFixes": [
+    "replace the literal with <span data-fact=\"<path>\">",
+    "…"
+  ]
 }
 ```
 

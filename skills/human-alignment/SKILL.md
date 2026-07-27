@@ -1,9 +1,10 @@
 ---
 name: aep-human-alignment
 description: >-
-  Renders product-context.yaml into a one-page HTML project brief: where we are,
-  what needs a human, where reality drifted. Use for project brief, status
-  one-pager, or onboarding a cold reader; not planning (/aep-envision).
+  Answers where a project stands, what is owed to a human and for how long, and
+  what changed since you last looked — from product-context.yaml. Use for
+  project pulse, status check, what needs me, or a project brief; not planning
+  (/aep-envision).
 ---
 
 # Human Alignment

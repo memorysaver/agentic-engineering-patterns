@@ -225,7 +225,7 @@
     },
     {
       "id": "human-alignment-direct",
-      "kind": "direct",
+      "kind": "boundary",
       "prompt": "Give me a one-page brief of where this project stands, what is waiting on me, and where reality drifted from the plan.",
       "expected": "aep-human-alignment"
     },
@@ -239,6 +239,12 @@
       "id": "human-alignment-vs-watch",
       "kind": "boundary",
       "prompt": "Do not ingest telemetry or open a monitoring tick — just render the plan file's current state into a human-readable brief.",
+      "expected": "aep-human-alignment"
+    },
+    {
+      "id": "human-alignment-pulse",
+      "kind": "direct",
+      "prompt": "What has changed in this project since I last looked, and what has been waiting on me the longest?",
       "expected": "aep-human-alignment"
     }
   ]

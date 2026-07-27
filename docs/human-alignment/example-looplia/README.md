@@ -1,9 +1,16 @@
 # Reference example: a real brief — **currently failing evaluation**
 
-> Two independent generator/evaluator rounds have failed this artifact. Read
-> [`eval-findings.md`](eval-findings.md) before treating anything here as
-> exemplary. It is committed as evidence of where the pipeline stands, not as a
-> model to copy.
+> **This is evidence, not a model.** Two independent generator/evaluator rounds
+> failed the brief in this directory. It is committed so the failure is
+> inspectable — read [`eval-findings.md`](eval-findings.md) first.
+>
+> The machinery passes: facts validate, five archify artifacts reach green
+> inside the receipt bound, both audits pass. What fails is the prose, which
+> asserts more than the facts carry. That distinction is the whole finding.
+>
+> The supported surface is the **pulse** — see `pulse-2026-07-27.txt` in this
+> directory for the same project rendered as computed events instead. It states
+> nothing, so it cannot state anything wrongly.
 
 These files are the **unedited output** of `/aep-human-alignment` run against a
 real consumer repo (looplia, 396 stories, 41 layer gates, 21 workspace packages)

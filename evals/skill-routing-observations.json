@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
   "run": {
-    "date": "2026-07-25",
+    "date": "2026-07-27",
     "model": "Claude Sonnet (Claude Code subagent)",
     "model_version": "Claude Code `model: sonnet` subagent; exact serving snapshot not exposed",
     "input": "The 23 installed skill names and frontmatter descriptions only — no SKILL.md body, no repository access",
-    "method": "Independent re-run of the whole suite, required because adding aep-human-alignment changed the description corpus this routing decision is made against. The probe agent was given one file (catalog + prompts), instructed not to open any other file and not to search for the expectation list, and asked to self-report confidence. It made exactly one tool call. Expectations live in skill-routing.json; this file records only what was selected.",
-    "description_sha256": "f9f97aada5318ba5717bdad7d5153deb9ad11f183f97838f885007fa89a55bb7"
+    "method": "Independent re-run of the whole suite, required because aep-human-alignment's description was rewritten to lead with the supported emissions rather than the unproven one. The probe agent was given one file, instructed not to open any other and not to search for the expectation list, and asked to self-report confidence. It made exactly one tool call.",
+    "description_sha256": "2113ea6c9fc4e76786ce83175bac129339d040197b81482fa095d895110f9076"
   },
   "observations": [
     {
@@ -163,6 +163,10 @@
     },
     {
       "id": "human-alignment-vs-watch",
+      "selected": "aep-human-alignment"
+    },
+    {
+      "id": "human-alignment-pulse",
       "selected": "aep-human-alignment"
     }
   ]
