@@ -48,6 +48,37 @@ For product context, resolve split vs v1 mode with the probe in [references/file
 
 ---
 
+## Step 0: Coherence precheck (mechanical, blocking)
+
+Before spawning any agent, run the deterministic check. It is cheap, it needs no
+judgment, and it catches the class of defect where the control file and the work
+record have stopped agreeing:
+
+```bash
+node scripts/coherence.mjs --context product-context.yaml
+```
+
+It exits non-zero on a **blocking** finding and prints a fix for each:
+
+| Finding                                      | Why it blocks                                                                   |
+| -------------------------------------------- | ------------------------------------------------------------------------------- |
+| completed stories under a `not_started` gate | the gate no longer describes the work; every downstream consumer reads it wrong |
+| a gate status outside the defined set        | the control file's wording drifts before its content does                       |
+| roll-up disagrees with the record            | a zeroed total beside a non-zero record is a statement about the total          |
+| a module used by stories but never declared  | that work is invisible to every architecture consumer                           |
+| fields the schema does not define            | they carry real meaning no framework consumer can read                          |
+
+**Fix blocking findings before continuing.** Agents cannot evaluate an artifact
+that contradicts itself, and a finding reported without being fixed is a
+subscription to the problem rather than a fix for it.
+
+The derivations are specified in
+[references/drift-facts.md](references/drift-facts.md); `scripts/coherence.mjs`
+is the executable half, shared with `/aep-human-alignment` so the two cannot
+drift apart.
+
+---
+
 ## Step 1: Determine Validation Mode
 
 The skill operates in one of four modes based on the artifact type. Each mode configures which agents to spawn and what they check. **Mode A (Product Context) is detailed below.** For Mode B (Design), Mode C (Code), or Mode D (Document) — agent roles, the Phase-5 code branch, and agent-count customization — read [references/modes.md](references/modes.md).

@@ -1058,6 +1058,18 @@ This shrinks the skill to its actual job and removes the pressure that produced
 the detector suite: the surface no longer has to be the place a problem is
 caught in order for the problem to be caught.
 
+**Implemented (2026-07-27).** The detectors that want an action —
+completed work under an unopened gate, an undefined gate status, a roll-up that
+disagrees with its record, a module used but never declared, and fields a
+consumer invented — moved to `skills/product-context/_shared/scripts/coherence.mjs`
+and run as a **blocking Step 0 in `/aep-validate`**. The brief renders what that
+detector returns and no longer computes it.
+
+The script is _shared_, not copied: `build-skills.sh` now materializes
+`_shared/scripts/` into consumers the same way it always has for references, on
+the same per-file rule (a skill receives what its SKILL.md names). Two copies of
+a drift detector drift, and a drift detector that drifts is worse than none.
+
 ### D12 — Never a private store
 
 One reviewer proposed a dedicated ledger file for the owner's rulings,

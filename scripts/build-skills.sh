@@ -16,8 +16,10 @@
 #     is skill-owned and never touched, so authored and generated files coexist.
 #
 # Selection rules:
-#   - references: a skill receives exactly the _shared/references/ files whose
-#     path (relative to references/) its SKILL.md mentions as "references/<path>".
+#   - references and scripts: a skill receives exactly the _shared/<dir>/ files
+#     whose path its SKILL.md mentions as "<dir>/<path>". Shared scripts exist
+#     because a detector that two skills must agree on cannot be duplicated —
+#     the copies drift, and a drift detector that drifts is worse than none.
 #   - templates: a skill that mentions "templates/" receives the full shared
 #     template kit (templates cross-reference each other, so they ship whole).
 #
@@ -87,8 +89,8 @@ desired_files() {
     return 0
   fi
   local rel
-  (cd "$SHARED/references" && find . -type f ! -name "$MARKER" | sed 's|^\./||') | while IFS= read -r rel; do
-    if grep -qF "references/$rel" "$skillmd"; then
+  (cd "$SHARED/$shared" && find . -type f ! -name "$MARKER" | sed 's|^\./||') | while IFS= read -r rel; do
+    if grep -qF "$shared/$rel" "$skillmd"; then
       printf '%s\n' "$rel"
     fi
   done | sort
@@ -158,7 +160,7 @@ preflight_destinations() {
     skillmd="$skill_dir/SKILL.md"
     [ -f "$skillmd" ] || continue
 
-    for shared in references templates; do
+    for shared in references scripts templates; do
       src="$SHARED/$shared"
       [ -d "$src" ] || continue
       dst="$skill_dir$shared"
@@ -216,7 +218,7 @@ while IFS= read -r skill_dir; do
   skillmd="$skill_dir/SKILL.md"
   [ -f "$skillmd" ] || continue
 
-  for shared in references templates; do
+  for shared in references scripts templates; do
     src="$SHARED/$shared"
     [ -d "$src" ] || continue
     dst="$skill_dir$shared"

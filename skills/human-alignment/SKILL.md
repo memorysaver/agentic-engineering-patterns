@@ -187,6 +187,12 @@ re-invent them here:
   derivations. Hand-authored drift is banned: when nothing derives, the row is
   silent, not fabricated.
 
+Control-plane defects — a gate that no longer describes its work, a roll-up that
+disagrees with the record, a module used but never declared — are **not detected
+here** (D11). They want an action, so they live in `scripts/coherence.mjs`,
+shared with `/aep-validate`, which blocks on them. This skill renders what that
+detector returns.
+
 `derive.mjs` implements both. If a predicate's fields are absent, it is skipped
 **and recorded** — an empty attention set is only trustworthy when the skip list
 is empty too, and the page must say which it is.

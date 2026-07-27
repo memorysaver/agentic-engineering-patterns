@@ -287,6 +287,28 @@ export function deriveAttentionSet(ctx, currentLayer) {
 }
 
 // ─── Drift facts ───────────────────────────────────────────────────────────
+const COHERENCE_TO_DRIFT = {
+  "coherence/completed-under-unopened-gate": "control_plane_incoherence",
+  "coherence/gate-status-undefined": "control_plane_incoherence",
+  "coherence/rollup-disagrees": "control_plane_incoherence",
+  "coherence/module-undeclared": "control_plane_incoherence",
+  "coherence/module-never-worked": "control_plane_incoherence",
+  "coherence/schema-invention": "control_plane_incoherence",
+};
+
+// D11: render what the shared detector found; do not re-detect it here.
+export function coherenceAsDrift(ctx, coherence) {
+  return coherence(ctx).findings.map((f) => ({
+    kind: COHERENCE_TO_DRIFT[f.code] ?? "control_plane_incoherence",
+    layer: /layer (\d+(?:\.\d+)?)/.exec(String(f.subject))?.[1]
+      ? Number(/layer (\d+(?:\.\d+)?)/.exec(String(f.subject))[1])
+      : null,
+    detail: f.detail,
+    path: f.path,
+    level: "derived",
+  }));
+}
+
 export function deriveDriftFacts(ctx) {
   const facts = [];
   const stories = ctx.stories ?? [];
@@ -354,22 +376,10 @@ export function deriveDriftFacts(ctx) {
     });
   }
 
-  // 4 · control-plane incoherence — >=1 completed story under a not_started gate
-  for (const g of gates) {
-    if (g.status !== "not_started") continue;
-    const inLayer = byLayer.get(g.layer) ?? [];
-    const completed = inLayer.filter((s) => s.status === "completed").length;
-    if (completed === 0) continue;
-    facts.push({
-      kind: "control_plane_incoherence",
-      layer: num(g.layer),
-      detail: `${completed} completed stor${completed === 1 ? "y" : "ies"} under a not_started gate`,
-      path: `layer_gates[layer=${g.layer}].status`,
-      level: "derived",
-      counters: { completed_stories: completed, layer_stories: inLayer.length },
-    });
-  }
-
+  // Control-plane incoherence, cost-rollup disagreement, module-vocabulary drift
+  // and schema inventions are no longer detected here (decision doc D11): they
+  // are findings that want an action, so they live in scripts/coherence.mjs and
+  // block in /aep-validate. This skill renders what that detector returns.
   return facts;
 }
 
@@ -818,31 +828,10 @@ export async function derive({
     delta,
   };
 
-  // Cost drift: a zeroed roll-up beside a non-zero story sum.
-  if (cost.rollup_disagrees) {
-    facts.drift_facts.push({
-      kind: "control_plane_incoherence",
-      layer: null,
-      detail: `cost roll-up declares ${cost.total_usd} while ${cost.priced_story_count} stories sum to ${cost.derived_total_usd}`,
-      path: "cost.total_usd vs stories[].cost_usd",
-      level: "derived",
-      counters: { priced_stories: cost.priced_story_count },
-    });
-  }
-
-  // Module vocabulary drift: the control plane and the work using different words.
-  if (structure && (structure.used_not_declared.length || structure.declared_not_used.length)) {
-    facts.drift_facts.push({
-      kind: "control_plane_incoherence",
-      layer: null,
-      detail: `${structure.used_not_declared.length} module names are used by stories but never declared, and ${structure.declared_not_used.length} declared modules have never been worked`,
-      path: "architecture.modules[].name vs stories[].module",
-      level: "derived",
-      counters: {
-        used_not_declared: structure.used_not_declared.length,
-        declared_not_used: structure.declared_not_used.length,
-      },
-    });
+  // D11: the control-plane findings come from the shared detector.
+  {
+    const { coherence } = await import("./coherence.mjs");
+    facts.drift_facts.push(...coherenceAsDrift(ctx, coherence));
   }
 
   // 5 · declared vs actual — only when a scan is present
