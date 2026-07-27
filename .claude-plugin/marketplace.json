@@ -5,7 +5,7 @@
     "email": "mho@looplia.run"
   },
   "metadata": {
-    "version": "3.2.1",
+    "version": "3.3.0",
     "description": "Skills for product planning, project scaffolding, and agentic development workflows."
   },
   "plugins": [
@@ -48,6 +48,13 @@
         "./skills/agentic-development-workflow/wrap",
         "./skills/agentic-development-workflow/git-ref"
       ]
+    },
+    {
+      "name": "human-alignment",
+      "description": "Project pulse from product-context.yaml: where it stands, what is owed to a human and for how long, and what changed since you last looked.",
+      "source": "./",
+      "strict": false,
+      "skills": ["./skills/human-alignment"]
     },
     {
       "name": "patterns",

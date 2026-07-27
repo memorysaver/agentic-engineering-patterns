@@ -6,13 +6,14 @@ evaluator's verification checklist (Step 2) or when scoring consolidated finding
 
 ## For Product Context (Mode A)
 
-| Dimension                    | What to check                                                                                 |
-| ---------------------------- | --------------------------------------------------------------------------------------------- |
-| **Completeness**             | Are all required sections present? Are enums listed explicitly? Are defaults specified?       |
-| **Consistency**              | Do field names match across sections? Do stories reference valid module IDs?                  |
-| **Implementability**         | Can each story be implemented with the information given? Missing technical details?          |
-| **Security**                 | Are there security implications in the design that aren't addressed? (auth, data access, PII) |
-| **Downstream compatibility** | Does the artifact work with its consumers? (dispatch, design, build)                          |
+| Dimension                    | What to check                                                                                                                                                                         |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Completeness**             | Are all required sections present? Are enums listed explicitly? Are defaults specified?                                                                                               |
+| **Consistency**              | Do field names match across sections? Do stories reference valid module IDs?                                                                                                          |
+| **Implementability**         | Can each story be implemented with the information given? Missing technical details?                                                                                                  |
+| **Security**                 | Are there security implications in the design that aren't addressed? (auth, data access, PII)                                                                                         |
+| **Downstream compatibility** | Does the artifact work with its consumers? (dispatch, design, build)                                                                                                                  |
+| **Control-plane coherence**  | Does the control file still describe the work? Run `scripts/coherence.mjs` first — it is mechanical and blocking, so the agents never spend judgment on what a check already decided. |
 
 ## For Design Artifacts (Mode B)
 

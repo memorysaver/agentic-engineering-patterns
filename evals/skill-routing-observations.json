@@ -1,49 +1,173 @@
 {
   "schema_version": 1,
   "run": {
-    "date": "2026-07-14",
-    "model": "GPT-5 Codex",
-    "model_version": "Codex desktop review runtime; exact serving snapshot not exposed",
-    "input": "The 22 installed skill names and frontmatter descriptions only",
-    "method": "Recorded front-tier selection artifact. Expectations live in a separate suite and CI binds this run to the exact installed description corpus.",
-    "description_sha256": "9f6d74009dcb4453f34f762671cb0fe9823d84b0a7951cbd3c4c868253c56ca8"
+    "date": "2026-07-27",
+    "model": "Claude Sonnet (Claude Code subagent)",
+    "model_version": "Claude Code `model: sonnet` subagent; exact serving snapshot not exposed",
+    "input": "The 23 installed skill names and frontmatter descriptions only — no SKILL.md body, no repository access",
+    "method": "Independent re-run of the whole suite, required because aep-human-alignment's description was rewritten to lead with the supported emissions rather than the unproven one. The probe agent was given one file, instructed not to open any other and not to search for the expectation list, and asked to self-report confidence. It made exactly one tool call.",
+    "description_sha256": "2113ea6c9fc4e76786ce83175bac129339d040197b81482fa095d895110f9076"
   },
   "observations": [
-    { "id": "build-direct", "selected": "aep-build" },
-    { "id": "design-direct", "selected": "aep-design" },
-    { "id": "git-ref-direct", "selected": "aep-git-ref" },
-    { "id": "launch-direct", "selected": "aep-launch" },
-    { "id": "wrap-direct", "selected": "aep-wrap" },
-    { "id": "autopilot-direct", "selected": "aep-autopilot" },
-    { "id": "design-lens-direct", "selected": "aep-design-lens" },
-    { "id": "executor-direct", "selected": "aep-executor" },
-    { "id": "gen-eval-direct", "selected": "aep-gen-eval" },
-    { "id": "workflow-feedback-direct", "selected": "aep-workflow-feedback" },
-    { "id": "workflow-direct", "selected": "aep-workflow" },
-    { "id": "calibrate-direct", "selected": "aep-calibrate" },
-    { "id": "dispatch-direct", "selected": "aep-dispatch" },
-    { "id": "envision-direct", "selected": "aep-envision" },
-    { "id": "map-direct", "selected": "aep-map" },
-    { "id": "model-direct", "selected": "aep-model" },
-    { "id": "reflect-direct", "selected": "aep-reflect" },
-    { "id": "validate-direct", "selected": "aep-validate" },
-    { "id": "watch-direct", "selected": "aep-watch" },
-    { "id": "e2e-scaffolding-direct", "selected": "aep-e2e-skill-scaffolding" },
-    { "id": "onboard-direct", "selected": "aep-onboard" },
-    { "id": "scaffold-direct", "selected": "aep-scaffold" },
-    { "id": "onboard-vs-scaffold-zh", "selected": "aep-onboard" },
-    { "id": "scaffold-vs-onboard-zh", "selected": "aep-scaffold" },
-    { "id": "dispatch-vs-autopilot-zh", "selected": "aep-dispatch" },
-    { "id": "autopilot-vs-dispatch-zh", "selected": "aep-autopilot" },
-    { "id": "design-lens-vs-calibrate-zh", "selected": "aep-design-lens" },
-    { "id": "calibrate-vs-design-lens-zh", "selected": "aep-calibrate" },
-    { "id": "validate-vs-gen-eval", "selected": "aep-validate" },
-    { "id": "validate-code-review", "selected": "aep-validate" },
-    { "id": "validate-document-review", "selected": "aep-validate" },
-    { "id": "gen-eval-vs-validate", "selected": "aep-gen-eval" },
-    { "id": "workflow-vs-feedback-zh", "selected": "aep-workflow" },
-    { "id": "feedback-vs-workflow-zh", "selected": "aep-workflow-feedback" },
-    { "id": "model-vs-map", "selected": "aep-model" },
-    { "id": "reflect-vs-watch", "selected": "aep-reflect" }
+    {
+      "id": "build-direct",
+      "selected": "aep-build"
+    },
+    {
+      "id": "design-direct",
+      "selected": "aep-design"
+    },
+    {
+      "id": "git-ref-direct",
+      "selected": "aep-git-ref"
+    },
+    {
+      "id": "launch-direct",
+      "selected": "aep-launch"
+    },
+    {
+      "id": "wrap-direct",
+      "selected": "aep-wrap"
+    },
+    {
+      "id": "autopilot-direct",
+      "selected": "aep-autopilot"
+    },
+    {
+      "id": "design-lens-direct",
+      "selected": "aep-design-lens"
+    },
+    {
+      "id": "executor-direct",
+      "selected": "aep-executor"
+    },
+    {
+      "id": "gen-eval-direct",
+      "selected": "aep-gen-eval"
+    },
+    {
+      "id": "workflow-feedback-direct",
+      "selected": "aep-workflow-feedback"
+    },
+    {
+      "id": "workflow-direct",
+      "selected": "aep-workflow"
+    },
+    {
+      "id": "calibrate-direct",
+      "selected": "aep-calibrate"
+    },
+    {
+      "id": "dispatch-direct",
+      "selected": "aep-dispatch"
+    },
+    {
+      "id": "envision-direct",
+      "selected": "aep-envision"
+    },
+    {
+      "id": "map-direct",
+      "selected": "aep-map"
+    },
+    {
+      "id": "model-direct",
+      "selected": "aep-model"
+    },
+    {
+      "id": "reflect-direct",
+      "selected": "aep-reflect"
+    },
+    {
+      "id": "validate-direct",
+      "selected": "aep-validate"
+    },
+    {
+      "id": "watch-direct",
+      "selected": "aep-watch"
+    },
+    {
+      "id": "e2e-scaffolding-direct",
+      "selected": "aep-e2e-skill-scaffolding"
+    },
+    {
+      "id": "onboard-direct",
+      "selected": "aep-onboard"
+    },
+    {
+      "id": "scaffold-direct",
+      "selected": "aep-scaffold"
+    },
+    {
+      "id": "onboard-vs-scaffold-zh",
+      "selected": "aep-onboard"
+    },
+    {
+      "id": "scaffold-vs-onboard-zh",
+      "selected": "aep-scaffold"
+    },
+    {
+      "id": "dispatch-vs-autopilot-zh",
+      "selected": "aep-dispatch"
+    },
+    {
+      "id": "autopilot-vs-dispatch-zh",
+      "selected": "aep-autopilot"
+    },
+    {
+      "id": "design-lens-vs-calibrate-zh",
+      "selected": "aep-design-lens"
+    },
+    {
+      "id": "calibrate-vs-design-lens-zh",
+      "selected": "aep-calibrate"
+    },
+    {
+      "id": "validate-vs-gen-eval",
+      "selected": "aep-validate"
+    },
+    {
+      "id": "validate-code-review",
+      "selected": "aep-validate"
+    },
+    {
+      "id": "validate-document-review",
+      "selected": "aep-validate"
+    },
+    {
+      "id": "gen-eval-vs-validate",
+      "selected": "aep-gen-eval"
+    },
+    {
+      "id": "workflow-vs-feedback-zh",
+      "selected": "aep-workflow"
+    },
+    {
+      "id": "feedback-vs-workflow-zh",
+      "selected": "aep-workflow-feedback"
+    },
+    {
+      "id": "model-vs-map",
+      "selected": "aep-model"
+    },
+    {
+      "id": "reflect-vs-watch",
+      "selected": "aep-reflect"
+    },
+    {
+      "id": "human-alignment-direct",
+      "selected": "aep-human-alignment"
+    },
+    {
+      "id": "human-alignment-vs-envision",
+      "selected": "aep-human-alignment"
+    },
+    {
+      "id": "human-alignment-vs-watch",
+      "selected": "aep-human-alignment"
+    },
+    {
+      "id": "human-alignment-pulse",
+      "selected": "aep-human-alignment"
+    }
   ]
 }

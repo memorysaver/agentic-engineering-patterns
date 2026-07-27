@@ -240,6 +240,7 @@ The `skills` CLI selects by skill name (there's no "group" flag). The groups map
 | **Product** (product-context)               | `aep-envision`, `aep-map`, `aep-model`, `aep-dispatch`, `aep-validate`, `aep-calibrate`, `aep-reflect`, `aep-watch` |
 | **Setup** (project-setup)                   | `aep-onboard`, `aep-scaffold`, `aep-e2e-skill-scaffolding`                                                          |
 | **Patterns** (patterns)                     | `aep-gen-eval`, `aep-executor`, `aep-autopilot`, `aep-workflow`, `aep-workflow-feedback`, `aep-design-lens`         |
+| **Alignment** (human-alignment)             | `aep-human-alignment`                                                                                               |
 
 > **Releasing:** bumping `metadata.version` in `.claude-plugin/marketplace.json` must come with a matching [CHANGELOG.md](CHANGELOG.md) entry in the same PR (move the `[Unreleased]` notes under the new `[X.Y.Z] - DATE` heading), and a `vX.Y.Z` git tag on merge to `main`.
 
@@ -626,30 +627,31 @@ Generate a dimension-specific brief, explore or discuss, capture decisions for a
 
 ## All Skills
 
-| Skill                        | Plugin                       | Purpose                                                                                                          |
-| ---------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `/aep-envision`              | product-context              | Opportunity brief + context document                                                                             |
-| `/aep-map`                   | product-context              | System map + story graph + agent topology                                                                        |
-| `/aep-model`                 | product-context              | Object-first UI structure (OOUX/ORCA Object Map) for UI products                                                 |
-| `/aep-validate`              | product-context              | Generator/evaluator validation of any AEP artifact                                                               |
-| `/aep-dispatch`              | product-context              | Pick next story + create OpenSpec change                                                                         |
-| `/aep-calibrate`             | product-context              | Human alignment checkpoint for any quality dimension                                                             |
-| `/aep-reflect`               | product-context              | Classify feedback + update context                                                                               |
-| `/aep-watch`                 | product-context              | Ingest telemetry/errors → auto-file stories (self-feeding loop)                                                  |
-| `/aep-onboard`               | project-setup                | Verify tools + install plugins                                                                                   |
-| `/aep-scaffold`              | project-setup                | Scaffold monorepo + initialize OpenSpec; idempotent audit→converge for existing projects                         |
-| `/aep-e2e-skill-scaffolding` | project-setup                | Generate/upgrade the canonical BDD layer-gate e2e-test skill                                                     |
-| `/aep-design`                | agentic-development-workflow | Explore + propose + review a feature                                                                             |
-| `/aep-launch`                | agentic-development-workflow | Spawn workspace (Claude bg subagents/sessions; Codex subagents/exec; tmux when pinned) + optional evaluator      |
-| `/aep-build`                 | agentic-development-workflow | Implement → test → PR → merge                                                                                    |
-| `/aep-wrap`                  | agentic-development-workflow | Archive + cleanup + suggest reflect                                                                              |
-| `/aep-git-ref`               | agentic-development-workflow | AEP git + worktree conventions (on-demand)                                                                       |
-| `/aep-gen-eval`              | patterns                     | Generator/evaluator separation for honest validation                                                             |
-| `/aep-executor`              | patterns                     | Host-agnostic backend for spawning/steering workspace agents                                                     |
-| `/aep-autopilot`             | patterns                     | Autonomous dispatch-launch-monitor-wrap loop via `/loop`                                                         |
-| `/aep-workflow`              | patterns                     | Dynamic workflows — author a custom multi-agent harness for a task (+ sub-pattern catalog)                       |
-| `/aep-workflow-feedback`     | patterns                     | Capture + review process learnings between downstream projects and AEP                                           |
-| `/aep-design-lens`           | patterns                     | Theory-grounded design guideline + heuristic health-check (HCI/design-theory catalog + task/data lens selection) |
+| Skill                        | Plugin                       | Purpose                                                                                                                                   |
+| ---------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `/aep-envision`              | product-context              | Opportunity brief + context document                                                                                                      |
+| `/aep-map`                   | product-context              | System map + story graph + agent topology                                                                                                 |
+| `/aep-model`                 | product-context              | Object-first UI structure (OOUX/ORCA Object Map) for UI products                                                                          |
+| `/aep-validate`              | product-context              | Generator/evaluator validation of any AEP artifact                                                                                        |
+| `/aep-dispatch`              | product-context              | Pick next story + create OpenSpec change                                                                                                  |
+| `/aep-calibrate`             | product-context              | Human alignment checkpoint for any quality dimension                                                                                      |
+| `/aep-reflect`               | product-context              | Classify feedback + update context                                                                                                        |
+| `/aep-watch`                 | product-context              | Ingest telemetry/errors → auto-file stories (self-feeding loop)                                                                           |
+| `/aep-onboard`               | project-setup                | Verify tools + install plugins                                                                                                            |
+| `/aep-scaffold`              | project-setup                | Scaffold monorepo + initialize OpenSpec; idempotent audit→converge for existing projects                                                  |
+| `/aep-e2e-skill-scaffolding` | project-setup                | Generate/upgrade the canonical BDD layer-gate e2e-test skill                                                                              |
+| `/aep-design`                | agentic-development-workflow | Explore + propose + review a feature                                                                                                      |
+| `/aep-launch`                | agentic-development-workflow | Spawn workspace (Claude bg subagents/sessions; Codex subagents/exec; tmux when pinned) + optional evaluator                               |
+| `/aep-build`                 | agentic-development-workflow | Implement → test → PR → merge                                                                                                             |
+| `/aep-wrap`                  | agentic-development-workflow | Archive + cleanup + suggest reflect                                                                                                       |
+| `/aep-git-ref`               | agentic-development-workflow | AEP git + worktree conventions (on-demand)                                                                                                |
+| `/aep-gen-eval`              | patterns                     | Generator/evaluator separation for honest validation                                                                                      |
+| `/aep-executor`              | patterns                     | Host-agnostic backend for spawning/steering workspace agents                                                                              |
+| `/aep-autopilot`             | patterns                     | Autonomous dispatch-launch-monitor-wrap loop via `/loop`                                                                                  |
+| `/aep-workflow`              | patterns                     | Dynamic workflows — author a custom multi-agent harness for a task (+ sub-pattern catalog)                                                |
+| `/aep-workflow-feedback`     | patterns                     | Capture + review process learnings between downstream projects and AEP                                                                    |
+| `/aep-design-lens`           | patterns                     | Theory-grounded design guideline + heuristic health-check (HCI/design-theory catalog + task/data lens selection)                          |
+| `/aep-human-alignment`       | human-alignment              | Project pulse from `product-context.yaml` — where it stands, what is owed to a human and for how long, what changed since you last looked |
 
 Launches are **native-first** with **hub-and-spoke human gates** — see
 [Launch modes](#launch-modes--native-first-executor-backends) and

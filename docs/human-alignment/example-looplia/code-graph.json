@@ -1,0 +1,467 @@
+{
+  "repo": "looplia",
+  "commit": "a28fec13",
+  "tool": "scan-workspace.mjs (package.json workspace graph, deterministic)",
+  "coverage": {
+    "scanned": "JavaScript/TypeScript workspaces declared in the root package.json",
+    "unscanned": [
+      {
+        "path": ".",
+        "language": "Rust",
+        "marker": "Cargo.toml"
+      },
+      {
+        "path": "apps/cli",
+        "language": "Rust",
+        "marker": "Cargo.toml"
+      },
+      {
+        "path": "apps/daemon",
+        "language": "Rust",
+        "marker": "Cargo.toml"
+      },
+      {
+        "path": "packages/proto",
+        "language": "Rust",
+        "marker": "Cargo.toml"
+      }
+    ],
+    "complete": false
+  },
+  "nodes": 21,
+  "edges": 75,
+  "apps": 3,
+  "packages": 17,
+  "package_names": [
+    "@looplia/agent",
+    "server",
+    "web",
+    "@looplia/agent-runtime",
+    "@looplia/api",
+    "@looplia/auth",
+    "@looplia/config",
+    "@looplia/db",
+    "@looplia/do-agent",
+    "@looplia/do-container",
+    "@looplia/do-relay",
+    "@looplia/do-sidecar",
+    "@looplia/agent-e2e-test",
+    "@looplia/email-protocol",
+    "@looplia/email-sdk-ts",
+    "@looplia/env",
+    "@looplia/infra",
+    "@looplia/protocol",
+    "@looplia/ui",
+    "@looplia/voice",
+    "@looplia/e2e-test"
+  ],
+  "nodes_detail": [
+    {
+      "name": "@looplia/agent",
+      "dir": "apps/agent",
+      "private": true
+    },
+    {
+      "name": "server",
+      "dir": "apps/server",
+      "private": false
+    },
+    {
+      "name": "web",
+      "dir": "apps/web",
+      "private": true
+    },
+    {
+      "name": "@looplia/agent-runtime",
+      "dir": "packages/agent-runtime",
+      "private": true
+    },
+    {
+      "name": "@looplia/api",
+      "dir": "packages/api",
+      "private": false
+    },
+    {
+      "name": "@looplia/auth",
+      "dir": "packages/auth",
+      "private": false
+    },
+    {
+      "name": "@looplia/config",
+      "dir": "packages/config",
+      "private": true
+    },
+    {
+      "name": "@looplia/db",
+      "dir": "packages/db",
+      "private": false
+    },
+    {
+      "name": "@looplia/do-agent",
+      "dir": "packages/do-agent",
+      "private": true
+    },
+    {
+      "name": "@looplia/do-container",
+      "dir": "packages/do-container",
+      "private": true
+    },
+    {
+      "name": "@looplia/do-relay",
+      "dir": "packages/do-relay",
+      "private": true
+    },
+    {
+      "name": "@looplia/do-sidecar",
+      "dir": "packages/do-sidecar",
+      "private": true
+    },
+    {
+      "name": "@looplia/agent-e2e-test",
+      "dir": "packages/e2e-test",
+      "private": true
+    },
+    {
+      "name": "@looplia/email-protocol",
+      "dir": "packages/email-protocol",
+      "private": true
+    },
+    {
+      "name": "@looplia/email-sdk-ts",
+      "dir": "packages/email-sdk-ts",
+      "private": false
+    },
+    {
+      "name": "@looplia/env",
+      "dir": "packages/env",
+      "private": true
+    },
+    {
+      "name": "@looplia/infra",
+      "dir": "packages/infra",
+      "private": true
+    },
+    {
+      "name": "@looplia/protocol",
+      "dir": "packages/protocol",
+      "private": true
+    },
+    {
+      "name": "@looplia/ui",
+      "dir": "packages/ui",
+      "private": true
+    },
+    {
+      "name": "@looplia/voice",
+      "dir": "packages/voice",
+      "private": true
+    },
+    {
+      "name": "@looplia/e2e-test",
+      "dir": "tests/e2e",
+      "private": true
+    }
+  ],
+  "edges_detail": [
+    {
+      "from": "@looplia/agent-e2e-test",
+      "to": "@looplia/agent-runtime"
+    },
+    {
+      "from": "@looplia/agent-e2e-test",
+      "to": "@looplia/api"
+    },
+    {
+      "from": "@looplia/agent-e2e-test",
+      "to": "@looplia/auth"
+    },
+    {
+      "from": "@looplia/agent-e2e-test",
+      "to": "@looplia/config"
+    },
+    {
+      "from": "@looplia/agent-e2e-test",
+      "to": "@looplia/db"
+    },
+    {
+      "from": "@looplia/agent-e2e-test",
+      "to": "@looplia/do-agent"
+    },
+    {
+      "from": "@looplia/agent-e2e-test",
+      "to": "@looplia/do-container"
+    },
+    {
+      "from": "@looplia/agent-e2e-test",
+      "to": "@looplia/do-relay"
+    },
+    {
+      "from": "@looplia/agent-e2e-test",
+      "to": "@looplia/email-protocol"
+    },
+    {
+      "from": "@looplia/agent-e2e-test",
+      "to": "@looplia/env"
+    },
+    {
+      "from": "@looplia/agent-e2e-test",
+      "to": "@looplia/protocol"
+    },
+    {
+      "from": "@looplia/agent-e2e-test",
+      "to": "@looplia/voice"
+    },
+    {
+      "from": "@looplia/agent-runtime",
+      "to": "@looplia/config"
+    },
+    {
+      "from": "@looplia/api",
+      "to": "@looplia/auth"
+    },
+    {
+      "from": "@looplia/api",
+      "to": "@looplia/config"
+    },
+    {
+      "from": "@looplia/api",
+      "to": "@looplia/db"
+    },
+    {
+      "from": "@looplia/api",
+      "to": "@looplia/email-protocol"
+    },
+    {
+      "from": "@looplia/api",
+      "to": "@looplia/env"
+    },
+    {
+      "from": "@looplia/api",
+      "to": "@looplia/protocol"
+    },
+    {
+      "from": "@looplia/auth",
+      "to": "@looplia/config"
+    },
+    {
+      "from": "@looplia/auth",
+      "to": "@looplia/db"
+    },
+    {
+      "from": "@looplia/auth",
+      "to": "@looplia/env"
+    },
+    {
+      "from": "@looplia/db",
+      "to": "@looplia/config"
+    },
+    {
+      "from": "@looplia/db",
+      "to": "@looplia/email-protocol"
+    },
+    {
+      "from": "@looplia/db",
+      "to": "@looplia/env"
+    },
+    {
+      "from": "@looplia/do-agent",
+      "to": "@looplia/agent-runtime"
+    },
+    {
+      "from": "@looplia/do-agent",
+      "to": "@looplia/api"
+    },
+    {
+      "from": "@looplia/do-agent",
+      "to": "@looplia/config"
+    },
+    {
+      "from": "@looplia/do-agent",
+      "to": "@looplia/db"
+    },
+    {
+      "from": "@looplia/do-agent",
+      "to": "@looplia/do-relay"
+    },
+    {
+      "from": "@looplia/do-agent",
+      "to": "@looplia/email-protocol"
+    },
+    {
+      "from": "@looplia/do-agent",
+      "to": "@looplia/protocol"
+    },
+    {
+      "from": "@looplia/do-container",
+      "to": "@looplia/config"
+    },
+    {
+      "from": "@looplia/do-relay",
+      "to": "@looplia/config"
+    },
+    {
+      "from": "@looplia/do-relay",
+      "to": "@looplia/protocol"
+    },
+    {
+      "from": "@looplia/do-sidecar",
+      "to": "@looplia/config"
+    },
+    {
+      "from": "@looplia/e2e-test",
+      "to": "@looplia/api"
+    },
+    {
+      "from": "@looplia/e2e-test",
+      "to": "@looplia/auth"
+    },
+    {
+      "from": "@looplia/e2e-test",
+      "to": "@looplia/config"
+    },
+    {
+      "from": "@looplia/e2e-test",
+      "to": "@looplia/db"
+    },
+    {
+      "from": "@looplia/e2e-test",
+      "to": "@looplia/do-relay"
+    },
+    {
+      "from": "@looplia/e2e-test",
+      "to": "@looplia/env"
+    },
+    {
+      "from": "@looplia/e2e-test",
+      "to": "@looplia/protocol"
+    },
+    {
+      "from": "@looplia/email-protocol",
+      "to": "@looplia/config"
+    },
+    {
+      "from": "@looplia/email-sdk-ts",
+      "to": "@looplia/config"
+    },
+    {
+      "from": "@looplia/email-sdk-ts",
+      "to": "@looplia/email-protocol"
+    },
+    {
+      "from": "@looplia/env",
+      "to": "@looplia/config"
+    },
+    {
+      "from": "@looplia/env",
+      "to": "@looplia/infra"
+    },
+    {
+      "from": "@looplia/infra",
+      "to": "@looplia/config"
+    },
+    {
+      "from": "@looplia/protocol",
+      "to": "@looplia/config"
+    },
+    {
+      "from": "@looplia/ui",
+      "to": "@looplia/config"
+    },
+    {
+      "from": "@looplia/voice",
+      "to": "@looplia/agent-runtime"
+    },
+    {
+      "from": "@looplia/voice",
+      "to": "@looplia/api"
+    },
+    {
+      "from": "@looplia/voice",
+      "to": "@looplia/config"
+    },
+    {
+      "from": "@looplia/voice",
+      "to": "@looplia/db"
+    },
+    {
+      "from": "@looplia/voice",
+      "to": "@looplia/do-agent"
+    },
+    {
+      "from": "server",
+      "to": "@looplia/agent-runtime"
+    },
+    {
+      "from": "server",
+      "to": "@looplia/api"
+    },
+    {
+      "from": "server",
+      "to": "@looplia/auth"
+    },
+    {
+      "from": "server",
+      "to": "@looplia/config"
+    },
+    {
+      "from": "server",
+      "to": "@looplia/db"
+    },
+    {
+      "from": "server",
+      "to": "@looplia/do-agent"
+    },
+    {
+      "from": "server",
+      "to": "@looplia/do-container"
+    },
+    {
+      "from": "server",
+      "to": "@looplia/do-relay"
+    },
+    {
+      "from": "server",
+      "to": "@looplia/email-protocol"
+    },
+    {
+      "from": "server",
+      "to": "@looplia/env"
+    },
+    {
+      "from": "server",
+      "to": "@looplia/voice"
+    },
+    {
+      "from": "web",
+      "to": "@looplia/api"
+    },
+    {
+      "from": "web",
+      "to": "@looplia/auth"
+    },
+    {
+      "from": "web",
+      "to": "@looplia/config"
+    },
+    {
+      "from": "web",
+      "to": "@looplia/db"
+    },
+    {
+      "from": "web",
+      "to": "@looplia/env"
+    },
+    {
+      "from": "web",
+      "to": "@looplia/protocol"
+    },
+    {
+      "from": "web",
+      "to": "@looplia/ui"
+    },
+    {
+      "from": "web",
+      "to": "@looplia/voice"
+    }
+  ]
+}

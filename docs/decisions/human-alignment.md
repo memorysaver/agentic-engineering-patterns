@@ -60,6 +60,56 @@
 > ruled (keep the latest 3); and the revision-6 rulings (scope names, mermaid off
 > the primary path) are propagated to every section that still contradicted them.
 
+> **Revision 8 (2026-07-25):** owner rulings after the implementation run, on
+> what the Engineering band is _for_. (a) The band is **prospective and
+> structural**, not a deeper cut of progress — an engineer needs the current
+> structure and _what the next design does to it_, and "where work happened /
+> what it cost / where it failed" is Project's depth, not Engineering's. Its
+> spine is **Now · Concepts · Next · Options** (D8). (b) The ontology is no
+> longer a deployment taxonomy: nodes are **concept modules measured against the
+> code units that carry them**, because `stories[].module` × `files_affected`
+> makes that binding derivable today. (c) Suggestions are **allowed and
+> welcome**, but only as a **Design Option Set** with a derived trigger, ≥3
+> options including "leave it as is", per-option cost/benefit in the project's
+> own measured terms, a design sketch, and a stated ranking criterion — a bare
+> one-liner recommendation is banned (D8). (d) Trigger thresholds are **fixed in
+> the spec**, not configurable. (e) The mining principle: when deterministic
+> signal looks insufficient, **dig further into what the project actually
+> records** — do not concede the ground to agent judgment. Revision 7's own
+> implementation violated this three times (D7).
+
+> **Revision 9 (2026-07-25):** after an independent generator/evaluator pass on
+> the generated brief returned **FAIL**. Nine content defects, and all but one
+> share a single shape: **the prose needed a fact the derivation had not
+> produced, so the authoring agent supplied it from a diagram label, from
+> ambient knowledge, or by counting manually — and the audit could not see it,
+> because its unit of check was the digit rather than the claim.** The root
+> cause is that the facts plane was designed top-down (what should the brief
+> show?) against a source carrying **483 populated key paths**, of which the
+> derivation read about **thirty**. Revision 9 replaces hole-by-hole patching
+> with four mechanisms that make the gap visible and the omission illegal (D9):
+> a **source census**, **claims that bind** rather than numbers that bind,
+> facts that carry **predicates** rather than raw fields, and tools that
+> **declare their own coverage**. Owner rulings: the census classifies at
+> **path-template level**, and an `ignored` entry must carry a **reason**, not
+> a checkmark.
+
+> **Revision 10 (2026-07-26):** after two independent reviews of the design
+> itself and a re-measurement of the velocity premise revision 9 rested on.
+>
+> **Scope note, because revisions 7–9 blurred it.** This revision is about **the
+> surface's own design**. The reference consumer's plan-file hygiene — stale
+> calibration entries, gates never flipped, an unwired cost roll-up, undeclared
+> modules — is that consumer's business and `/aep-validate`'s. Those findings are
+> evidence about _what this surface does and does not make visible_; they are not
+> requirements on it, and treating them as such is how a rendering skill grew a
+> detector suite.
+>
+> Three rulings: the unit of delivery is the **clock, not the page** (D10); the
+> skill **renders and does not detect** (D11); and it **never keeps a private
+> store** (D12). Plus corrections to D7 and D9 that are the design's own, not the
+> consumer's.
+
 ## Problem
 
 AEP's planning layer captures intent and state in `product-context.yaml` — stories,
@@ -218,12 +268,12 @@ surface, so no separate stakeholder mode is needed. Bands are named by **scope,
 not audience** (owner ruling: role names make readers self-exclude; scope names
 only classify depth): **Overview · Product · Project · Engineering**.
 
-| Band                | Audience                 | Content (block re-homed from)                                                                                                                                                                                                                                                              | Derived from                                                                                                                                                                                         | Regeneration gate                                    |
-| ------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| **1 · Overview**    | every role, 30 seconds   | what this project is, one paragraph (PRIMER's essence) · health + progress in one sentence · the one ask + the while-you-were-away narrative (NOW)                                                                                                                                         | identity fields; the attention set; state diff vs. baseline                                                                                                                                          | identity: era · rest: never                          |
-| **2 · Product**     | whoever uses the product | what works today (shipped, user-visible capabilities) · what recently changed for users · what the current layer will add, in user language                                                                                                                                                | **net-new derivation**: `passed` `layer_gates` + changelog, translated to user-visible outcomes (authored + anchored, D4 rules); `scripted_passed` gates admitted only under an EXP chip (see below) | capability list: gate reaches `passed` · rest: never |
-| **3 · Project**     | plan and progress        | the full layer strip + current-layer story rows (FRONTIER) · queued layers, one sentence each + disclosure · what moved, where reality drifted, cost (LEDGER's plain layer)                                                                                                                | `stories`, `layer_gates`, `changelog`, the drift facts                                                                                                                                               | never (the LEDGER block stays the dark record)       |
-| **4 · Engineering** | the system itself        | the embedded archify architecture artifact (semantic types, boundaries, guided views, passport — revision 5) + module-group cards · the loop + story state machine, vocabulary's sole definition (LIFECYCLE) · drift technical detail, gate table, raw story lists, all provenance anchors | `architecture` (+ optional reality probe) → typed IR → archify, the canonical vocabulary                                                                                                             | structure change                                     |
+| Band                | Audience                 | Content (block re-homed from)                                                                                                                                                                                                                                                                                                                             | Derived from                                                                                                                                                                                         | Regeneration gate                                    |
+| ------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| **1 · Overview**    | every role, 30 seconds   | what this project is, one paragraph (PRIMER's essence) · health + progress in one sentence · the one ask + the while-you-were-away narrative (NOW)                                                                                                                                                                                                        | identity fields; the attention set; state diff vs. baseline                                                                                                                                          | identity: era · rest: never                          |
+| **2 · Product**     | whoever uses the product | what works today (shipped, user-visible capabilities) · what recently changed for users · what the current layer will add, in user language                                                                                                                                                                                                               | **net-new derivation**: `passed` `layer_gates` + changelog, translated to user-visible outcomes (authored + anchored, D4 rules); `scripted_passed` gates admitted only under an EXP chip (see below) | capability list: gate reaches `passed` · rest: never |
+| **3 · Project**     | plan and progress        | the full layer strip + current-layer story rows (FRONTIER) · queued layers, one sentence each + disclosure · what moved, where reality drifted, cost (LEDGER's plain layer)                                                                                                                                                                               | `stories`, `layer_gates`, `changelog`, the drift facts                                                                                                                                               | never (the LEDGER block stays the dark record)       |
+| **4 · Engineering** | the system itself        | **Now** the real code structure · **Concepts** the module vocabulary measured onto it · **Next** the queued design projected onto both, and what it needs that does not exist · **Options** only when a D8 trigger fires · the loop + story state machine, vocabulary's sole definition (LIFECYCLE) · gate table, raw story lists, all provenance anchors | code scan → `stories[].module` × `files_affected` binding → typed IR → archify (`compare` for Next), the canonical vocabulary                                                                        | structure change                                     |
 
 The six SIBYL jobs all survive — NOW and PRIMER's essence fuse into band 1,
 FRONTIER and LEDGER's plain layer form band 3, SHAPE and LIFECYCLE anchor band 4 —
@@ -305,21 +355,53 @@ Carried over from the SIBYL contract, unchanged in meaning:
   open count · needs-you count) keeps the glance overview present at any scroll
   depth.
 - **The architecture view is generated by a deterministic code pipeline and
-  rendered by archify** (owner rulings, revisions 5–6). No agent judgment in the
-  loop: a workspace-graph scanner reads the real package topology (package.json /
-  turbo graph; dependency-cruiser is the later import-level rung; LSP is rejected
-  for batch graph work), a rule table transforms it into typed archify IR —
-  R1 exclude test packages · R2 fold ubiquitous deps (in-degree ≥ 60%) into cards
-  · R3 layered/cascade layout · R4 fixed semantic-type map · R5 boundaries from
-  directory structure · R6 transitive reduction · R7 fixed package→domain table ·
-  R8 domain-level edge aggregation · R9 generated guided views · R10 permutation
-  search for row order — and a **mechanical receipt consumer** applies archify's
-  repair receipts (via/labelAt/labelDy) within the two-round bound. Same commit in,
-  byte-identical artifact out. **Three tiers**: the domain overview (≈9 nodes, the
-  embedded default), the full package graph (deep-dive), and the declared
-  architecture from the YAML (the authored narrative tier — meaning, not
-  verification). Code is the source of truth for edges; the YAML for meaning;
-  their disagreement is a drift fact, never silently reconciled.
+  rendered by archify** (owner rulings, revisions 5–6, scope corrected in
+  revision 8). The ruling was never "no agent anywhere in this view" — it is
+  **ground truth comes from code tooling, and translating it into something a
+  human understands is the agent's job**. A workspace-graph scanner reads the
+  real package topology (package.json / turbo graph; dependency-cruiser is the
+  later import-level rung; LSP is rejected for batch graph work); a rule table
+  transforms it into typed archify IR — R1 exclude test packages · R2 fold
+  ubiquitous deps (in-degree ≥ 60%) into cards · R3 layered/cascade layout ·
+  R4 semantic-type map · R5 boundaries from directory structure · R6 transitive
+  reduction · **R7 concept-module ↔ code-unit binding, measured (below)** ·
+  R8 edge aggregation · R9 generated guided views · R10 permutation search for
+  row order — and a **mechanical receipt consumer** applies archify's repair
+  receipts within the two-round bound. Same commit in, byte-identical artifact
+  out.
+- **R7 is a measurement, not a naming convention** (revision 8). The first
+  implementation grouped packages by splitting their names on the first hyphen.
+  That is deterministic and worthless: `db` and `auth` being separate "domains"
+  is an artifact of how packages were named, not a fact about the system, and
+  the grouping threw away the 32 prose module descriptions the project already
+  carries. It produced 14 domains from 19 packages, 11 of them singletons — no
+  compression, no meaning.
+  **The project already states its own ontology and binds it to code:**
+  `stories[].module` (present on 396/396 stories in the reference consumer) says
+  which concept each piece of work belongs to, and `stories[].files_affected`
+  (also 396/396, 84% resolving to a real workspace package) says where that work
+  landed. The concept→code binding is therefore **measured from the work record**,
+  not declared and not guessed. No graph-clustering alternative can replace this:
+  clustering yields groups with no names, and a domain's _name_ is a human
+  concept that exists only in prose.
+- **The Engineering band is prospective and structural** (owner ruling, revision
+  8): **Now · Concepts · Next**, and the payload is the tension between them.
+  - **Now** — the real code structure. Ground truth, tool-derived.
+  - **Concepts** — the module vocabulary humans reason in, bound to Now by the
+    R7 measurement. The gap here is "the boundary you believe in is not the
+    boundary that exists".
+  - **Next** — the queued design projected onto Now: which code units the open
+    stories' modules land in, which concepts are net-new, and whether each has a
+    home. The gap here is "what the next design needs that the structure has
+    not got". This is the question no status surface answers and the one an
+    engineer most needs; archify's `compare` (Before/Delta/After) renders it,
+    pointed **forwards** rather than at the previous brief.
+
+  Progress-shaped annotations — where work happened, what it cost, where it
+  failed — belong to Project's depth and are **excluded** from this band. That
+  separation is what keeps the pyramid honest: each band is the same three
+  questions at higher resolution, not a different subject.
+
 - **All diagrams are archify; mermaid leaves the primary path** (revision 6). The
   AEP loop renders as an archify `workflow` diagram and the story state machine as
   an archify `lifecycle` diagram, so the page has one diagram system, one visual
@@ -366,14 +448,14 @@ Carried over from the SIBYL contract, unchanged in meaning:
 The generation pipeline (each phase ends in a checkable postcondition, per the
 deterministic-orchestration standard):
 
-| Phase         | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Postcondition                                                                                                                                                    |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0 · Preflight | `product-context.yaml` exists (else point to `/aep-envision`); read `docs/human-alignment/manifest.json` for the delta baseline                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | baseline commit known, or first-run declared                                                                                                                     |
-| 1 · Derive    | run `scripts/derive.mjs`: extract **facts JSON** from `product-context.yaml` + git — story counts by state and layer, the attention set (D7), the drift facts (D7), the shipped-capability inputs for band 2 (passed layer gates + their summaries), changelog entries since baseline, layer-gate status, cost roll-up — and validate it against `facts.schema.json`                                                                                                                                                                                                                                                                           | facts JSON exists and validates; every fact names its YAML path                                                                                                  |
-| 1.5 · Scan    | run the deterministic architecture pipeline (D3), all three scripts named in D5: `scan-workspace.mjs` (workspace-graph scan) → `arch-rules.mjs` (R1–R10 → typed IR) → `receipt-consumer.mjs` (archify validate → apply receipts → deliver), producing the domain-overview and package-graph artifacts revision-pinned to HEAD; the declared-vs-actual gap joins the drift facts (import-level dependency-cruiser diff is the later rung)                                                                                                                                                                                                       | artifacts delivered `code-verified` (package level), or scanner unavailable and the view is marked degraded                                                      |
-| 2 · Author    | fill `assets/template.html`: no number is ever typed into markup — every one is a `data-fact="<facts-JSON path>"` binding the template's renderer fills at load (see the binding rule below); narrative (PRIMER, translations, LEDGER prose) is written fresh, tense-chipped, stamped with authored-at + source commit; narrative obeys the evidence-language rule and the cold-reader authoring rules below                                                                                                                                                                                                                                   | every section rendered or stamped                                                                                                                                |
-| 3 · Audit     | run `scripts/audit.mjs` for the mechanical checks (number-provenance, statically: every `data-fact` path resolves in facts JSON, and no digit appears in authored markup outside a `data-fact` element or a provenance anchor; class preflight; chip-grammar: every non-fact chipped, no fact chipped, one chip per clause; translation-anchor 1:1 — every plain sentence cites a fact id, every surfaced fact has a plain sentence; prose vocabulary-budget count) plus the judgment checks from `references/checklist.md` (vocabulary audit against the D2 closed set, evidence-language audit, glance gate, cold-reader test, so-what test) | audit passes; failures emit structured receipts; at most two correction rounds                                                                                   |
-| 4 · Deliver   | write `docs/human-alignment/brief-<date>T<time>Z-<shorthash>.html`; update `manifest.json` (generation record + content SHA-256, appending the prior record to `history[]`); **prune** every brief beyond the newest three (D2 retention ruling); report the delta summary + path in-conversation                                                                                                                                                                                                                                                                                                                                              | new file exists; its name's hash equals repo HEAD; `manifest.json` digest matches the file; ≤ 3 brief files remain and every pruned one has a `history[]` record |
+| Phase         | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Postcondition                                                                                                                                                    |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0 · Preflight | `product-context.yaml` exists (else point to `/aep-envision`); read `docs/human-alignment/manifest.json` for the delta baseline                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | baseline commit known, or first-run declared                                                                                                                     |
+| 1 · Derive    | run `scripts/census.mjs` first: enumerate every populated key path in the plan file and classify it against `scripts/source-census.json` (`derived` / `ignored` **with a reason** / `unhandled`), reporting unhandled paths that carry data. Then run `scripts/derive.mjs`: extract **facts JSON** from `product-context.yaml` + git — story counts by state and layer, the attention set (D7), the drift facts (D7), the shipped-capability inputs for band 2 (passed layer gates + their summaries), changelog entries since baseline, layer-gate status, cost roll-up — and validate it against `facts.schema.json`                                                                                                | census reported; facts JSON exists and validates; every fact names its YAML path                                                                                 |
+| 1.5 · Scan    | run the deterministic architecture pipeline (D3), all three scripts named in D5: `scan-workspace.mjs` (workspace-graph scan) → `arch-rules.mjs` (R1–R10 → typed IR) → `receipt-consumer.mjs` (archify validate → apply receipts → deliver), producing the domain-overview and package-graph artifacts revision-pinned to HEAD; the declared-vs-actual gap joins the drift facts (import-level dependency-cruiser diff is the later rung)                                                                                                                                                                                                                                                                              | artifacts delivered `code-verified` (package level), or scanner unavailable and the view is marked degraded                                                      |
+| 2 · Author    | fill `assets/template.html`: no number is ever typed into markup — every one is a `data-fact="<facts-JSON path>"` binding the template's renderer fills at load — and **every assertive block carries `data-claims="<fact paths>"`** naming the facts it rests on (D9). A block that can cite nothing is marked visibly as authored; narrative (PRIMER, translations, LEDGER prose) is written fresh, tense-chipped, stamped with authored-at + source commit; narrative obeys the evidence-language rule and the cold-reader authoring rules below                                                                                                                                                                   | every section rendered or stamped                                                                                                                                |
+| 3 · Audit     | run `scripts/audit.mjs` for the mechanical checks (claim-provenance, statically: every `data-fact` and `data-claims` path resolves in facts JSON; no assertive block exists without citations; and **no digit _or number-word_** appears in authored markup outside a binding or a provenance anchor; class preflight; chip-grammar: every non-fact chipped, no fact chipped, one chip per clause; translation-anchor 1:1 — every plain sentence cites a fact id, every surfaced fact has a plain sentence; prose vocabulary-budget count) plus the judgment checks from `references/checklist.md` (vocabulary audit against the D2 closed set, evidence-language audit, glance gate, cold-reader test, so-what test) | audit passes; failures emit structured receipts; at most two correction rounds                                                                                   |
+| 4 · Deliver   | write `docs/human-alignment/brief-<date>T<time>Z-<shorthash>.html`; update `manifest.json` (generation record + content SHA-256, appending the prior record to `history[]`); **prune** every brief beyond the newest three (D2 retention ruling); report the delta summary + path in-conversation                                                                                                                                                                                                                                                                                                                                                                                                                     | new file exists; its name's hash equals repo HEAD; `manifest.json` digest matches the file; ≤ 3 brief files remain and every pruned one has a `history[]` record |
 
 - **Why the derive script is v1, not deferred** (owner ruling: faithful
   representation): OBS-5's trust came from _code-derived_ artifacts, and AEP's own
@@ -448,6 +530,8 @@ skills/human-alignment/
 │   ├── receipt-consumer.mjs # Phase 1.5c: archify validate → apply repair receipts → deliver
 │   ├── assemble.mjs      # Phase 4: embed delivered artifacts as srcdoc; prune to newest 3
 │   ├── audit.mjs         # Phase 3: independent mechanical audit (provenance, classes, chip grammar)
+│   ├── census.mjs        # Phase 1a: populated-path census vs the classification manifest
+│   ├── source-census.json # path-template → derived | ignored(reason); the completeness contract
 │   └── facts.schema.json # the typed contract between derive, author, and audit
 └── assets/
     └── template.html     # seed file; the only source of CSS classes AND the palette
@@ -665,6 +749,39 @@ vocabulary; L32's 38 criteria with zero coverage). The owner's readability
 verdict on the result — system vocabulary is illegible even to a returning
 owner — produced the revision-3 cold-reader contract (D2).
 
+**Mine deeper before conceding (revision 8).** The rule that governs every
+derivation here: **when a signal looks underivable, the next move is to ask what
+the project actually records — not to hand the question to agent judgment.**
+Checking the field the schema names, finding it empty, and recording
+`schema_absent` is a half-measure that reads as diligence.
+
+Revision 7's own implementation broke this three times against the reference
+consumer, and each error shipped into the delivered example:
+
+| Reported as underivable                         | Actually available                                                                                                                    |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| "cost plane declared but unwired"               | `cost.total_usd` is 0, but **34 stories carry numeric `cost_usd` totalling \$735.15**, attributable per module (`agent` \$543.80)     |
+| "declared architecture is not code-addressable" | **396/396 stories carry `module` + `files_affected`**, 84% of 1,485 paths resolving to a workspace package — the binding is measured  |
+| "32 declared modules, 1 name in common"         | Wrong comparison: declared modules against _package_ names. Against `stories[].module` the real finding is **44 used vs 32 declared** |
+
+A roll-up field being zero is a statement about the roll-up, not about the data.
+Consequently:
+
+- **Cost derives from `stories[].cost_usd`**, rolled up per module and per layer;
+  `cost.*` is used only when it is non-empty and reconciled against the story sum.
+  A disagreement between them is itself a drift fact.
+- **Drift 5 is restated.** The declared architecture _is_ code-addressable — via
+  the work record. `architecture.modules[].paths` remains a worthwhile schema
+  addition, but as a way to **declare** what is already **measurable**, not as a
+  precondition. Measured bindings do not rot the way declared ones do.
+- **New detector — module vocabulary drift.** Compare three sets: modules
+  declared in `architecture.modules[]`, modules that stories are filed against,
+  and modules that resolve to code. In the reference consumer: **13 used but
+  never declared** (`agent-runtime`, `do-agent`, `server`, `infra`, …) and **1
+  declared but never worked**. That is the control plane and the work drifting
+  apart in the project's own vocabulary — sharper than anything the previous
+  name-comparison produced.
+
 **Re-derivation pass (2026-07-25, revision 7).** Every number above was recomputed
 from the looplia repo and the surviving artifacts. The counts hold — 395 stories,
 25,074 lines at `d5212571`, attention set of 2 (both `failed`; zero `in_review`),
@@ -705,6 +822,325 @@ advanced mid-simulation (L32-005 landed; its gate flipped to `scripted_passed`),
 which surfaced two more authoring rules now in D4's spirit: changelog
 translations bind by entry id + kind, never by list position, and no authored
 sentence may carry a literal number — all numbers render from facts.
+
+### D8 — Design Option Sets: suggestions with enough material to disagree with
+
+The Engineering band **may recommend**, and the reason it may is the same reason
+the rest of the surface may not fabricate: what makes a claim safe is the
+material under it. A bare "consider splitting this package" is an unchipped
+assertion with no anchor — the reader can only obey or ignore it. A suggestion
+carrying its option space, its measured costs, and its ranking criterion leaves
+the judgment where it belongs.
+
+So a suggestion is a **first-class surface element with a required grammar**, in
+the same way a drift row is:
+
+| Field                    | Rule                                                                                                                                         |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Trigger**              | A derived signal, cited. **No trigger, no Options block** — the same rule that bans hand-authored drift.                                     |
+| **Measured situation**   | The facts defining the decision space, every number `data-fact` bound.                                                                       |
+| **Options**              | **At least three, one of which must be "leave it as is."** Omitting the null option converts information into pressure.                      |
+| **Cost / benefit**       | Stated in _this project's measured terms_ — files moved, stories touched, runtime hops added — never in generic architectural principle.     |
+| **Design sketch**        | Enough substance to evaluate: which units, which seam, which new edges.                                                                      |
+| **What would settle it** | The measurement or event that makes the choice obvious. The `EXP` chip's discipline, applied to a decision.                                  |
+| **Tense**                | The whole block is non-fact and is chipped, so the page-level honesty meter still reads true.                                                |
+| **Ranking**              | Permitted, but the **criterion must be stated** so the reader can reject it. "On seam cost, C is cheapest" is legal; "I recommend C" is not. |
+
+**The triggers are fixed in this spec, not configurable** (owner ruling). A
+configurable threshold is a knob nobody turns; a fixed one gets reviewed. All
+three run **only against the Next projection** — open stories. Running them over
+history is a category error and was measured to be pure noise (below).
+
+1. **Concept crowding** — a code unit that the queued design plans to fill with
+   **≥ 4 concept modules**, **≥ 30 files**, and whose concepts are **≥ 50%
+   pairwise file-disjoint**. All three conditions are load-bearing: density alone
+   flags shared-type packages, and disjointness alone flags registries where
+   every concept simply adds its own file. Together they say _a lot of separable
+   code is being planned into one unit that has no internal boundary_.
+2. **Homeless concept** — a concept module in the Next projection whose planned
+   paths resolve to no code unit at all: the design has not decided where it
+   lives. Threshold ≥ 1.
+
+**Calibration against the reference consumer** (45 open stories, 8 net-new
+concept modules):
+
+| Detector                  | On the Next projection                                 | On completed work (control)               |
+| ------------------------- | ------------------------------------------------------ | ----------------------------------------- |
+| Concept crowding          | **1** — `do-agent`: 7 concepts, 85 files, 81% disjoint | 5 — noise                                 |
+| Homeless concept          | **0**                                                  | 3 — all false (docs and non-package work) |
+| _Entanglement (rejected)_ | 0                                                      | 68 — no principled cut point              |
+
+The control column is why the scope rule exists. It also killed a third detector
+I intended to ship: "two modules declared independent but sharing ≥ 3 files"
+returned 68 hits on real history with no defensible threshold, so it is
+**rejected from v1** rather than tuned until it looked reasonable.
+
+**The worked example the reference consumer produces.** Trigger: `do-agent` is
+planned to carry seven concept modules across 85 files, of which 17 of 21
+pairs share no file at all. The situation is therefore not "these things are
+entangled" but "**the plan has already partitioned this code seven ways and given
+the partition nothing to enforce it**". Options: keep one unit and enforce the
+seam with import rules (zero migration, unenforceable); split along the measured
+seams into separate runtime units (real isolation, one extra RPC hop on the
+publish path because the authority check sits there); or extract only
+`authority-kernel`, which shares zero files with all six others (highest-value
+isolation for one hop). Ranking criterion stated: seam cost — and explicitly
+_not_ security, which would reorder it.
+
+### D9 — Completeness by construction
+
+An independent evaluator scored the generated brief and failed it. The findings
+matter less than their shape: **eight of nine were the same defect wearing
+different clothes.**
+
+| Surface symptom                             | What was actually missing                                                                              |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| "spend is zero, this brief cannot say"      | `stories[].cost_usd` was never read                                                                    |
+| "the declared architecture is unverifiable" | `stories[].files_affected` was never read                                                              |
+| "one module name in common"                 | the wrong two sets were compared                                                                       |
+| "automatic repair has already given up"     | `attempt_count` / `max_retries` never read — filled from a diagram's generic label                     |
+| "five tasks in two days" (it was eight)     | no fact for _completions in a window_ — counted by hand                                                |
+| "the last thing before sign-off"            | `closure_status` / `decision_realignment` never read; the sign-off had been **withdrawn**, not delayed |
+| "the newest stretch of work"                | the changelog was sliced from the tail without sorting — **a plain bug**                               |
+| "the system is 21 code units"               | the scanner covers one ecosystem and never said so                                                     |
+| "the cleanest cut available"                | two concepts tied at zero shared files; the fact returned one                                          |
+
+The pattern: **the prose needed a fact the derivation had not produced, and the
+agent supplied it anyway.** The audit could not object because its unit of check
+was the digit — and "already given up", "the newest stretch", and "five" are not
+digits.
+
+Underneath that sits the real cause. The facts plane was designed **top-down** —
+_what should the brief show?_ — against a source carrying **483 populated key
+paths**, of which the derivation reads about **thirty**. Every hole was a path
+nobody had looked at. Patching them one at a time treats the symptom.
+
+Four mechanisms replace the patching. Each is deterministic.
+
+**1 · Source census — the system must know what it has not looked at.** Walk the
+consumer's plan file, enumerate every populated key path, and classify each
+against a committed manifest:
+
+- `derived` — reaches facts JSON
+- `ignored` — listed with a **reason**, never a bare checkmark (owner ruling)
+- `unhandled` — neither, and therefore a reported gap
+
+Classification is at **path-template level** (`stories[].readiness_score`, not
+396 leaf paths) — roughly a hundred entries, authored once (owner ruling). The
+run reports unhandled paths carrying data, and the brief states its own reading
+coverage on the page. Completeness stops being a hope and becomes a number.
+This mechanism alone closes rows 1, 2, 4 and 6 above.
+
+**2 · Claims bind, not numbers.** The audit's unit changes from the digit to the
+claim. Every assertive block declares the facts it rests on:
+
+```html
+<p data-claims="cost.derived_total_usd cost.rollup_disagrees">…</p>
+```
+
+The audit then enforces three things: every cited path resolves; **no assertive
+block may exist without citations**; and number-words (`five`, `eight`,
+`three quarters`) are treated exactly as digits are. One rule closes both the
+unbound numeral and the uncited causal claim — the two defects that produced the
+worst sentences on the page.
+
+**3 · Facts carry predicates, not just fields.** Prose wants to say _"retries are
+exhausted"_, _"the sign-off was withdrawn"_, _"eight landed in two days"_. Those
+must be **derived predicates**, not agent inferences:
+
+- `retries_exhausted` = `attempt_count >= max_retries`
+- `sign_off_withdrawn` = `closure_status` present
+- `root_cause_stated` = whether a failure log asserts a cause or disclaims one
+- `completions_in_window(days)`
+
+When the predicate does not exist, mechanism 2 forbids the sentence. The two
+planes are forced to co-evolve instead of drifting apart.
+
+A corollary, from the tied-seam defect: **a fact may not collapse ambiguity.**
+Where a derivation has ties or several valid answers, the fact carries all of
+them — otherwise the prose will assert a uniqueness the data does not support.
+
+**4 · Every tool declares its own coverage.** A scanner reports what it covered
+_and what it did not_: `21 JS/TS workspaces; 2 Cargo crates unscanned`. The
+coverage statement is itself a fact the prose must use. **No tool is permitted to
+imply totality** — the brief priced work on a Rust daemon in one band while
+excluding it from "the system" in another, and nothing in the pipeline noticed.
+
+**What this does not fix.** Row 7 — the unsorted changelog slice — is an ordinary
+bug. No mechanism above would have caught it; only the evaluator did. That is
+recorded rather than papered over: **eight of nine become structurally
+impossible, one was simply wrong code.**
+
+**What stays agent-authored.** The essence paragraph (no product-vision field
+exists), the translation of module responsibilities into plain language, and the
+option-set framing. Each must still cite; whatever can cite nothing is marked
+visibly as authored, as the brief already does for its opening paragraph.
+
+**Acceptance for this revision.** Re-running against the reference consumer, the
+census must _report_ the unhandled paths that produced the original defects, and
+the audit must _reject_ the sentences that shipped. The bar is not "the defects
+are gone" — it is "the defects cannot be authored".
+
+### D10 — The unit of delivery is the clock, not the page
+
+Revision 9 diagnosed a velocity problem and got the number wrong. The 1.1-hour
+figure is the **interval between edits**, not the **survival time of a fact**.
+Re-measured across sixty plan-file commits, the facts this surface rests on do
+not share a clock at all:
+
+| Fact class                          | Median survival | Band |
+| ----------------------------------- | --------------- | ---- |
+| changelog length                    | 0.3 h           | 3    |
+| story status distribution           | 1.3 h           | 3    |
+| gates passed                        | 14.7 h          | 2    |
+| gate status map · coverage          | 33.5 h          | 2    |
+| **the attention set · the one ask** | **110 h**       | 1    |
+
+Rolled up: **band 1 ≈ 100 h · band 2 ≈ 29 h · band 3 ≈ 10 h · band 4 ≈ 10 h.**
+The band split from revision 6 turns out to be almost exactly the seam in the
+survival curve — that decomposition was right.
+
+**What is wrong is fusing the bands into one file.** D3's revision-6 ruling
+("one file, nothing else to open") welds four clocks together. To keep band 3
+true you regenerate at band 3's rate; every regeneration re-authors band 1's
+prose, whose facts move a hundred times more slowly. **You pay roughly a hundred
+authoring passes per band-1 fact change**, and each pass is an independent draw
+from a defect distribution that has so far produced several content defects per
+draw. Regeneration is not the cure for staleness here — it is the delivery
+mechanism for the actual failure mode.
+
+The evidence that this, and not staleness, is the failure: of the eighteen
+findings across two evaluation rounds, **two or three are staleness**. The rest
+are authoring failures against a fact plane that was correct, complete, and
+twenty-two minutes old — including a claim that a stage had not started while
+three separate correct representations of that stage's completion sat in the
+file the sentence cited.
+
+**Ruling: emit three things on three clocks, not one thing on the fastest.**
+
+1. **The fact plane, prose-free, per plan-file commit.** Deterministic, cheap,
+   no authoring surface, therefore no defect surface. It already exists.
+2. **A read-time answer to "what happened since I last looked"** — computed when
+   asked, never written down, dealing in **events rather than states**. "The
+   canary recovered at 17:0x" stays true forever; "the canary is broken" had a
+   26-hour half-life. A report of states rots; a log of events can at worst be
+   incomplete.
+3. **The orientation document, per layer rather than per invocation.** Bands 1,
+   2 and the Concepts half of 4. That clock comfortably supports careful prose,
+   translation, archify and a multi-megabyte body, because it is generated on
+   the order of weekly.
+
+The design's own answer to velocity — the delta baseline, the
+while-you-were-away narrative — has **never produced a line of output** in any
+generation (`delta.first_run` was true both times). Nine revisions hardened the
+components that had already run; the one that never ran is the one this ruling
+promotes to a first-class emission.
+
+### D11 — Render; do not detect
+
+The skill has been accumulating detectors. Control-plane incoherence, cost
+roll-up disagreement, module-vocabulary drift, concept crowding — each was added
+here because this was the surface that noticed. That is the wrong home.
+
+**A detector that finds a defect in the plan file belongs where it can block**
+— `/aep-validate` — not in a document where it narrates. The distinction is
+whether the finding wants an action or a reader: incoherent gates want fixing,
+and a brief that reports them every week without stopping anything is a
+subscription to a problem rather than a fix for it.
+
+What stays here: **rendering**, and the reader-facing judgment about what
+deserves the surface. What moves: the detectors themselves, as
+`/aep-validate` rules. What is shared: the derived-view specs
+(`attention-set.md`, `drift-facts.md`) remain **framework vocabulary** that both
+skills consume — that was always their stated status and it is now load-bearing.
+
+This shrinks the skill to its actual job and removes the pressure that produced
+the detector suite: the surface no longer has to be the place a problem is
+caught in order for the problem to be caught.
+
+**Implemented (2026-07-27).** The detectors that want an action —
+completed work under an unopened gate, an undefined gate status, a roll-up that
+disagrees with its record, a module used but never declared, and fields a
+consumer invented — moved to `skills/product-context/_shared/scripts/coherence.mjs`
+and run as a **blocking Step 0 in `/aep-validate`**. The brief renders what that
+detector returns and no longer computes it.
+
+The script is _shared_, not copied: `build-skills.sh` now materializes
+`_shared/scripts/` into consumers the same way it always has for references, on
+the same per-file rule (a skill receives what its SKILL.md names). Two copies of
+a drift detector drift, and a drift detector that drifts is worse than none.
+
+### D12 — Never a private store
+
+One reviewer proposed a dedicated ledger file for the owner's rulings,
+obligations and invariants — the durable objects a fast-moving project loses
+track of. The insight is right and the mechanism is not, because **the framework
+already has homes for most of it**:
+
+| Durable object  | Framework home                                              | Status                                                  |
+| --------------- | ----------------------------------------------------------- | ------------------------------------------------------- |
+| A ruling        | `product.decisions[]` — decision · reasoning · alternatives | exists                                                  |
+| A deferred call | `product.open_questions[]` — with `revisit_trigger`         | exists; this is premise-rot handling, already specified |
+| An obligation   | —                                                           | **genuine gap**                                         |
+
+A private ledger would be a **third home** for something the schema defines, and
+a stored copy of a derivable truth is exactly what D7 rejects: a second source
+validation will not catch when it drifts.
+
+So the rule: **this skill derives and surfaces; it does not store.** Three
+consequences.
+
+- Where the framework has the field, derive from it. If a consumer leaves
+  `product.decisions[]` empty and records rulings in prose elsewhere, that is
+  the consumer's practice, and the surface reports the absence — it does not
+  invent a place to put them.
+- Where a consumer has **invented fields the schema does not define**, that is
+  itself drift worth surfacing. The reference consumer added `closure_status`,
+  `decision_realignment`, `notes` and `release` to its layer gates; those carry
+  real meaning and no framework consumer can read them.
+- Where the framework genuinely lacks the field, **recommend it** — the
+  `architecture.modules[].paths` precedent. The gap here is **obligations**:
+  `evidence.manual_pending` is a boolean with no `owed_by` and no `since`, so
+  nothing can age it or escalate it. An obligation that has been true for
+  weeks is indistinguishable from one raised this morning.
+
+**Recommendation to the framework (separate schema PR):** give an obligation a
+shape — what is owed, by whom, since when, what it blocks, and what discharges
+it. Age is the missing dimension; "what needs a human" without duration is a
+list, not a signal.
+
+### D7 corrections (the design's own, not the consumer's)
+
+Two defects in the attention-set spec, both found by review of the spec rather
+than of the data:
+
+- **The one ask must respect dependencies.** The tie-break is "layer order, then
+  id". In the reference consumer both candidates sat in the same layer and the
+  alphabetically-first one **depends on the other** — so the rule selected the
+  blocked item over its blocker and told the reader to restart it. Ordering
+  within a rank must be topological before it is alphabetical.
+- **Every signal carries `since`, and age can be the alarm.** OBS-2 says a
+  detector that lists intentional deferrals is noise. A signal continuously true
+  for months is that noise — unless its **age** is the finding, which for an
+  obligation it usually is. Both require a `since`, which the spec does not
+  currently demand.
+
+### D9 corrections (the design's own)
+
+- **The census postcondition must be adversarial.** `unhandled_count == 0` was
+  satisfied at 11.5% read coverage, with the great majority of ignores sharing a
+  handful of templated reasons — and one of those ignores (`stories[].dependencies[]`,
+  populated on 77% of stories) is the direct cause of the one-ask defect above.
+  The owner's ruling that an ignore must carry a reason was satisfied in letter
+  by writing a few reasons and fanning them out. A stronger postcondition: a
+  path populated across most of a collection may not be `ignored` without a
+  named consumer that reads it elsewhere.
+- **Claim-binding raises apparent verification without raising verification.**
+  Mechanism 2 makes citation mandatory; nothing makes the sentence follow from
+  the citation, and a citation that resolves without bearing its claim reads
+  _verified_. On a surface whose only product is trust this is net-negative as
+  it stands. Either the binding gains a checkable relation between claim and
+  fact, or the mechanism is downgraded from a guarantee to a lint.
 
 ## Horizon (recorded, not built)
 
@@ -804,6 +1240,65 @@ sentence may carry a literal number — all numbers render from facts.
   upstream, and adding one would store a truth derivable from `plan` ∖ `history`,
   which is the same second-source failure the attention set was designed to avoid
   (D7). The predicate is derived instead.
+- **Name-stem package grouping as R7** (revision 7's implementation) — rejected
+  in revision 8: deterministic but meaningless. It produced 14 domains from 19
+  packages with 11 singletons, and discarded 32 prose module descriptions to
+  split strings on a hyphen. Determinism is a means to trust for _claims about
+  reality_; a grouping is not a claim about reality, so determinism bought
+  nothing there.
+- **A per-repo domain override file, plus a tunable folding threshold** — rejected
+  as the compromise it was: it concedes the rule does not work and asks the user
+  to patch it by hand, or shrinks the picture until it looks acceptable. Neither
+  makes the diagram say what the system is.
+- **Graph-clustering the package topology** (shared-dependent sets, community
+  detection) — rejected: measurable, but it yields `group-1`, `group-2`. A
+  domain's _name_ is a human concept that exists only in prose, and no amount of
+  graph mathematics recovers it.
+- **Annotating the architecture with the fact plane** (work here, spend here,
+  failures here) — rejected by the owner in revision 8 as a **band confusion**:
+  those are Project's questions at greater depth. Engineering's question is
+  structural and forward-looking — what the next design does to what exists.
+- **Entanglement detector** ("declared independent, sharing ≥ 3 files") —
+  rejected from v1 (D8): 68 hits on real history with no principled cut point.
+  Recorded rather than tuned into looking reasonable.
+- **Configurable Option-Set thresholds** — rejected by the owner: a knob nobody
+  turns. Fixed values get reviewed.
+- **Bare one-liner recommendations** — rejected (D8): a suggestion without its
+  option space and measured costs leaves the reader only obedience or dismissal.
+  Suggestions are welcome; unsupported ones are not.
+- **Fixing the evaluator's nine findings one at a time** — rejected in revision 9. Eight of them were one defect wearing different clothes; a patch list would
+  have shipped a tenth. The mechanisms in D9 are chosen so the defects cannot be
+  authored, not so that these particular nine are absent.
+- **A digit-only provenance audit** (revisions 7–8) — superseded: it certifies
+  "every number is bound" while `five`, `eight` and `three quarters` walk past
+  it, and while an uncited causal claim is not a number at all. The unit of
+  check is the claim.
+- **Full-path census** (all 483 leaf paths) — rejected by the owner in favour of
+  **path-template** classification: leaf-level entries would be dominated by
+  per-consumer schema noise, and the review burden would fall on the wrong
+  thing. Roughly a hundred templates, authored once.
+- **A checkbox `ignored` list** — rejected by the owner: an ignore entry must
+  carry a **reason**. A checkmark records that someone clicked past a field; a
+  reason records why the field does not matter, and is reviewable when it starts
+  to matter.
+- **Letting the scanner report only what it found** — rejected: a tool that
+  states its finds without stating its blind spots licenses "the system is 21
+  units" while two Cargo crates sit outside the scan and get priced elsewhere on
+  the same page.
+- **A dedicated owner-ledger file** for rulings, obligations and invariants —
+  rejected in revision 10 (D12). The insight behind it is correct, but the
+  framework already defines `product.decisions[]` and
+  `product.open_questions[].revisit_trigger`; a private file would be a third
+  home for a truth the schema owns, which is the second-source failure D7 exists
+  to prevent. The part that is genuinely missing — an obligation with an age —
+  is recommended to the schema instead.
+- **Keeping the detectors in this skill** — rejected (D11): a finding that wants
+  an action belongs where it can block. Reporting incoherent gates in a document
+  every week is a subscription to a problem, not a fix.
+- **Regenerating the whole page to keep its fastest band true** — rejected
+  (D10): it pays a hundred authoring passes per slow-band fact change, and each
+  pass is an independent draw from the defect distribution. The measured failure
+  is authoring, not staleness.
 - **React / three.js now** — deferred with named triggers (D3).
 
 ## References

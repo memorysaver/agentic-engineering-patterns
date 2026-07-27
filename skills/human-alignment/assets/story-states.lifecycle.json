@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "The five stages of a task",
+    "subtitle": "Story state machine · the sole definition of this brief's vocabulary · exceptions are markers, not stages",
+    "output": "story-states.html",
+    "quality_profile": "standard"
+  },
+  "lanes": [
+    { "id": "main", "label": "The normal path (the five cells beside every task row)" },
+    { "id": "exceptions", "label": "Exceptions · waiting on a human" }
+  ],
+  "states": [
+    {
+      "id": "pending",
+      "type": "start",
+      "label": "Pending",
+      "sublabel": "PENDING",
+      "lane": "main",
+      "col": 0,
+      "step": "01"
+    },
+    {
+      "id": "ready",
+      "type": "active",
+      "label": "Ready",
+      "sublabel": "READY",
+      "lane": "main",
+      "col": 1,
+      "step": "02"
+    },
+    {
+      "id": "in_progress",
+      "type": "active",
+      "label": "In progress",
+      "sublabel": "IN_PROGRESS",
+      "lane": "main",
+      "col": 2,
+      "step": "03"
+    },
+    {
+      "id": "in_review",
+      "type": "active",
+      "label": "In review",
+      "sublabel": "IN_REVIEW",
+      "lane": "main",
+      "col": 3,
+      "step": "04"
+    },
+    {
+      "id": "completed",
+      "type": "success",
+      "label": "Completed",
+      "sublabel": "COMPLETED",
+      "lane": "main",
+      "col": 4,
+      "step": "05"
+    },
+    {
+      "id": "blocked",
+      "type": "waiting",
+      "label": "Blocked",
+      "sublabel": "dependency failed",
+      "lane": "exceptions",
+      "col": 0
+    },
+    {
+      "id": "failed",
+      "type": "failure",
+      "label": "Failed",
+      "sublabel": "retries exhausted",
+      "lane": "exceptions",
+      "col": 1
+    },
+    {
+      "id": "deferred",
+      "type": "waiting",
+      "label": "Deferred",
+      "sublabel": "postponed by a human",
+      "lane": "exceptions",
+      "col": 2
+    }
+  ],
+  "transitions": [
+    { "id": "t1", "from": "pending", "to": "ready", "label": "deps done", "labelDy": -25 },
+    { "id": "t2", "from": "ready", "to": "in_progress", "label": "dispatched", "labelDy": -25 },
+    { "id": "t3", "from": "in_progress", "to": "in_review", "label": "PR open", "labelDy": -25 },
+    { "id": "t4", "from": "in_review", "to": "completed", "label": "verified", "labelDy": -25 },
+    { "id": "t5", "from": "pending", "to": "blocked", "route": "drop" },
+    { "id": "t6", "from": "in_progress", "to": "failed", "route": "drop" },
+    {
+      "id": "t7",
+      "from": "failed",
+      "to": "pending",
+      "label": "only a human may do this",
+      "variant": "security",
+      "route": "bottom-channel"
+    },
+    {
+      "id": "t8",
+      "from": "blocked",
+      "to": "pending",
+      "label": "unblocked",
+      "route": "bottom-channel"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "Why \"needs you\" exists",
+      "items": [
+        "failed → pending is a transition only a human may run",
+        "blocked and deferred also wait on a person",
+        "this is where the Overview band's ask comes from"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,838 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/memorysaver/agentic-engineering-patterns/skills/human-alignment/facts.schema.json",
+  "title": "Human-alignment facts JSON",
+  "description": "The typed contract between derive.mjs (producer), the authoring agent (consumer), and audit.mjs (checker). Every number rendered on a brief must resolve to a path in this document.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "generated_from",
+    "commit",
+    "project",
+    "story_total",
+    "by_status",
+    "open_total",
+    "attention_set",
+    "schema_absent",
+    "drift_facts",
+    "gates",
+    "layers",
+    "changelog_recent",
+    "cost",
+    "modules"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "generated_from": {
+      "type": "string"
+    },
+    "commit": {
+      "type": "string",
+      "description": "short git SHA of HEAD at derivation"
+    },
+    "baseline_commit": {
+      "type": ["string", "null"],
+      "description": "commit of the previous generation, or null on first run"
+    },
+    "project": {
+      "type": "string"
+    },
+    "version": {
+      "type": ["string", "null"]
+    },
+    "updated_at": {
+      "type": ["string", "null"]
+    },
+    "story_total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "by_status": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "open_total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "current_layer": {
+      "type": ["number", "null"]
+    },
+    "attention_set": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rank", "kind", "verb", "id", "title", "path"],
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 6
+          },
+          "kind": {
+            "enum": [
+              "failed",
+              "amendment_pending",
+              "in_review",
+              "calibration_due",
+              "draft_object_map",
+              "open_question"
+            ]
+          },
+          "verb": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "layer": {
+            "type": ["number", "null"]
+          },
+          "path": {
+            "type": "string"
+          },
+          "why": {
+            "type": ["string", "null"],
+            "description": "prose-typed only; numeric sources are dropped, never rendered"
+          },
+          "predicates": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "retries_exhausted": {
+                "type": ["boolean", "null"]
+              },
+              "attempts_used": {
+                "type": ["integer", "null"]
+              },
+              "attempts_allowed": {
+                "type": ["integer", "null"]
+              },
+              "failure_log_count": {
+                "type": "integer"
+              },
+              "root_cause_stated": {
+                "type": ["boolean", "null"],
+                "description": "false when a failure log disclaims its own root cause \u2014 the surface may then not assert one"
+              }
+            }
+          }
+        }
+      }
+    },
+    "one_ask": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/properties/attention_set/items"
+        }
+      ]
+    },
+    "schema_absent": {
+      "type": "array",
+      "description": "One record per predicate skipped because its fields are absent. An empty attention_set is only trustworthy when this array is also empty.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["predicate", "path", "reason"],
+        "properties": {
+          "predicate": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "drift_facts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "detail", "path", "level"],
+        "properties": {
+          "kind": {
+            "enum": [
+              "intent_without_evidence",
+              "plan_behind_architecture",
+              "reality_resisting_intent",
+              "control_plane_incoherence",
+              "declared_vs_actual"
+            ]
+          },
+          "layer": {
+            "type": ["number", "null"]
+          },
+          "detail": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "level": {
+            "enum": ["derived", "code-verified", "unverified"]
+          },
+          "counters": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "by_status", "detail"],
+      "properties": {
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "by_status": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        },
+        "vocabulary_violations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["layer", "status", "path"],
+            "properties": {
+              "layer": {
+                "type": "number"
+              },
+              "status": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "detail": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["layer", "status"],
+            "properties": {
+              "layer": {
+                "type": "number"
+              },
+              "status": {
+                "type": "string"
+              },
+              "criteria_total": {
+                "type": ["integer", "null"]
+              },
+              "criteria_covered": {
+                "type": ["integer", "null"]
+              },
+              "completed_at": {
+                "type": ["string", "null"]
+              },
+              "shippable": {
+                "type": "boolean",
+                "description": "true only for status == passed; scripted_passed is EXP, never fact"
+              },
+              "closure_status": {
+                "type": ["string", "null"]
+              },
+              "sign_off_withdrawn": {
+                "type": "boolean",
+                "description": "a retired acceptance is not a pending one"
+              },
+              "successor_layer": {
+                "type": ["number", "null"]
+              },
+              "retired_acceptance": {
+                "type": ["string", "null"]
+              }
+            }
+          }
+        },
+        "by_layer": {
+          "type": "object",
+          "description": "gate detail keyed by layer \u2014 bind by key, never by array position",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["layer", "status"],
+            "properties": {
+              "layer": {
+                "type": "number"
+              },
+              "status": {
+                "type": "string"
+              },
+              "criteria_total": {
+                "type": ["integer", "null"]
+              },
+              "criteria_covered": {
+                "type": ["integer", "null"]
+              },
+              "completed_at": {
+                "type": ["string", "null"]
+              },
+              "shippable": {
+                "type": "boolean",
+                "description": "true only for status == passed; scripted_passed is EXP, never fact"
+              },
+              "closure_status": {
+                "type": ["string", "null"]
+              },
+              "sign_off_withdrawn": {
+                "type": "boolean",
+                "description": "a retired acceptance is not a pending one"
+              },
+              "successor_layer": {
+                "type": ["number", "null"]
+              },
+              "retired_acceptance": {
+                "type": ["string", "null"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "layers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["layer", "counts", "gate_status"],
+        "properties": {
+          "layer": {
+            "type": "number"
+          },
+          "counts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "gate_status": {
+            "type": ["string", "null"]
+          },
+          "is_current": {
+            "type": "boolean"
+          },
+          "stories": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "title", "status", "stage"],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                },
+                "stage": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 5
+                },
+                "exception": {
+                  "type": ["string", "null"]
+                },
+                "why": {
+                  "type": ["string", "null"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "changelog_recent": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "date", "summary"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "stable binding key: date + kind + index; translations bind by id, never by list position"
+          },
+          "date": {
+            "type": "string"
+          },
+          "kind": {
+            "type": ["string", "null"]
+          },
+          "author": {
+            "type": ["string", "null"]
+          },
+          "summary": {
+            "type": "string"
+          },
+          "since_baseline": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "description": "Band 2 inputs. passed gates yield facts; scripted_passed gates are EXP-chipped and never unchipped.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["layer", "gate_status", "tense", "source"],
+        "properties": {
+          "layer": {
+            "type": "number"
+          },
+          "gate_status": {
+            "enum": ["passed", "scripted_passed"]
+          },
+          "tense": {
+            "enum": ["IS", "EXP"]
+          },
+          "settles_on": {
+            "type": ["string", "null"]
+          },
+          "definition": {
+            "type": ["string", "null"]
+          },
+          "completed_at": {
+            "type": ["string", "null"]
+          },
+          "source": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "cost": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["derived_total_usd", "priced_story_count", "instrumented"],
+      "properties": {
+        "total_usd": {
+          "type": ["number", "null"],
+          "description": "the declared roll-up; a zero here is a statement about the roll-up, not the data"
+        },
+        "derived_total_usd": {
+          "type": "number",
+          "description": "summed from stories[].cost_usd \u2014 the work record"
+        },
+        "priced_story_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "story_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "by_module": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "rollup_disagrees": {
+          "type": "boolean"
+        },
+        "instrumented": {
+          "type": "boolean"
+        }
+      }
+    },
+    "modules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["declared_count", "path_bound_count"],
+      "properties": {
+        "declared_count": {
+          "type": "integer"
+        },
+        "path_bound_count": {
+          "type": "integer",
+          "description": "modules carrying architecture.modules[].paths"
+        },
+        "names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "used_count": {
+          "type": ["integer", "null"],
+          "description": "distinct modules stories are filed against"
+        },
+        "code_bound_count": {
+          "type": ["integer", "null"],
+          "description": "concepts resolving to at least one code unit"
+        },
+        "used_not_declared": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "declared_not_used": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "code_graph": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["nodes", "edges", "tool"],
+          "properties": {
+            "nodes": {
+              "type": "integer"
+            },
+            "edges": {
+              "type": "integer"
+            },
+            "apps": {
+              "type": "integer"
+            },
+            "packages": {
+              "type": "integer"
+            },
+            "domains": {
+              "type": "integer"
+            },
+            "domain_edges": {
+              "type": "integer"
+            },
+            "name_overlap": {
+              "type": "integer",
+              "description": "declared module names that match a real package name"
+            },
+            "tool": {
+              "type": "string"
+            },
+            "commit": {
+              "type": "string"
+            },
+            "coverage_complete": {
+              "type": "boolean",
+              "description": "false when the scanner left an ecosystem unread \u2014 no tool may imply totality"
+            },
+            "unscanned_count": {
+              "type": "integer"
+            }
+          }
+        }
+      ]
+    },
+    "delta": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "first_run": {
+          "type": "boolean"
+        },
+        "commits_since_baseline": {
+          "type": ["integer", "null"]
+        },
+        "status_changes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "from", "to"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "from": {
+                "type": ["string", "null"]
+              },
+              "to": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "changelog_new": {
+          "type": "integer"
+        }
+      }
+    },
+    "structure": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["now", "concepts", "next", "options"],
+          "description": "The Engineering plane: Now (real structure) \u00b7 Concepts (vocabulary measured onto it) \u00b7 Next (queued design projected) \u00b7 Options (D8 triggers).",
+          "properties": {
+            "now": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["units", "edges"],
+              "properties": {
+                "units": {
+                  "type": "integer"
+                },
+                "edges": {
+                  "type": "integer"
+                },
+                "commit": {
+                  "type": "string"
+                }
+              }
+            },
+            "concepts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["module", "files", "units"],
+                "properties": {
+                  "module": {
+                    "type": "string"
+                  },
+                  "declared": {
+                    "type": "boolean"
+                  },
+                  "net_new": {
+                    "type": "boolean"
+                  },
+                  "responsibility": {
+                    "type": ["string", "null"]
+                  },
+                  "files": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "units": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "homeless": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            },
+            "concepts_total": {
+              "type": "integer"
+            },
+            "concepts_code_bound": {
+              "type": "integer"
+            },
+            "used_not_declared": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "declared_not_used": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "next": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["module", "files", "units"],
+                "properties": {
+                  "module": {
+                    "type": "string"
+                  },
+                  "declared": {
+                    "type": "boolean"
+                  },
+                  "net_new": {
+                    "type": "boolean"
+                  },
+                  "responsibility": {
+                    "type": ["string", "null"]
+                  },
+                  "files": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "units": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "homeless": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            },
+            "next_net_new": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["trigger", "concepts", "path"],
+                "properties": {
+                  "trigger": {
+                    "enum": ["concept_crowding", "homeless_concept"]
+                  },
+                  "unit": {
+                    "type": ["string", "null"]
+                  },
+                  "concepts": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "concept_count": {
+                    "type": "integer"
+                  },
+                  "files": {
+                    "type": "integer"
+                  },
+                  "pairs": {
+                    "type": "integer"
+                  },
+                  "disjoint_pairs": {
+                    "type": "integer"
+                  },
+                  "disjoint_share": {
+                    "type": "number"
+                  },
+                  "cleanest_seam": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "module": {
+                            "type": "string"
+                          },
+                          "shared_files": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "path": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "completions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["days", "since", "count", "ids"],
+        "properties": {
+          "days": {
+            "type": "integer"
+          },
+          "since": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer"
+          },
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "reading_coverage": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["populated_paths", "derived_count", "ignored_count", "unhandled_count"],
+          "description": "What the census found: how much of the source this brief actually read (D9).",
+          "properties": {
+            "populated_paths": {
+              "type": "integer"
+            },
+            "derived_count": {
+              "type": "integer"
+            },
+            "ignored_count": {
+              "type": "integer"
+            },
+            "unhandled_count": {
+              "type": "integer"
+            },
+            "read_coverage": {
+              "type": "number"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

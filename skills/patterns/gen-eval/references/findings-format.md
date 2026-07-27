@@ -8,22 +8,22 @@ How to consolidate, categorize, and present findings from generator/evaluator ag
 
 Every finding falls into one of three categories:
 
-| Category | Definition | Action |
-|----------|-----------|--------|
-| **Blocking** | Would stop the downstream consumer from working. Implementation cannot proceed without fixing this. | Fix immediately before proceeding |
-| **Important** | Would cause friction, confusion, or rework. Consumer can work around it but shouldn't have to. | Fix before proceeding if possible |
-| **Minor** | Cosmetic, missing optional fields, style inconsistencies. No functional impact. | Fix if time permits, or defer |
+| Category      | Definition                                                                                          | Action                            |
+| ------------- | --------------------------------------------------------------------------------------------------- | --------------------------------- |
+| **Blocking**  | Would stop the downstream consumer from working. Implementation cannot proceed without fixing this. | Fix immediately before proceeding |
+| **Important** | Would cause friction, confusion, or rework. Consumer can work around it but shouldn't have to.      | Fix before proceeding if possible |
+| **Minor**     | Cosmetic, missing optional fields, style inconsistencies. No functional impact.                     | Fix if time permits, or defer     |
 
 ### Classification heuristics
 
-| Signal | Likely category |
-|--------|----------------|
-| Missing required field → downstream skill errors | Blocking |
-| Security vulnerability (auth bypass, data leak) | Blocking |
-| Ambiguous acceptance criteria (implementer must guess) | Important |
-| Wrong file path (exists but different name) | Important |
-| Missing optional field (has reasonable default) | Minor |
-| Naming convention mismatch (functional but inconsistent) | Minor |
+| Signal                                                   | Likely category |
+| -------------------------------------------------------- | --------------- |
+| Missing required field → downstream skill errors         | Blocking        |
+| Security vulnerability (auth bypass, data leak)          | Blocking        |
+| Ambiguous acceptance criteria (implementer must guess)   | Important       |
+| Wrong file path (exists but different name)              | Important       |
+| Missing optional field (has reasonable default)          | Minor           |
+| Naming convention mismatch (functional but inconsistent) | Minor           |
 
 ---
 
@@ -34,6 +34,7 @@ Multiple agents often find the same issue from different angles. Merge duplicate
 ### How to detect duplicates
 
 Two findings are duplicates if they:
+
 1. Reference the same item (story, field, file, endpoint)
 2. Describe the same root cause (even if symptoms differ)
 3. Would be fixed by the same change
@@ -41,6 +42,7 @@ Two findings are duplicates if they:
 ### How to merge
 
 When merging duplicate findings:
+
 - Keep the **higher severity** classification
 - Combine evidence from both agents
 - Note which agents found it: "found by Generator + Evaluator"
@@ -53,6 +55,7 @@ When merging duplicate findings:
 **Evaluator found:** "Story `api-storage-router` has a security issue — `creatorId` should come from session, not client input, to prevent cross-user access"
 
 **Merged finding:**
+
 ```
 BLOCKING: creatorId must come from session, not client input
 - Found by: Generator (missing detail) + Evaluator (security issue)
@@ -101,12 +104,12 @@ Validation complete: {N} blocking, {M} important, {K} minor issues found.
 When there are 10+ findings, a table is more scannable:
 
 ```markdown
-| # | Severity | Issue | Found by | Fix |
-|---|----------|-------|----------|-----|
-| 1 | Blocking | creatorId from client = security hole | Gen + Eval | Derive from session |
-| 2 | Blocking | Missing dispatch_epoch field | Protocol | Add top-level field |
-| 3 | Important | Zod v4 incompatibility | Evaluator | Hand-write schemas |
-| ... | | | | |
+| #   | Severity  | Issue                                 | Found by   | Fix                 |
+| --- | --------- | ------------------------------------- | ---------- | ------------------- |
+| 1   | Blocking  | creatorId from client = security hole | Gen + Eval | Derive from session |
+| 2   | Blocking  | Missing dispatch_epoch field          | Protocol   | Add top-level field |
+| 3   | Important | Zod v4 incompatibility                | Evaluator  | Hand-write schemas  |
+| ... |           |                                       |            |                     |
 ```
 
 ---
@@ -125,13 +128,13 @@ After applying fixes, append a changelog entry to the artifact:
 
 ### Mode labels for changelog
 
-| Mode | Label |
-|------|-------|
-| Product context validation | `product-context` |
-| Design artifact validation | `design` |
-| Code review | `code-review` |
-| Document validation | `document` |
-| Custom | Use the artifact name |
+| Mode                       | Label                 |
+| -------------------------- | --------------------- |
+| Product context validation | `product-context`     |
+| Design artifact validation | `design`              |
+| Code review                | `code-review`         |
+| Document validation        | `document`            |
+| Custom                     | Use the artifact name |
 
 ---
 

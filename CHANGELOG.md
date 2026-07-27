@@ -17,6 +17,74 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 > `/envision`, `/dispatch`, `/reflect`, …), which records product-state history
 > for that project. See [`docs/glossary.md`](docs/glossary.md).
 
+## [3.3.0] - 2026-07-27
+
+`/aep-human-alignment` — a project pulse. One command answers where a project
+stands, what is owed to a human and for how long, and what changed since you
+last looked, derived from `product-context.yaml`.
+
+The design went through ten revisions and two independent generator/evaluator
+rounds, both of which failed the artifact it originally set out to produce. What
+ships is what survived that: the deterministic half.
+
+### Added
+
+- **`skills/human-alignment/`** — a standalone top-level skill, a fifth
+  marketplace plugin, emitting on three clocks rather than one:
+  - **The fact plane** (`derive.mjs` + `census.mjs` + `facts.schema.json`) —
+    every number the surface can state, derived from the plan file and git,
+    validated against its own schema. `census.mjs` classifies every populated
+    path in the consumer's plan file as derived / ignored-with-a-reason /
+    unhandled, so what the tooling cannot see is a number rather than a
+    surprise.
+  - **The pulse** (`pulse.mjs`) — the read-time answer to _what happened since I
+    last looked_. It writes nothing, asserts nothing, and deals in events rather
+    than states. Four sections: obligations with their age, transitions since
+    your cursor, what needs a human, and open work that has stopped moving.
+  - **The deterministic architecture pipeline** (`scan-workspace.mjs` →
+    `arch-rules.mjs` → `receipt-consumer.mjs`) — the real package topology, with
+    concepts bound to code units by measurement from the work record, rendered
+    through archify's layout gates and repaired only by its own receipts.
+- **Two framework specs** in `skills/product-context/_shared/references/` —
+  `attention-set.md` (what needs a human, its priority order, per-predicate
+  schema tolerance) and `drift-facts.md` (where reality drifted).
+
+### Changed
+
+- **`/aep-validate` gains a blocking coherence precheck.** Five plan-file
+  defects that want an action rather than a reader — completed work under a gate
+  recorded as never started, an undefined gate status, a roll-up that disagrees
+  with the record it summarizes, a module used but never declared, and fields a
+  consumer invented — now run mechanically before any agent is spawned, and
+  fail. They were previously narrated in a document while nothing stopped.
+- **`scripts/build-skills.sh` materializes shared resources into top-level
+  skills and shared `scripts/`**, on the same per-file rule it has always used
+  for references. The coherence detector is shared rather than copied: two
+  copies of a drift detector drift.
+- **Pre-commit hooks no longer fail a docs-only commit.** oxlint and oxfmt error
+  rather than no-op when handed nothing they handle; both now carry a glob and
+  oxfmt guards on the post-filter set.
+
+### Not yet ready
+
+- **The one-page HTML brief (emission 3) ships unproven and is documented as
+  such.** Two independent evaluations failed it — not on machinery, which
+  passes, but on prose asserting more than the facts carried. Its per-layer
+  regeneration trigger is unbuilt; today it generates per invocation, which the
+  decision doc identifies as the central design error. Findings and a generated
+  example are committed at `docs/human-alignment/example-looplia/` as evidence,
+  not as a model to copy. Use the pulse.
+
+### Notes
+
+- Only a `passed` gate yields an unchipped capability; `scripted_passed` appears
+  solely under an EXP chip naming the acceptance run that would settle it, and a
+  gate whose sign-off was withdrawn yields neither.
+- A roll-up field being zero is a statement about the roll-up, not about the
+  data. Spend derives from `stories[].cost_usd`; the concept-to-code binding
+  derives from `stories[].module` × `files_affected`.
+- Consumers must re-pin to `@v3.3.0` before `/aep-human-alignment` is available.
+
 ## [3.2.1] - 2026-07-18
 
 Patch: the `secret_scan` example in the scaffolded `policy.md` named

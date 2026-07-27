@@ -16,8 +16,10 @@
 #     is skill-owned and never touched, so authored and generated files coexist.
 #
 # Selection rules:
-#   - references: a skill receives exactly the _shared/references/ files whose
-#     path (relative to references/) its SKILL.md mentions as "references/<path>".
+#   - references and scripts: a skill receives exactly the _shared/<dir>/ files
+#     whose path its SKILL.md mentions as "<dir>/<path>". Shared scripts exist
+#     because a detector that two skills must agree on cannot be duplicated —
+#     the copies drift, and a drift detector that drifts is worse than none.
 #   - templates: a skill that mentions "templates/" receives the full shared
 #     template kit (templates cross-reference each other, so they ship whole).
 #
@@ -63,6 +65,20 @@ if [ ! -d "$SHARED" ]; then
   exit 1
 fi
 
+# Consumers of the shared corpus: every skill directory in the repo, whether it
+# sits under skills/product-context/ (the original category) or directly under
+# skills/ as a standalone top-level skill. A directory is a skill iff it holds a
+# SKILL.md, which excludes the category dirs and _shared itself. Standalone
+# skills need this because the `skills` CLI installs one directory at a time —
+# a skill that reads references/attention-set.md must carry its own copy.
+consumer_dirs() {
+  local d
+  for d in "$PC"/*/ "$REPO"/skills/*/; do
+    [ -f "$d/SKILL.md" ] || continue
+    printf '%s\n' "$d"
+  done | sort -u
+}
+
 # Desired managed files (relative paths within the shared dir) for one consumer.
 desired_files() {
   local skillmd="$1" shared="$2"
@@ -73,8 +89,8 @@ desired_files() {
     return 0
   fi
   local rel
-  (cd "$SHARED/references" && find . -type f ! -name "$MARKER" | sed 's|^\./||') | while IFS= read -r rel; do
-    if grep -qF "references/$rel" "$skillmd"; then
+  (cd "$SHARED/$shared" && find . -type f ! -name "$MARKER" | sed 's|^\./||') | while IFS= read -r rel; do
+    if grep -qF "$shared/$rel" "$skillmd"; then
       printf '%s\n' "$rel"
     fi
   done | sort
@@ -139,13 +155,12 @@ preflight_destinations() {
   local skill_dir name skillmd shared src dst desired recorded rel seen marker
   local failures=0
 
-  for skill_dir in "$PC"/*/; do
+  while IFS= read -r skill_dir; do
     name="$(basename "$skill_dir")"
-    [ "$name" = "_shared" ] && continue
     skillmd="$skill_dir/SKILL.md"
     [ -f "$skillmd" ] || continue
 
-    for shared in references templates; do
+    for shared in references scripts templates; do
       src="$SHARED/$shared"
       [ -d "$src" ] || continue
       dst="$skill_dir$shared"
@@ -183,7 +198,7 @@ preflight_destinations() {
         fi
       done <<< "$desired"
     done
-  done
+  done <<< "$(consumer_dirs)"
 
   [ "$failures" -eq 0 ] || {
     echo "ERROR: $failures unsafe generated-resource destination(s); nothing was changed." >&2
@@ -198,13 +213,12 @@ WROTE=0
 CONFLICT=0
 CHANGED_FILES=""
 
-for skill_dir in "$PC"/*/; do
+while IFS= read -r skill_dir; do
   name="$(basename "$skill_dir")"
-  [ "$name" = "_shared" ] && continue
   skillmd="$skill_dir/SKILL.md"
   [ -f "$skillmd" ] || continue
 
-  for shared in references templates; do
+  for shared in references scripts templates; do
     src="$SHARED/$shared"
     [ -d "$src" ] || continue
     dst="$skill_dir$shared"
@@ -307,7 +321,7 @@ $desired"
       WROTE=$((WROTE + 1))
     fi
   done
-done
+done <<< "$(consumer_dirs)"
 
 # Stage exactly what this run changed (lefthook's stage_fixed only re-stages
 # files that were already staged, so the hook passes --stage instead).

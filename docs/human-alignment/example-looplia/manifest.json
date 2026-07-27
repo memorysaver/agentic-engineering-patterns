@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "generated": "2026-07-27T0414Z",
+  "commit": "a28fec13",
+  "output": "brief-2026-07-27T0414Z-a28fec13.html",
+  "facts_sha256": "2e6aacef28a0a42817d47b4fe06c594be694a9dca1593a4991206eaab008da73",
+  "artifacts": [
+    "aep-loop",
+    "architecture-declared",
+    "architecture-next",
+    "architecture-now",
+    "story-states"
+  ],
+  "degraded": [],
+  "content_sha256": "6bc8dbad622dadca5fbd0ae99d4e2c1f25f3d2dba4dbba3b0e72474cbc9a34ec",
+  "history": [
+    {
+      "schema_version": 1,
+      "generated": "2026-07-25T0745Z",
+      "commit": "65e359c6",
+      "output": "brief-2026-07-25T0745Z-65e359c6.html",
+      "facts_sha256": "b1396d5c490de1b69f31a7db2c17bde4488f60a7b3e5300baf686be20c6b5882",
+      "artifacts": [
+        "aep-loop",
+        "architecture-declared",
+        "architecture-next",
+        "architecture-now",
+        "story-states"
+      ],
+      "degraded": [],
+      "content_sha256": "b8b53ad21a10e58a5779bad82e6a73f133f894102b7c36ddd3288c02bd2fc51b"
+    },
+    {
+      "schema_version": 1,
+      "generated": "2026-07-25T1730Z",
+      "commit": "a28fec13",
+      "output": "brief-2026-07-25T1730Z-a28fec13.html",
+      "facts_sha256": "bafd889f239feacbc6476a3c632055bbc3abebbebabd64c91f2f3df8c8f834fa",
+      "artifacts": [
+        "aep-loop",
+        "architecture-declared",
+        "architecture-next",
+        "architecture-now",
+        "story-states"
+      ],
+      "degraded": [],
+      "content_sha256": "b88f115242c809da61bf7d16bb861ea116b9f4ed1f310a0d36ee530beb67038e"
+    }
+  ]
+}

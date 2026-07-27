@@ -1,0 +1,905 @@
+<!doctype html>
+<html lang="{{LANG}}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{PROJECT}} · project brief</title>
+    <!--
+      TEMPLATE CONTRACT — read before authoring a single section.
+
+      1. This file is the ONLY source of CSS class names. Never invent a class;
+         if a section needs a shape that is not here, add it here first.
+      2. No number is ever typed into markup. Every number is
+         <span data-fact="<path into facts JSON>"></span> and the renderer at the
+         bottom fills it. audit.mjs fails the build if a digit appears in
+         authored markup outside a data-fact element or a .anchor.
+      3. Every surfaced item is a plain sentence first; its system identifier
+         goes in the <p class="anchor"> beneath it. Anchors are citations.
+      4. Facts are unchipped. Only non-facts carry a chip:
+         <span class="chip goal">…</span> must name its binding story/layer,
+         <span class="chip exp">…</span> must name the event that settles it.
+         Never chip a fact — the page-level "how much of this is hollow" read is
+         the trust gauge, and diluting it destroys the gauge.
+      5. Slots marked {{...}} are filled at author time. Blocks marked
+         data-gate collapse to a stamp when the delta gate says unchanged.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Newsreader:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ── Palette: the single source. Two accents, fixed meanings. ────────── */
+      :root {
+        --paper: #f5f2ea;
+        --paper-2: #efeada;
+        --record: #23201c;
+        --record-2: #2e2a24;
+        --ink: #1c1a17;
+        --ink-2: #4b463e;
+        --ink-3: #7d766a;
+        --ink-invert: #f2eee4;
+        --rule: #d9d2c2;
+        --rule-record: #433d34;
+        --needs-you: #a8532a; /* sienna — one meaning: a human is required */
+        --drift: #6b7135; /* olive — one meaning: intent and reality diverged */
+        --serif: "Newsreader", ui-serif, Georgia, serif;
+        --sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+        --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+        --band-max: 1120px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--sans);
+        font-size: 16px;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ── Canvas layer: data-free, degradable, allowed to be beautiful ───── */
+      #wash {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+      }
+      #wash canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      .wash-fallback {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background: radial-gradient(
+          120% 80% at 20% 0%,
+          #fbf8f0 0%,
+          var(--paper) 45%,
+          var(--paper-2) 100%
+        );
+      }
+      .wash-tag {
+        position: fixed;
+        right: 12px;
+        bottom: 10px;
+        z-index: 6;
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--ink-3);
+        opacity: 0.65;
+      }
+
+      /* ── Rail: scope names, never role names ────────────────────────────── */
+      .rail {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 0;
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        padding: 10px 22px;
+        background: color-mix(in srgb, var(--paper) 86%, transparent);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--rule);
+        font-family: var(--mono);
+        font-size: 11px;
+      }
+      .rail nav {
+        display: flex;
+        gap: 6px;
+      }
+      .rail button {
+        font: inherit;
+        border: 1px solid transparent;
+        background: none;
+        color: var(--ink-3);
+        padding: 3px 9px;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+      .rail button[aria-current="true"] {
+        color: var(--ink);
+        border-color: var(--rule);
+        background: color-mix(in srgb, var(--paper-2) 70%, transparent);
+      }
+      .rail .state {
+        margin-left: auto;
+        display: flex;
+        gap: 14px;
+        color: var(--ink-2);
+      }
+      .rail .state b {
+        font-weight: 500;
+        color: var(--ink);
+      }
+      .rail .state .flag {
+        color: var(--needs-you);
+      }
+
+      /* ── Bands ──────────────────────────────────────────────────────────── */
+      .band {
+        position: relative;
+        z-index: 1;
+        scroll-margin-top: 52px;
+        padding: 72px 22px 60px;
+      }
+      .band-inner {
+        max-width: var(--band-max);
+        margin: 0 auto;
+      }
+      .band.record {
+        background: var(--record);
+        color: var(--ink-invert);
+        --ink: var(--ink-invert);
+        --ink-2: #c7c0b2;
+        --ink-3: #948d80;
+        --rule: var(--rule-record);
+      }
+      .band-kicker {
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+        margin: 0 0 10px;
+      }
+      .band-title {
+        font-family: var(--serif);
+        font-size: clamp(28px, 4vw, 44px);
+        font-weight: 600;
+        line-height: 1.15;
+        margin: 0 0 6px;
+      }
+      .answer-first {
+        font-family: var(--serif);
+        font-size: clamp(19px, 2.2vw, 24px);
+        line-height: 1.45;
+        color: var(--ink);
+        margin: 0 0 28px;
+        max-width: 62ch;
+      }
+      .section {
+        margin: 34px 0 0;
+      }
+      .section h3 {
+        font-family: var(--serif);
+        font-size: 20px;
+        font-weight: 600;
+        margin: 0 0 8px;
+      }
+      p {
+        max-width: 68ch;
+        margin: 0 0 12px;
+      }
+
+      /* ── Anchors: system identifiers live here and nowhere else ─────────── */
+      .anchor {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--ink-3);
+        margin: 2px 0 14px;
+        word-break: break-word;
+      }
+
+      /* ── Tense chips: never on a fact ───────────────────────────────────── */
+      .chip {
+        display: inline-block;
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 1px 7px;
+        border-radius: 3px;
+        vertical-align: 1px;
+        margin-right: 5px;
+      }
+      .chip.goal {
+        border: 1px solid var(--ink-2);
+        color: var(--ink-2);
+      }
+      .chip.exp {
+        border: 1px dashed var(--ink-2);
+        color: var(--ink-2);
+      }
+
+      /* ── The one ask ────────────────────────────────────────────────────── */
+      .ask {
+        border-left: 3px solid var(--needs-you);
+        padding: 2px 0 2px 18px;
+        margin: 0 0 26px;
+      }
+      .ask .verb {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--needs-you);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+      }
+      .ask .how {
+        font-size: 14px;
+        color: var(--ink-2);
+      }
+      .quiet {
+        border-top: 1px solid var(--rule);
+        padding-top: 14px;
+        font-size: 14px;
+        color: var(--ink-2);
+      }
+
+      /* ── Stage cells: the five-cell grammar, defined in LIFECYCLE ───────── */
+      .rows {
+        border-top: 1px solid var(--rule);
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 86px 1fr;
+        gap: 16px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--rule);
+        align-items: start;
+      }
+      .stages {
+        display: flex;
+        gap: 3px;
+        padding-top: 4px;
+      }
+      .cell {
+        width: 13px;
+        height: 13px;
+        border: 1px solid var(--ink-3);
+        border-radius: 2px;
+      }
+      .cell.on {
+        background: var(--ink-2);
+        border-color: var(--ink-2);
+      }
+      .cell.exception {
+        background: var(--needs-you);
+        border-color: var(--needs-you);
+      }
+      .row .what {
+        margin: 0;
+      }
+      .row .mark {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--needs-you);
+        text-transform: uppercase;
+      }
+
+      /* ── Layer strip ────────────────────────────────────────────────────── */
+      .strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin: 0 0 20px;
+      }
+      .tick {
+        font-family: var(--mono);
+        font-size: 10px;
+        padding: 3px 7px;
+        border: 1px solid var(--rule);
+        border-radius: 3px;
+        color: var(--ink-3);
+      }
+      .tick.done {
+        background: var(--ink-2);
+        border-color: var(--ink-2);
+        color: var(--paper);
+      }
+      .tick.current {
+        border-color: var(--needs-you);
+        color: var(--needs-you);
+        font-weight: 500;
+      }
+
+      /* ── Drift rows ─────────────────────────────────────────────────────── */
+      .drift {
+        border-left: 3px solid var(--drift);
+        padding-left: 16px;
+        margin: 0 0 20px;
+      }
+      .drift h4 {
+        font-family: var(--serif);
+        font-size: 17px;
+        font-weight: 600;
+        margin: 0 0 4px;
+      }
+
+      /* ── Design Option Sets (D8): suggestions carrying their material ──── */
+      .options {
+        border: 1px solid var(--rule);
+        border-radius: 4px;
+        padding: 20px 22px;
+        margin: 24px 0;
+      }
+      .options > h4 {
+        font-family: var(--serif);
+        font-size: 19px;
+        font-weight: 600;
+        margin: 0 0 4px;
+      }
+      .option {
+        border-top: 1px solid var(--rule);
+        padding-top: 14px;
+        margin-top: 16px;
+      }
+      .option h5 {
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ink-2);
+        margin: 0 0 6px;
+      }
+      .option dl {
+        margin: 0;
+        display: grid;
+        grid-template-columns: 5.5rem 1fr;
+        gap: 2px 14px;
+        font-size: 15px;
+      }
+      .option dt {
+        font-family: var(--mono);
+        font-size: 11px;
+        text-transform: uppercase;
+        color: var(--ink-3);
+        padding-top: 4px;
+      }
+      .option dd {
+        margin: 0;
+      }
+      .criterion {
+        border-top: 1px solid var(--rule);
+        margin-top: 18px;
+        padding-top: 12px;
+        font-size: 14px;
+        color: var(--ink-2);
+      }
+
+      /* ── Disclosure: the folded queue ───────────────────────────────────── */
+      details {
+        margin: 8px 0 18px;
+      }
+      summary {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--ink-2);
+        cursor: pointer;
+      }
+      details ul {
+        margin: 10px 0 0;
+        padding-left: 20px;
+        font-size: 14px;
+        color: var(--ink-2);
+      }
+
+      /* ── Embedded artifacts ─────────────────────────────────────────────── */
+      .tabs {
+        display: flex;
+        gap: 6px;
+        margin: 0 0 10px;
+        font-family: var(--mono);
+        font-size: 11px;
+      }
+      .tabs button {
+        font: inherit;
+        padding: 4px 10px;
+        border: 1px solid var(--rule);
+        border-radius: 3px;
+        background: none;
+        color: var(--ink-3);
+        cursor: pointer;
+      }
+      .tabs button[aria-selected="true"] {
+        color: var(--ink);
+        border-color: var(--ink-3);
+      }
+      .frame {
+        width: 100%;
+        height: 640px;
+        border: 1px solid var(--rule);
+        border-radius: 4px;
+        background: #fff;
+      }
+      .frame-degraded {
+        border: 1px dashed var(--rule);
+        padding: 18px;
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--ink-2);
+        white-space: pre-wrap;
+      }
+
+      /* ── Delta-gate stamps ──────────────────────────────────────────────── */
+      .stamp {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--ink-3);
+        border-top: 1px solid var(--rule);
+        margin-top: 30px;
+        padding-top: 10px;
+      }
+      /* A gated block shows its content OR its stamp, never both: the stamp is
+         what a collapsed block collapses to. */
+      [data-gate][data-changed="false"] > *:not(.stamp) {
+        display: none;
+      }
+      [data-gate][data-changed="true"] > .stamp {
+        display: none;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+      }
+      @media print {
+        .rail,
+        #wash,
+        .wash-tag {
+          display: none;
+        }
+        .band {
+          break-inside: avoid;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="wash"></div>
+    <div class="wash-tag" id="wash-tag">◷</div>
+
+    <header class="rail">
+      <span><b>{{PROJECT}}</b> · brief</span>
+      <nav id="rail-nav"></nav>
+      <span class="state">
+        <span>layer <b data-fact="current_layer"></b></span>
+        <span>open <b data-fact="open_total"></b></span>
+        <span class="flag">needs you <b data-fact="attention_set.length"></b></span>
+      </span>
+    </header>
+
+    <!-- ═══ BAND 1 · OVERVIEW ═══════════════════════════════════════════ -->
+    <section class="band" id="overview" data-band="Overview">
+      <div class="band-inner">
+        <p class="band-kicker">Overview · the whole thing at a glance</p>
+        <h1 class="band-title">{{PROJECT_TITLE}}</h1>
+        {{OVERVIEW_ANSWER_FIRST}}
+
+        <div data-gate="identity" data-changed="{{GATE_IDENTITY}}">
+          {{PRIMER_ESSENCE}}
+          <p class="anchor">{{PRIMER_ANCHOR}}</p>
+          <p class="stamp">Overview · unchanged since {{IDENTITY_STAMP}}</p>
+        </div>
+
+        <div class="ask" id="one-ask">
+          <p class="verb">{{ASK_VERB}}</p>
+          {{ASK_SENTENCE}} {{ASK_HOW}}
+          <p class="anchor">{{ASK_ANCHOR}}</p>
+        </div>
+
+        {{QUIET_ZONE}}
+        <p class="anchor">{{QUIET_ANCHOR}}</p>
+
+        <div class="section">
+          <h3>{{AWAY_HEADING}}</h3>
+          {{AWAY_NARRATIVE}}
+          <p class="anchor">{{AWAY_ANCHOR}}</p>
+        </div>
+
+        <p class="stamp">
+          Five cells = the five stages of a task; filled = reached. Exceptions are markers, not
+          stages — defined once in Engineering. Small type under a sentence is its source; you only
+          need it when checking.
+        </p>
+      </div>
+    </section>
+
+    <!-- ═══ BAND 2 · PRODUCT ════════════════════════════════════════════ -->
+    <section class="band" id="product" data-band="Product">
+      <div class="band-inner">
+        <p class="band-kicker">Product · what it can do</p>
+        <h2 class="band-title">{{PRODUCT_TITLE}}</h2>
+        {{PRODUCT_ANSWER_FIRST}}
+
+        <div data-gate="capabilities" data-changed="{{GATE_CAPABILITIES}}">
+          <div class="section">
+            <h3>{{SHIPPED_HEADING}}</h3>
+            {{SHIPPED_CAPABILITIES}}
+          </div>
+          <div class="section">
+            <h3>{{RECENT_HEADING}}</h3>
+            {{RECENT_CHANGES}}
+          </div>
+          <div class="section">
+            <h3>{{NEXT_HEADING}}</h3>
+            {{NEXT_CAPABILITIES}}
+          </div>
+          <p class="stamp">Product · capability list unchanged since {{CAPABILITIES_STAMP}}</p>
+        </div>
+
+        <p class="stamp">
+          This list is derived from gates that reached <code>passed</code>; a gate that has only
+          passed its scripted run appears under an EXP chip naming the acceptance run that would
+          settle it. Nothing appears here on the strength of an unfinished gate.
+        </p>
+      </div>
+    </section>
+
+    <!-- ═══ BAND 3 · PROJECT ════════════════════════════════════════════ -->
+    <section class="band" id="project" data-band="Project">
+      <div class="band-inner">
+        <p class="band-kicker">Project · plan and progress</p>
+        <h2 class="band-title">{{PROJECT_BAND_TITLE}}</h2>
+        {{PROJECT_ANSWER_FIRST}}
+
+        <div class="strip" id="layer-strip"></div>
+        <div class="rows" id="frontier-rows"></div>
+        {{QUEUED_LAYERS}}
+      </div>
+    </section>
+
+    <!-- ═══ BAND 3b · THE RECORD ════════════════════════════════════════ -->
+    <section class="band record" id="ledger" data-band="Ledger">
+      <div class="band-inner">
+        <p class="band-kicker">Project · ledger · facts that expire live here</p>
+        <h2 class="band-title">{{LEDGER_TITLE}}</h2>
+        {{LEDGER_ANSWER_FIRST}}
+
+        <div class="section">
+          <h3>{{MOVED_HEADING}}</h3>
+          {{MOVED_BODY}}
+        </div>
+
+        <div class="section">
+          <h3>{{DRIFT_HEADING}}</h3>
+          {{DRIFT_ROWS}}
+        </div>
+
+        <p class="stamp">
+          Every drift row is derived and cites its source — none is written from impression.
+          Unchipped = fact; EXP = an expectation, with the condition that would settle it.
+        </p>
+      </div>
+    </section>
+
+    <!-- ═══ BAND 4 · ENGINEERING ════════════════════════════════════════ -->
+    <section class="band" id="engineering" data-band="Engineering">
+      <div class="band-inner">
+        <p class="band-kicker">Engineering · the system itself</p>
+        <h2 class="band-title">{{ENGINEERING_TITLE}}</h2>
+        {{ENGINEERING_ANSWER_FIRST}}
+
+        <div data-gate="architecture" data-changed="{{GATE_ARCHITECTURE}}">
+          <div class="tabs" id="arch-tabs"></div>
+          <div id="arch-host"></div>
+          <p class="anchor">{{ARCH_ANCHOR}}</p>
+          {{ARCH_NOTE}}
+          <p class="stamp">Engineering · architecture unchanged since {{ARCHITECTURE_STAMP}}</p>
+        </div>
+
+        {{OPTIONS_BLOCK}}
+
+        <div class="section" data-gate="lifecycle" data-changed="{{GATE_LIFECYCLE}}">
+          <h3>{{LIFECYCLE_HEADING}}</h3>
+          {{LIFECYCLE_INTRO}}
+          <div id="loop-host"></div>
+          <div id="states-host"></div>
+          <p class="stamp">Engineering · loop and states unchanged since {{LIFECYCLE_STAMP}}</p>
+        </div>
+
+        <div class="section">
+          <h3>{{PROVENANCE_HEADING}}</h3>
+          {{PROVENANCE_BODY}}
+          <p class="anchor" id="manifest-anchor"></p>
+        </div>
+      </div>
+    </section>
+
+    <script id="facts-json" type="application/json">
+      {{FACTS_JSON}}
+    </script>
+    <script id="manifest-json" type="application/json">
+      {{MANIFEST_JSON}}
+    </script>
+    <script id="artifacts-json" type="application/json">
+      {{ARTIFACTS_JSON}}
+    </script>
+
+    <script>
+      (function () {
+        "use strict";
+        var FACTS = JSON.parse(document.getElementById("facts-json").textContent);
+        var MANIFEST = JSON.parse(document.getElementById("manifest-json").textContent);
+        var ARTIFACTS = JSON.parse(document.getElementById("artifacts-json").textContent);
+
+        // ── The only number renderer. Markup never carries a digit. ────────
+        function resolve(path) {
+          return path.split(".").reduce(function (o, k) {
+            if (o == null) return undefined;
+            if (k === "length") return o.length;
+            return o[k];
+          }, FACTS);
+        }
+        Array.prototype.forEach.call(document.querySelectorAll("[data-fact]"), function (el) {
+          var v = resolve(el.getAttribute("data-fact"));
+          el.textContent = v === undefined || v === null ? "—" : String(v);
+        });
+
+        // ── Layer strip ────────────────────────────────────────────────────
+        var strip = document.getElementById("layer-strip");
+        if (strip) {
+          FACTS.layers.forEach(function (l) {
+            var b = document.createElement("span");
+            var open = (l.total || 0) - ((l.counts.completed || 0) + (l.counts.deferred || 0));
+            b.className =
+              "tick" +
+              (open === 0 && l.total > 0 ? " done" : "") +
+              (l.is_current ? " current" : "");
+            b.textContent = "L" + l.layer;
+            b.title = l.total + " tasks · gate " + (l.gate_status || "none");
+            strip.appendChild(b);
+          });
+        }
+
+        // ── Current-layer rows, five-cell stage grammar ────────────────────
+        var rows = document.getElementById("frontier-rows");
+        var current = FACTS.layers.filter(function (l) {
+          return l.is_current;
+        })[0];
+        if (rows && current) {
+          current.stories
+            .filter(function (s) {
+              return s.status !== "completed";
+            })
+            .forEach(function (s) {
+              var row = document.createElement("div");
+              row.className = "row";
+              var cells = document.createElement("div");
+              cells.className = "stages";
+              for (var i = 1; i <= 5; i++) {
+                var c = document.createElement("span");
+                c.className =
+                  "cell" +
+                  (i <= s.stage ? " on" : "") +
+                  (s.exception && i === s.stage ? " exception" : "");
+                cells.appendChild(c);
+              }
+              var what = document.createElement("div");
+              var p = document.createElement("p");
+              p.className = "what";
+              p.textContent = s.title;
+              what.appendChild(p);
+              if (s.exception) {
+                var mk = document.createElement("p");
+                mk.className = "mark";
+                mk.textContent = s.exception;
+                what.appendChild(mk);
+              }
+              var an = document.createElement("p");
+              an.className = "anchor";
+              an.textContent = s.id + " · stories[].status = " + s.status;
+              what.appendChild(an);
+              row.appendChild(cells);
+              row.appendChild(what);
+              rows.appendChild(row);
+            });
+        }
+
+        // ── Embedded artifacts: one frame, tabs, srcdoc ────────────────────
+        function mountFrame(hostId, keys) {
+          var host = document.getElementById(hostId);
+          if (!host) return;
+          var available = keys.filter(function (k) {
+            return ARTIFACTS[k.key];
+          });
+          if (available.length === 0) {
+            var d = document.createElement("div");
+            d.className = "frame-degraded";
+            d.textContent =
+              "Diagram unavailable at generation time (archify CLI absent). This section is DEGRADED and says so; the source description is:\n\n" +
+              keys
+                .map(function (k) {
+                  return "· " + k.label;
+                })
+                .join("\n");
+            host.appendChild(d);
+            return;
+          }
+          var frame = document.createElement("iframe");
+          frame.className = "frame";
+          frame.setAttribute("sandbox", "allow-scripts allow-popups");
+          frame.setAttribute("loading", "lazy");
+          frame.setAttribute("title", available[0].label);
+          host.appendChild(frame);
+          var tabsHost = document.getElementById(hostId.replace("-host", "-tabs"));
+          function show(k) {
+            frame.srcdoc = ARTIFACTS[k.key];
+            if (!tabsHost) return;
+            Array.prototype.forEach.call(tabsHost.children, function (b) {
+              b.setAttribute("aria-selected", String(b.dataset.key === k.key));
+            });
+          }
+          if (tabsHost && available.length > 1) {
+            available.forEach(function (k) {
+              var b = document.createElement("button");
+              b.textContent = k.label;
+              b.dataset.key = k.key;
+              b.onclick = function () {
+                show(k);
+              };
+              tabsHost.appendChild(b);
+            });
+          }
+          show(available[0]);
+        }
+        mountFrame("arch-host", [
+          { key: "architecture-now", label: "what exists now" },
+          { key: "architecture-next", label: "where the next design lands" },
+          { key: "architecture-declared", label: "declared narrative" },
+        ]);
+        mountFrame("loop-host", [{ key: "aep-loop", label: "the loop" }]);
+        mountFrame("states-host", [{ key: "story-states", label: "task states" }]);
+
+        // ── Rail: scope names, keyboard jumps, no scroll-snap ──────────────
+        var bands = Array.prototype.slice.call(document.querySelectorAll(".band"));
+        var nav = document.getElementById("rail-nav");
+        bands.forEach(function (b) {
+          var btn = document.createElement("button");
+          btn.textContent = b.dataset.band;
+          btn.onclick = function () {
+            b.scrollIntoView({ behavior: "smooth" });
+          };
+          nav.appendChild(btn);
+        });
+        function currentIndex() {
+          var best = 0;
+          bands.forEach(function (b, i) {
+            if (b.getBoundingClientRect().top <= 80) best = i;
+          });
+          return best;
+        }
+        function mark() {
+          var i = currentIndex();
+          Array.prototype.forEach.call(nav.children, function (b, j) {
+            b.setAttribute("aria-current", String(i === j));
+          });
+        }
+        window.addEventListener("scroll", mark, { passive: true });
+        mark();
+        document.addEventListener("keydown", function (e) {
+          if (e.metaKey || e.ctrlKey || e.altKey) return;
+          var tag = (e.target.tagName || "").toLowerCase();
+          if (tag === "input" || tag === "textarea") return;
+          var i = currentIndex();
+          var to = null;
+          if (e.key === "j" || e.key === "ArrowDown" || e.key === "PageDown")
+            to = Math.min(i + 1, bands.length - 1);
+          else if (e.key === "k" || e.key === "ArrowUp" || e.key === "PageUp")
+            to = Math.max(i - 1, 0);
+          else if (e.key === "Home") to = 0;
+          else if (e.key === "End") to = bands.length - 1;
+          if (to === null) return;
+          e.preventDefault();
+          bands[to].scrollIntoView({ behavior: "smooth" });
+        });
+
+        // ── Provenance ─────────────────────────────────────────────────────
+        var ma = document.getElementById("manifest-anchor");
+        if (ma) {
+          ma.textContent =
+            "generated " +
+            MANIFEST.generated +
+            " @ " +
+            MANIFEST.commit +
+            " · facts sha256 " +
+            (MANIFEST.facts_sha256 || "").slice(0, 16) +
+            " · derived by derive.mjs, audited by audit.mjs";
+        }
+
+        // ── Canvas layer: WebGL wash, CSS gradient fallback ────────────────
+        var tag = document.getElementById("wash-tag");
+        function fallback() {
+          var d = document.createElement("div");
+          d.className = "wash-fallback";
+          document.body.insertBefore(d, document.body.firstChild);
+          var w = document.getElementById("wash");
+          if (w) w.remove();
+          if (tag) tag.textContent = "wash: css";
+        }
+        try {
+          var canvas = document.createElement("canvas");
+          var gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+          if (!gl) throw new Error("no webgl");
+          document.getElementById("wash").appendChild(canvas);
+          var vs = "attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}";
+          var fs =
+            "precision mediump float;uniform vec2 r;uniform float t;" +
+            "float n(vec2 v){return fract(sin(dot(v,vec2(12.9898,78.233)))*43758.5453);}" +
+            "float s(vec2 v){vec2 i=floor(v),f=fract(v);f=f*f*(3.-2.*f);" +
+            "return mix(mix(n(i),n(i+vec2(1,0)),f.x),mix(n(i+vec2(0,1)),n(i+vec2(1,1)),f.x),f.y);}" +
+            "void main(){vec2 uv=gl_FragCoord.xy/r;float d=1.-uv.y;" +
+            "float v=s(uv*3.+vec2(t*.02,t*.015))*.5+s(uv*6.-vec2(t*.01,0.))*.25;" +
+            "vec3 paper=vec3(.961,.949,.918);vec3 warm=vec3(.925,.894,.831);" +
+            "vec3 c=mix(paper,warm,v*d*1.1);gl_FragColor=vec4(c,1.);}";
+          function sh(type, src) {
+            var o = gl.createShader(type);
+            gl.shaderSource(o, src);
+            gl.compileShader(o);
+            if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error("shader");
+            return o;
+          }
+          var prog = gl.createProgram();
+          gl.attachShader(prog, sh(gl.VERTEX_SHADER, vs));
+          gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, fs));
+          gl.linkProgram(prog);
+          if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error("link");
+          gl.useProgram(prog);
+          var buf = gl.createBuffer();
+          gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+          var loc = gl.getAttribLocation(prog, "p");
+          gl.enableVertexAttribArray(loc);
+          gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+          var uR = gl.getUniformLocation(prog, "r");
+          var uT = gl.getUniformLocation(prog, "t");
+          var reduce =
+            window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          function size() {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+          }
+          window.addEventListener("resize", size);
+          size();
+          if (tag) tag.textContent = "wash: webgl";
+          var start = performance.now();
+          function draw() {
+            gl.uniform2f(uR, canvas.width, canvas.height);
+            gl.uniform1f(uT, (performance.now() - start) / 1000);
+            gl.drawArrays(gl.TRIANGLES, 0, 3);
+            if (!reduce) requestAnimationFrame(draw);
+          }
+          draw();
+        } catch (err) {
+          fallback();
+        }
+      })();
+    </script>
+  </body>
+</html>
