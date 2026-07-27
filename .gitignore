@@ -60,3 +60,10 @@ dogfood-output/
 
 # Local agent/CLI installation artifacts
 .antigravitycli/
+
+# Stray screenshots dropped at the repo root during design sessions.
+# They were committed once by an over-broad `git add -A`; ignore them so it
+# cannot happen again.
+*.png
+!docs/**/*.png
+!assets/**/*.png
