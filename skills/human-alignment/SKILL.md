@@ -54,7 +54,34 @@ cursor defaults to the last orientation document's commit.
 Emission 3 — the rest of this file — is worth its cost only at its own clock.
 Generating it per invocation is the mistake revisions 1–9 made.
 
-## Steps
+## Step 0 — choose the emission (do this first)
+
+**Default to the pulse.** It answers the question people actually arrive with,
+costs seconds, and cannot state anything wrongly:
+
+```bash
+node scripts/pulse.mjs --repo . [--since <commit>]
+```
+
+Stop there unless one of these is true:
+
+| Ask                                                                   | Emission                                             |
+| --------------------------------------------------------------------- | ---------------------------------------------------- |
+| "what changed / what needs me / where are we"                         | **2 · pulse** — stop after this                      |
+| a script or another skill needs the numbers                           | **1 · fact plane** — run Derive below, stop after it |
+| "produce a document someone can be onboarded from", stated explicitly | **3 · the brief** — read the warning first           |
+
+**Before generating a brief, say this to the person and get a yes:** its prose
+failed two independent evaluations, the audit passing does not mean its claims
+are verified, and its output needs their review. Do not generate one because the
+request was vague — a vague request is a pulse.
+
+The phases below are **emission 3 only**. Emissions 1 and 2 are the two commands
+above.
+
+---
+
+## Emission 3 · the brief (unproven)
 
 Each phase ends in a checkable postcondition. Do not start a phase whose
 predecessor's postcondition is unmet.

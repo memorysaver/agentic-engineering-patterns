@@ -17,6 +17,28 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 > `/envision`, `/dispatch`, `/reflect`, …), which records product-state history
 > for that project. See [`docs/glossary.md`](docs/glossary.md).
 
+## [3.3.1] - 2026-07-27
+
+Patch: v3.3.0 documented the one-page brief as unproven and then shipped a
+skill whose default path generated one anyway.
+
+The maturity table sat in a section above `## Steps`, and `## Steps` walked
+straight from preflight to delivery with no gate. An agent following the
+operative instructions never encountered the warning — so the stated posture
+("use emissions 1 and 2") and the actual behaviour disagreed. That is exactly
+the class of defect this skill exists to catch, shipped inside the skill itself.
+
+### Fixed
+
+- **`SKILL.md` now gates on the emission before any phase runs.** Step 0 defaults
+  to the pulse and stops there; the fact plane and the brief each require a
+  matching ask. The brief additionally requires telling the person that its prose
+  failed two evaluations, that a passing audit does not mean verified claims, and
+  that the output needs their review — and getting a yes. **A vague request is a
+  pulse**, not a document.
+- The brief's phases are now explicitly headed `Emission 3 · the brief
+(unproven)` rather than presenting as the skill's main flow.
+
 ## [3.3.0] - 2026-07-27
 
 `/aep-human-alignment` — a project pulse. One command answers where a project
