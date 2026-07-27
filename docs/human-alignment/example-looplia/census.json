@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "populated_paths": 486,
-  "derived_count": 55,
-  "ignored_count": 431,
+  "populated_paths": 488,
+  "derived_count": 56,
+  "ignored_count": 432,
   "unhandled_count": 0,
-  "read_coverage": 0.113,
+  "read_coverage": 0.115,
   "derived": [
     {
       "path": "architecture.amendment_log[].date",
@@ -112,11 +112,15 @@
     },
     {
       "path": "layer_gates[].coverage.criteria_covered",
-      "populated": 9
+      "populated": 10
     },
     {
       "path": "layer_gates[].coverage.criteria_total",
-      "populated": 9
+      "populated": 10
+    },
+    {
+      "path": "layer_gates[].coverage.uncovered[]",
+      "populated": 1
     },
     {
       "path": "layer_gates[].decision_realignment.decided_at",
@@ -1844,6 +1848,11 @@
       "reason": "Evidence artifacts proving a gate (journeys, dogfood receipts, matrices). The brief reports whether the gate passed and cites it; reproducing the evidence bundle is /aep-build's record."
     },
     {
+      "path": "layer_gates[].evidence.scripted[]",
+      "populated": 3,
+      "reason": "Evidence artifacts proving a gate (journeys, dogfood receipts, matrices). The brief reports whether the gate passed and cites it; reproducing the evidence bundle is /aep-build's record."
+    },
+    {
       "path": "layer_gates[].journeys[]",
       "populated": 10,
       "reason": "BDD journey references. Same disposition as evidence — the proof, not the state."
@@ -2387,7 +2396,6 @@
   "unhandled": [],
   "declared_but_absent": [
     "architecture.modules[].paths[]",
-    "layer_gates[].coverage.uncovered[]",
     "layer_gates[].skip_human_eval"
   ],
   "reasonless_ignores": []

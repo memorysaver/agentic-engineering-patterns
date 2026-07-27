@@ -1,0 +1,27 @@
+
+PULSE  looplia-run  @ a28fec13
+  cursor 65e359c6 · 9 commits since
+
+OWED BY YOU
+   46d  L10    BLOCKED on registering a real Notion integration + Google OAuth client (user-owned accounts) an…
+   45d  L12    PENDING — requires a human with a real mic on looplia.run (9-item checklist + performance-quali…
+   26d  L26    manual acceptance not run
+    2d  L32    manual acceptance not run
+    2d  L41    Gate stays scripted_passed: Tier-2/3 remain PENDING the target-bound journey, and no tamper-evi…
+    ?d  L20    manual acceptance not run
+
+SINCE YOU LAST LOOKED
+  L41-001                        pending → completed
+  layer L32                      closed_realigned → successor L41
+  gate L41                       not_started → scripted_passed
+
+NEEDS YOU NOW
+  reset      FIX-L32-SUPERVISOR-START-001   Stabilize fresh-identity Sandbox supervisor start
+  reset      FIX-L32-CANARY-502-001         Diagnose non-contract Sandbox canary 502 envelope
+
+OPEN AND NOT MOVING
+    5d  FIX-L32-SUPERVISOR-START-001   failed
+    5d  FIX-L32-CANARY-502-001         failed
+
+  nothing here was written to disk; re-run to recompute
+

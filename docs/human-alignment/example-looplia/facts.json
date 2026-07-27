@@ -21,23 +21,6 @@
       "rank": 1,
       "kind": "failed",
       "verb": "reset",
-      "id": "FIX-L32-CANARY-502-001",
-      "title": "Diagnose non-contract Sandbox canary 502 envelope",
-      "layer": 32,
-      "path": "stories[id=FIX-L32-CANARY-502-001].status",
-      "why": null,
-      "predicates": {
-        "retries_exhausted": false,
-        "attempts_used": 0,
-        "attempts_allowed": 2,
-        "failure_log_count": 1,
-        "root_cause_stated": false
-      }
-    },
-    {
-      "rank": 1,
-      "kind": "failed",
-      "verb": "reset",
       "id": "FIX-L32-SUPERVISOR-START-001",
       "title": "Stabilize fresh-identity Sandbox supervisor start",
       "layer": 32,
@@ -47,6 +30,23 @@
         "retries_exhausted": false,
         "attempts_used": 0,
         "attempts_allowed": 4,
+        "failure_log_count": 1,
+        "root_cause_stated": false
+      }
+    },
+    {
+      "rank": 1,
+      "kind": "failed",
+      "verb": "reset",
+      "id": "FIX-L32-CANARY-502-001",
+      "title": "Diagnose non-contract Sandbox canary 502 envelope",
+      "layer": 32,
+      "path": "stories[id=FIX-L32-CANARY-502-001].status",
+      "why": null,
+      "predicates": {
+        "retries_exhausted": false,
+        "attempts_used": 0,
+        "attempts_allowed": 2,
         "failure_log_count": 1,
         "root_cause_stated": false
       }
@@ -276,15 +276,15 @@
     "rank": 1,
     "kind": "failed",
     "verb": "reset",
-    "id": "FIX-L32-CANARY-502-001",
-    "title": "Diagnose non-contract Sandbox canary 502 envelope",
+    "id": "FIX-L32-SUPERVISOR-START-001",
+    "title": "Stabilize fresh-identity Sandbox supervisor start",
     "layer": 32,
-    "path": "stories[id=FIX-L32-CANARY-502-001].status",
+    "path": "stories[id=FIX-L32-SUPERVISOR-START-001].status",
     "why": null,
     "predicates": {
       "retries_exhausted": false,
       "attempts_used": 0,
-      "attempts_allowed": 2,
+      "attempts_allowed": 4,
       "failure_log_count": 1,
       "root_cause_stated": false
     }

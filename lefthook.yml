@@ -6,11 +6,20 @@ pre-commit:
   # copies, then verify that the committed artifact is stable.
   parallel: false
   jobs:
+    # Both tools error rather than no-op when handed nothing they handle, and a
+    # glob alone is not enough: .json staged under a path in .oxfmtrc.json's
+    # ignorePatterns still reaches oxfmt, which then filters it away and exits
+    # non-zero. Guard on the post-filter set so a docs-only commit can pass
+    # without hiding a genuine formatting failure.
     - name: oxlint
+      glob: "*.{js,mjs,cjs,jsx,ts,mts,cts,tsx}"
       run: bun oxlint --fix {staged_files}
       stage_fixed: true
     - name: oxfmt
-      run: bun oxfmt --write {staged_files}
+      glob: "*.{js,mjs,cjs,jsx,ts,mts,cts,tsx,json,jsonc}"
+      run: |
+        files=$(printf '%s\n' {staged_files} | grep -v '^docs/human-alignment/example-' || true)
+        [ -z "$files" ] || bun oxfmt --write $files
       stage_fixed: true
     # Keep each skill self-contained: materialize skills/product-context/_shared
     # into the skills that reference it. --stage makes the script git-add every
