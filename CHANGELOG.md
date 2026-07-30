@@ -17,6 +17,86 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 > `/envision`, `/dispatch`, `/reflect`, …), which records product-state history
 > for that project. See [`docs/glossary.md`](docs/glossary.md).
 
+## [4.0.0] - 2026-07-31
+
+Major: the corpus is re-shaped for Claude 5 generation models, against
+[`docs/decisions/claude-5-context-engineering.md`](docs/decisions/claude-5-context-engineering.md).
+v3.0.0 asked how *much* context a skill spends; this asks what *kind* earns its
+place. Four conversions, plus the ratchets that keep them.
+
+### Added
+
+- **One canonical vocabulary** — `_shared/references/aep-vocabulary.schema.json`
+  declares every enumerated value more than one skill reads: `story_status` and
+  the four-state `story_status_signal` a workspace may report, `layer_gate_status`,
+  `dogfood_target`, `journey_target_type`, `journey_timing`, `e2e_tier`,
+  `verification_tier`, `failure_class`, `error_class`. `coherence.mjs` and
+  `derive.mjs` load it at runtime; `scripts/check-vocabulary.mjs` proves every
+  other copy — in a schema (`x-aep-vocab`) or in prose (`(aep-vocab: <name>)`) —
+  still matches, in CI.
+- **Typed contracts where prose used to specify shape** —
+  `autopilot-state.schema.json` (+ `validate-state.mjs`),
+  `status-signal.schema.json` (+ `validate-signal.mjs`, which also enforces the
+  pairings a schema cannot: `failed` needs a `failure_log`, `in_review` needs a
+  `pr_url`), and `tick-protocol.json` for the tick's thresholds and derived
+  states (+ `derive-workspace-state.mjs`).
+- **Executable probes where recipes used to be retyped** —
+  `executor/scripts/detect-backend.sh` replaces 45 lines of detection bash and
+  the mode-selection pseudocode, with `scripts/test-detect-backend.sh` covering
+  every row of the mode matrix over stub hosts.
+- **Ratchets** in `skills-check.yml`: cross-skill vocabulary agreement, backend
+  detection fixtures, and steering counts (negation lines, hard imperatives) that
+  may fall but not rise.
+- `skills/patterns/autopilot/templates/autopilot-status.md.tmpl` — the human
+  status file was a template living inside a reference document.
+
+### Changed
+
+- **Constraints are classified, not softened.** Every imperative in a SKILL.md is
+  a protocol invariant (kept, positively phrased, paired with its check), a
+  backend floor, or taste (deleted). 123 negation-steered lines → 63, of which
+  most are now prose describing behavior rather than steering; 5 hard imperatives
+  remain in SKILL.md, each load-bearing. The two orchestrator-boundary
+  prohibitions are documented as carrying no machine check, because none can
+  exist for a rule about the agent's own tool use.
+- `build-skills.sh` materializes shared resources into skills at **any depth**
+  (the vocabulary's consumers are nested below the product-context skills the
+  build was written for); the whole-kit `templates/` rule is scoped to
+  product-context, which owns that kit.
+- The minimal JSON-Schema validator is shared (`_shared/scripts/json-schema.mjs`)
+  rather than living inside `derive.mjs`.
+- `/aep-onboard` no longer authors a `## Memory & Learning Loop` section into a
+  downstream `AGENTS.md`. The optional memory skills document their own wiring;
+  what belongs in the repo is what the host cannot know — the lessons themselves.
+- Navigation-debt counting no longer treats a reference → typed-artifact link as
+  a hop: it terminates a chain instead of extending one.
+
+### Fixed
+
+- **The layer-gate vocabulary shipped in three incompatible spellings.** The
+  schema template had six values, `coherence.mjs` had those plus `waived`, and
+  `derive.mjs` had neither `running` nor `failed` — so a gate legitimately
+  `running` was reported by the brief as a vocabulary violation. One declaration
+  now, and `waived` is documented in the schema template.
+- `validate/references/protocol-specs.md`, whose stated job is the exact
+  downstream contract, listed story statuses as `review | done` (no such states)
+  and typed `business_value` as the `priority` enum.
+- `signals-spec.md` bounded `phase` at 0–13 while the autopilot state bounded it
+  at 0–12. Both are 0–13, and the schema records that a workspace's own run ends
+  at 12 — Phase 13 (archive) runs from the main session.
+- `/aep-wrap`'s cross-skill pointer to the YAML guardrails is R3 prose rather
+  than a bare path into another skill.
+
+### Pending
+
+- **C-P4 (deferred skill surface)** is not in this release. Router skill,
+  `disable-model-invocation` on run-once skills, and the description diet from
+  4,940 characters toward 3,200 all change which skills advertise themselves,
+  and R7 requires a fresh independent triggering run before that can land —
+  `evals/skill-routing-observations.json` is bound to a digest of the installed
+  descriptions precisely so a diet cannot silently un-wire a skill. It ships when
+  that run has been made.
+
 ## [3.3.1] - 2026-07-27
 
 Patch: v3.3.0 documented the one-page brief as unproven and then shipped a
