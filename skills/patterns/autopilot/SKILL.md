@@ -291,6 +291,7 @@ Read and display current autopilot state.
 
 ```bash
 cat .dev-workflow/autopilot-status.md
+node scripts/derive-workspace-state.mjs      # logical state + flags per workspace
 ```
 
 Also parse `.dev-workflow/autopilot-state.json` and present: **Status**

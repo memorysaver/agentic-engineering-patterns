@@ -1,0 +1,129 @@
+{
+  "$comment": "The constants and derivations of the tick, as data. tick-protocol.md is the procedure — what the tick does, in order, and why — and points here for every number and every predicate, so a threshold has one home instead of appearing in a prose table, a nudge text, and SKILL.md. scripts/derive-workspace-state.mjs evaluates derived_states, which is what makes this file the source rather than a second copy of one.",
+  "schema_version": 1,
+  "thresholds": {
+    "tick_lock_stale_minutes": {
+      "value": 4,
+      "why": "A tick_in_progress older than this is a crashed tick's lock, not a running tick. Long enough to exceed a healthy tick, short enough that a crash self-heals within one /loop interval."
+    },
+    "tick_target_seconds": {
+      "value": 60,
+      "why": "Work per tick. Under the goal driver the turn then waits the per-tick floor before ending."
+    },
+    "max_wraps_per_tick": {
+      "value": 1,
+      "why": "A wrap writes product-context.yaml and moves git refs on the integration branch. Two in one tick race each other; simultaneous completions wrap across consecutive ticks."
+    },
+    "max_retries": {
+      "value": 3,
+      "why": "Attempts on a failed story before it escalates instead of re-dispatching."
+    },
+    "review_trigger": {
+      "retrigger_after_ticks": {
+        "value": 3,
+        "why": "Ticks with no response to a gen/eval trigger before re-triggering with the urgent text (~15 min)."
+      },
+      "escalate_after_attempts": {
+        "value": 2,
+        "why": "Trigger attempts before the workspace escalates as eval_not_converging rather than being nudged again."
+      },
+      "merge_stuck_ticks": {
+        "value": 2,
+        "why": "Ticks at phase 12 without progress before the stronger merge nudge. Lower than the general ladder because a stalled merge is a known, recoverable shape, not an unknown stall."
+      }
+    },
+    "stuck_ladder": [
+      {
+        "consecutive_stuck_ticks": 3,
+        "approx_minutes": 15,
+        "action": "observe",
+        "detail": "Check blockers. If the workspace declared any, log and leave it alone — a declared blocker is not silence."
+      },
+      {
+        "consecutive_stuck_ticks": 6,
+        "approx_minutes": 30,
+        "action": "nudge",
+        "detail": "executor.nudge() with the stuck text in tick-protocol.md Step ⑤. On claude-bg this is also the stop+respawn threshold."
+      },
+      {
+        "consecutive_stuck_ticks": 12,
+        "approx_minutes": 60,
+        "action": "escalate",
+        "detail": "Add a stuck escalation. Consider pausing when the story is on the critical path."
+      }
+    ]
+  },
+  "derived_states": {
+    "$comment": "The autopilot keeps no FSM enum: a workspace's logical state is derived from its fields each tick. Ordered — first match wins, which is what disambiguates phase 11 (CI/Review loop) from phase 12+ (Awaiting merge). Stuck is deliberately NOT in this list: it is orthogonal to progress (a workspace can be stuck while Implementing), so it is a flag below rather than a state that would mask where the work actually stands.",
+    "rules": [
+      {
+        "state": "Initializing",
+        "when": { "all": [{ "field": "phase", "op": "eq", "value": 0 }] }
+      },
+      {
+        "state": "Implementing",
+        "when": { "all": [{ "field": "phase", "op": "eq", "value": 4 }] }
+      },
+      { "state": "Reviewing", "when": { "all": [{ "field": "phase", "op": "eq", "value": 5 }] } },
+      {
+        "state": "Testing",
+        "when": {
+          "all": [
+            { "field": "phase", "op": "gte", "value": 6 },
+            { "field": "phase", "op": "lte", "value": 8 }
+          ]
+        }
+      },
+      {
+        "state": "PR created",
+        "when": {
+          "all": [
+            { "field": "phase", "op": "eq", "value": 10 },
+            { "field": "story_status", "op": "eq", "value": "in_review" }
+          ]
+        }
+      },
+      {
+        "state": "CI/Review loop",
+        "when": {
+          "all": [
+            { "field": "phase", "op": "eq", "value": 11 },
+            { "field": "story_status", "op": "eq", "value": "in_review" }
+          ]
+        }
+      },
+      {
+        "state": "Awaiting merge",
+        "when": {
+          "all": [
+            { "field": "story_status", "op": "eq", "value": "in_review" },
+            { "field": "phase", "op": "gte", "value": 11 }
+          ]
+        }
+      },
+      {
+        "state": "Completed",
+        "when": { "all": [{ "field": "story_status", "op": "eq", "value": "completed" }] }
+      },
+      {
+        "state": "Failed",
+        "when": { "all": [{ "field": "story_status", "op": "eq", "value": "failed" }] }
+      }
+    ],
+    "fallback": "In progress",
+    "flags": [
+      {
+        "flag": "stuck",
+        "when": {
+          "all": [{ "field": "consecutive_stuck_ticks", "op": "gte", "value": 6 }]
+        },
+        "detail": "At or past the nudge rung of the stuck ladder."
+      },
+      {
+        "flag": "human_gate",
+        "when": { "all": [{ "field": "last_action", "op": "eq", "value": "human_gate" }] },
+        "detail": "Waiting on a human answer in the main session — gated, not stuck, and exempt from stuck counting."
+      }
+    ]
+  }
+}

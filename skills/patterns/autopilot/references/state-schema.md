@@ -22,11 +22,11 @@ that are behavior rather than shape.
 
 `tick_in_progress` keeps two ticks from interleaving:
 
-1. **Before the tick** — read it. Set, and younger than 4 minutes → skip this tick.
+1. **Before the tick** — read it. Set, and younger than `thresholds.tick_lock_stale_minutes` ([tick-protocol.json](tick-protocol.json)) → skip this tick.
 2. **Start of tick** — set it to now and write immediately.
 3. **End of tick** — set it to `null` and write.
 
-A crashed tick leaves the lock set; the first tick more than 4 minutes later treats it as stale,
+A crashed tick leaves the lock set; the first tick past that window treats it as stale,
 clears it, and proceeds. The staleness window is what makes a crash self-healing rather than a
 permanent stop.
 

@@ -28,7 +28,7 @@ cat .dev-workflow/autopilot-state.json
 **Exit conditions:**
 
 - `status` is not `"running"` → log "autopilot not running, skipping tick" and exit
-- `tick_in_progress` timestamp exists AND is less than 4 minutes old → log "previous tick still running, skipping" and exit (prevents overlapping ticks when `/loop` fires before the previous tick completes)
+- `tick_in_progress` exists and is younger than `thresholds.tick_lock_stale_minutes` ([tick-protocol.json](tick-protocol.json)) → log "previous tick still running, skipping" and exit (prevents overlapping ticks when `/loop` fires before the previous tick completes)
 
 **If proceeding:**
 
@@ -69,7 +69,7 @@ For each workspace in `state.workspaces`:
 **If `story_status` is `"failed"`:**
 
 - Check `failure_log` for structured error info
-- Add escalation if `attempt_count` exceeds `max_retries` (default 3)
+- Add escalation if `attempt_count` exceeds `thresholds.max_retries`
 
 **If `blocked_on == "human"` (or `needs-human.md` has an unresolved entry):**
 
@@ -116,7 +116,7 @@ For each workspace where `story_status == "completed"`:
    - Increment `stats.stories_completed`
    - Add `cost_usd` to `stats.total_cost_usd`
 
-**Max ONE wrap per tick.** Wraps modify `product-context.yaml` and involve git operations. Running multiple wraps risks conflicts. If multiple workspaces completed simultaneously, they get wrapped across consecutive ticks.
+**`thresholds.max_wraps_per_tick` wrap per tick.** A wrap writes `product-context.yaml` and moves git refs; two in one tick race each other. Simultaneous completions wrap across consecutive ticks.
 
 After wrapping, **skip to step ⑦** (write state). The next tick will handle dispatch of newly-ready stories (which the wrap may have unblocked via cascade).
 
@@ -229,7 +229,7 @@ executor.nudge(<workspace-name>,
 
 Set in state: `code_review_triggered = true`, `code_review_triggered_at = now`, `last_action = "review_triggered"`.
 
-**Re-trigger after 3 ticks (15 min) with no response:**
+**Re-trigger after `thresholds.review_trigger.retrigger_after_ticks` with no response:**
 
 ```
 executor.nudge(<workspace-name>,
@@ -269,7 +269,7 @@ executor.nudge(<workspace-name>,
 
 Set `last_action = "merge_nudged"`, `last_action_at = now`.
 
-**2. If `phase == 12` AND `consecutive_stuck_ticks >= 2` — workspace started merge but is stuck:**
+**2. If `phase == 12` AND `consecutive_stuck_ticks >= thresholds.review_trigger.merge_stuck_ticks` — workspace started merge but is stuck:**
 
 ```
 executor.nudge(<workspace-name>,
@@ -340,11 +340,8 @@ git -C .feature-workspaces/<workspace-name> diff --stat
 
 ### Thresholds
 
-| Stuck ticks | Duration | Action                                                        |
-| ----------- | -------- | ------------------------------------------------------------- |
-| 3           | 15 min   | Check if workspace has blockers. If yes, log but don't nudge. |
-| 6           | 30 min   | Send nudge via `executor.nudge()` (see below). Log warning.   |
-| 12          | 60 min   | Add escalation. Consider pausing if on critical path.         |
+`thresholds.stuck_ladder` in [tick-protocol.json](tick-protocol.json) — three rungs
+(observe → nudge → escalate), each with the tick count it fires at and why.
 
 ### Nudge Command (30 min stuck)
 
@@ -572,17 +569,14 @@ with two extra actions so the `/goal` evaluator can decide whether to re-fire:
 
 ## Workspace State Derivation
 
-The autopilot does NOT maintain a formal FSM enum. It derives the logical state from the combination of fields on each tick:
+The autopilot keeps no FSM enum: a workspace's logical state is derived from its
+fields. The rules are `derived_states` in [tick-protocol.json](tick-protocol.json),
+ordered first-match, and this evaluates them:
 
-| Derived state  | Condition                                       |
-| -------------- | ----------------------------------------------- |
-| Initializing   | `phase == 0`                                    |
-| Implementing   | `phase == 4`                                    |
-| Reviewing      | `phase == 5`                                    |
-| Testing        | `phase >= 6 AND phase <= 8`                     |
-| PR created     | `phase == 10 AND story_status == "in_review"`   |
-| CI/Review loop | `phase == 11 AND story_status == "in_review"`   |
-| Awaiting merge | `story_status == "in_review"` AND `phase >= 11` |
-| Completed      | `story_status == "completed"`                   |
-| Failed         | `story_status == "failed"`                      |
-| Stuck          | `consecutive_stuck_ticks >= 6`                  |
+```bash
+node scripts/derive-workspace-state.mjs        # or --json for the status writer
+```
+
+`stuck` and `human_gate` come back as **flags**, not states — a workspace can be
+stuck while Implementing, and reporting "Stuck" alone would hide where the work
+actually stands.
