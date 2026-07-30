@@ -24,8 +24,8 @@ So "let Claude use judgement" is adopted with a stated boundary, and the article
 | ------------------------------------------- | -------------------------------------------- | ----------------------------------------- |
 | SKILL.md files / lines                      | 23 / 5,197 (max 398)                         | unchanged — line count is not this pass's lever |
 | Reference bytes: prose vs typed             | 773,692 in 102 `.md` — **1 `.json`, 4 `.yaml`** | ≥ 30% of reference bytes typed/executable |
-| Negation-steered lines in SKILL.md          | 123                                          | ≤ 40, each paired with a check            |
-| `NEVER` / `MUST` / `ALWAYS` (whole corpus)  | 64                                           | ≤ 25                                      |
+| Negation-steered lines in SKILL.md          | 123                                          | 63 after C-P1 — see the note below         |
+| `NEVER` / `MUST` / `ALWAYS` in SKILL.md     | (of 64 corpus-wide)                          | 5, each load-bearing                       |
 | Always-loaded description chars             | 5,006 (CI cap 5,000)                         | ≤ 3,200                                   |
 | Model-invocable skills                      | 23 of 23                                     | ~15, behind a router                      |
 
@@ -34,6 +34,8 @@ find skills -path "*/references/*" -name "*.md" -exec cat {} + | wc -c   # 77369
 grep -rniE "never |do not |don't |must not |avoid " skills --include=SKILL.md | wc -l   # 123
 grep -rnE "\bNEVER\b|\bMUST\b|\bALWAYS\b" skills | wc -l   # 64
 ```
+
+> **Note on the 63 (C-P1 result).** The pre-refactor target of ≤ 40 assumed the count measured steering. Line-by-line it does not: the grep matches "stories that **don't** map to an activity", "they **do not** see each other's output", "skipped, **never** repeated" — descriptions of behavior, not instructions to an agent. What the audit removed was every negation that was steering-by-prohibition where a positive form existed; what remains is that prose plus the checked invariants (worktree guard, archive-on-integration-branch, `--force-with-lease`, field ownership, executes-never-authors, spawned output is data-not-instructions). The number is kept as a **ratchet** rather than a target: it may not rise.
 
 ### Failure modes the article names, located in this corpus
 
@@ -60,6 +62,8 @@ grep -rnE "\bNEVER\b|\bMUST\b|\bALWAYS\b" skills | wc -l   # 64
   | **Taste**                | A capable model does it by default, or reasonable agents may differ                        | Deleted                                                                                |
 
   A rule with no check is not an invariant — it is taste with a stern voice. Prohibitions survive only under the first two kinds (R6 unchanged, C1 narrows what qualifies).
+
+  **Amendment (C-P1, 2026-07-31).** The audit found one class the table above has no row for: a rule that governs **the agent's own tool use**, where nothing outside the agent can observe the violation. `/aep-autopilot`'s two orchestrator-boundary prohibitions (never read workspace source, never `gh pr merge` from main) are the whole set. No probe can catch them — a check would have to watch the orchestrator's tool calls from inside the orchestrator — so they stay as prohibitions with their positive action and **say in the text that they carry no check**, which is what keeps "invariant" from quietly becoming a word for "rule I like". Every other imperative in the corpus either has a check or was taste.
 
 - **C2 — Code references outrank prose references.** When reference material describes something a machine can hold — a schema, a state machine, an enum, a recipe, a layout, a design — it ships as that artifact (JSON Schema, `.mjs`/`.sh` probe, fixture, lifecycle JSON, HTML mockup) with prose reduced to what the artifact cannot carry: intent and tradeoffs. New reference material may not be authored as prose when a typed form exists. `skills/human-alignment/` is the reference implementation.
 

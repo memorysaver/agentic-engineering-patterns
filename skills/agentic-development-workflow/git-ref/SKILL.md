@@ -83,7 +83,7 @@ git worktree add -b feat/<name> .feature-workspaces/<name> "$BASE"
 
 - Path is **always** under `.feature-workspaces/<name>` (kept gitignored).
 - Branch is **always** `feat/<name>` — corresponding to the OpenSpec change name or story id.
-- Base is **always** the integration branch `$BASE` — never another feature branch.
+- Base is **always** the integration branch `$BASE`.
 
 The worktree shares `.git/objects` with the main repo, so creating it is fast and history is not duplicated. Only the working tree files are duplicated on disk.
 
@@ -134,7 +134,7 @@ git worktree repair .feature-workspaces/<name>
 
 - Use kebab-case after the slash. No spaces, no underscores.
 - Keep names short (≤ 30 chars) — they appear in tab labels, signal files, and PR titles.
-- Don't reuse a branch name after deletion until the corresponding worktree is fully removed (`git worktree prune` cleans up dangling refs).
+- Reuse a deleted branch name once its worktree is fully removed (`git worktree prune` clears the dangling refs).
 
 ---
 
@@ -144,7 +144,7 @@ This is the largest AEP-specific convention.
 
 ### What
 
-`tasks.md` lists N tasks. The feature branch ends up with N commits — one per task — in the same order. Conventional-commit format. Workspace agents implement linearly, committing after each task, never bundling and never splitting:
+`tasks.md` lists N tasks. The feature branch ends up with N commits — one per task — in the same order. Conventional-commit format. Workspace agents implement linearly, committing after each task, so the commit count matches the task count:
 
 ```bash
 # Implement task 1
@@ -174,7 +174,7 @@ After each commit, record the short SHA in `.dev-workflow/feature-verification.j
 | Situation                                                 | Action                                                                                                                                                            |
 | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Forgot a file in the just-committed task                  | `git add <file> && git commit --amend --no-edit` (only safe **before** the next task's commit)                                                                    |
-| Realized the previous task is broken, several commits ago | Add a new commit: `fix(<scope>): correct <issue from task N>` — do not rebase                                                                                     |
+| Realized the previous task is broken, several commits ago | Add a new commit: `fix(<scope>): correct <issue from task N>` — the history stays append-only                                                                     |
 | Review feedback or eval-loop FAIL                         | Add a follow-up commit: `fix(<scope>): address review on <topic>`                                                                                                 |
 | Need to update against new origin/`$BASE`                 | `git fetch origin && git rebase origin/"$BASE" && git push --force-with-lease origin feat/<name>`                                                                 |
 | Conflicts during rebase                                   | Resolve in working tree, `git add <files> && git rebase --continue`. If hopelessly tangled, `git rebase --abort` and surface to the orchestrator via signal file. |

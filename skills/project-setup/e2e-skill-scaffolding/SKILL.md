@@ -211,10 +211,10 @@ green + every acceptance criterion proven + prior-layer journeys replay). See
 - If `product-context.yaml` exists:
   - Ensure each `layer_gates[]` entry uses the **canonical enriched shape** — `status` (including
     `scripted_passed`), a `coverage` block (`criteria_total` / `criteria_covered` / `uncovered`), and
-    structured `evidence` (`scripted` / `journeys` / `matrix`). Don't rewrite existing gate state; just
+    structured `evidence` (`scripted` / `journeys` / `matrix`). Existing gate state stays as it is; just
     add the missing `coverage` / `evidence` keys (back-compat: older gates without them still parse).
   - Ensure `docs/layer-gates/` exists; seed `docs/layer-gates/0.md` from
-    `skills/e2e-test/layer-gate-evidence.template.md` if absent (never overwrite a filled-in one).
+    `skills/e2e-test/layer-gate-evidence.template.md` when it is absent.
 - If not (standalone project): journeys still organize by layer; the gate is a manual checkbox in
   `docs/layer-gates/<layer>.md` (copy the evidence template). The loop works without the YAML state
   machine — the two matrices + checklist are the record.
@@ -254,10 +254,10 @@ Report to the user: what was created vs. upgraded, the canonical symlinks, the *
 
 - **Real dir is the source of truth**; `.claude/skills` and `.agents/skills` entries are symlinks only.
 - **Upgrades add only missing scaffold** — hand-written journeys and a filled-in `policy.md` stay untouched;
-  re-confirm the policy with the user, then update it (never silently overwrite). To replace a real
+  re-confirm the policy with the user, then update it. To replace a real
   `.claude/skills/e2e-test` dir, migrate it into `skills/` (git mv) first — Phase 4 `expose()` refuses a
   real path.
-- **Journeys are tool-agnostic** — the tool is resolved by `tool-selection.md`, never hard-coded in a journey.
+- **Journeys are tool-agnostic** — `tool-selection.md` resolves the tool at run time.
 - **seed.sh stays idempotent** and exits 0 on a fresh project (no project-specific seeding yet).
 - **`policy.md` is the single source of truth for tiers / target / timing** — no copy goes in `AGENTS.md`;
   the skill is canonical cross-tool, so every runtime reads this one file.

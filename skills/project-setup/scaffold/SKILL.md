@@ -298,7 +298,7 @@ For the full project layout after scaffolding completes, see [`references/result
 - **Show the full command and wait for confirmation** before running scaffold; include `--yes` (non-interactive), `--no-git` (in-place), and warn that in-place overwrites README.md, .gitignore, and package.json.
 - **Commit OpenSpec artifacts to git** — they are part of the project record.
 - **Never overwrite an existing OpenSpec config** — check `openspec/config.yaml` exists before `openspec init`.
-- **Never overwrite hand-authored content** (journeys, specs, prose) — the existing-project flow normalizes layout and upgrades generated infra idempotently, leaving hand-written files intact.
+- **Hand-authored content is never overwritten** (journeys, specs, prose) — the existing-project flow normalizes layout and upgrades generated infra idempotently, leaving hand-written files intact.
 - **Version re-pin is recommend-only** — scaffold prints the `npx skills add@<newtag>` commands; the user runs them in a deliberate own-PR re-pin.
 
 ---
@@ -307,8 +307,8 @@ For the full project layout after scaffolding completes, see [`references/result
 
 For projects that already have source code. This flow is **idempotent**: run it to onboard an existing
 project **or** re-run it later to repair **drift** toward the current AEP standard (canonical cross-tool
-layout, BDD e2e skill, current pin). It **reports first, asks, then converges** — and **never overwrites
-hand-authored content**. Re-running a fully-converged project is a no-op ("already up to date").
+layout, BDD e2e skill, current pin). It **reports first, asks, then converges**, under the Guardrails rule above —
+**hand-authored content survives**. Re-running a fully-converged project is a no-op ("already up to date").
 
 Read [`references/converge-flow.md`](references/converge-flow.md) for how to interpret each audit category,
 the observability→telemetry-candidate handling, and the per-category converge detail.

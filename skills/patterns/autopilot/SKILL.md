@@ -21,7 +21,7 @@ a fixed-interval fallback driver. Rationale:
 **Where this fits:** `/aep-envision → /aep-map → /aep-validate → /aep-autopilot
 (goal: "layer N complete") → /aep-reflect`.
 
-**Session:** Main session only (never from a feature workspace).
+**Session:** Main session only — Step ① guards it.
 **State:** `.dev-workflow/autopilot-state.json` (machine-readable) +
 `.dev-workflow/autopilot-status.md` (human-readable). Every legal field is typed
 in [references/autopilot-state.schema.json](references/autopilot-state.schema.json);
@@ -36,12 +36,12 @@ Check a state file with `node scripts/validate-state.mjs` (shared validator:
 **Read this first; it overrides everything below.** You are an **orchestrator**,
 not an executor. All code operations happen inside workspace agents. The main
 session assesses progress **via signal files and git metadata only** and steers
-workspaces through `executor.nudge()` — it never reads, reviews, edits,
-evaluates, or merges workspace code. Violating this boundary is autopilot's most
-common failure.
+workspaces through `executor.nudge()`. Crossing this boundary is autopilot's
+most common failure, so it has exactly two prohibitions and they live here.
 
-**Two hard prohibitions** (they cannot be phrased away — stated once, each paired
-with its positive action):
+**Two hard prohibitions.** Both govern the orchestrator's own tool use, which no
+probe can observe from outside — so unlike every other rule in AEP they carry no
+machine check, and each is stated once, paired with its positive action:
 
 - **Never read workspace source files** (no `Read`/`Grep`/`Bash` into a
   worktree) — **assess via signal files** (`.dev-workflow/signals/`) **and git
@@ -60,7 +60,7 @@ with its positive action):
 | Need                                         | Orchestrator action                                                                                                           |
 | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | Read workspace progress                      | Read `.feature-workspaces/<name>/.dev-workflow/signals/status.json`                                                           |
-| Check PR state                               | `gh pr view <number> --json state` (observe only — never act on merge)                                                        |
+| Check PR state                               | `gh pr view <number> --json state` (observe only)                                                                             |
 | Trigger code review / gen-eval               | `executor.nudge(<ws>, "<trigger>")` — the workspace runs its **own** evaluator                                                |
 | Send feedback / instructions                 | `executor.nudge()` or write `.feature-workspaces/<name>/.dev-workflow/signals/feedback.md`                                    |
 | Nudge a stuck agent                          | `executor.nudge(<ws>, "<nudge>")`                                                                                             |
@@ -249,8 +249,8 @@ duplicate actions.
 
 - **CHECK (cheap, isolated):** `executor.check(prompt, schema)` — a Haiku
   subagent (Claude Code) or `codex exec` one-shot (Codex) — reads
-  `autopilot-state.json` + every workspace `signals/` + `gh pr view` (**signals
-  only, never workspace code**), computes transitions / stuck / dispatch capacity,
+  `autopilot-state.json` + every workspace `signals/` + `gh pr view`, computes
+  transitions / stuck / dispatch capacity,
   **writes the updated `autopilot-state.json` + `autopilot-status.md`**, and
   returns the compact **action list**
   (`{summary, state_written, actions:[{type, workspace, story_id, message, reason}]}`
@@ -333,11 +333,12 @@ modified; no wraps or merges are triggered. To resume: `/aep-autopilot`.
 Rules with no natural step home (the ordering invariants, atomic write, and tick
 lock live in `references/tick-protocol.md` / `references/state-schema.md`):
 
-- **Require a real PASS before nudging a merge** — never treat SKIP-only test
-  results or "no checks" as passing; for integration/test stories require at
-  least one passing check OR an explicit eval-response PASS.
-- **Respect WIP limits** — never exceed `topology.routing.concurrency_limit`.
-- **Never dispatch a story with unmet dependencies** — even in autonomous mode.
+- **Require a real PASS before nudging a merge** — for integration/test stories
+  that means at least one passing check OR an explicit eval-response PASS.
+  SKIP-only results and "no checks" are absences of evidence, not passes.
+- **Respect WIP limits** — `topology.routing.concurrency_limit` is the ceiling.
+- **Dispatch only stories whose dependencies are all `completed`** — autonomous
+  mode included.
 
 ---
 

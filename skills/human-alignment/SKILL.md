@@ -73,8 +73,8 @@ Stop there unless one of these is true:
 
 **Before generating a brief, say this to the person and get a yes:** its prose
 failed two independent evaluations, the audit passing does not mean its claims
-are verified, and its output needs their review. Do not generate one because the
-request was vague — a vague request is a pulse.
+are verified, and its output needs their review. A vague request is a pulse, not
+a brief.
 
 The phases below are **emission 3 only**. Emissions 1 and 2 are the two commands
 above.
@@ -83,8 +83,8 @@ above.
 
 ## Emission 3 · the brief (unproven)
 
-Each phase ends in a checkable postcondition. Do not start a phase whose
-predecessor's postcondition is unmet.
+Each phase ends in a checkable postcondition, and the next phase starts once the
+previous one's holds.
 
 ### 0 · Preflight
 
@@ -145,8 +145,8 @@ The five that fail an audit fastest:
 
 1. **Answer first** — every section opens with one plain sentence that _is_ the
    section's conclusion.
-2. **Translate** — story titles and changelog entries never surface verbatim;
-   re-author each as a consequence sentence bound to its id in the anchor.
+2. **Translate** — re-author every story title and changelog entry as a
+   consequence sentence bound to its id in the anchor.
 3. **No naked numbers, in digits or in words.** Every number is `data-fact`.
    `five`, `eight`, `three quarters` are numbers too — that hole once shipped
    "five tasks in two days" when the truth was eight.
@@ -181,8 +181,8 @@ archify's prose, validated separately) while still checking that the diagrams
 and the facts describe the same commit.
 
 Failures are structured receipts (`code` · `subject` · `evidence` ·
-`supportedFixes`). Apply a **listed** fix and re-run. Never guess, and never
-exceed **two** correction rounds — a third failure is reported, not retried.
+`supportedFixes`). Apply a **listed** fix and re-run, at most **twice** — a receipt with no listed
+fix, and a third failure, are both reported rather than retried.
 Then walk the judgment checks in [`references/checklist.md`](references/checklist.md).
 
 → _audit passes; judgment checks walked._
@@ -194,8 +194,8 @@ node scripts/assemble.mjs --authored <authored.html> --facts docs/human-alignmen
   --artifacts <build-dir> --out-dir docs/human-alignment --keep 3
 ```
 
-Run it **in the output directory**; never move briefs by hand. Removing one
-outside this script discards the delta baseline, and the next run then reports
+Run it **in the output directory** — the script owns every move a brief makes.
+Removing one outside it discards the delta baseline, and the next run then reports
 itself as the first. `assemble.mjs` refuses to run when the ledger names a brief
 that is no longer present, and when the facts and the code graph disagree about
 which commit they describe.

@@ -183,7 +183,7 @@ For every agent-to-agent transition:
 
 - **Dispatch policy:** How stories are assigned from the ready queue
 - **Concurrency limit:** Maximum parallel agents (start conservative: 5-10)
-- **Conflict detection:** Stories modifying the same files must not run in parallel
+- **Conflict detection:** Stories modifying the same files go in different slices
 - **Retry routing:** Same agent retry (2x) → fresh agent with failure log (1x) → human escalation
 
 Write the topology to the `topology` section of `product-context.yaml`. Also initialize the `layer_gates` and `cost` sections.

@@ -82,6 +82,20 @@ jobs:
           done < <(find skills -name SKILL.md -not -path '*/node_modules/*')
           exit $fail
 
+      # C6 of docs/decisions/claude-5-context-engineering.md: ratchets, not
+      # one-time cuts. These are the C-P1 baselines; they may fall, never rise.
+      # A new prohibition is not forbidden — it just has to earn its place by
+      # replacing one that had no check behind it.
+      - name: Steering ratchets (negations, hard imperatives)
+        run: |
+          fail=0
+          negations=$(grep -rniE "never |do not |don't |must not |avoid " skills --include=SKILL.md | wc -l | tr -d ' ')
+          imperatives=$(grep -rnE "\bNEVER\b|\bMUST\b|\bALWAYS\b" skills --include=SKILL.md | wc -l | tr -d ' ')
+          echo "steering: $negations negation lines, $imperatives hard imperatives (SKILL.md)"
+          if [ "$negations" -gt 63 ]; then echo "FAIL: negation lines rose above 63: $negations"; fail=1; fi
+          if [ "$imperatives" -gt 5 ]; then echo "FAIL: hard imperatives rose above 5: $imperatives"; fail=1; fi
+          exit $fail
+
       # R8(b): the $BASE resolver block has exactly one canonical home —
       # git-ref's SKILL.md. The raw `aep.integration-branch` literal is
       # allowlisted in the three reference files that read the config key for

@@ -117,7 +117,7 @@ done
 > monitor + mid-flight-feedback loop — attach with `tmux attach -t <name>`.
 > Skills auto-detect cmux and never abort when it's absent. See `/aep-executor`.
 
-These are optional — the workflow works without them but is enhanced by them. On macOS, do not enable `agent-browser` until a one-command smoke test can launch a page without crashing Chrome:
+These are optional — the workflow works without them but is enhanced by them. On macOS, enable `agent-browser` once a one-command smoke test can launch a page without crashing Chrome:
 
 ```bash
 agent-browser navigate about:blank
@@ -163,7 +163,7 @@ Add `agent-browser` only after the Phase 3 smoke test succeeds — it launches a
 
 ### Merging rules
 
-- Merge new entries into existing keys — preserve any other settings (`permissions`, `env`, etc.); do not overwrite them.
+- Merge new entries into existing keys, preserving any other settings (`permissions`, `env`, etc.).
 - If `hooks.PreToolUse` already exists, **append** these hook entries rather than replacing existing hooks.
 - If the file doesn't exist, create it from the template (all three keys).
 
