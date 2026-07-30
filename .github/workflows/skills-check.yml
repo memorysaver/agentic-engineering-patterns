@@ -15,6 +15,7 @@ on:
       - "scripts/test-scaffold-audit.sh"
       - "scripts/test-scaffold-converge.sh"
       - "scripts/test-derive-recipe.sh"
+      - "scripts/test-detect-backend.sh"
       - ".github/workflows/skills-check.yml"
   pull_request:
     paths:
@@ -28,6 +29,7 @@ on:
       - "scripts/test-scaffold-audit.sh"
       - "scripts/test-scaffold-converge.sh"
       - "scripts/test-derive-recipe.sh"
+      - "scripts/test-detect-backend.sh"
       - ".github/workflows/skills-check.yml"
 
 jobs:
@@ -59,6 +61,11 @@ jobs:
 
       - name: Verification-recipe derivation fixtures
         run: bash scripts/test-derive-recipe.sh
+
+      # C2: the executor mode matrix is a table people reason about; these are
+      # the executable half of it.
+      - name: Backend detection fixtures
+        run: bash scripts/test-detect-backend.sh
 
       # R7/R8 of docs/decisions/skill-authoring-standard.md: one corpus-wide
       # line budget for every SKILL.md — warn above 400, fail above 500.
