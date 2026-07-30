@@ -44,7 +44,7 @@ A verifier must not share incentives with the generator. AEP already separates g
 Every FAIL from any tier acquires a **`failure_class`**, assigned **per finding** (one incident may carry findings of different classes):
 
 ```
-failure_class: product-defect | environment | harness-flake | scope
+failure_class: product-defect | environment | harness-flake | scope   (aep-vocab: failure_class)
 ```
 
 | Class            | Meaning                                                                                                       | Routes to                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -64,7 +64,7 @@ A taxonomy that lives only in prose is the drift class `docs/decisions/determini
 
 - **Tier-2/3 dogfood and post-merge guard reports** — the unified report (`/aep-executor` → dogfood-validation.md) carries a required `**Failure-Class:**` line per finding; the `dogfood_report` adapter (telemetry-ingestion.md in `/aep-reflect` / `/aep-watch`) parses it and **never auto-files** `environment` / `harness-flake` / `scope` findings.
 - **Phase 5 evaluation FAILs** — the **evaluator** (not the generator) writes `failure_class` into `eval-response-<N>.md` / `feature-verification.json`, consistent with the existing field-ownership rule (the generator cannot mark its own work as passing; eval-protocol.md → Field ownership).
-- **Build/CI failures** — `status.json` failure logs carry `failure_class` alongside the existing `error_class` enum (`test_failure | timeout | context_overflow | merge_conflict`). `error_class` records execution mechanics and stays; `failure_class` is the routing layer above it.
+- **Build/CI failures** — `status.json` failure logs carry `failure_class` alongside the existing `error_class` enum (`test_failure | timeout | context_overflow | merge_conflict` — aep-vocab: error_class). `error_class` records execution mechanics and stays; `failure_class` is the routing layer above it.
 
 ### `error_class` → `failure_class` default mapping
 
@@ -180,7 +180,7 @@ The binding derivation emits `.dev-workflow/verification-recipe.json`, and **bui
   "story_id": "<id>",
   "derived_at": "<ISO 8601>",
   "base_sha": "<sha>",
-  "tier": "light | standard | deep",
+  "tier": "light | standard | deep", // (aep-vocab: verification_tier)
   "tier_provisional": "light | standard | deep",
   "tier_escalated": false,
   "scope_drift": false,

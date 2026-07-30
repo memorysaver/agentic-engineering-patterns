@@ -122,6 +122,83 @@ for (const file of walkFiles(SKILLS)) {
   }
 }
 
+// ─── Prose listings ────────────────────────────────────────────────────────
+// A schema is not the only place a vocabulary gets restated: templates, YAML
+// schemas, and reference prose all enumerate values inline where a reader needs
+// them there. Those listings opt in with a marker naming the vocabulary —
+//
+//   status: not_started # not_started | running | passed   (aep-vocab: layer_gate_status)
+//
+// — and the values on that line must then be the canonical set, no more and no
+// fewer. Marking is deliberate: prose that mentions three states in passing
+// ("not_started → scripted_passed → passed") is narrative, not a listing, and
+// must not be forced to spell out the whole enum.
+const MARKER = /\(aep-vocab:\s*([a-z_]+)\)/;
+const PROSE_EXTENSIONS = [".md", ".yaml", ".yml", ".tmpl", ".json"];
+
+function proseFiles(dir, out = []) {
+  for (const entry of readdirSync(dir)) {
+    const path = join(dir, entry);
+    if (statSync(path).isDirectory()) proseFiles(path, out);
+    else if (PROSE_EXTENSIONS.some((ext) => entry.endsWith(ext))) out.push(path);
+  }
+  return out;
+}
+
+// A listing line carries prose around its values (a YAML key, a trailing
+// comment), so the check is token containment rather than parsing: every
+// canonical value must appear as its own token, and every separated segment
+// must carry at least one — which is what catches a typo'd or invented value
+// without demanding that prose be machine-shaped.
+function hasToken(line, value) {
+  const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?<![\\w-])${escaped}(?![\\w-])`).test(line);
+}
+
+function segments(line) {
+  const parts = line.split("|").map((s) => s.trim());
+  return parts.length > 1 ? parts : [];
+}
+
+for (const file of proseFiles(SKILLS)) {
+  const lines = readFileSync(file, "utf8").split("\n");
+  lines.forEach((line, index) => {
+    const marked = line.match(MARKER);
+    if (!marked) return;
+    checked += 1;
+    const name = marked[1];
+    const def = defs[name];
+    const where = { file: relative(REPO, file), path: `line ${index + 1}`, vocab: name };
+    if (!def) {
+      drift.push({ ...where, reason: `no $defs.${name} in ${VOCAB_BASENAME}` });
+      return;
+    }
+    // x-aep-listing exists for vocabularies whose prose form is not literally
+    // the enum — dogfood_target's deployed:<url> is a pattern in the schema and
+    // a placeholder on the page.
+    const required = (
+      def["x-aep-listing"] ??
+      def.enum ??
+      def.oneOf?.flatMap((s) => s.enum ?? []) ??
+      []
+    ).map(String);
+    const body = line.replace(MARKER, "");
+    const missing = required.filter((v) => !hasToken(body, v));
+    const stray = segments(body).filter((seg) => seg && !required.some((v) => hasToken(seg, v)));
+    if (missing.length || stray.length) {
+      drift.push({
+        ...where,
+        reason: [
+          missing.length ? `missing ${missing.join(", ")}` : null,
+          stray.length ? `segment names no known value: "${stray[0]}"` : null,
+        ]
+          .filter(Boolean)
+          .join("; "),
+      });
+    }
+  });
+}
+
 if (jsonOutput) {
   console.log(JSON.stringify({ checked, vocabularies: Object.keys(defs), drift }, null, 2));
 } else if (drift.length) {
@@ -133,7 +210,7 @@ if (jsonOutput) {
   );
 } else {
   console.log(
-    `check-vocabulary: ${checked} tagged enum(s) agree with ${Object.keys(defs).length} canonical vocabularies`,
+    `check-vocabulary: ${checked} tagged listing(s) agree with ${Object.keys(defs).length} canonical vocabularies`,
   );
 }
 

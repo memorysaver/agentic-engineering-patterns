@@ -44,7 +44,7 @@ existing callers — `/aep-build` Phase 6 and the autopilot post-merge guard —
 are unchanged.
 
 ```
-e2e_tool(target_type):              # target_type ∈ {web, mobile, desktop, cli}; default web
+e2e_tool(target_type):              # target_type ∈ {web, mobile, desktop, cli}; default web (aep-vocab: journey_target_type)
   resolve HOST + mode via executor.detect()
   pref = topology.routing.e2e.tool.<target_type>            # optional pin; unset or 'auto' = NO pin
   if target_type == web and (pref unset or pref == 'auto'):

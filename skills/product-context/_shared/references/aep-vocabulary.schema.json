@@ -70,6 +70,7 @@
           "description": "deployed:<url> — a deployed environment, typically reached after merge → deploy"
         }
       ],
+      "x-aep-listing": ["none", "cli", "local", "deployed:<url>"],
       "x-aep-stages": {
         "none": "no runnable surface (config / schema / docs repo)",
         "cli": "the built command-line binary, driven by bash",
