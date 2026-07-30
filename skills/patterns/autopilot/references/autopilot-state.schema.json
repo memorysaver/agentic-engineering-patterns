@@ -1,0 +1,224 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/memorysaver/agentic-engineering-patterns/skills/aep-autopilot/autopilot-state.schema.json",
+  "title": ".dev-workflow/autopilot-state.json",
+  "description": "The machine-readable state the autopilot tick reads and writes, on the main workspace (repo root) only. Every field a tick may set is declared here; a tick that wants to record something not in this document is recording meaning no other consumer can read. Written by the atomic-write protocol in state-schema.md so a mid-write crash cannot corrupt it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "status", "started_at", "tick_count", "workspaces"],
+  "properties": {
+    "version": { "const": 1 },
+    "status": {
+      "description": "Whether the driver dispatches new work. paused keeps existing workspaces running and stops dispatch; stopped ends the loop.",
+      "enum": ["running", "paused", "stopped"]
+    },
+    "started_at": { "type": "string", "description": "ISO8601 of /aep-autopilot start" },
+    "last_tick_at": {
+      "type": ["string", "null"],
+      "description": "ISO8601 of the last completed tick"
+    },
+    "tick_count": { "type": "integer", "minimum": 0 },
+    "tick_in_progress": {
+      "type": ["string", "null"],
+      "description": "The tick lock: ISO8601 of the tick currently running, null when none is. A tick that finds this set and younger than 4 minutes skips; older than that, it is a crashed tick's stale lock and the next tick clears it."
+    },
+    "workspaces": {
+      "type": "object",
+      "description": "Keyed by workspace name (the worktree directory name).",
+      "additionalProperties": { "$ref": "#/$defs/workspace" }
+    },
+    "escalations": {
+      "type": "array",
+      "description": "Open and acknowledged escalations, newest last. An escalation is the driver telling a human what it cannot decide.",
+      "items": { "$ref": "#/$defs/escalation" }
+    },
+    "guard_state": {
+      "type": "object",
+      "description": "Post-merge guard state keyed by story_id, so a tick is idempotent: deploy-once, dogfood-once, revert-once, escalate-once. See references/post-merge-guard.md.",
+      "additionalProperties": { "$ref": "#/$defs/guard_entry" }
+    },
+    "stats": { "$ref": "#/$defs/stats" }
+  },
+  "$defs": {
+    "workspace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["story_id", "backend", "story_status"],
+      "properties": {
+        "story_id": { "type": "string", "description": "Story ID from product-context.yaml" },
+        "backend": {
+          "description": "Executor mode this workspace was launched under. Decides which handle agent_id carries and which liveness probe applies — see /aep-executor.",
+          "enum": ["native-bg-subagent", "claude-bg", "codex-subagent", "codex-exec", "legacy"]
+        },
+        "agent_id": {
+          "type": ["string", "null"],
+          "description": "Handle for nudge / liveness / teardown, whose shape follows backend: bg-subagent id (bare hex), bg session id, codex agent id, exec session id, or tmux session name."
+        },
+        "phase": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 12,
+          "description": "Current /aep-build phase, from the workspace's status.json signal"
+        },
+        "phase_name": { "type": "string" },
+        "story_status": {
+          "x-aep-vocab": "story_status_signal",
+          "description": "Mirrored from the workspace's own signal. The control-plane states (pending, ready, blocked, deferred) never appear here — a workspace only reports on work it owns.",
+          "enum": ["in_progress", "in_review", "completed", "failed"]
+        },
+        "completion_pct": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "pr_url": { "type": ["string", "null"] },
+        "cost_usd": { "type": ["number", "null"] },
+        "completed_at": { "type": ["string", "null"] },
+        "failure_log": {
+          "type": ["object", "null"],
+          "description": "Structured failure carried up from the workspace signal"
+        },
+        "last_action": { "$ref": "#/$defs/last_action" },
+        "last_action_at": { "type": "string" },
+        "code_review_triggered": { "type": "boolean" },
+        "code_review_triggered_at": { "type": ["string", "null"] },
+        "eval_rounds_completed": { "type": "integer", "minimum": 0 },
+        "consecutive_stuck_ticks": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Ticks whose progress and liveness hash both failed to change"
+        },
+        "last_liveness_hash": {
+          "type": ["string", "null"],
+          "description": "Hash of the backend's liveness-probe output at the last tick (TaskList entry / worktree-activity probe / logs tail / worker.log / tmux pane). Null on the first tick and after a restart."
+        },
+        "blockers": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "last_action": {
+      "description": "What the driver last did to this workspace. The tick reads it to stay idempotent — an action already taken is not retaken.",
+      "enum": [
+        "launched",
+        "readopted",
+        "review_triggered",
+        "review_re_triggered",
+        "detected_merged",
+        "detected_closed",
+        "wrapping",
+        "merge_nudged",
+        "merge_stuck_nudged",
+        "nudged",
+        "escalated_stuck",
+        "human_gate"
+      ],
+      "x-aep-stages": {
+        "launched": "workspace just launched via /aep-launch",
+        "readopted": "orphaned worker re-spawned into the existing worktree",
+        "review_triggered": "gen/eval triggered via executor nudge",
+        "review_re_triggered": "gen/eval re-triggered after a stuck run",
+        "detected_merged": "PR observed merged",
+        "detected_closed": "PR observed closed without merge",
+        "wrapping": "/aep-wrap in progress",
+        "merge_nudged": "nudged to proceed to Phase 12",
+        "merge_stuck_nudged": "stronger nudge sent for a stuck Phase 12",
+        "nudged": "stuck nudge sent via executor nudge",
+        "escalated_stuck": "escalated after prolonged stuck",
+        "human_gate": "blocked on a human decision (needs-human.md)"
+      }
+    },
+    "escalation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "story_id",
+        "reason",
+        "details",
+        "expected_human_action",
+        "created_at",
+        "acknowledged"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "design_needed",
+            "stuck",
+            "failed",
+            "layer_gate_failed",
+            "eval_not_converging",
+            "human_gate",
+            "post_merge_regression",
+            "environment_repair"
+          ],
+          "x-aep-stages": {
+            "environment_repair": "a gate or dogfood preflight REFUSED on unmet preconditions — an environment failure, not a product one. Unlike every other type it does not pause dispatch of the remaining in-layer stories, and it self-clears: the refusing gate re-probes each tick and resumes when the probes pass."
+          }
+        },
+        "story_id": { "type": "string" },
+        "workspace": {
+          "type": ["string", "null"],
+          "description": "Null when the story was never launched"
+        },
+        "reason": {
+          "type": "string",
+          "description": "One line — what the driver could not decide"
+        },
+        "details": {
+          "type": "string",
+          "description": "Enough for a human to act without reading the state file. For environment_repair this carries the ops checklist: every named REFUSING tag and the repair it implies."
+        },
+        "expected_human_action": {
+          "type": "string",
+          "description": "The concrete next command or edit"
+        },
+        "created_at": { "type": "string" },
+        "acknowledged": { "type": "boolean" }
+      }
+    },
+    "guard_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pr_number", "deploy_status", "monitor_until"],
+      "properties": {
+        "pr_number": { "type": "integer" },
+        "deploy_status": { "enum": ["pending", "deployed", "failed"] },
+        "monitor_until": {
+          "type": "string",
+          "description": "ISO8601 end of the window_min monitoring window"
+        },
+        "health": {
+          "type": "object",
+          "description": "Last reading per configured health_signals key (e.g. ci_status, error_rate, health_endpoint)",
+          "additionalProperties": { "type": "string" }
+        },
+        "dogfood_done": { "type": "boolean" },
+        "reverted": { "type": "boolean", "description": "Guards against a double revert" },
+        "escalated": {
+          "type": "boolean",
+          "description": "Guards against a duplicate post_merge_regression escalation"
+        }
+      }
+    },
+    "stats": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stories_completed": { "type": "integer", "minimum": 0 },
+        "stories_failed": { "type": "integer", "minimum": 0 },
+        "total_ticks": { "type": "integer", "minimum": 0 },
+        "total_cost_usd": { "type": "number", "minimum": 0 }
+      }
+    },
+    "history_entry": {
+      "title": "One line of .dev-workflow/autopilot-history.jsonl",
+      "description": "Append-only audit trail, one JSON line per tick. actions is the human-readable list of what the tick did, in order.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tick", "at", "status", "actions"],
+      "properties": {
+        "tick": { "type": "integer", "minimum": 1 },
+        "at": { "type": "string" },
+        "status": { "enum": ["running", "paused", "stopped"] },
+        "actions": { "type": "array", "items": { "type": "string" } },
+        "workspaces_active": { "type": "integer", "minimum": 0 },
+        "stories_completed_total": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

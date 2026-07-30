@@ -75,7 +75,10 @@ subscription to the problem rather than a fix for it.
 The derivations are specified in
 [references/drift-facts.md](references/drift-facts.md); `scripts/coherence.mjs`
 is the executable half, shared with `/aep-human-alignment` so the two cannot
-drift apart.
+drift apart. "The defined set" in row 2 is
+[references/aep-vocabulary.schema.json](references/aep-vocabulary.schema.json),
+which the checker loads at runtime — the gate states are declared once for the
+whole corpus, and `scripts/json-schema.mjs` is the shared validator behind it.
 
 ---
 

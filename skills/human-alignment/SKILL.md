@@ -102,7 +102,10 @@ node scripts/derive.mjs --context product-context.yaml --repo . \
 ```
 
 The facts JSON is the **only legal source of numbers**. It validates against
-`scripts/facts.schema.json` or the run stops.
+`scripts/facts.schema.json` — via the shared validator in `scripts/json-schema.mjs` —
+or the run stops. Story and gate states come from
+`references/aep-vocabulary.schema.json`, the corpus-wide vocabulary: a state this
+brief has no stage for stops the derive rather than rendering as stage 1.
 
 The census classifies every populated path in the plan file against
 `scripts/source-census.json` as `derived` / `ignored` (**with a reason**) /

@@ -40,71 +40,38 @@ export async function loadYaml(path) {
   return JSON.parse(json);
 }
 
-// ─── Minimal JSON-Schema validator ─────────────────────────────────────────
-// Covers exactly the keywords facts.schema.json uses. Kept in-repo so the
-// pipeline has no network dependency and audit.mjs can reuse it.
-export function validate(schema, data, root = schema, path = "$") {
-  const errs = [];
-  const fail = (msg) => errs.push(`${path}: ${msg}`);
-  if (schema.$ref) {
-    const target = schema.$ref
-      .replace(/^#\//, "")
-      .split("/")
-      .reduce((o, k) => o?.[k.replace(/~1/g, "/").replace(/~0/g, "~")], root);
-    return validate(target, data, root, path);
-  }
-  if (schema.oneOf) {
-    const ok = schema.oneOf.filter((s) => validate(s, data, root, path).length === 0);
-    if (ok.length !== 1) fail(`matched ${ok.length} of oneOf, expected exactly 1`);
-    return errs;
-  }
-  if ("const" in schema && data !== schema.const)
-    fail(`expected const ${JSON.stringify(schema.const)}`);
-  if (schema.enum && !schema.enum.includes(data)) fail(`${JSON.stringify(data)} not in enum`);
-  if (schema.type) {
-    const types = Array.isArray(schema.type) ? schema.type : [schema.type];
-    const actual =
-      data === null
-        ? "null"
-        : Array.isArray(data)
-          ? "array"
-          : Number.isInteger(data)
-            ? "integer"
-            : typeof data;
-    const ok = types.some(
-      (t) => t === actual || (t === "number" && (actual === "integer" || actual === "number")),
-    );
-    if (!ok) {
-      fail(`expected ${types.join("|")}, got ${actual}`);
-      return errs;
-    }
-  }
-  if (typeof data === "number") {
-    if ("minimum" in schema && data < schema.minimum) fail(`< minimum ${schema.minimum}`);
-    if ("maximum" in schema && data > schema.maximum) fail(`> maximum ${schema.maximum}`);
-  }
-  if (Array.isArray(data) && schema.items) {
-    data.forEach((v, i) => errs.push(...validate(schema.items, v, root, `${path}[${i}]`)));
-  }
-  if (data && typeof data === "object" && !Array.isArray(data)) {
-    for (const key of schema.required ?? []) if (!(key in data)) fail(`missing required "${key}"`);
-    for (const [key, value] of Object.entries(data)) {
-      const sub = schema.properties?.[key];
-      if (sub) errs.push(...validate(sub, value, root, `${path}.${key}`));
-      else if (schema.additionalProperties === false) fail(`unexpected property "${key}"`);
-      else if (typeof schema.additionalProperties === "object")
-        errs.push(...validate(schema.additionalProperties, value, root, `${path}.${key}`));
-    }
-  }
-  return errs;
-}
+// ─── Schema validation ─────────────────────────────────────────────────────
+// The validator is shared, not restated: scripts/json-schema.mjs is the one
+// implementation every AEP skill uses, materialized here by build-skills.sh.
+// Re-exported because audit.mjs validates the same facts document.
+export { validate } from "./json-schema.mjs";
+import { validate, loadVocabulary } from "./json-schema.mjs";
 
 // ─── Vocabulary ────────────────────────────────────────────────────────────
+// The legal values come from references/aep-vocabulary.schema.json; what lives
+// here is only what the brief adds on top of them — the stage ordering the
+// five-cell row renders, and which states read as closed or started. A state
+// added to the vocabulary and not given a stage stops the run rather than
+// rendering as stage 1 by accident.
 const STAGE = { pending: 1, ready: 2, in_progress: 3, in_review: 4, completed: 5 };
 const EXCEPTION_STAGE = { failed: 3, blocked: 3, deferred: 1 };
 const CLOSED = new Set(["completed", "deferred"]);
 const STARTED = new Set(["in_progress", "in_review", "completed", "failed", "blocked"]);
-const GATE_VOCABULARY = new Set(["not_started", "scripted_passed", "passed", "deferred", "waived"]);
+const GATE_VOCABULARY = loadVocabulary(`${HERE}/../references`, "layer_gate_status");
+
+{
+  const canonical = loadVocabulary(`${HERE}/../references`, "story_status");
+  const staged = new Set([...Object.keys(STAGE), ...Object.keys(EXCEPTION_STAGE)]);
+  const missing = [...canonical].filter((s) => !staged.has(s));
+  const unknown = [...staged].filter((s) => !canonical.has(s));
+  if (missing.length || unknown.length) {
+    throw new Error(
+      `story_status drift: ${missing.length ? `no stage for ${missing.join(", ")}` : ""}` +
+        `${missing.length && unknown.length ? "; " : ""}` +
+        `${unknown.length ? `${unknown.join(", ")} not in the vocabulary` : ""}`,
+    );
+  }
+}
 
 const VERBS = {
   failed: "reset",

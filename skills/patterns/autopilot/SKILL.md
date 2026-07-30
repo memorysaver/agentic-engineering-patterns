@@ -23,8 +23,11 @@ a fixed-interval fallback driver. Rationale:
 
 **Session:** Main session only (never from a feature workspace).
 **State:** `.dev-workflow/autopilot-state.json` (machine-readable) +
-`.dev-workflow/autopilot-status.md` (human-readable). Schema, atomic-write, and
-tick-lock mechanics are canonical in `references/state-schema.md`.
+`.dev-workflow/autopilot-status.md` (human-readable). Every legal field is typed
+in [references/autopilot-state.schema.json](references/autopilot-state.schema.json);
+`references/state-schema.md` carries the atomic-write and tick-lock protocols.
+Check a state file with `node scripts/validate-state.mjs` (shared validator:
+`scripts/json-schema.mjs`).
 
 ---
 
@@ -144,8 +147,8 @@ Verify before proceeding:
    mkdir -p .dev-workflow
    ```
 
-2. Initialize `.dev-workflow/autopilot-state.json` (full schema in
-   `references/state-schema.md`):
+2. Initialize `.dev-workflow/autopilot-state.json` (every field typed in
+   `references/autopilot-state.schema.json`):
 
    ```json
    {
@@ -166,7 +169,7 @@ Verify before proceeding:
    ```
 
 3. Write initial `.dev-workflow/autopilot-status.md` (Status: Running, tick count
-   0, no active workspaces yet — format in `references/state-schema.md`).
+   0, no active workspaces yet — fill `templates/autopilot-status.md.tmpl`).
 
 4. Resolve the **launch mode + driver pair** (executor `detect()` + the driver ×
    backend matrix). On Claude Code the default mode is **native-bg-subagent** (no
@@ -221,8 +224,9 @@ architecture) human gates; both default to keeping the human in control:
   override always escalates, even with these flags on.
 
 Routing thresholds and the pause protocol live in the tick step that applies them
-(`references/tick-protocol.md` Step ⑥); the escalation-entry and paused
-`autopilot-status.md` shapes are in `references/state-schema.md`.
+(`references/tick-protocol.md` Step ⑥); the escalation entry is typed in
+`references/autopilot-state.schema.json` and the paused `autopilot-status.md`
+sections are in `templates/autopilot-status.md.tmpl`.
 
 > **`full_auto` does not touch journey authoring.** The journey FILE is always a
 > pre-merge build deliverable (`/aep-build` Phase 6 Step A authors it from the

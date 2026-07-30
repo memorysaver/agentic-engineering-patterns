@@ -10,6 +10,7 @@ on:
       - ".claude-plugin/marketplace.json"
       - "scripts/build-skills.sh"
       - "scripts/test-build-skills.sh"
+      - "scripts/check-vocabulary.mjs"
       - "scripts/check-skills-package.sh"
       - "scripts/test-scaffold-audit.sh"
       - "scripts/test-scaffold-converge.sh"
@@ -22,6 +23,7 @@ on:
       - ".claude-plugin/marketplace.json"
       - "scripts/build-skills.sh"
       - "scripts/test-build-skills.sh"
+      - "scripts/check-vocabulary.mjs"
       - "scripts/check-skills-package.sh"
       - "scripts/test-scaffold-audit.sh"
       - "scripts/test-scaffold-converge.sh"
@@ -39,6 +41,12 @@ jobs:
 
       - name: Generated-resource security fixtures
         run: bash scripts/test-build-skills.sh
+
+      # C4/C6 of docs/decisions/claude-5-context-engineering.md: a skill schema
+      # that restates a cross-skill enum must still match the canonical
+      # declaration. Half-applied taxonomy changes are this repo's #1 bug class.
+      - name: Cross-skill vocabulary agrees
+        run: node scripts/check-vocabulary.mjs
 
       - name: Skill package is complete, bounded, and officially valid
         run: bash scripts/check-skills-package.sh

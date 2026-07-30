@@ -49,6 +49,7 @@
     "check": "oxlint && oxfmt --write",
     "skills:build": "bash scripts/build-skills.sh",
     "skills:check": "bash scripts/build-skills.sh --check",
+    "skills:check-vocab": "node scripts/check-vocabulary.mjs",
     "skills:test-build": "bash scripts/test-build-skills.sh",
     "skills:package-check": "bash scripts/check-skills-package.sh",
     "skills:test-scaffold": "bash scripts/test-scaffold-converge.sh",

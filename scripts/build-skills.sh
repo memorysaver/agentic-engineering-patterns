@@ -65,24 +65,29 @@ if [ ! -d "$SHARED" ]; then
   exit 1
 fi
 
-# Consumers of the shared corpus: every skill directory in the repo, whether it
-# sits under skills/product-context/ (the original category) or directly under
-# skills/ as a standalone top-level skill. A directory is a skill iff it holds a
-# SKILL.md, which excludes the category dirs and _shared itself. Standalone
-# skills need this because the `skills` CLI installs one directory at a time —
-# a skill that reads references/attention-set.md must carry its own copy.
+# Consumers of the shared corpus: every skill directory in the repo, at any
+# depth. A directory is a skill iff it holds a SKILL.md, which excludes the
+# category dirs (patterns/, agentic-development-workflow/, …) and _shared
+# itself. Skills need this because the `skills` CLI installs one directory at a
+# time — a skill that reads references/attention-set.md must carry its own copy.
+# Depth-agnostic since v4.0.0: the shared corpus now carries the cross-skill
+# vocabulary schema, whose consumers (autopilot, launch, wrap) are nested one
+# level deeper than the product-context skills it was built for.
 consumer_dirs() {
-  local d
-  for d in "$PC"/*/ "$REPO"/skills/*/; do
-    [ -f "$d/SKILL.md" ] || continue
-    printf '%s\n' "$d"
-  done | sort -u
+  find "$REPO/skills" -type f -name SKILL.md \
+    | while IFS= read -r skillmd; do printf '%s/\n' "$(dirname "$skillmd")"; done \
+    | sort -u
 }
 
 # Desired managed files (relative paths within the shared dir) for one consumer.
 desired_files() {
   local skillmd="$1" shared="$2"
   if [ "$shared" = "templates" ]; then
+    # The whole-kit rule is product-context-scoped: those templates
+    # cross-reference each other and ship together. Skills outside that category
+    # own their own templates/ dir, and a bare "templates/" mention there means
+    # their own kit, not this one.
+    case "$skillmd" in "$PC"/*) ;; *) return 0 ;; esac
     if grep -qE '(^|[^A-Za-z0-9_/])templates/' "$skillmd"; then
       (cd "$SHARED/templates" && find . -type f ! -name "$MARKER" | sed 's|^\./||' | sort)
     fi

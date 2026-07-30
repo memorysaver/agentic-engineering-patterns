@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/memorysaver/agentic-engineering-patterns/skills/aep-vocabulary.schema.json",
+  "title": "AEP cross-skill vocabulary",
+  "description": "The canonical declaration of every enumerated value more than one AEP skill reads or writes. Authored once in skills/product-context/_shared/references/ and materialized into each consuming skill by scripts/build-skills.sh, because the `skills` CLI installs one directory at a time and a validator cannot reach across install boundaries. Nothing validates against this document as a whole: consumers either load a named $def at runtime (coherence.mjs, derive.mjs) or declare a matching enum tagged with x-aep-vocab, which scripts/check-vocabulary.mjs proves identical. Adding a value here and nowhere else is the intended workflow — a half-applied taxonomy change is this repo's #1 bug class.",
+  "type": "object",
+  "$defs": {
+    "story_status": {
+      "title": "Story lifecycle state",
+      "description": "product-context.yaml stories[].status. Five stages on the normal path plus three exceptions that wait on a human. Written by /aep-dispatch (ready → in_progress), /aep-wrap (→ completed / failed, and pending → ready once dependencies complete), and a human (failed → pending is the one transition no agent may make).",
+      "enum": [
+        "pending",
+        "ready",
+        "in_progress",
+        "in_review",
+        "completed",
+        "blocked",
+        "failed",
+        "deferred"
+      ],
+      "x-aep-stages": {
+        "pending": "dependencies unmet or not yet dispatched",
+        "ready": "dependencies complete, eligible for dispatch",
+        "in_progress": "a workspace agent is building it",
+        "in_review": "PR open, under eval/CI",
+        "completed": "merged and wrapped",
+        "blocked": "a dependency failed — waits on a human",
+        "failed": "retries exhausted — only a human may reset it to pending",
+        "deferred": "postponed by a human"
+      }
+    },
+    "story_status_signal": {
+      "title": "Story state a workspace may report",
+      "description": "The subset of story_status a workspace agent writes into .dev-workflow/signals/status.json. A workspace never reports pending, ready, blocked, or deferred: those are control-plane states owned by the main session, and a workspace that claims one is reporting on work it does not own.",
+      "enum": ["in_progress", "in_review", "completed", "failed"],
+      "x-aep-subset-of": "story_status"
+    },
+    "layer_gate_status": {
+      "title": "Layer gate state",
+      "description": "product-context.yaml layer_gates[].status. Two-phase and coverage-checked: scripted_passed means the layer's Tier-1 suite is green (machinery proven, live product not yet); passed additionally requires every applicable higher tier green, every acceptance criterion covered, and prior-layer journeys replaying green. /aep-dispatch refuses to start layer N while layer N-1 is anything other than passed — scripted_passed still blocks.",
+      "enum": [
+        "not_started",
+        "running",
+        "scripted_passed",
+        "passed",
+        "failed",
+        "deferred",
+        "waived"
+      ],
+      "x-aep-stages": {
+        "not_started": "no gate run yet",
+        "running": "a gate run is in flight",
+        "scripted_passed": "Tier-1 green; higher tiers or coverage still pending",
+        "passed": "all applicable tiers green + coverage complete + regression replay green",
+        "failed": "a gate run failed on product behavior (distinct from a preflight REFUSING on environment)",
+        "deferred": "gate execution postponed by a human",
+        "waived": "a human accepted the layer without the full gate, on the record"
+      }
+    },
+    "dogfood_target": {
+      "title": "What Tier-2 journeys run against",
+      "description": "skills/e2e-test/policy.md dogfood_target — the surface and environment, not the tool. none is reserved for a repo with no runnable surface at all (pure config / schema / docs), where Tier 2 is N/A and there is no journeys/ dir.",
+      "oneOf": [
+        {
+          "enum": ["none", "cli", "local"]
+        },
+        {
+          "type": "string",
+          "pattern": "^deployed:\\S+$",
+          "description": "deployed:<url> — a deployed environment, typically reached after merge → deploy"
+        }
+      ],
+      "x-aep-stages": {
+        "none": "no runnable surface (config / schema / docs repo)",
+        "cli": "the built command-line binary, driven by bash",
+        "local": "the local dev server ($BASE_URL from .dev-workflow/ports.env)",
+        "deployed:<url>": "a deployed environment"
+      }
+    },
+    "journey_target_type": {
+      "title": "Journey surface type",
+      "description": "A journey's target: — resolves which TOOL executes it (browser/device driver vs bash), where dogfood_target resolves the surface and environment. A target: web journey on a dogfood_target: cli project is a scaffolding error, not a preference.",
+      "enum": ["web", "mobile", "desktop", "cli"]
+    },
+    "journey_timing": {
+      "title": "When a journey is executed",
+      "description": "skills/e2e-test/policy.md journey_timing. Governs EXECUTION only, never authoring: the journey file is always a pre-merge /aep-build Phase 6 deliverable. Under post-deploy a merge sits at scripted_passed until the deployed dogfood flips it to passed.",
+      "enum": ["pre-merge", "post-deploy"]
+    },
+    "e2e_tier": {
+      "title": "Verification tier",
+      "description": "Which tiers gate a layer is per-project (skills/e2e-test/policy.md). A CLI or library is 1 + 2, an API service 1 + 3, a web/mobile app 1 + 2 (+ 3); only a repo with no runnable surface is 1-only.",
+      "enum": [1, 2, 3],
+      "x-aep-stages": {
+        "1": "Scripted gates — proves the MACHINERY, in the project's own test framework",
+        "2": "Journey dogfood — proves the PRODUCT against real providers/env, from skills/e2e-test/journeys/",
+        "3": "API drivers — backend state, bulk setup, async flows, via throwaway scripts in .dev-workflow/"
+      }
+    }
+  }
+}

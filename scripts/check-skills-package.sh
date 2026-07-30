@@ -168,7 +168,15 @@ for (const sourceName of walk("skills").filter((file) => file.endsWith(".md")).s
     if (sourceSkill && targetSkill && sourceSkill !== targetSkill) {
       errors.push(`cross-skill relative link in ${sourceName}: ${rawTarget}`);
     }
-    if (normalized(sourceName).includes("/references/") && normalized(resolved).includes("/references/")) {
+    // Navigation debt is prose sending the reader to more prose. A pointer from
+    // a reference into a typed artifact in the same skill (schema, fixture,
+    // script) is where C2 wants the reader to land, not another hop — it
+    // terminates the chain instead of extending it.
+    if (
+      normalized(sourceName).includes("/references/") &&
+      normalized(resolved).includes("/references/") &&
+      resolved.endsWith(".md")
+    ) {
       referenceHops += 1;
     }
   }

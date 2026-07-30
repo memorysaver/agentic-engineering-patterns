@@ -96,7 +96,7 @@ pr_url: <url> # from signal pr_url
 cost_usd: <cost> # from signal cost_usd
 ```
 
-If `story_status` is `failed`, set `status: failed` and record the structured `failure_log` under `failure_logs:` instead. Then transition any `pending` story whose dependencies are now all `completed` to `ready`. Validate YAML (`npx js-yaml product-context.yaml > /dev/null`; see product-context references/yaml-guardrails.md), then commit all transitions atomically via the **control-plane commit** (step 4) — `git add product-context.yaml`, message `chore: update story <id> status to completed`.
+If `story_status` is `failed`, set `status: failed` and record the structured `failure_log` under `failure_logs:` instead. Then transition any `pending` story whose dependencies are now all `completed` to `ready`. Validate YAML (`npx js-yaml product-context.yaml > /dev/null`; `/aep-validate` carries the guardrails and common fixes), then commit all transitions atomically via the **control-plane commit** (step 4) — `git add product-context.yaml`, message `chore: update story <id> status to completed`.
 
 > **Concurrency protocol:** this is the only place story completion status enters `product-context.yaml` — workspace agents write signals; `/aep-wrap` (on the integration branch) reads signals and writes YAML.
 
