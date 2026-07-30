@@ -80,47 +80,29 @@ MODE=$(cat "$(git rev-parse --show-toplevel)/.dev-workflow/signals/mode" 2>/dev/
 }
 ```
 
-**Fields:**
+**Fields:** [status-signal.schema.json](status-signal.schema.json) — every field
+typed, with what each is for. Check a signal against it:
 
-| Field               | Type         | Description                                                                                                                                                                                                                            |
-| ------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `phase`             | number       | Current phase number (0–13)                                                                                                                                                                                                            |
-| `phase_name`        | string       | Human-readable phase name                                                                                                                                                                                                              |
-| `task_current`      | string       | Current task being worked on (Phase 4 only)                                                                                                                                                                                            |
-| `task_index`        | number       | 1-based index of current task                                                                                                                                                                                                          |
-| `task_total`        | number       | Total number of tasks                                                                                                                                                                                                                  |
-| `started_at`        | string       | ISO 8601 timestamp of phase start                                                                                                                                                                                                      |
-| `blockers`          | string[]     | List of blockers preventing progress                                                                                                                                                                                                   |
-| `completion_pct`    | number       | Estimated completion percentage (0–100)                                                                                                                                                                                                |
-| `last_updated`      | string       | ISO 8601 timestamp of last update                                                                                                                                                                                                      |
-| `story_status`      | string       | Story state for `/aep-dispatch` sync: `"in_progress"`, `"in_review"`, `"completed"`, `"failed"`                                                                                                                                        |
-| `pr_url`            | string       | PR URL once created (Phase 10+)                                                                                                                                                                                                        |
-| `cost_usd`          | number       | Accumulated cost estimate for this story                                                                                                                                                                                               |
-| `completed_at`      | string       | ISO 8601 timestamp when story completed (Phase 12)                                                                                                                                                                                     |
-| `failure_log`       | object       | Structured failure record (Phase 12 failure only) — `error_class`, `failure_class`, `approach_summary`, `failure_point`, `root_cause`, `unexplored_alternatives`                                                                       |
-| `blocked_on`        | string\|null | `"human"` while the worker waits on a human decision (paired with a `needs-human.md` entry); null otherwise                                                                                                                            |
-| `verification_tier` | string\|null | `light` \| `standard` \| `deep` — published from `verification-recipe.json` at Phase 5 entry (binding derivation); null before then. What the autopilot's tier-aware ④b nudges read.                                                 |
-| `tier_escalated`    | boolean      | True once the cap-exhaustion `standard → deep` auto-escalation has fired — the autopilot's `eval_not_converging` waits for the escalated cap too                                                                                       |
-| `self_review`       | object\|null | `light`-tier quality-gate signal — `{"result": "PASS" \| "FAIL", "sha": "<reviewed HEAD>", "report": ".dev-workflow/code-review-<story>.md"}`. Written by the workspace after the structured self-review; null for standard/deep.     |
-| `failure_classes`   | object\|null | Per-class finding counts from the latest completed eval round / dogfood report, evaluator-authored: `{"product-defect": n, "environment": n, "harness-flake": n, "scope": n}`. Null before the first FAIL. See the routing note below. |
+```bash
+node scripts/validate-signal.mjs .dev-workflow/signals/status.json
+```
 
-> **Concurrency protocol:** These story-tracking fields replace direct writes to `product-context.yaml`. The main session (via `/aep-wrap` and `/aep-dispatch` signal sync) reads these fields and updates the YAML. Workspace agents must never write to `product-context.yaml`.
+The validator also enforces the pairings the schema alone cannot: `failed` needs
+a `failure_log`, `in_review` needs a `pr_url`, `completed` needs a
+`completed_at`, and `blocked_on: human` needs a blocker saying what the human
+must decide.
 
-> **`failure_log.failure_class`** — the typed routing class above `error_class`
-> (`product-defect | environment | harness-flake | scope`; canon: `/aep-gen-eval` →
-> `references/verification-economics.md`). `error_class` records execution mechanics and stays;
-> `failure_class` is what the reader routes on — `status.json` is autopilot's only workspace input, so a
-> FAIL published without a class cannot be routed. Defaults follow the canonical
-> `error_class → failure_class` mapping (no qualifying evidence → `product-defect`).
+> **Concurrency protocol:** These story-tracking fields replace direct writes to
+> `product-context.yaml`. The main session (via `/aep-wrap` and `/aep-dispatch`
+> signal sync) reads them and updates the YAML; workspace agents never write it.
 
-> **`failure_classes` (mixed-class routing).** The taxonomy is assigned per **finding**, so one round may
-> carry findings of different classes — a single scalar would lose one of them (the canon's dual-class
-> incidents). Routing on the counts is deterministic and **conjunctive** — every non-zero class routes,
-> and no class masks another: `environment > 0` → the ops/`environment_repair` path (re-probed each tick;
-> in-layer dispatch continues); `product-defect > 0` → the eval/recovery path stays live **in parallel**
-> (repair never masks a defect, a defect never cancels repair); `harness-flake > 0` → quarantine + re-run
-> after ratification; `scope > 0` → the human gate. Evaluator-authored, mirroring the per-finding
-> `Failure-Class:` lines in `eval-response-<N>.md` — the generator never writes it.
+> **Routing on failures.** `failure_class` is what the reader routes on and
+> `error_class` records execution mechanics beneath it; both are declared in
+> `references/aep-vocabulary.schema.json` and treated in `/aep-gen-eval` →
+> `references/verification-economics.md`. `failure_classes` carries per-class
+> **counts** rather than one scalar because the taxonomy is assigned per finding
+> and a round can be mixed-class — routing is conjunctive, so every non-zero
+> class routes and none masks another.
 
 **Update points:**
 

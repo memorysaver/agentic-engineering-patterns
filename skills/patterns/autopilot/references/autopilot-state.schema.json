@@ -57,8 +57,8 @@
         "phase": {
           "type": "integer",
           "minimum": 0,
-          "maximum": 12,
-          "description": "Current /aep-build phase, from the workspace's status.json signal"
+          "maximum": 13,
+          "description": "Mirrored from the workspace's status.json signal — same bounds as /aep-launch's status-signal.schema.json"
         },
         "phase_name": { "type": "string" },
         "story_status": {

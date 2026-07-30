@@ -224,7 +224,9 @@ behavior — write full criteria. Setup recipe (criteria assembly + bootstrap te
 ## After Launch: Monitor & Steer
 
 The main session watches and steers without interrupting the worker, via the signal files documented
-in `references/signals-spec.md` — `status.json` (current phase), `ready-for-review.flag`,
+in `references/signals-spec.md` — `status.json` (current phase, typed in
+`references/status-signal.schema.json`; check one with `node scripts/validate-signal.mjs`, which uses
+the shared `scripts/json-schema.mjs`), `ready-for-review.flag`,
 `needs-human.md`, and `feedback.md` (mid-flight steering, read at phase boundaries). If `needs-human.md`
 appears (or `status.json` shows `"blocked_on": "human"`), the worker has **gate-and-parked** on a
 decision — answer it through the mode's transport (Human-Gate Protocol in /aep-executor `backends.md`).

@@ -87,6 +87,27 @@
       "description": "skills/e2e-test/policy.md journey_timing. Governs EXECUTION only, never authoring: the journey file is always a pre-merge /aep-build Phase 6 deliverable. Under post-deploy a merge sits at scripted_passed until the deployed dogfood flips it to passed.",
       "enum": ["pre-merge", "post-deploy"]
     },
+    "verification_tier": {
+      "title": "How much verification this story earns",
+      "description": "Derived into verification-recipe.json and published on status.json at Phase 5 entry. light scores no dimensions (structured self-review); standard runs the derived preset; deep runs it with nothing de-weighted and, where a second model family is available, prefers a different family from the generator. Canonical treatment: /aep-gen-eval → references/verification-economics.md.",
+      "enum": ["light", "standard", "deep"]
+    },
+    "failure_class": {
+      "title": "What kind of failure a FAIL is",
+      "description": "Assigned per finding, mandatory at every FAIL before a recovery rung is chosen — status.json is the autopilot's only workspace input, so a FAIL published without a class cannot be routed. Routing is conjunctive: every non-zero class routes and none masks another. Only product-defect climbs the recovery ladder.",
+      "enum": ["product-defect", "environment", "harness-flake", "scope"],
+      "x-aep-stages": {
+        "product-defect": "the built thing is wrong — finding → story / fix commit → gen-eval",
+        "environment": "an unmet precondition outside the product (credential, access, unseeded target) — the ops / environment_repair path, re-probed each tick",
+        "harness-flake": "the verification apparatus failed, not the product — quarantine and re-run after ratification",
+        "scope": "the spec and the work disagree — the human gate"
+      }
+    },
+    "error_class": {
+      "title": "Execution mechanics of a build/CI failure",
+      "description": "The pre-existing enum on status.json failure logs, recording HOW a run died. It stays; failure_class is the routing layer above it, defaulting per the error_class → failure_class mapping in verification-economics.md.",
+      "enum": ["test_failure", "timeout", "context_overflow", "merge_conflict"]
+    },
     "e2e_tier": {
       "title": "Verification tier",
       "description": "Which tiers gate a layer is per-project (skills/e2e-test/policy.md). A CLI or library is 1 + 2, an API service 1 + 3, a web/mobile app 1 + 2 (+ 3); only a repo with no runnable surface is 1-only.",
