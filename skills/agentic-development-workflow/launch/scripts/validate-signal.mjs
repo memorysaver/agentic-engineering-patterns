@@ -47,8 +47,11 @@ if (signal.story_status === "in_review" && !signal.pr_url)
   errors.push("$: story_status is in_review but pr_url is absent");
 if (signal.story_status === "completed" && !signal.completed_at)
   errors.push("$: story_status is completed but completed_at is absent");
-if (signal.blocked_on === "human" && signal.blockers?.length === 0)
-  errors.push("$: blocked_on is human but blockers is empty — say what the human must decide");
+// `!length` rather than `length === 0`: the commonest way to have no blockers
+// is to omit the key, and `undefined === 0` is false — which let exactly the
+// likely shape through.
+if (signal.blocked_on === "human" && !signal.blockers?.length)
+  errors.push("$: blocked_on is human but no blocker is named — say what the human must decide");
 
 if (errors.length) {
   for (const error of errors) console.error(`FAIL: ${error}`);

@@ -15,16 +15,22 @@
 // must match $defs.<name> in the canonical file exactly. Enums compare as sets
 // (order is presentation); anything else compares as a structure.
 //
-// Usage: node scripts/check-vocabulary.mjs [--json]
+// Usage: node scripts/check-vocabulary.mjs [--json] [--skills <dir>]
+//   --skills points the scan at a fixture tree instead of skills/, which is how
+//   scripts/test-check-vocabulary.sh exercises the parser's edge cases.
 // Exit 0 when every copy agrees, 1 on drift, 2 on bad input.
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const SKILLS = join(REPO, "skills");
-const CANONICAL = join(SKILLS, "product-context/_shared/references/aep-vocabulary.schema.json");
+const skillsFlag = process.argv.indexOf("--skills");
+const SKILLS = skillsFlag === -1 ? join(REPO, "skills") : resolve(process.argv[skillsFlag + 1]);
+const CANONICAL = join(
+  REPO,
+  "skills/product-context/_shared/references/aep-vocabulary.schema.json",
+);
 const VOCAB_BASENAME = "aep-vocabulary.schema.json";
 const ANNOTATION = "x-aep-vocab";
 
@@ -78,6 +84,7 @@ const defs = canonical.$defs ?? {};
 
 const drift = [];
 let checked = 0;
+let generatedCopies = 0;
 
 for (const file of walkFiles(SKILLS)) {
   let doc;
@@ -155,9 +162,27 @@ function hasToken(line, value) {
   return new RegExp(`(?<![\\w-])${escaped}(?![\\w-])`).test(line);
 }
 
-function segments(line) {
+// Only single-token segments are judged for stray values. A separated segment
+// carrying prose — a YAML key, a trailing comment, a markdown table cell, all of
+// which legitimately sit on a listing line — is narration around the values, not
+// a value. A typo'd or invented value is still a bare token, so this gives up no
+// detection: `staging` is caught, `all seven` is not accused.
+function judgedSegments(line) {
   const parts = line.split("|").map((s) => s.trim());
-  return parts.length > 1 ? parts : [];
+  if (parts.length < 2) return [];
+  return parts.filter((seg) => seg && !/\s/.test(seg));
+}
+
+// A listing that ships as a build-generated copy is verified like any other, but
+// it is not a separate authored decision — reporting it as one overstates how
+// much of the corpus is actually bound.
+function isGeneratedCopy(file) {
+  const marker = join(dirname(file), ".aep-generated");
+  try {
+    return readFileSync(marker, "utf8").split("\n").slice(1).includes(basename(file));
+  } catch {
+    return false;
+  }
 }
 
 for (const file of proseFiles(SKILLS)) {
@@ -166,6 +191,7 @@ for (const file of proseFiles(SKILLS)) {
     const marked = line.match(MARKER);
     if (!marked) return;
     checked += 1;
+    if (isGeneratedCopy(file)) generatedCopies += 1;
     const name = marked[1];
     const def = defs[name];
     const where = { file: relative(REPO, file), path: `line ${index + 1}`, vocab: name };
@@ -182,9 +208,12 @@ for (const file of proseFiles(SKILLS)) {
       def.oneOf?.flatMap((s) => s.enum ?? []) ??
       []
     ).map(String);
-    const body = line.replace(MARKER, "");
+    // Markdown escapes its pipes (`\|`) inside table cells; unescape before
+    // segmenting, or every value in a table row keeps a trailing backslash and
+    // reads as prose — which would skip exactly the values we are checking.
+    const body = line.replace(MARKER, "").replace(/\\\|/g, "|");
     const missing = required.filter((v) => !hasToken(body, v));
-    const stray = segments(body).filter((seg) => seg && !required.some((v) => hasToken(seg, v)));
+    const stray = judgedSegments(body).filter((seg) => !required.some((v) => hasToken(seg, v)));
     if (missing.length || stray.length) {
       drift.push({
         ...where,
@@ -209,8 +238,9 @@ if (jsonOutput) {
     `Edit skills/product-context/_shared/references/${VOCAB_BASENAME}, then run bash scripts/build-skills.sh.`,
   );
 } else {
+  const authored = checked - generatedCopies;
   console.log(
-    `check-vocabulary: ${checked} tagged listing(s) agree with ${Object.keys(defs).length} canonical vocabularies`,
+    `check-vocabulary: ${authored} authored listing(s) + ${generatedCopies} build-generated cop(ies) agree with ${Object.keys(defs).length} canonical vocabularies`,
   );
 }
 

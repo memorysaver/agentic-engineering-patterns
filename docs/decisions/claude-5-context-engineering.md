@@ -75,7 +75,7 @@ grep -rnE "\bNEVER\b|\bMUST\b|\bALWAYS\b" skills | wc -l   # 64
 
 - **C5 — Host memory over prescribed memory.** AEP prescribes no memory ritual the host already performs. `/aep-onboard` may point at optional memory skills; it does not author memory-loop prose into downstream `AGENTS.md`. AEP's own lessons loop (`/aep-build` → `/aep-wrap` → `/aep-launch`) stays — it is durable project state, not agent recall.
 
-- **C6 — Ratchets, not one-time cuts.** `skills-check.yml` gains three non-increasing ratchets alongside the existing navigation-debt ones: negation count in SKILL.md, `NEVER`/`MUST`/`ALWAYS` count corpus-wide, and description-corpus characters; plus one non-decreasing ratchet: typed-reference byte share. Each implementation PR moves the recorded numbers; none may move them backward.
+- **C6 — Ratchets, not one-time cuts.** `skills-check.yml` gains non-increasing ratchets alongside the existing navigation-debt ones: steering counts (negations, hard imperatives) and description-corpus characters. **Steering is ratcheted per skill** (`evals/steering-baseline.json`, checked by `scripts/check-steering.mjs`), not corpus-wide: a single corpus number is bump-bait, because most of what the count matches is prose describing behavior, so a capped total fires on innocuous edits and the cheapest fix — raising it — makes the ratchet decorative. Per skill, the failure names the file that grew a prohibition and asks a question with a local answer: which one in *this* skill earned its place, and which one leaves.
 
 ---
 

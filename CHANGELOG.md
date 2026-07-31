@@ -45,8 +45,10 @@ place. Four conversions, plus the ratchets that keep them.
   the mode-selection pseudocode, with `scripts/test-detect-backend.sh` covering
   every row of the mode matrix over stub hosts.
 - **Ratchets** in `skills-check.yml`: cross-skill vocabulary agreement, backend
-  detection fixtures, and steering counts (negation lines, hard imperatives) that
-  may fall but not rise.
+  detection fixtures, vocabulary-checker fixtures, and per-skill steering
+  ceilings (`evals/steering-baseline.json` via `scripts/check-steering.mjs`) that
+  may fall but not rise — held per skill so a failure names the file that grew a
+  prohibition instead of moving a corpus total nobody owns.
 - `skills/patterns/autopilot/templates/autopilot-status.md.tmpl` — the human
   status file was a template living inside a reference document.
 

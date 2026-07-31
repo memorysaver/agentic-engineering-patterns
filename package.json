@@ -50,6 +50,8 @@
     "skills:build": "bash scripts/build-skills.sh",
     "skills:check": "bash scripts/build-skills.sh --check",
     "skills:check-vocab": "node scripts/check-vocabulary.mjs",
+    "skills:check-steering": "node scripts/check-steering.mjs",
+    "skills:test-vocab": "bash scripts/test-check-vocabulary.sh",
     "skills:test-detect": "bash scripts/test-detect-backend.sh",
     "skills:test-build": "bash scripts/test-build-skills.sh",
     "skills:package-check": "bash scripts/check-skills-package.sh",
