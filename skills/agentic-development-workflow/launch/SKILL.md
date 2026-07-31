@@ -1,9 +1,9 @@
 ---
 name: aep-launch
 description: >-
-  Launches an autonomous workspace agent for a designed feature by creating its
-  worktree, selecting an /aep-executor backend, and optionally adding an
-  evaluator. Use after /aep-design or for "launch workspace" and "spawn agent".
+  Creates a designed feature's worktree and spawns its implementation agent,
+  plus an optional evaluator. Use after /aep-design or for "launch
+  workspace".
 ---
 
 # Launch

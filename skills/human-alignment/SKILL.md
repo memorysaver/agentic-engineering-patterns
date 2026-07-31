@@ -1,10 +1,9 @@
 ---
 name: aep-human-alignment
 description: >-
-  Answers where a project stands, what is owed to a human and for how long, and
-  what changed since you last looked — from product-context.yaml. Use for
-  project pulse, status check, what needs me, or a project brief; not planning
-  (/aep-envision).
+  Renders product-context.yaml into where we stand, what waits on a human,
+  and what drifted. Use for pulse, status check, or a project brief; not
+  planning.
 ---
 
 # Human Alignment

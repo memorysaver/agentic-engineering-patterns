@@ -1,9 +1,8 @@
 ---
 name: aep-dispatch
 description: >-
-  Selects and routes one ready story by syncing signals, scoring the queue, and
-  handing off to /aep-design or /aep-launch. Use for "what's next", "dispatch",
-  or "pick a story"; use /aep-autopilot for continuous execution.
+  Picks one ready story and hands it to /aep-design or /aep-launch. Use for
+  "what's next" or "dispatch"; running continuously is /aep-autopilot.
 ---
 
 # Dispatch

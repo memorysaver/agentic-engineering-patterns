@@ -1,9 +1,9 @@
 ---
 name: aep-calibrate
 description: >-
-  Captures human judgment for a quality dimension agents cannot evaluate. Use
-  when /aep-reflect finds a works-vs-right gap, before a .5 alignment layer, or
-  for "calibrate" and "design brief".
+  Turns a human's subjective judgment into criteria agents can apply. Use
+  for a works-vs-right gap, a .5 layer, or "calibrate" — not a usability
+  audit.
 ---
 
 # Calibrate

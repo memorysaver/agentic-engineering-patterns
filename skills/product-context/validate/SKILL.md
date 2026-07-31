@@ -1,10 +1,9 @@
 ---
 name: aep-validate
 description: >-
-  Validates an AEP artifact with separate generator, evaluator, and optional
-  protocol-checker roles. Use for code review, implementation validation,
-  document or RFC validation, after /aep-envision, /aep-map, or /aep-design,
-  or for "validate", "verify", "dry-run", "evaluate", and "gen/eval".
+  Validates one artifact — code, document, or spec — with separate generator
+  and evaluator roles. Use for code review, "validate", "verify", or
+  "dry-run".
 ---
 
 # Validate

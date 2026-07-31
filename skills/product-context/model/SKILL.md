@@ -1,9 +1,8 @@
 ---
 name: aep-model
 description: >-
-  Builds a human-reviewed OOUX/ORCA object map and noun-first UI blueprint. Use
-  after /aep-map, before UI stories, or for "object model", "object map",
-  "OOUX", "ORCA", and "noun-first IA".
+  Builds a human-reviewed OOUX object map and noun-first UI blueprint. Use
+  after /aep-map, before UI stories, or for "object model" and "OOUX".
 ---
 
 # Model

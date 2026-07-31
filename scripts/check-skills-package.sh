@@ -329,7 +329,10 @@ for (const expectedName of expectedNames) {
   descriptionWords += description.trim().split(/\s+/).length;
   descriptionRecords.push(`${name}\0${description}`);
 }
-if (descriptionChars > 5000) errors.push(`description corpus exceeds 5000 characters: ${descriptionChars}`);
+// C3/C6 ratchet, tightened from 5000 at v4.0.0 once the diet landed at 3369.
+// Every character here is paid by every session of every downstream repo, so
+// the budget follows the corpus down rather than sitting where it was set.
+if (descriptionChars > 3400) errors.push(`description corpus exceeds 3400 characters: ${descriptionChars}`);
 
 const routingEvidence = JSON.parse(fs.readFileSync(process.argv[4], "utf8"));
 const descriptionSha256 = crypto.createHash("sha256").update(descriptionRecords.join("\n")).digest("hex");

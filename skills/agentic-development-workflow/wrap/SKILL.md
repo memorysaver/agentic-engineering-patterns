@@ -1,9 +1,8 @@
 ---
 name: aep-wrap
 description: >-
-  Archives OpenSpec artifacts and cleans the workspace after a PR merges. Use
-  for "wrap up", "archive", or "post-merge cleanup"; this is the final feature
-  step before /aep-dispatch or /aep-reflect.
+  Archives OpenSpec artifacts and removes the workspace after a PR merges.
+  Use for "wrap up", "archive", or post-merge cleanup.
 ---
 
 # Wrap

@@ -1,9 +1,9 @@
 ---
 name: aep-design-lens
 description: >-
-  Reviews product UI with theory-grounded guidelines and a 0–4 heuristic
-  severity check. Use for design, usability, heuristic, or accessibility
-  review; not taste capture (/aep-calibrate) or object IA (/aep-model).
+  Reviews an existing UI against usability and accessibility heuristics,
+  scored 0–4. Use for design or heuristic review; taste capture is
+  /aep-calibrate.
 ---
 
 # Design Lens

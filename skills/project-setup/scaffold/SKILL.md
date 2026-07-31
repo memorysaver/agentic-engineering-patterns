@@ -1,6 +1,8 @@
 ---
 name: aep-scaffold
-description: Creates a new AEP project or converges an existing project's agentic infrastructure. Use for new project, scaffold, infrastructure setup, or skills-layout repair; use /aep-onboard for installation and orientation.
+description: >-
+  Creates a new AEP project or repairs an existing project's agentic
+  infrastructure and skills layout. Installing AEP itself is /aep-onboard.
 ---
 
 # Scaffold

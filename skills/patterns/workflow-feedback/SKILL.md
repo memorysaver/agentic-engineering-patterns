@@ -1,9 +1,9 @@
 ---
 name: aep-workflow-feedback
 description: >-
-  Captures process or stack learnings downstream and routes them back to AEP.
-  Use after /aep-wrap or /aep-reflect, or for "workflow feedback", "capture
-  learnings", and "pull learnings upstream".
+  Captures process learnings in a downstream project and routes them
+  upstream to AEP. Use after /aep-wrap or /aep-reflect, or for "capture
+  learnings".
 ---
 
 # Workflow Feedback

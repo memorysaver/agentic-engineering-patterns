@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "run": {
-    "date": "2026-07-14",
+    "date": "2026-07-31",
     "model_class": "front-tier Codex reasoning model",
-    "input": "Only the 22 skill names and frontmatter descriptions after the metadata diet",
+    "input": "Only the 23 skill names and frontmatter descriptions after the v4.0.0 diet (3,369 characters corpus-wide)",
     "method": "For each prompt, select the single best skill without opening any SKILL.md body. Boundary probes intentionally resemble a neighboring skill. Observed values record this review run and must be rerun when routing metadata changes."
   },
   "cases": [
@@ -142,37 +142,37 @@
     {
       "id": "onboard-vs-scaffold-zh",
       "kind": "boundary",
-      "prompt": "我第一次接觸 AEP，先幫我安裝、檢查工具並解釋整體工作方式，不要建立新專案。",
+      "prompt": "\u6211\u7b2c\u4e00\u6b21\u63a5\u89f8 AEP\uff0c\u5148\u5e6b\u6211\u5b89\u88dd\u3001\u6aa2\u67e5\u5de5\u5177\u4e26\u89e3\u91cb\u6574\u9ad4\u5de5\u4f5c\u65b9\u5f0f\uff0c\u4e0d\u8981\u5efa\u7acb\u65b0\u5c08\u6848\u3002",
       "expected": "aep-onboard"
     },
     {
       "id": "scaffold-vs-onboard-zh",
       "kind": "boundary",
-      "prompt": "AEP 已經裝好了，請修復這個既有專案分裂的 .claude/.agents skills layout。",
+      "prompt": "AEP \u5df2\u7d93\u88dd\u597d\u4e86\uff0c\u8acb\u4fee\u5fa9\u9019\u500b\u65e2\u6709\u5c08\u6848\u5206\u88c2\u7684 .claude/.agents skills layout\u3002",
       "expected": "aep-scaffold"
     },
     {
       "id": "dispatch-vs-autopilot-zh",
       "kind": "boundary",
-      "prompt": "只挑一個現在最適合做的 story，交給下一個 feature 階段，不要持續跑。",
+      "prompt": "\u53ea\u6311\u4e00\u500b\u73fe\u5728\u6700\u9069\u5408\u505a\u7684 story\uff0c\u4ea4\u7d66\u4e0b\u4e00\u500b feature \u968e\u6bb5\uff0c\u4e0d\u8981\u6301\u7e8c\u8dd1\u3002",
       "expected": "aep-dispatch"
     },
     {
       "id": "autopilot-vs-dispatch-zh",
       "kind": "boundary",
-      "prompt": "不用再問我，連續把這一層的多個 stories 從派工一路監控到收尾。",
+      "prompt": "\u4e0d\u7528\u518d\u554f\u6211\uff0c\u9023\u7e8c\u628a\u9019\u4e00\u5c64\u7684\u591a\u500b stories \u5f9e\u6d3e\u5de5\u4e00\u8def\u76e3\u63a7\u5230\u6536\u5c3e\u3002",
       "expected": "aep-autopilot"
     },
     {
       "id": "design-lens-vs-calibrate-zh",
       "kind": "boundary",
-      "prompt": "請依可用性與 accessibility heuristics 審查這個現有介面並標嚴重度。",
+      "prompt": "\u8acb\u4f9d\u53ef\u7528\u6027\u8207 accessibility heuristics \u5be9\u67e5\u9019\u500b\u73fe\u6709\u4ecb\u9762\u4e26\u6a19\u56b4\u91cd\u5ea6\u3002",
       "expected": "aep-design-lens"
     },
     {
       "id": "calibrate-vs-design-lens-zh",
       "kind": "boundary",
-      "prompt": "這不是要做 usability audit；請把我對品牌視覺好壞的主觀判斷整理成 agents 能用的標準。",
+      "prompt": "\u9019\u4e0d\u662f\u8981\u505a usability audit\uff1b\u8acb\u628a\u6211\u5c0d\u54c1\u724c\u8996\u89ba\u597d\u58de\u7684\u4e3b\u89c0\u5224\u65b7\u6574\u7406\u6210 agents \u80fd\u7528\u7684\u6a19\u6e96\u3002",
       "expected": "aep-calibrate"
     },
     {
@@ -202,13 +202,13 @@
     {
       "id": "workflow-vs-feedback-zh",
       "kind": "boundary",
-      "prompt": "請為這個超出單一 context 的任務寫一個可重跑的 multi-agent workflow。",
+      "prompt": "\u8acb\u70ba\u9019\u500b\u8d85\u51fa\u55ae\u4e00 context \u7684\u4efb\u52d9\u5beb\u4e00\u500b\u53ef\u91cd\u8dd1\u7684 multi-agent workflow\u3002",
       "expected": "aep-workflow"
     },
     {
       "id": "feedback-vs-workflow-zh",
       "kind": "boundary",
-      "prompt": "workflow 已經跑完了，現在把這次流程上的教訓整理並回送到 AEP。",
+      "prompt": "workflow \u5df2\u7d93\u8dd1\u5b8c\u4e86\uff0c\u73fe\u5728\u628a\u9019\u6b21\u6d41\u7a0b\u4e0a\u7684\u6559\u8a13\u6574\u7406\u4e26\u56de\u9001\u5230 AEP\u3002",
       "expected": "aep-workflow-feedback"
     },
     {
@@ -238,7 +238,7 @@
     {
       "id": "human-alignment-vs-watch",
       "kind": "boundary",
-      "prompt": "Do not ingest telemetry or open a monitoring tick — just render the plan file's current state into a human-readable brief.",
+      "prompt": "Do not ingest telemetry or open a monitoring tick \u2014 just render the plan file's current state into a human-readable brief.",
       "expected": "aep-human-alignment"
     },
     {

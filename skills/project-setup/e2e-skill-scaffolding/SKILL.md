@@ -2,8 +2,7 @@
 name: aep-e2e-skill-scaffolding
 description: >-
   Generates or upgrades a project's e2e-test skill to the three-tier BDD
-  layer-gate shape. Use for "scaffold e2e", "set up e2e testing", "add BDD
-  journeys", or thin/bash migration; normally delegated by /aep-scaffold.
+  layer-gate shape. Use for "set up e2e testing" or "add BDD journeys".
 ---
 
 # E2E Skill Scaffolding

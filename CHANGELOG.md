@@ -87,15 +87,20 @@ place. Four conversions, plus the ratchets that keep them.
 - `/aep-wrap`'s cross-skill pointer to the YAML guardrails is R3 prose rather
   than a bare path into another skill.
 
-### Pending
+### Changed (routing metadata)
 
-- **C-P4 (deferred skill surface)** is not in this release. Router skill,
-  `disable-model-invocation` on run-once skills, and the description diet from
-  4,940 characters toward 3,200 all change which skills advertise themselves,
-  and R7 requires a fresh independent triggering run before that can land —
-  `evals/skill-routing-observations.json` is bound to a digest of the installed
-  descriptions precisely so a diet cannot silently un-wire a skill. It ships when
-  that run has been made.
+- **Description corpus 4,940 → 3,369 characters (-32%)**, and the CI cap follows
+  it from 5,000 to 3,400 — every character is paid by every session of every
+  downstream repo. Re-verified per R7 by an independent triggering run (a Sonnet
+  subagent given only the 23 names, the 23 descriptions, and the 40 prompts,
+  making no tool calls): **40/40 matched**, all 17 boundary probes included.
+  `evals/skill-routing-observations.json` is re-bound to the new digest.
+- **`disable-model-invocation` and the router skill are dropped, not deferred.**
+  `evals/skill-routing.json` asserts a direct probe for all 23 skills, so the
+  recorded routing contract says every one must stay selectable — and
+  de-advertising `/aep-onboard` would remove auto-discovery from exactly the
+  users who do not yet know the command names. A router would re-advertise, at
+  its own cost, what it de-advertised.
 
 ## [3.3.1] - 2026-07-27
 

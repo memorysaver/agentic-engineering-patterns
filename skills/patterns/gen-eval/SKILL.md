@@ -1,9 +1,9 @@
 ---
 name: aep-gen-eval
 description: >-
-  Canonical generator/evaluator pattern for artifact scoring, agent contracts,
-  eval protocol, and findings. Used by /aep-build, /aep-validate, and
-  /aep-launch; invoke for "gen/eval", "separate evaluator", or artifact review.
+  Defines the reusable generator/evaluator pattern: scoring, agent
+  contracts, eval protocol. Validating one specific artifact is
+  /aep-validate.
 ---
 
 # Generator/Evaluator Pattern

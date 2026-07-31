@@ -1,9 +1,8 @@
 ---
 name: aep-build
 description: >-
-  Implements one feature autonomously in an isolated workspace, including task
-  commits, review, tests, PR, feedback, and merge. Use when a workspace agent
-  should build or implement; this workflow does not interact with the user.
+  Implements one feature autonomously in a workspace — task commits, review,
+  tests, PR, merge. Runs as a workspace agent, not a user conversation.
 ---
 
 # Build

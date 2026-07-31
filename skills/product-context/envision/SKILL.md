@@ -1,9 +1,9 @@
 ---
 name: aep-envision
 description: >-
-  Validates and frames a product opportunity for downstream agents. Use to
-  start or revisit an idea, validate product direction, answer "what should we
-  build", or create the Context Document for /aep-map and /aep-design.
+  Validates and frames a product opportunity into the Context Document
+  downstream agents read. Use to start or revisit an idea, or for "what
+  should we build".
 ---
 
 # Envision

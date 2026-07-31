@@ -1,9 +1,9 @@
 ---
 name: aep-watch
 description: >-
-  Monitors bug trackers, errors, and telemetry from the main workspace, then
-  classifies, deduplicates, and creates backlog stories. Use for "watch",
-  "monitor for new work", "ingest errors", or telemetry-driven stories.
+  Ingests bug trackers, errors, and telemetry, then dedupes them into
+  backlog stories. Use for "monitor for new work" or telemetry-driven
+  stories.
 ---
 
 # Watch

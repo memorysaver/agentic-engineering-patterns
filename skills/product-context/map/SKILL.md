@@ -2,8 +2,8 @@
 name: aep-map
 description: >-
   Decomposes a product into a system map, layered story graph, and agent
-  topology. Use after /aep-envision or for "decompose", "story map", "system
-  architecture", "break this down", and "plan the stories".
+  topology. Use after /aep-envision, or for "break this down" and "plan the
+  stories".
 ---
 
 # Map

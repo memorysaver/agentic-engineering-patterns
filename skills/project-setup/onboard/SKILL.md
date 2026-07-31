@@ -1,9 +1,9 @@
 ---
 name: aep-onboard
 description: >-
-  Installs, verifies, and explains Agentic Engineering Patterns (AEP). Use for
-  first-time AEP or plugin mentions, environment setup, tool checks, project
-  plugin configuration, or an overview; use /aep-scaffold to create a project.
+  Installs, verifies, and explains AEP itself: environment, tools, plugin
+  config. Use for first contact with AEP; creating a project is
+  /aep-scaffold.
 ---
 
 # Onboard

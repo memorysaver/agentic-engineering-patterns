@@ -2,8 +2,8 @@
 name: aep-executor
 description: >-
   Spawns and steers workspace agents across Claude Code and Codex backends.
-  Used by /aep-launch, /aep-build, and /aep-autopilot; invoke directly for
-  backend choice, launch mode, host/tmux detection, or workflow execution.
+  Use for backend choice, launch mode, or host detection; other skills call
+  it.
 ---
 
 # Executor Abstraction

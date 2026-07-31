@@ -1,9 +1,8 @@
 ---
 name: aep-autopilot
 description: >-
-  Runs the dispatch-to-wrap cycle continuously for one layer from the main
-  workspace. Use for "autopilot", "hands-free", or unattended multi-story
-  execution; prefer /aep-dispatch for one story only.
+  Runs dispatch through wrap continuously for a whole layer, unattended. Use
+  for "autopilot" or "hands-free"; for a single story use /aep-dispatch.
 ---
 
 # Autopilot
