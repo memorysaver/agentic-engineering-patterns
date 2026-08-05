@@ -290,21 +290,16 @@ jq . /tmp/aep-check.out.json
 ```
 
 **Result schema (the CHECK → ACT contract):**
+[`action-list.schema.json`](action-list.schema.json) — every field, with the
+closed action-type vocabulary bound to `check_action_type` in the corpus
+vocabulary. Pass the file itself as the structured-output schema when spawning
+the CHECK — it is what `--output-schema` above should point at, resolved the
+same way as the liveness probe:
 
-```json
-{
-  "summary": "string — one-line human-readable status",
-  "state_written": true,
-  "actions": [
-    {
-      "type": "nudge | wrap | launch | escalate | design",
-      "workspace": "string | null",
-      "story_id": "string | null",
-      "message": "string | null — exact text for a nudge",
-      "reason": "string | null — for escalate/design"
-    }
-  ]
-}
+```bash
+AEP_EXECUTOR_DIR=.agents/skills/aep-executor
+[ -d "$AEP_EXECUTOR_DIR" ] || AEP_EXECUTOR_DIR=.claude/skills/aep-executor
+cp "$AEP_EXECUTOR_DIR/references/action-list.schema.json" /tmp/aep-check.schema.json
 ```
 
 ---

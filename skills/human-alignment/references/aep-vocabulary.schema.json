@@ -88,6 +88,35 @@
       "description": "skills/e2e-test/policy.md journey_timing. Governs EXECUTION only, never authoring: the journey file is always a pre-merge /aep-build Phase 6 deliverable. Under post-deploy a merge sits at scripted_passed until the deployed dogfood flips it to passed.",
       "enum": ["pre-merge", "post-deploy"]
     },
+    "check_action_type": {
+      "title": "What the CHECK half of a tick may ask the ACT half to do",
+      "description": "The action vocabulary of the CHECK → ACT contract (executor check() emits the list, the orchestrator performs it). An action type outside this set is a request the ACT loop has no handler for — it would be silently dropped, which is why the contract is closed.",
+      "enum": ["nudge", "wrap", "launch", "escalate", "design"],
+      "x-aep-stages": {
+        "nudge": "deliver a message to a workspace over its backend transport",
+        "wrap": "run /aep-wrap for a completed workspace (max one per tick)",
+        "launch": "dispatch a story — or re-adopt an orphan when flagged readopt",
+        "escalate": "record an escalation for a human",
+        "design": "route a story to /aep-design instead of autonomous launch"
+      }
+    },
+    "dimension_preset": {
+      "title": "Which scoring rubric a verification recipe binds",
+      "description": "Derived with the tier in one artifact so depth and rubric never decouple. The derivation script currently emits every value except api-only, which remains selectable in manual /aep-validate flows — the vocabulary is the legal set, not the derivable subset. Canonical treatment: /aep-gen-eval → references/scoring-framework.md § Dimension Presets.",
+      "enum": [
+        "ui-heavy",
+        "api-only",
+        "security-sensitive",
+        "data-pipeline",
+        "mixed",
+        "product-design"
+      ]
+    },
+    "evaluator_effort": {
+      "title": "Evaluator effort hint riding the verification recipe",
+      "description": "Travels from the recipe to executor spawn_evaluator(). none belongs to the light tier (no evaluator spawns — build self-reviews); its omission from the prose spec while the emitter produced it is drift bug #5 of this refactor.",
+      "enum": ["none", "default", "highest"]
+    },
     "verification_tier": {
       "title": "How much verification this story earns",
       "description": "Derived into verification-recipe.json and published on status.json at Phase 5 entry. light scores no dimensions (structured self-review); standard runs the derived preset; deep runs it with nothing de-weighted and, where a second model family is available, prefers a different family from the generator. Canonical treatment: /aep-gen-eval → references/verification-economics.md.",

@@ -175,28 +175,13 @@ Per tier: `light` scores no dimensions (self-review); `standard` runs the derive
 
 The binding derivation emits `.dev-workflow/verification-recipe.json`, and **build Phase 5 refuses to start without it** — a derivation function executed from prose recall is exactly the class of mechanical step that eventually gets skipped:
 
-```json
-{
-  "story_id": "<id>",
-  "derived_at": "<ISO 8601>",
-  "base_sha": "<sha>",
-  "tier": "light | standard | deep", // (aep-vocab: verification_tier)
-  "tier_provisional": "light | standard | deep",
-  "tier_escalated": false,
-  "scope_drift": false,
-  "referee_assets_touched": false,
-  "negative_assertion_delta": false,
-  "dimension_preset": "ui-heavy | api-only | security-sensitive | data-pipeline | mixed | product-design",
-  "hard_floors": { "Security": 4, "Data Privacy": 4 },
-  "max_rounds": 2,
-  "evaluator_effort": "default | highest",
-  "inputs": {
-    "sensitive_paths_matched": [],
-    "files_in_diff": 0,
-    "declared_files_affected": 0
-  }
-}
-```
+The recipe's shape is [`verification-recipe.schema.json`](verification-recipe.schema.json)
+— every field typed, the three enums bound to the corpus vocabulary
+(`verification_tier`, `dimension_preset`, `evaluator_effort`). The schema
+follows the **emitter** (the derive script `/aep-e2e-skill-scaffolding`
+scaffolds), which is what actually runs downstream; the prose block that used
+to sit here had drifted from it — `evaluator_effort` omitted `none` (the
+light tier's value) and the `inputs` field names disagreed with what ships.
 
 Downstream projects get a runnable reference implementation (derivation function + preflight probe stubs + recipe emission) shipped with `/aep-e2e-skill-scaffolding`; AEP itself ships no runtime.
 

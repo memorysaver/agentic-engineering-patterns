@@ -38,8 +38,13 @@ place. Four conversions, plus the ratchets that keep them.
   `autopilot-state.schema.json` (+ `validate-state.mjs`),
   `status-signal.schema.json` (+ `validate-signal.mjs`, which also enforces the
   pairings a schema cannot: `failed` needs a `failure_log`, `in_review` needs a
-  `pr_url`), and `tick-protocol.json` for the tick's thresholds and derived
-  states (+ `derive-workspace-state.mjs`).
+  `pr_url`), `tick-protocol.json` for the tick's thresholds and derived
+  states (+ `derive-workspace-state.mjs`), `action-list.schema.json` (the
+  CHECK → ACT contract — passed as the CHECK's structured-output schema), and
+  `verification-recipe.schema.json` (the tier/preset/floors artifact, following
+  the emitter that actually ships downstream). C2 as amended draws the line by
+  **kind**: a shape may not live in prose; procedure and rationale may not be
+  forced into JSON.
 - **Executable probes where recipes used to be retyped** —
   `executor/scripts/detect-backend.sh` replaces 45 lines of detection bash and
   the mode-selection pseudocode, with `scripts/test-detect-backend.sh` covering
@@ -86,6 +91,12 @@ place. Four conversions, plus the ratchets that keep them.
 - `signals-spec.md` bounded `phase` at 0–13 while the autopilot state bounded it
   at 0–12. Both are 0–13, and the schema records that a workspace's own run ends
   at 12 — Phase 13 (archive) runs from the main session.
+- **Drift bug #5, found writing `verification-recipe.schema.json`:** the recipe
+  spec in `verification-economics.md` disagreed with the derive script that
+  actually ships — `evaluator_effort` omitted `none` (the light tier's value),
+  the `inputs` field names differed (`declared_files_affected` vs the emitted
+  `files_affected_declared`), and two emitted fields were undocumented. The
+  schema follows the emitter; the stale prose block is now a pointer.
 - `/aep-wrap`'s cross-skill pointer to the YAML guardrails is R3 prose rather
   than a bare path into another skill.
 

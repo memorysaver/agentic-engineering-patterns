@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/memorysaver/agentic-engineering-patterns/skills/aep-executor/action-list.schema.json",
+  "title": "The CHECK → ACT contract",
+  "description": "What executor check() returns: the action list a cheap, context-isolated CHECK agent emits and the orchestrator's ACT half performs. This is the entire interface between the two halves of a tick — the CHECK reads signals and computes, the ACT touches the world — so an action shape the ACT has no handler for must fail validation here rather than be silently dropped there. Pass this file as the structured-output schema when spawning the CHECK (Claude subagent schema / codex exec --output-schema).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["summary", "state_written", "actions"],
+  "properties": {
+    "summary": {
+      "type": "string",
+      "description": "One line, human-readable — what this tick found and did. Surfaced to the goal/loop driver."
+    },
+    "state_written": {
+      "type": "boolean",
+      "description": "Whether the CHECK wrote the updated autopilot-state.json + autopilot-status.md itself. When false the ACT must not assume state reflects this tick."
+    },
+    "actions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/action" }
+    }
+  },
+  "$defs": {
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "x-aep-vocab": "check_action_type",
+          "enum": ["nudge", "wrap", "launch", "escalate", "design"]
+        },
+        "workspace": {
+          "type": ["string", "null"],
+          "description": "Target workspace name; null for actions with no workspace yet (a fresh launch, a design routing)"
+        },
+        "story_id": { "type": ["string", "null"] },
+        "message": {
+          "type": ["string", "null"],
+          "description": "Exact text to deliver for a nudge — the ACT relays it verbatim over the workspace's backend transport, never paraphrased"
+        },
+        "reason": {
+          "type": ["string", "null"],
+          "description": "For escalate/design: one line on what the CHECK could not decide"
+        },
+        "readopt": {
+          "type": "boolean",
+          "description": "On launch: re-spawn into the existing worktree with the recovery bootstrap (orphan re-adoption) instead of creating one"
+        }
+      }
+    }
+  }
+}

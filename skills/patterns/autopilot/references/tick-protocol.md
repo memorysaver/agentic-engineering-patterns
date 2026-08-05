@@ -15,7 +15,7 @@ this tick each turn until the layer completes; loop driver (fallback) —
 - **CHECK** — steps ①②⑤, the read-only/scoring parts of ④⑥, and the ⑦ state write. These run in a cheap, context-isolated agent via `executor.check()` (Claude Code Haiku subagent / Codex `codex exec`) and produce an **action list**. The CHECK reads signals only — never workspace code.
 - **ACT** — the orchestrator performs the emitted actions: ③ wrap, ③.5 post-merge guard (dogfood / reflect / revert), ④/⑤ nudges, ⑥ launch, escalations.
 
-The action-list schema is `{summary, state_written, actions[]}`, each action `{type, workspace, story_id, message, reason}` (full schema in `/aep-executor` → `references/backends.md`). The step recipes below are both the content of the CHECK prompt and the templates the ACT executes.
+The action list is typed in `/aep-executor` → `references/action-list.schema.json` — pass that file as the CHECK's structured-output schema, so an action shape the ACT has no handler for fails at emission rather than being silently dropped. The step recipes below are both the content of the CHECK prompt and the templates the ACT executes.
 
 ---
 
