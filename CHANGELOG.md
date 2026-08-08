@@ -100,6 +100,31 @@ place. Four conversions, plus the ratchets that keep them.
 - `/aep-wrap`'s cross-skill pointer to the YAML guardrails is R3 prose rather
   than a bare path into another skill.
 
+### Added (patterns)
+
+- **`/aep-easy-explain`** — user-typed comprehension repair plus AEP's standing
+  explain-to-a-human register (context first, ASD-STE100 Simplified Technical
+  English, the project's own nouns), adapted from mattpocock/skills
+  `wait-what`. `disable-model-invocation: true` is the design: only the human
+  knows when they stopped following, and a model reaching for it would grade its
+  own clarity. Orchestrator surfaces (autopilot status/escalations, the
+  scaffolded AGENTS.md AEP Workflow section) adopt the register by default.
+  `check-skills-package.sh` learns the user-invoked-only contract: no routing
+  probe (the router never sees it), no metadata-budget charge, no digest entry —
+  and the open-format validator's one unknown-field complaint about the Claude
+  Code extension field is tolerated by exact match, nothing else.
+
+### Removed (install + memory design)
+
+- **The canonical shared-symlink layout guidance is retired** — installs are
+  plain per-agent `skills` CLI copies; the normalize-to-symlinks upgrade step
+  and the `-a claude-code` symlink-copy gotcha are gone from README.
+- **External memory add-ons are no longer recommended** (`project-memory`,
+  `memory-forge`): AEP's own loop captures (`/aep-build`), archives
+  (`/aep-wrap`), and recalls (`/aep-launch`) lessons, and the agent host carries
+  its own memory. `project-behavior` (AGENTS.md behavioral preamble) remains the
+  one optional supplement.
+
 ### Changed (eval economics — impact routing)
 
 - **A finding now says whether it matters.** `finding_impact`

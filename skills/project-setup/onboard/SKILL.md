@@ -38,15 +38,15 @@ This installs every AEP skill (the `aep-*` names) plus a `skills-lock.json` mani
 
 ### Optional add-ons — always ask the user
 
-AEP pairs with two project-level skills from [`memorysaver/skills`](https://github.com/memorysaver/skills). **Ask the user whether they want each**, and install only what they choose (newest tag at <https://github.com/memorysaver/skills/releases/latest>, once per agent):
+AEP pairs with one project-level skill from [`memorysaver/skills`](https://github.com/memorysaver/skills). **Ask the user whether they want it** (newest tag at <https://github.com/memorysaver/skills/releases/latest>, once per agent):
 
-- **Behavioral guidelines in `AGENTS.md`?** → install `project-behavior`, then run it to scaffold/extend `AGENTS.md`.
-- **Committed project memory (durable lessons the repo owns)?** → install `project-memory` (and `memory-forge`) and run `project-memory` to bootstrap `project-memory/`. It layers on AEP's native lessons loop — capture (`/aep-build` → `.dev-workflow/lessons.md`), archive (`/aep-wrap` → `lessons-learned/`), recall (`/aep-launch`) — by adding semantic recall at `/aep-dispatch`, persistence at `/aep-wrap`, and distillation of settled lessons into skills at `/aep-reflect`. Those skills document their own wiring; AEP does not author a memory section into `AGENTS.md`, because the host already recalls what it saw and a hand-written recall ritual only competes with it. What belongs in the repo is what the host cannot know: the lessons themselves.
+- **Behavioral guidelines in `AGENTS.md`?** → install `project-behavior`, then run it to scaffold/extend `AGENTS.md`. Afterward, add one line to the AEP Workflow section: *when the main agent explains status or decisions to a human, it uses the `/aep-easy-explain` register — one line of context first, ASD-STE100 Simplified Technical English, the project's own nouns.*
 
 ```bash
-npx skills add memorysaver/skills@<latest-tag> -a claude-code \
-  --skill project-behavior --skill project-memory --skill memory-forge -y
+npx skills add memorysaver/skills@<latest-tag> -a claude-code --skill project-behavior -y
 ```
+
+Project memory needs no add-on. AEP's own loop captures lessons (`/aep-build` → `.dev-workflow/lessons.md`), archives them (`/aep-wrap` → `lessons-learned/`), and recalls them (`/aep-launch`); the agent host carries its own memory of what it has seen, and a hand-written recall ritual only competes with it. What belongs in the repo is what the host cannot know: the lessons themselves.
 
 > **Note:** This installs the AEP skills themselves. Recommended third-party Claude Code plugins are configured at the project level in Phase 4 via `.claude/settings.json`; browser automation is added only after its local smoke test passes.
 

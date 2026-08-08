@@ -293,6 +293,9 @@ cat .dev-workflow/autopilot-status.md
 node scripts/derive-workspace-state.mjs      # logical state + flags per workspace
 ```
 
+Render the explanation for the human in the `/aep-easy-explain` register: one line
+of context first, ASD-STE100 plain English, the project's own nouns.
+
 Also parse `.dev-workflow/autopilot-state.json` and present: **Status**
 (running / paused / stopped); **Uptime** (since `started_at`, tick count);
 **Active workspaces** (name, story_id, phase, completion_pct, last_action);

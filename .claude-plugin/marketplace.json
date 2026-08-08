@@ -67,7 +67,8 @@
         "./skills/patterns/autopilot",
         "./skills/patterns/workflow",
         "./skills/patterns/workflow-feedback",
-        "./skills/patterns/design-lens"
+        "./skills/patterns/design-lens",
+        "./skills/patterns/easy-explain"
       ]
     }
   ]

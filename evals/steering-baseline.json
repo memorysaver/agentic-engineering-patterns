@@ -3,7 +3,7 @@
   "note": "Per-skill steering ceilings (C1/C6 of docs/decisions/claude-5-context-engineering.md). A skill may fall below its entry; rising above it fails CI. Raising an entry is a reviewable decision, not a fix — the question it asks is which prohibition in THIS skill earned its place.",
   "skills": {
     "skills/agentic-development-workflow/build/SKILL.md": {
-      "negations": 12,
+      "negations": 11,
       "imperatives": 2
     },
     "skills/agentic-development-workflow/design/SKILL.md": {
@@ -32,6 +32,10 @@
     },
     "skills/patterns/design-lens/SKILL.md": {
       "negations": 4,
+      "imperatives": 0
+    },
+    "skills/patterns/easy-explain/SKILL.md": {
+      "negations": 1,
       "imperatives": 0
     },
     "skills/patterns/executor/SKILL.md": {

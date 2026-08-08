@@ -59,6 +59,10 @@ Install the Agentic Engineering Patterns (AEP) skills into this project, pinned 
      feature lifecycle in .claude/skills/ and/or .agents/skills/, pinned via skills-lock.json.
      The skills are self-describing; start with `aep-onboard`. Upgrade by re-running
      `npx skills add memorysaver/agentic-engineering-patterns@<newtag>` once per agent.
+     When the main agent explains status or decisions to a human, it uses the
+     /aep-easy-explain register: one line of context first, ASD-STE100 Simplified Technical
+     English, and this project's own nouns. Type /aep-easy-explain whenever a message
+     doesn't land.
 
 5. Verify with `npx skills list`. Restore from the lockfile later with `npx skills experimental_install`.
 
@@ -70,22 +74,14 @@ Install the Agentic Engineering Patterns (AEP) skills into this project, pinned 
    AEP creates the per-project openspec/ artifacts itself — /aep-scaffold initializes them for a new
    project, or run `openspec init` once in an existing repo.
 
-7. Then ALWAYS ASK the user which optional add-ons they want — both come from
-   memorysaver/skills (newest tag at https://github.com/memorysaver/skills/releases/latest):
-     a. "Set up behavioral guidelines (a coding-discipline preamble) in AGENTS.md?"
-        If yes → install `project-behavior`, then run it to scaffold/extend AGENTS.md.
-     b. "Set up a project memory system (committed lessons + recall)?"
-        If yes → install `project-memory` (and `memory-forge`), run project-memory to bootstrap
-        project-memory/, then add a concise "## Memory & Learning Loop" section to AGENTS.md that
-        LAYERS these onto AEP's native lessons loop — don't duplicate it. (AEP already captures
-        via /aep-build -> .dev-workflow/lessons.md, archives via /aep-wrap -> lessons-learned/, and
-        recalls via /aep-launch.) Keep it to a few lines; the skills are self-describing:
-          - project-memory — recall at /aep-dispatch, and at /aep-wrap persist the just-archived lesson
-            into project-memory/ for qmd-backed semantic recall.
-          - memory-forge — at /aep-reflect or before a PR, distill settled lessons (>=7 days, once
-            >=3 have accrued) into reusable skills the next agent auto-loads.
-   Install each chosen skill once per agent, then commit the installed files (the commit is the pin):
+7. Then ASK the user one optional question: "Set up behavioral guidelines (a coding-discipline
+   preamble) in AGENTS.md?" If yes → install `project-behavior` from memorysaver/skills (newest
+   tag at https://github.com/memorysaver/skills/releases/latest), run it to scaffold/extend
+   AGENTS.md, then commit the installed files (the commit is the pin):
      npx skills add memorysaver/skills@<latest-tag> -a claude-code --skill project-behavior -y
+   Project memory needs no add-on: AEP's own loop captures lessons (/aep-build ->
+   .dev-workflow/lessons.md), archives them (/aep-wrap -> lessons-learned/), and recalls them
+   (/aep-launch), and the agent host carries its own memory.
 ```
 
 ### Quick start
@@ -149,54 +145,30 @@ Then:
    `.agents/skills/`, brand-new files for any skills the release added (e.g. a new `aep-watch/`),
    and rewritten hashes in `skills-lock.json`. Jumping several releases at once also backfills any
    files your old pin predated — expect more new files than the changelog's headline.
-2. **Normalize `.claude/skills/aep-*` back to symlinks** if your layout shares one copy between
-   runtimes (see the gotcha below).
-3. **Bump the AGENTS.md pin note.** If your `AGENTS.md` states the pinned version in prose — the
+2. **Bump the AGENTS.md pin note.** If your `AGENTS.md` states the pinned version in prose — the
    canonical header's `… pinned at **vX.Y.Z**) are self-describing …` line — update it to the new
    tag so the doc doesn't drift from the installed bytes. It's hand-written, so the skill install
    won't touch it. Stage it in the **same commit** as the skill bytes.
-4. **Commit with `--no-verify`** so the pre-commit formatter doesn't rewrite the pinned bytes and
+3. **Commit with `--no-verify`** so the pre-commit formatter doesn't rewrite the pinned bytes and
    break the lockfile hashes (see [Keep your formatter off the skills](#keep-your-formatter-off-the-skills)).
-5. **Verify.** `npx skills list` shows the new versions, the AGENTS.md pin note matches the new tag,
+4. **Verify.** `npx skills list` shows the new versions, the AGENTS.md pin note matches the new tag,
    and `git status` is clean.
 
-> **Gotcha — the `-a claude-code` symlink copy.** If your canonical layout keeps
-> `.agents/skills/<name>` as the **real files** and `.claude/skills/<name>` as a **symlink** →
-> `../../.agents/skills/<name>` (so both runtimes share one copy), then `npx skills add -a claude-code`
-> **replaces those symlinks with copied real directories.** `git status` then shows the tracked
-> symlinks as **deleted** plus a pile of untracked files — a spurious, layout-breaking diff. Run the
-> `-a codex` install (which writes the real `.agents/` files) as well, then run `/aep-scaffold` in
-> existing-project mode and confirm category A. Its converge script promotes the only copy,
-> collapses content-and-mode-identical duplicates, and stops for manual resolution when the two real copies
-> differ; it does not discard either side of an ambiguous pair.
->
-> Afterward `git status` shows only the real `.agents/skills/**` updates (no phantom deletions) and
-> both runtimes resolve to one set of bytes again. Repos that install real copies for each agent
-> (no symlinks) can skip this step.
+### Optional supplement: behavioral guidelines
 
-### Optional supplement: behavior + memory
-
-Two project-level capabilities AEP doesn't ship itself live in a separate repo,
-[`memorysaver/skills`](https://github.com/memorysaver/skills). Install them as an
-**optional supplement** — once per agent (`-a claude-code`, then `-a codex`):
+One project-level capability AEP doesn't ship itself lives in a separate repo,
+[`memorysaver/skills`](https://github.com/memorysaver/skills):
+**`project-behavior`** scaffolds/extends your `AGENTS.md` with a behavioral preamble (a
+Karpathy coding-discipline pack by default). Install once per agent, run it, and commit the
+installed files to freeze the pin:
 
 ```bash
-npx skills add memorysaver/skills@<latest-tag> -a claude-code \
-  --skill project-behavior --skill project-memory --skill memory-forge
+npx skills add memorysaver/skills@<latest-tag> -a claude-code --skill project-behavior
 ```
 
-- **`project-behavior`** — scaffolds/extends your `AGENTS.md` with a behavioral preamble
-  (a Karpathy coding-discipline pack by default); run it after installing.
-- **`project-memory`** — a git-committable `project-memory/` store with qmd-backed semantic recall;
-  run it to set up, then add a concise `## Memory & Learning Loop` section to `AGENTS.md` that
-  **layers** it onto AEP's native lessons loop (recall at `/aep-dispatch`, persist at `/aep-wrap`) rather
-  than running a parallel one.
-- **`memory-forge`** — distills settled `project-memory/` lessons (>=7 days) into reusable skills at
-  `/aep-reflect` or before a PR — the distillation step AEP's native loop doesn't have.
-
-These aren't part of AEP's versioned release — pin them the same way you pin AEP: install the
-latest [`memorysaver/skills`](https://github.com/memorysaver/skills/releases/latest) release
-tag, then **commit the installed files** to freeze it.
+Project memory needs no supplement: AEP's own loop captures lessons (`/aep-build` →
+`.dev-workflow/lessons.md`), archives them (`/aep-wrap` → `lessons-learned/`), recalls them
+(`/aep-launch`), and the agent host carries its own memory of what it has seen.
 
 ### Keep your formatter off the skills
 
@@ -649,6 +621,7 @@ Generate a dimension-specific brief, explore or discuss, capture decisions for a
 | `/aep-executor`              | patterns                     | Host-agnostic backend for spawning/steering workspace agents                                                                              |
 | `/aep-autopilot`             | patterns                     | Autonomous dispatch-launch-monitor-wrap loop via `/loop`                                                                                  |
 | `/aep-workflow`              | patterns                     | Dynamic workflows — author a custom multi-agent harness for a task (+ sub-pattern catalog)                                                |
+| `/aep-easy-explain`          | patterns                     | Re-pitch the last message in plain language (user-typed only); also the main agent's explain-to-a-human register                          |
 | `/aep-workflow-feedback`     | patterns                     | Capture + review process learnings between downstream projects and AEP                                                                    |
 | `/aep-design-lens`           | patterns                     | Theory-grounded design guideline + heuristic health-check (HCI/design-theory catalog + task/data lens selection)                          |
 | `/aep-human-alignment`       | human-alignment              | Project pulse from `product-context.yaml` — where it stands, what is owed to a human and for how long, what changed since you last looked |
