@@ -117,6 +117,16 @@
       "description": "Travels from the recipe to executor spawn_evaluator(). none belongs to the light tier (no evaluator spawns — build self-reviews); its omission from the prose spec while the emitter produced it is drift bug #5 of this refactor.",
       "enum": ["none", "default", "highest"]
     },
+    "finding_impact": {
+      "title": "How much a finding matters — the axis that decides whether it buys an eval round",
+      "description": "Evaluator-authored, per finding, anchored to the story's acceptance criteria (blocking must name the criterion or hard-floor dimension it violates). Orthogonal to failure_class: class says what KIND of failure routes where; impact says whether it is worth another generator round. Only product-defect findings are impact-graded — environment/harness-flake/scope keep their conjunctive routing. The verdict is DERIVED from these labels (eval-protocol.md), which is what makes the round-buying decision mechanical instead of a mood.",
+      "enum": ["blocking", "material", "polish"],
+      "x-aep-stages": {
+        "blocking": "violates a named acceptance criterion, breaches a hard-floor dimension, or is security/data-privacy class — fixed this round; security keeps its immediate-escalation canon",
+        "material": "user-observable defect or correctness risk the criteria did not enumerate — fixed in a round",
+        "polish": "nothing user-observable: style, naming, docs, micro-refactors — recorded and surfaced, buys no round"
+      }
+    },
     "verification_tier": {
       "title": "How much verification this story earns",
       "description": "Derived into verification-recipe.json and published on status.json at Phase 5 entry. light scores no dimensions (structured self-review); standard runs the derived preset; deep runs it with nothing de-weighted and, where a second model family is available, prefers a different family from the generator. Canonical treatment: /aep-gen-eval → references/verification-economics.md.",

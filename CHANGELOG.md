@@ -100,6 +100,19 @@ place. Four conversions, plus the ratchets that keep them.
 - `/aep-wrap`'s cross-skill pointer to the YAML guardrails is R3 prose rather
   than a bare path into another skill.
 
+### Changed (eval economics — impact routing)
+
+- **A finding now says whether it matters.** `finding_impact`
+  (`blocking | material | polish`) joins the vocabulary, evaluator-authored and
+  anchored to acceptance criteria; the eval verdict is **derived** from the
+  labels (FAIL ⇔ ≥1 blocking/material or a hard-floor breach), an all-polish
+  round is mechanically PASS-with-notes, and the round cap is a ceiling, not a
+  quota. Fixes the observed failure mode of loops round-tripping on nits without
+  asking impact. `findings_by_impact` joins the verification accounting
+  (record-only; calibration stays deferred) so a round count of five polish
+  findings stops reading like five blocking ones. Amendment recorded in
+  `docs/decisions/verification-economics.md`.
+
 ### Changed (routing metadata)
 
 - **Description corpus 4,940 → 3,369 characters (-32%)**, and the CI cap follows

@@ -209,6 +209,7 @@ verification:
   evaluator_model: <id> | null # MUST when an evaluator ran
   eval_rounds: <n> | null # MUST when an evaluator ran — from signals/eval-response-*.md count
   findings_by_round: [<n>, ...] | null # MUST when an evaluator ran — needs per-round persistence
+  findings_by_impact: { blocking: <n>, material: <n>, polish: <n> } | null # MUST when an evaluator ran — totals across rounds; five polish findings and five blocking findings must not read as the same number
   finding_dimensions: [<dimension>, ...] | null # dimensions breached across rounds; feeds re-weighting
   journey_scenarios_run: <n> | null # MUST when a journey ran — from the dogfood report
   preflight_refusals: [] # MUST — named tags; [] when preflight passed
@@ -216,7 +217,7 @@ verification:
   escaped_defects: [] # filled retroactively by /aep-reflect
 ```
 
-Suite-level economics (`suite_runs`, `suite_seconds`) live in the **layer budget box** (the layer-gate evidence doc), where `/aep-wrap` actually runs the suites — not in the per-story record. **Per-round eval persistence** (keeping `eval-response-<N>.md` through wrap's gather) is an explicit requirement: `findings_by_round` is the loosening signal the calibration loop depends on.
+Suite-level economics (`suite_runs`, `suite_seconds`) live in the **layer budget box** (the layer-gate evidence doc), where `/aep-wrap` actually runs the suites — not in the per-story record. **Per-round eval persistence** (keeping `eval-response-<N>.md` through wrap's gather) is an explicit requirement: `findings_by_round` is the loosening signal the calibration loop depends on, and `findings_by_impact` is what makes that signal honest — a round count alone cannot distinguish a loop finding real defects from one round-tripping on polish (the observed failure mode this field was added for). Impact grading and the derived verdict are specified in eval-protocol.md; the vocabulary is `finding_impact` in `aep-vocabulary.schema.json`.
 
 ### Closing the loop
 
