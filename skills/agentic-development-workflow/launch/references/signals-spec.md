@@ -84,9 +84,12 @@ MODE=$(cat "$(git rev-parse --show-toplevel)/.dev-workflow/signals/mode" 2>/dev/
 typed, with what each is for. Check a signal against it:
 
 ```bash
-node scripts/validate-signal.mjs .dev-workflow/signals/status.json
+ROOT=$(git rev-parse --show-toplevel); AL="$ROOT/.agents/skills/aep-launch"; [ -d "$AL" ] || AL="$ROOT/.claude/skills/aep-launch"
+node "$AL/scripts/validate-signal.mjs" .dev-workflow/signals/status.json
 ```
 
+It is an on-demand check — mandatory producer-side validation is deliberately
+outside v4.0.0's scope.
 The validator also enforces the pairings the schema alone cannot: `failed` needs
 a `failure_log`, `in_review` needs a `pr_url`, `completed` needs a
 `completed_at`, and `blocked_on: human` needs a blocker saying what the human

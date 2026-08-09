@@ -574,7 +574,8 @@ fields. The rules are `derived_states` in [tick-protocol.json](tick-protocol.jso
 ordered first-match, and this evaluates them:
 
 ```bash
-node scripts/derive-workspace-state.mjs        # or --json for the status writer
+ROOT=$(git rev-parse --show-toplevel); AP="$ROOT/.agents/skills/aep-autopilot"; [ -d "$AP" ] || AP="$ROOT/.claude/skills/aep-autopilot"
+node "$AP/scripts/derive-workspace-state.mjs"  # or --json for the status writer
 ```
 
 `stuck` and `human_gate` come back as **flags**, not states — a workspace can be

@@ -25,8 +25,11 @@ a fixed-interval fallback driver. Rationale:
 `.dev-workflow/autopilot-status.md` (human-readable). Every legal field is typed
 in [references/autopilot-state.schema.json](references/autopilot-state.schema.json);
 `references/state-schema.md` carries the atomic-write and tick-lock protocols.
-Check a state file with `node scripts/validate-state.mjs` (shared validator:
-`scripts/json-schema.mjs`).
+Check a state file with the installed skill's `scripts/validate-state.mjs`
+(shared validator: `scripts/json-schema.mjs`; runnable command in
+`references/state-schema.md` — resolve the skill root from the repo top like
+every packaged script, `.agents/skills/aep-autopilot` falling back to
+`.claude/skills/aep-autopilot`).
 
 ---
 
@@ -290,7 +293,8 @@ Read and display current autopilot state.
 
 ```bash
 cat .dev-workflow/autopilot-status.md
-node scripts/derive-workspace-state.mjs      # logical state + flags per workspace
+ROOT=$(git rev-parse --show-toplevel); AP="$ROOT/.agents/skills/aep-autopilot"; [ -d "$AP" ] || AP="$ROOT/.claude/skills/aep-autopilot"
+node "$AP/scripts/derive-workspace-state.mjs"   # logical state + flags per workspace
 ```
 
 Render the explanation for the human in the `/aep-easy-explain` register: one line

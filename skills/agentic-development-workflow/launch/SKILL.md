@@ -225,7 +225,8 @@ behavior — write full criteria. Setup recipe (criteria assembly + bootstrap te
 
 The main session watches and steers without interrupting the worker, via the signal files documented
 in `references/signals-spec.md` — `status.json` (current phase, typed in
-`references/status-signal.schema.json`; check one with `node scripts/validate-signal.mjs`, which uses
+`references/status-signal.schema.json`; check one with the installed skill's
+`scripts/validate-signal.mjs` — runnable command in `references/signals-spec.md` — which uses
 the shared `scripts/json-schema.mjs`), `ready-for-review.flag`,
 `needs-human.md`, and `feedback.md` (mid-flight steering, read at phase boundaries). If `needs-human.md`
 appears (or `status.json` shows `"blocked_on": "human"`), the worker has **gate-and-parked** on a
