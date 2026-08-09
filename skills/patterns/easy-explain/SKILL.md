@@ -33,7 +33,10 @@ survives being invoked twice in a row without degrading into terseness.
 This skill is **user-typed only** (`/aep-easy-explain`), and that is the design:
 only the human knows when they stopped following. The model reaching for it on
 its own would grade its own clarity — the same self-evaluation `/aep-gen-eval`
-exists to forbid.
+exists to forbid. Each host enforces it with its own native metadata: Claude
+Code via `disable-model-invocation: true` in the frontmatter, Codex via
+`agents/openai.yaml` (`policy.allow_implicit_invocation: false`); explicit
+invocation stays available on both.
 
 > Adapted from [mattpocock/skills](https://github.com/mattpocock/skills)
 > `productivity/wait-what` — the three-line original, whose insight is that

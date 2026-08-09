@@ -117,6 +117,20 @@ const duplicateSourceNames = duplicates(sourceMeta.map((meta) => meta.name));
 if (duplicateSourceNames.length) errors.push(`duplicate skill names: ${duplicateSourceNames.join(", ")}`);
 const advertisedNames = sourceMeta.filter((meta) => !meta.userInvokedOnly).map((meta) => meta.name).sort();
 const userInvokedNames = sourceMeta.filter((meta) => meta.userInvokedOnly).map((meta) => meta.name).sort();
+// The user-invoked-only contract is per-host: Claude Code reads the frontmatter
+// extension field, Codex reads agents/openai.yaml. Enforce the pair so a skill
+// cannot be hidden from one router and implicitly invocable on the other.
+for (const meta of sourceMeta) {
+  const codexPolicyPath = path.join(meta.skillPath, "agents", "openai.yaml");
+  const codexOptOut = fs.existsSync(codexPolicyPath)
+    && /allow_implicit_invocation:\s*false/.test(fs.readFileSync(codexPolicyPath, "utf8"));
+  if (meta.userInvokedOnly && !codexOptOut) {
+    errors.push(`${meta.name} sets disable-model-invocation but lacks agents/openai.yaml with policy.allow_implicit_invocation: false — Codex would still implicitly invoke it`);
+  }
+  if (!meta.userInvokedOnly && codexOptOut) {
+    errors.push(`${meta.name} opts out of Codex implicit invocation but not Claude Code's — add disable-model-invocation: true or drop agents/openai.yaml`);
+  }
+}
 
 const directNames = safeCases.filter((entry) => entry.kind === "direct").map((entry) => entry.expected);
 const duplicateDirectNames = duplicates(directNames);

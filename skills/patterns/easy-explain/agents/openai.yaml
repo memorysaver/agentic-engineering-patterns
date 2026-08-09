@@ -1,0 +1,8 @@
+# Codex half of the user-typed-only contract (the Claude Code half is
+# `disable-model-invocation: true` in SKILL.md frontmatter). Codex reads this
+# per-agent policy file; allow_implicit_invocation defaults to true, and false
+# removes the skill from the implicitly available model context — explicit
+# `$skill` invocation still works. Only the human knows when they stopped
+# following; a model reaching for this skill would grade its own clarity.
+policy:
+  allow_implicit_invocation: false
