@@ -79,9 +79,10 @@ Install the Agentic Engineering Patterns (AEP) skills into this project, pinned 
    tag at https://github.com/memorysaver/skills/releases/latest), run it to scaffold/extend
    AGENTS.md, then commit the installed files (the commit is the pin):
      npx skills add memorysaver/skills@<latest-tag> -a claude-code --skill project-behavior -y
-   Project memory needs no add-on: AEP's own loop captures lessons (/aep-build ->
-   .dev-workflow/lessons.md), archives them (/aep-wrap -> lessons-learned/), and recalls them
-   (/aep-launch), and the agent host carries its own memory.
+   Project memory needs no add-on: the durable source of truth is the repo itself — AEP's loop
+   captures lessons (/aep-build -> .dev-workflow/lessons.md), archives them (/aep-wrap ->
+   lessons-learned/), and recalls them (/aep-launch). Host memory (Claude Code auto-memory;
+   Codex memories, where enabled) is an optional accelerator on top, never the record.
 ```
 
 ### Quick start
@@ -166,9 +167,11 @@ installed files to freeze the pin:
 npx skills add memorysaver/skills@<latest-tag> -a claude-code --skill project-behavior
 ```
 
-Project memory needs no supplement: AEP's own loop captures lessons (`/aep-build` →
-`.dev-workflow/lessons.md`), archives them (`/aep-wrap` → `lessons-learned/`), recalls them
-(`/aep-launch`), and the agent host carries its own memory of what it has seen.
+Project memory needs no supplement: the durable source of truth is the repo itself — AEP's own
+loop captures lessons (`/aep-build` → `.dev-workflow/lessons.md`), archives them (`/aep-wrap` →
+`lessons-learned/`), and recalls them (`/aep-launch`). Host memory (Claude Code auto-memory;
+Codex memories, where enabled) is an optional accelerator — a cache over what the repo already
+records, never the record itself, and never assumed present.
 
 ### Keep your formatter off the skills
 

@@ -92,7 +92,9 @@ session alive, so session-bound modes (**native-bg-subagent**) work under it.
   agent with `StartInterval=300` (or cron / a `while … sleep 300` loop) running:
 
   ```bash
-  codex exec -m gpt-5.4-mini -c model_reasoning_effort=low \
+  # AEP_CODEX_TICK_MODEL — the cheap high-frequency tier by role, not a pinned
+  # generation (defined in /aep-executor → references/backends.md).
+  codex exec -m "${AEP_CODEX_TICK_MODEL:-gpt-5.6-luna}" -c model_reasoning_effort=low \
     -C "$PWD" --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox \
     "/aep-autopilot tick" < /dev/null    # < /dev/null: exec hangs on stdin otherwise
   ```

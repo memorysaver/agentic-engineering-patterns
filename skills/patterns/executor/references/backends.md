@@ -282,7 +282,11 @@ prompt: <the analysis prompt; OUTPUT ONLY the JSON in `schema`>
 **Codex — `codex exec` cheap one-shot:**
 
 ```bash
-codex exec -m gpt-5.4-mini -c model_reasoning_effort=low \
+# AEP_CODEX_TICK_MODEL is the ROLE knob: the host's cost-sensitive
+# high-frequency tier for CHECK/tick one-shots. The default names the current
+# generation's cheap tier; override it per repo/environment rather than
+# editing recipes when generations move.
+codex exec -m "${AEP_CODEX_TICK_MODEL:-gpt-5.6-luna}" -c model_reasoning_effort=low \
   -C "$PWD" --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox \
   --output-schema /tmp/aep-check.schema.json -o /tmp/aep-check.out.json \
   "<the analysis prompt>" < /dev/null

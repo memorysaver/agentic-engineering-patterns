@@ -220,7 +220,7 @@ Then the common worktree removal from `backends.md`.
 Host-aware dogfood (`dogfood_method()`) for Codex resolves by mode, per
 [`dogfood-validation.md`](dogfood-validation.md):
 
-- **codex-subagent** (desktop, GPT-5.4 multimodal): use the **native in-app
+- **codex-subagent** (desktop, multimodal): use the **native in-app
   browser + computer-use** to drive the app and capture screenshots (computer-use
   is desktop-only). Fallback: the Playwright skill, then agent-browser CLI.
 - **codex-exec** (headless): **write and run a Playwright script** (no computer-use

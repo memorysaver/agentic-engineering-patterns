@@ -46,7 +46,7 @@ AEP pairs with one project-level skill from [`memorysaver/skills`](https://githu
 npx skills add memorysaver/skills@<latest-tag> -a claude-code --skill project-behavior -y
 ```
 
-Project memory needs no add-on. AEP's own loop captures lessons (`/aep-build` → `.dev-workflow/lessons.md`), archives them (`/aep-wrap` → `lessons-learned/`), and recalls them (`/aep-launch`); the agent host carries its own memory of what it has seen, and a hand-written recall ritual only competes with it. What belongs in the repo is what the host cannot know: the lessons themselves.
+Project memory needs no add-on. The durable record is the repo itself: AEP's own loop captures lessons (`/aep-build` → `.dev-workflow/lessons.md`), archives them (`/aep-wrap` → `lessons-learned/`), and recalls them (`/aep-launch`). Host memory (Claude Code auto-memory; Codex memories, where enabled) is an optional accelerator over that record — present on some hosts, absent on others, and a hand-written recall ritual only competes with it. What belongs in the repo is what no host can be assumed to know: the lessons themselves.
 
 > **Note:** This installs the AEP skills themselves. Recommended third-party Claude Code plugins are configured at the project level in Phase 4 via `.claude/settings.json`; browser automation is added only after its local smoke test passes.
 
