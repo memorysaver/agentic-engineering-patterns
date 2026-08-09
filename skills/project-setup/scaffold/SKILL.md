@@ -308,8 +308,8 @@ For the full project layout after scaffolding completes, see [`references/result
 # Existing Project Flow — audit → confirm → converge
 
 For projects that already have source code. This flow is **idempotent**: run it to onboard an existing
-project **or** re-run it later to repair **drift** toward the current AEP standard (canonical cross-tool
-layout, BDD e2e skill, current pin). It **reports first, asks, then converges**, under the Guardrails rule above —
+project **or** re-run it later to repair **drift** toward the current AEP standard (healthy per-agent
+skills layout, BDD e2e skill, current pin). It **reports first, asks, then converges**, under the Guardrails rule above —
 **hand-authored content survives**. Re-running a fully-converged project is a no-op ("already up to date").
 
 Read [`references/converge-flow.md`](references/converge-flow.md) for how to interpret each audit category,
@@ -334,7 +334,7 @@ Run the read-only audit. Nothing is changed in this phase.
 bash "<aep-scaffold-dir>/scripts/audit.sh"
 ```
 
-It prints `[ok]`/`[DRIFT]` per check across categories A (canonical layout), B (e2e shape), C (infra) and
+It prints `[ok]`/`[DRIFT]` per check across categories A (skills layout), B (e2e shape), C (infra) and
 `[detected]`/`[ ]` for D (observability), and **exits non-zero while any `[DRIFT]` remains** (exit 0 when
 clean). See `references/converge-flow.md` for what each category means and the observability handling.
 
@@ -342,7 +342,7 @@ clean). See `references/converge-flow.md` for what each category means and the o
 
 ## Phase 2E: Report + Confirm Direction
 
-Present the audit as a **current → target** summary grouped by category (A canonical layout, B e2e shape,
+Present the audit as a **current → target** summary grouped by category (A skills layout, B e2e shape,
 C infra, D observability, E version pin). For each category with drift/gaps, list the **proposed change**
 and ask the user which to apply. **Default = fix all drift + gaps.** Use a per-category checklist (e.g.
 the AskUserQuestion-style confirm). Only confirmed categories are converged in Phase 3E.

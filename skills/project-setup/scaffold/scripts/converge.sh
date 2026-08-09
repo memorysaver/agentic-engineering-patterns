@@ -2,14 +2,16 @@
 # /aep-scaffold existing-project converge — mechanical, idempotent fixes.
 #
 # Applies only the selected mechanical categories:
-#   A  canonical aep-* skills layout + CLAUDE.md import
+#   A  skills-layout health check + CLAUDE.md import (verify only — moves nothing)
 #   C  workflow entries in .gitignore
 #   E  version-pin recommendation (output only; never executes a re-pin)
 #
 # With no flags, A,C,E are selected for backward compatibility. To honor the
 # Phase 2 confirmation, pass one or more `--category A|C|E` flags. Model-driven
-# B/C work remains in the calling skill. Hand-authored content is never
-# overwritten; ambiguous duplicate skill directories fail closed.
+# B/C work remains in the calling skill. Category A never rewrites an install:
+# plain per-agent installs and the legacy symlink layout are both healthy
+# shapes, and version skew (divergent copies of one skill) fails closed toward
+# the category E re-pin. Hand-authored content is never overwritten.
 
 set -euo pipefail
 
@@ -77,38 +79,39 @@ if [ "$selected" -eq 0 ]; then
   apply_e=1
 fi
 
-# Validate every ambiguous shape before the first write so a later conflict
-# cannot leave an earlier skill normalized in an otherwise failed run.
+# Validate the layout before any write so a partial run cannot change shape.
+# Category A never rewrites an install: aliased parents, foreign or broken
+# links, and version skew all fail closed with a human-facing pointer instead
+# of a mechanical fix.
 if [ "$apply_a" -eq 1 ]; then
   if ! aep_parent_dirs_safe; then
-    echo "ERROR: .agents, .claude, and their skills directories must be real directories; inspect symlinks or invalid entries manually." >&2
+    echo "ERROR: .agents, .claude, and their skills directories must be real directories when present; inspect symlinks or invalid entries manually." >&2
     exit 1
   fi
-  for claude_skill in .claude/skills/aep-*; do
-    [ -e "$claude_skill" ] || [ -L "$claude_skill" ] || continue
-    skill_name=${claude_skill##*/}
-    canonical_skill=".agents/skills/$skill_name"
-    expected_target="../../.agents/skills/$skill_name"
-    if [ -L "$claude_skill" ]; then
-      if [ "$(readlink "$claude_skill")" != "$expected_target" ] || [ ! -d "$canonical_skill" ] || [ -L "$canonical_skill" ]; then
-        echo "ERROR: $claude_skill is not a healthy canonical link; inspect it manually." >&2
-        exit 1
-      fi
-    elif [ ! -d "$claude_skill" ]; then
-      echo "ERROR: $claude_skill is not a skill directory; inspect it manually." >&2
-      exit 1
-    elif [ -L "$canonical_skill" ]; then
-      echo "ERROR: canonical $canonical_skill is itself a symlink; inspect it manually." >&2
-      exit 1
-    elif [ -e "$canonical_skill" ] && { [ ! -d "$canonical_skill" ] || ! aep_trees_identical "$claude_skill" "$canonical_skill"; }; then
-      echo "ERROR: divergent or invalid copies at $claude_skill and $canonical_skill; refusing to change either." >&2
+  for codex_skill in .agents/skills/aep-*; do
+    [ -e "$codex_skill" ] || [ -L "$codex_skill" ] || continue
+    if [ -L "$codex_skill" ] || [ ! -d "$codex_skill" ]; then
+      echo "ERROR: $codex_skill is not a real skill directory; inspect it manually." >&2
       exit 1
     fi
   done
-  for canonical_skill in .agents/skills/aep-*; do
-    [ -e "$canonical_skill" ] || [ -L "$canonical_skill" ] || continue
-    if [ -L "$canonical_skill" ] || [ ! -d "$canonical_skill" ]; then
-      echo "ERROR: canonical $canonical_skill is not a real skill directory; inspect it manually." >&2
+  for claude_skill in .claude/skills/aep-*; do
+    [ -e "$claude_skill" ] || [ -L "$claude_skill" ] || continue
+    skill_name=${claude_skill##*/}
+    codex_skill=".agents/skills/$skill_name"
+    if [ -L "$claude_skill" ]; then
+      if [ "$(readlink "$claude_skill")" != "../../.agents/skills/$skill_name" ] \
+        || [ ! -d "$codex_skill" ] || [ -L "$codex_skill" ]; then
+        echo "ERROR: $claude_skill is a link but not a healthy legacy one; inspect it manually." >&2
+        exit 1
+      fi
+    elif [ -d "$claude_skill" ]; then
+      if [ -d "$codex_skill" ] && ! aep_trees_identical "$claude_skill" "$codex_skill"; then
+        echo "ERROR: $claude_skill and $codex_skill diverge (version skew); re-pin both agents (category E) instead of editing either." >&2
+        exit 1
+      fi
+    else
+      echo "ERROR: $claude_skill is not a skill directory; inspect it manually." >&2
       exit 1
     fi
   done
@@ -124,72 +127,13 @@ if [ "$apply_c" -eq 1 ] && { [ -L .gitignore ] || { [ -e .gitignore ] && [ ! -f 
 fi
 
 if [ "$apply_a" -eq 1 ]; then
-  echo "=== A. Canonical skills layout ==="
-  mkdir -p .agents/skills .claude/skills
+  echo "=== A. Skills layout (verify only) + CLAUDE.md import ==="
+  echo "  plain per-agent installs and the legacy symlink layout both pass; nothing is moved, deleted, or linked"
 
-  # Promote every Claude-only real aep-* directory to the canonical Codex
-  # location, then link Claude to it. If both sides contain the same skill,
-  # collapse only content-and-mode-identical copies; divergent copies require
-  # a human so executable bits and other meaningful modes are never lost.
-  for claude_skill in .claude/skills/aep-*; do
-    [ -e "$claude_skill" ] || [ -L "$claude_skill" ] || continue
-    skill_name=${claude_skill##*/}
-    canonical_skill=".agents/skills/$skill_name"
-    expected_target="../../.agents/skills/$skill_name"
-
-    if [ -L "$claude_skill" ]; then
-      actual_target=$(readlink "$claude_skill")
-      if [ "$actual_target" != "$expected_target" ] || [ ! -e "$canonical_skill" ]; then
-        echo "ERROR: $claude_skill is not a healthy canonical link; inspect it manually." >&2
-        exit 1
-      fi
-      continue
-    fi
-    if [ ! -d "$claude_skill" ]; then
-      echo "ERROR: $claude_skill is not a skill directory; inspect it manually." >&2
-      exit 1
-    fi
-
-    if [ -L "$canonical_skill" ]; then
-      echo "ERROR: canonical $canonical_skill is itself a symlink; inspect it manually." >&2
-      exit 1
-    elif [ -e "$canonical_skill" ]; then
-      if ! aep_trees_identical "$claude_skill" "$canonical_skill"; then
-        echo "ERROR: divergent copies at $claude_skill and $canonical_skill; refusing to delete either." >&2
-        exit 1
-      fi
-      rm -rf -- "$claude_skill"
-    else
-      mv -- "$claude_skill" "$canonical_skill"
-    fi
-    ln -s "$expected_target" "$claude_skill"
-  done
-
-  # Expose Codex-only canonical skills to Claude.
-  for canonical_skill in .agents/skills/aep-*; do
-    [ -e "$canonical_skill" ] || [ -L "$canonical_skill" ] || continue
-    skill_name=${canonical_skill##*/}
-    claude_skill=".claude/skills/$skill_name"
-    expected_target="../../.agents/skills/$skill_name"
-
-    if [ -L "$canonical_skill" ]; then
-      echo "ERROR: canonical $canonical_skill is a symlink; inspect it manually." >&2
-      exit 1
-    elif [ ! -d "$canonical_skill" ]; then
-      echo "ERROR: canonical $canonical_skill is not a skill directory; inspect it manually." >&2
-      exit 1
-    fi
-    if [ ! -e "$claude_skill" ] && [ ! -L "$claude_skill" ]; then
-      ln -s "$expected_target" "$claude_skill"
-    elif [ ! -L "$claude_skill" ]; then
-      echo "ERROR: unexpected real directory at $claude_skill after normalization." >&2
-      exit 1
-    fi
-  done
-
-  # Create the import only when absent. Never clobber a file, symlink, or
-  # directory that a user already owns.
-  if [ -f AGENTS.md ] && [ ! -e CLAUDE.md ] && [ ! -L CLAUDE.md ]; then
+  # Create the import only when absent AND a Claude skill install exists —
+  # a Codex-only repo is owed no CLAUDE.md. Never clobber a file, symlink,
+  # or directory that a user already owns.
+  if [ -d .claude/skills ] && [ -f AGENTS.md ] && [ ! -e CLAUDE.md ] && [ ! -L CLAUDE.md ]; then
     printf '@AGENTS.md\n' > CLAUDE.md
   fi
   if [ -e CLAUDE.md ] && [ ! -f CLAUDE.md ]; then
@@ -215,5 +159,5 @@ if [ "$apply_e" -eq 1 ]; then
   echo "=== E. Version pin (recommend-only — never auto-run) ==="
   echo "  npx skills add memorysaver/agentic-engineering-patterns@<newtag> -a claude-code --skill '*' -y"
   echo "  npx skills add memorysaver/agentic-engineering-patterns@<newtag> -a codex        --skill '*' -y"
-  echo "  then normalize .claude/skills/aep-* symlinks (category A), bump the AGENTS.md pin note, commit --no-verify"
+  echo "  (run the line for each agent this repo installs), then re-run scripts/audit.sh, bump the AGENTS.md pin note, commit --no-verify"
 fi

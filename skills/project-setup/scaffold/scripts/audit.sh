@@ -41,11 +41,15 @@ echo "latest release: https://github.com/memorysaver/agentic-engineering-pattern
 echo "=== A. Canonical skills layout (cross-tool) ==="
 chk() { printf "  %-52s" "$1:"; shift; if "$@"; then echo "[ok]"; else echo "[DRIFT]"; DRIFT=1; fi; }
 chk "skills-lock.json present"            test -f skills-lock.json
-chk ".agents/skills exists (codex install)" test -d .agents/skills
+chk "an agent install exists (.claude/skills or .agents/skills)" bash -c '[ -d .claude/skills ] || [ -d .agents/skills ]'
 chk "AGENTS.md present"                    test -f AGENTS.md
 chk "AGENTS.md has AEP Workflow section"   bash -c 'grep -q "AEP Workflow" AGENTS.md 2>/dev/null'
-chk "CLAUDE.md = @AGENTS.md import"        bash -c '[ "$(head -1 CLAUDE.md 2>/dev/null | tr -d "[:space:]")" = "@AGENTS.md" ]'
-chk "AEP skills use canonical cross-tool layout" aep_layout_is_canonical
+# CLAUDE.md is owed where a Claude skill install exists (or the file already
+# does) — a Codex-only repo may still carry .claude/ for hooks and opsx aliases.
+if [ -d .claude/skills ] || [ -e CLAUDE.md ] || [ -L CLAUDE.md ]; then
+  chk "CLAUDE.md = @AGENTS.md import"        bash -c '[ "$(head -1 CLAUDE.md 2>/dev/null | tr -d "[:space:]")" = "@AGENTS.md" ]'
+fi
+chk "AEP skills layout healthy (plain per-agent or legacy links)" aep_layout_is_healthy
 # project-owned skills must be real in skills/ and symlinked into both runtimes
 same_directory() {
   [ -d "$1" ] && [ -d "$2" ] || return 1

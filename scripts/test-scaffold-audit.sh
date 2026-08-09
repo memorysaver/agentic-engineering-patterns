@@ -12,13 +12,15 @@ pass_count=0
 pass() { pass_count=$((pass_count + 1)); echo "PASS: $1"; }
 fail() { echo "FAIL: $1" >&2; exit 1; }
 
-baseline() {
+# Shared project infra: both runtime roots, the project-owned e2e-test skill
+# (real skills/ dir + BOTH runtime symlinks — that contract is unchanged),
+# AGENTS/CLAUDE wiring, lock file, hook, gitignore. The aep-* install shape
+# is what each case varies.
+infra() {
   local root="$1"
-  mkdir -p "$root/.agents/skills/aep-scaffold" "$root/.claude/skills"
+  mkdir -p "$root/.agents/skills" "$root/.claude/skills"
   mkdir -p "$root/skills/e2e-test" "$root/openspec"
   mkdir -p "$root/.claude/commands/opsx" "$root/.claude/hooks"
-  printf '%s\n' 'name: aep-scaffold' > "$root/.agents/skills/aep-scaffold/SKILL.md"
-  ln -s '../../.agents/skills/aep-scaffold' "$root/.claude/skills/aep-scaffold"
   printf 'policy\n' > "$root/skills/e2e-test/policy.md"
   ln -s '../../skills/e2e-test' "$root/.agents/skills/e2e-test"
   ln -s '../../skills/e2e-test' "$root/.claude/skills/e2e-test"
@@ -29,10 +31,42 @@ baseline() {
   printf '.dev-workflow/\n.feature-workspaces/\n' > "$root/.gitignore"
 }
 
+baseline() {
+  # The legacy v3 symlink layout — still legal, still audits clean.
+  local root="$1"
+  infra "$root"
+  mkdir -p "$root/.agents/skills/aep-scaffold"
+  printf '%s\n' 'name: aep-scaffold' > "$root/.agents/skills/aep-scaffold/SKILL.md"
+  ln -s '../../.agents/skills/aep-scaffold' "$root/.claude/skills/aep-scaffold"
+}
+
 case_dir="$TMP_ROOT/baseline"
 baseline "$case_dir"
-(cd "$case_dir" && bash "$AUDIT" >/dev/null) || fail "canonical baseline reported drift"
-pass "canonical audit baseline"
+(cd "$case_dir" && bash "$AUDIT" >/dev/null) || fail "legacy symlink baseline reported drift"
+pass "legacy symlink audit baseline"
+
+# v4 plain installs: a real copy on one side alone is a complete install.
+case_dir="$TMP_ROOT/plain-claude-only"
+infra "$case_dir"
+mkdir -p "$case_dir/.claude/skills/aep-scaffold"
+printf '%s\n' 'name: aep-scaffold' > "$case_dir/.claude/skills/aep-scaffold/SKILL.md"
+(cd "$case_dir" && bash "$AUDIT" >/dev/null) || fail "Claude-only plain install reported drift"
+pass "Claude-only plain install audits clean"
+
+case_dir="$TMP_ROOT/plain-codex-only"
+infra "$case_dir"
+mkdir -p "$case_dir/.agents/skills/aep-scaffold"
+printf '%s\n' 'name: aep-scaffold' > "$case_dir/.agents/skills/aep-scaffold/SKILL.md"
+(cd "$case_dir" && bash "$AUDIT" >/dev/null) || fail "Codex-only plain install reported drift"
+pass "Codex-only plain install audits clean"
+
+case_dir="$TMP_ROOT/plain-dual-identical"
+infra "$case_dir"
+mkdir -p "$case_dir/.agents/skills/aep-scaffold" "$case_dir/.claude/skills/aep-scaffold"
+printf '%s\n' 'name: aep-scaffold' > "$case_dir/.agents/skills/aep-scaffold/SKILL.md"
+printf '%s\n' 'name: aep-scaffold' > "$case_dir/.claude/skills/aep-scaffold/SKILL.md"
+(cd "$case_dir" && bash "$AUDIT" >/dev/null) || fail "identical dual plain install reported drift"
+pass "identical dual plain install audits clean"
 
 case_dir="$TMP_ROOT/injection"
 baseline "$case_dir"
@@ -50,9 +84,19 @@ rm "$case_dir/.claude/skills/aep-scaffold"
 mkdir -p "$case_dir/.claude/skills/aep-scaffold"
 printf 'divergent\n' > "$case_dir/.claude/skills/aep-scaffold/SKILL.md"
 if (cd "$case_dir" && bash "$AUDIT" >/dev/null); then
-  fail "divergent AEP copies passed audit"
+  fail "version-skewed AEP copies passed audit"
 fi
-pass "divergent AEP layout detection"
+pass "version-skew (divergent plain copies) detection"
+
+case_dir="$TMP_ROOT/aliased-skills-dir"
+baseline "$case_dir"
+rm "$case_dir/.claude/skills/aep-scaffold" "$case_dir/.claude/skills/e2e-test"
+rmdir "$case_dir/.claude/skills"
+ln -s '../.agents/skills' "$case_dir/.claude/skills"
+if (cd "$case_dir" && bash "$AUDIT" >/dev/null); then
+  fail "whole-directory skills alias passed audit"
+fi
+pass "whole-directory alias detection"
 
 case_dir="$TMP_ROOT/gitignore-substring"
 baseline "$case_dir"
