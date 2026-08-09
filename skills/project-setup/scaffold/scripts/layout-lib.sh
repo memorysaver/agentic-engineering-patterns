@@ -12,6 +12,19 @@ aep_parent_dirs_safe() {
   done
 }
 
+aep_claude_install_present() {
+  # A Claude skill install means .claude/skills holds at least one entry — a
+  # real directory or a symlink. An empty directory is scaffolding, not an
+  # install, and owes no CLAUDE.md import.
+  local entry
+  for entry in .claude/skills/*; do
+    if [ -e "$entry" ] || [ -L "$entry" ]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
 aep_mode() {
   local mode
   if mode=$(stat -c '%a' "$1" 2>/dev/null); then

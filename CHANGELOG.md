@@ -150,12 +150,15 @@ place. Four conversions, plus the ratchets that keep them.
   subagent given only the 23 names, the 23 descriptions, and the 40 prompts,
   making no tool calls): **40/40 matched**, all 17 boundary probes included.
   `evals/skill-routing-observations.json` is re-bound to the new digest.
-- **`disable-model-invocation` and the router skill are dropped, not deferred.**
-  `evals/skill-routing.json` asserts a direct probe for all 23 skills, so the
-  recorded routing contract says every one must stay selectable — and
-  de-advertising `/aep-onboard` would remove auto-discovery from exactly the
-  users who do not yet know the command names. A router would re-advertise, at
-  its own cost, what it de-advertised.
+- **De-advertising existing skills — and the router — are dropped, not
+  deferred.** `evals/skill-routing.json` asserts a direct probe for all 23
+  advertised skills, so the recorded routing contract says each must stay
+  selectable — de-advertising `/aep-onboard` would remove auto-discovery from
+  exactly the users who do not yet know the command names, and a router would
+  re-advertise, at its own cost, what it de-advertised. This is not a ban on
+  the field: `/aep-easy-explain` joins as the 24th skill **born**
+  user-typed-only (both hosts' native opt-outs), which de-advertises nothing —
+  the original 23 and their 40 recorded probes are untouched.
 
 ### Fixed (release closure, 2026-08-09)
 

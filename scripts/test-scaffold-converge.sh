@@ -59,6 +59,16 @@ assert_file_text "codex-only" "$case_dir/.agents/skills/aep-demo/SKILL.md"
 [ ! -e "$case_dir/CLAUDE.md" ] || fail "CLAUDE.md was created without a Claude skill install"
 pass "Codex-only plain install left intact"
 
+# An empty .claude/skills directory is scaffolding, not an install: no
+# CLAUDE.md is owed or created.
+case_dir="$TMP_ROOT/empty-claude-skills"
+mkdir -p "$case_dir/.claude/skills" "$case_dir/.agents/skills/aep-demo"
+printf 'codex-only\n' > "$case_dir/.agents/skills/aep-demo/SKILL.md"
+printf '# Agent guide\n' > "$case_dir/AGENTS.md"
+(cd "$case_dir" && bash "$CONVERGE" --category A >/dev/null)
+[ ! -e "$case_dir/CLAUDE.md" ] || fail "CLAUDE.md was created for an empty .claude/skills"
+pass "empty .claude/skills owes no CLAUDE.md"
+
 # Byte-and-mode-identical dual plain copies are a healthy dual install:
 # verified, never collapsed.
 case_dir="$TMP_ROOT/identical"

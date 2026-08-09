@@ -68,6 +68,20 @@ printf '%s\n' 'name: aep-scaffold' > "$case_dir/.claude/skills/aep-scaffold/SKIL
 (cd "$case_dir" && bash "$AUDIT" >/dev/null) || fail "identical dual plain install reported drift"
 pass "identical dual plain install audits clean"
 
+# An empty .claude/skills directory is scaffolding, not a Claude install: the
+# audit must not demand CLAUDE.md for it. (Other categories may drift in this
+# minimal fixture; the assertion is only that no CLAUDE.md check appears.)
+case_dir="$TMP_ROOT/empty-claude-skills"
+mkdir -p "$case_dir/.claude/skills" "$case_dir/.agents/skills/aep-scaffold"
+printf '%s\n' 'name: aep-scaffold' > "$case_dir/.agents/skills/aep-scaffold/SKILL.md"
+printf '# AEP Workflow\n' > "$case_dir/AGENTS.md"
+printf '{}\n' > "$case_dir/skills-lock.json"
+audit_output=$(cd "$case_dir" && bash "$AUDIT" 2>/dev/null) || true
+if printf '%s\n' "$audit_output" | grep -q "CLAUDE.md"; then
+  fail "CLAUDE.md was demanded despite an empty .claude/skills"
+fi
+pass "empty .claude/skills owes no CLAUDE.md check"
+
 case_dir="$TMP_ROOT/injection"
 baseline "$case_dir"
 malicious='x);touch${IFS}PWNED;#'

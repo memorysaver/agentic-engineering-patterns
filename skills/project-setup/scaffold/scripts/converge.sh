@@ -130,10 +130,11 @@ if [ "$apply_a" -eq 1 ]; then
   echo "=== A. Skills layout (verify only) + CLAUDE.md import ==="
   echo "  plain per-agent installs and the legacy symlink layout both pass; nothing is moved, deleted, or linked"
 
-  # Create the import only when absent AND a Claude skill install exists —
-  # a Codex-only repo is owed no CLAUDE.md. Never clobber a file, symlink,
-  # or directory that a user already owns.
-  if [ -d .claude/skills ] && [ -f AGENTS.md ] && [ ! -e CLAUDE.md ] && [ ! -L CLAUDE.md ]; then
+  # Create the import only when absent AND a Claude skill install exists (at
+  # least one entry in .claude/skills — an empty directory is scaffolding). A
+  # Codex-only repo is owed no CLAUDE.md. Never clobber a file, symlink, or
+  # directory that a user already owns.
+  if aep_claude_install_present && [ -f AGENTS.md ] && [ ! -e CLAUDE.md ] && [ ! -L CLAUDE.md ]; then
     printf '@AGENTS.md\n' > CLAUDE.md
   fi
   if [ -e CLAUDE.md ] && [ ! -f CLAUDE.md ]; then

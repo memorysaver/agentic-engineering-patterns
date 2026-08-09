@@ -44,9 +44,10 @@ chk "skills-lock.json present"            test -f skills-lock.json
 chk "an agent install exists (.claude/skills or .agents/skills)" bash -c '[ -d .claude/skills ] || [ -d .agents/skills ]'
 chk "AGENTS.md present"                    test -f AGENTS.md
 chk "AGENTS.md has AEP Workflow section"   bash -c 'grep -q "AEP Workflow" AGENTS.md 2>/dev/null'
-# CLAUDE.md is owed where a Claude skill install exists (or the file already
-# does) — a Codex-only repo may still carry .claude/ for hooks and opsx aliases.
-if [ -d .claude/skills ] || [ -e CLAUDE.md ] || [ -L CLAUDE.md ]; then
+# CLAUDE.md is owed where a Claude skill install exists (at least one entry in
+# .claude/skills — an empty directory is scaffolding) or the file already does;
+# a Codex-only repo may still carry .claude/ for hooks and opsx aliases.
+if aep_claude_install_present || [ -e CLAUDE.md ] || [ -L CLAUDE.md ]; then
   chk "CLAUDE.md = @AGENTS.md import"        bash -c '[ "$(head -1 CLAUDE.md 2>/dev/null | tr -d "[:space:]")" = "@AGENTS.md" ]'
 fi
 chk "AEP skills layout healthy (plain per-agent or legacy links)" aep_layout_is_healthy

@@ -120,10 +120,35 @@ const userInvokedNames = sourceMeta.filter((meta) => meta.userInvokedOnly).map((
 // The user-invoked-only contract is per-host: Claude Code reads the frontmatter
 // extension field, Codex reads agents/openai.yaml. Enforce the pair so a skill
 // cannot be hidden from one router and implicitly invocable on the other.
+// The Codex check is structural and canonical: the key counts only as the
+// DIRECT child of a top-level `policy:` mapping, at exactly two-space indent —
+// a same-named string at top level, under another section, or nested deeper
+// does not count.
+const codexImplicitInvocationDisabled = (text) => {
+  let inPolicy = false;
+  for (const line of text.split(/\r?\n/)) {
+    if (/^\s*(#|$)/.test(line)) continue;
+    if (/^\S/.test(line)) { inPolicy = /^policy:\s*(#.*)?$/.test(line); continue; }
+    if (inPolicy && /^  allow_implicit_invocation: false\s*(#.*)?$/.test(line)) return true;
+  }
+  return false;
+};
+// Deterministic self-test — all four shapes, before the function judges skills.
+const codexCheckSelfTest = [
+  ["policy:\n  allow_implicit_invocation: false\n", true],
+  ["allow_implicit_invocation: false\n", false],
+  ["interface:\n  allow_implicit_invocation: false\n", false],
+  ["policy:\n  nested:\n    allow_implicit_invocation: false\n", false],
+];
+for (const [yamlText, expected] of codexCheckSelfTest) {
+  if (codexImplicitInvocationDisabled(yamlText) !== expected) {
+    errors.push(`codexImplicitInvocationDisabled self-test failed on ${JSON.stringify(yamlText)} — expected ${expected}`);
+  }
+}
 for (const meta of sourceMeta) {
   const codexPolicyPath = path.join(meta.skillPath, "agents", "openai.yaml");
   const codexOptOut = fs.existsSync(codexPolicyPath)
-    && /allow_implicit_invocation:\s*false/.test(fs.readFileSync(codexPolicyPath, "utf8"));
+    && codexImplicitInvocationDisabled(fs.readFileSync(codexPolicyPath, "utf8"));
   if (meta.userInvokedOnly && !codexOptOut) {
     errors.push(`${meta.name} sets disable-model-invocation but lacks agents/openai.yaml with policy.allow_implicit_invocation: false — Codex would still implicitly invoke it`);
   }
