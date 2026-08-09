@@ -17,7 +17,7 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 > `/envision`, `/dispatch`, `/reflect`, …), which records product-state history
 > for that project. See [`docs/glossary.md`](docs/glossary.md).
 
-## [4.0.0] - 2026-07-31
+## [4.0.0] - 2026-08-09
 
 Major: the corpus is re-shaped for Claude 5 generation models, against
 [`docs/decisions/claude-5-context-engineering.md`](docs/decisions/claude-5-context-engineering.md).
@@ -30,7 +30,8 @@ place. Four conversions, plus the ratchets that keep them.
   declares every enumerated value more than one skill reads: `story_status` and
   the four-state `story_status_signal` a workspace may report, `layer_gate_status`,
   `dogfood_target`, `journey_target_type`, `journey_timing`, `e2e_tier`,
-  `verification_tier`, `failure_class`, `error_class`. `coherence.mjs` and
+  `check_action_type`, `dimension_preset`, `evaluator_effort`, `finding_impact`,
+  `verification_tier`, `failure_class`, `error_class` — fourteen in all. `coherence.mjs` and
   `derive.mjs` load it at runtime; `scripts/check-vocabulary.mjs` proves every
   other copy — in a schema (`x-aep-vocab`) or in prose (`(aep-vocab: <name>)`) —
   still matches, in CI.
@@ -112,7 +113,9 @@ place. Four conversions, plus the ratchets that keep them.
   `check-skills-package.sh` learns the user-invoked-only contract: no routing
   probe (the router never sees it), no metadata-budget charge, no digest entry —
   and the open-format validator's one unknown-field complaint about the Claude
-  Code extension field is tolerated by exact match, nothing else.
+  Code extension field is tolerated by exact match, nothing else. The contract
+  is per-host: `agents/openai.yaml` carries the Codex half, and the checker
+  requires the pair.
 
 ### Removed (install + memory design)
 
@@ -121,9 +124,10 @@ place. Four conversions, plus the ratchets that keep them.
   and the `-a claude-code` symlink-copy gotcha are gone from README.
 - **External memory add-ons are no longer recommended** (`project-memory`,
   `memory-forge`): AEP's own loop captures (`/aep-build`), archives
-  (`/aep-wrap`), and recalls (`/aep-launch`) lessons, and the agent host carries
-  its own memory. `project-behavior` (AGENTS.md behavioral preamble) remains the
-  one optional supplement.
+  (`/aep-wrap`), and recalls (`/aep-launch`) lessons — the repo is the durable
+  record, and host memory is an optional accelerator over it, never assumed
+  present. `project-behavior` (AGENTS.md behavioral preamble) remains the one
+  optional supplement.
 
 ### Changed (eval economics — impact routing)
 
@@ -152,6 +156,37 @@ place. Four conversions, plus the ratchets that keep them.
   de-advertising `/aep-onboard` would remove auto-discovery from exactly the
   users who do not yet know the command names. A router would re-advertise, at
   its own cost, what it de-advertised.
+
+### Fixed (release closure, 2026-08-09)
+
+- **The scaffold audit/converge enforce the v4 install contract instead of the
+  retired one.** Claude-only, Codex-only, and identical dual plain installs
+  audit clean; the legacy symlink layout stays legal where it already exists;
+  version skew (both agents carrying different copies of one skill) fails
+  closed toward the category E re-pin. `converge.sh` category A moves, deletes,
+  and links nothing — the promote/collapse machinery is gone, and `CLAUDE.md`
+  is created only where a Claude skill install exists. The fixture suites cover
+  both directions, keeping the fail-closed shapes (whole-directory alias,
+  symlinked parent, foreign link).
+- **`test-detect-backend.sh` is hermetic**: the fixture PATH is the stub dir
+  alone with real tools allowlisted by symlink, so a Linux runner's
+  `/usr/bin/tmux` can no longer turn the no-surface case into `legacy`.
+- **`/aep-easy-explain` is user-typed-only on both hosts**: the Codex half is
+  `agents/openai.yaml` (`policy.allow_implicit_invocation: false`) beside the
+  Claude Code frontmatter field, and `check-skills-package.sh` enforces the
+  per-host pair so a skill cannot be hidden from one router and implicitly
+  invocable on the other.
+- **Validator commands resolve on consumer paths**: `validate-state.mjs`,
+  `validate-signal.mjs`, and `derive-workspace-state.mjs` are documented with
+  the installed-skill-root resolver every packaged script uses, replacing
+  source-repo-relative paths that exist in no downstream repo. They remain
+  on-demand checks — mandatory producer-side validation is recorded as
+  deliberately outside v4.0.0's scope.
+- **Codex model names are roles, not generations**: the cheap high-frequency
+  tick tier is `AEP_CODEX_TICK_MODEL` (defaulting to the current generation's
+  cheap tier) in the two runnable recipes, and capability notes are
+  generation-neutral, so the corpus no longer contradicts whatever model
+  generation the host is on.
 
 ## [3.3.1] - 2026-07-27
 

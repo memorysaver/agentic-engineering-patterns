@@ -112,6 +112,18 @@ Each phase is an independent PR against this document, carrying R9 parity eviden
 
 ---
 
+## Amendment (2026-08-09, release closure): evidence scope
+
+What the v4.0.0 evidence does and does not establish, recorded so the release cannot be quoted past its data.
+
+**Established.** The always-loaded metadata corpus fell 4,940 → 3,369 characters (−32%) with routing preserved 40/40 — on **one router model** (a Claude Sonnet subagent; `evals/skill-routing-observations.json` records the model and the digest binding). The vocabulary, steering, and package gates are live in CI and surfaced five real drift bugs during conversion. That is the claim: a **context-correctness refactor with a measured always-loaded reduction**.
+
+**Not established.** Any end-to-end efficiency delta, on any host. `evals/skill-behavior-parity.json` is a reviewed dry-run inventory — CI checks its shape and that the disclosed references exist; it does not execute behavior. No cross-model routing probe has run. Installed skill bytes grew ~+4.8% (typed artifacts and their materialized copies) while core SKILL.md sizes stayed flat — total bytes and always-loaded context are different axes, and only the second was dieted and measured. The representative-task benchmark (v3.3.1 vs v4.0.0, Claude and Codex hosts) is post-merge work on its own branch.
+
+**Boundary.** The typed-contract validators ship as on-demand checks with consumer-path commands (the installed-skill-root resolver). Mandatory producer-side enforcement is deliberately not part of v4.0.0.
+
+---
+
 ## References
 
 - [The new rules of context engineering for Claude 5 generation models](https://claude.com/blog/the-new-rules-of-context-engineering-for-claude-5-generation-models) — Anthropic, 2026-07-24. Source of the six then/now conversions and the >80% system-prompt reduction result.
