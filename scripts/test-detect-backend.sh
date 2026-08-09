@@ -7,6 +7,11 @@
 # asserts the MODE that falls out — including the two that are easy to get
 # wrong: a workflow opt-in on a host without the Workflow tool must NOT select
 # workflow, and an ephemeral orchestrator must never select a session-bound mode.
+#
+# Hermeticity: the fixture PATH is ONLY the stub dir. Every real tool the
+# detector needs is symlinked in explicitly, because any host dir on PATH
+# leaks host surfaces into the matrix — a real /usr/bin/tmux turns the
+# no-surface case into legacy on any Linux runner.
 
 set -uo pipefail
 
@@ -37,11 +42,15 @@ make_host() {
   if [ "$has_tmux" = yes ]; then
     printf '#!/bin/sh\nexit 0\n' > "$bin/tmux"; chmod +x "$bin/tmux"
   fi
-  # git is needed for the pin probe; expose the real one.
+  # The complete allowlist of real tools the detector and harness may see:
+  # git for the pin probe, grep/env/sed for the capability probes, bash so
+  # `env -i` can locate the interpreter. Nothing else — no host dir is on
+  # the fixture PATH.
   ln -sf "$(command -v git)" "$bin/git"
   ln -sf "$(command -v grep)" "$bin/grep"
   ln -sf "$(command -v env)" "$bin/env"
   ln -sf "$(command -v sed)" "$bin/sed"
+  ln -sf "$(command -v bash)" "$bin/bash"
 }
 
 run_case() {
@@ -53,7 +62,7 @@ run_case() {
     envs+=("$1"); shift
   done
   local actual
-  actual=$(cd "$WORK/repo" && env -i PATH="$WORK/bin:/usr/bin:/bin" HOME="$WORK" "${envs[@]}" \
+  actual=$(cd "$WORK/repo" && env -i PATH="$WORK/bin" HOME="$WORK" "${envs[@]}" \
     bash "$DETECT" "${args[@]}" 2>/dev/null | sed -n 's/^MODE=//p')
   if [ "$actual" = "$expected" ]; then
     echo "PASS: $name → $actual"
