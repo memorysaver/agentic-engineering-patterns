@@ -740,6 +740,45 @@ degrade for the optional live half is preserved verbatim by the `live_policy`-aw
 
 ---
 
+## Amendment (2026-08-08, ships v4.0.0): Impact routing — a finding must say whether it matters
+
+**Field evidence.** Observed across downstream runs (owner report, 2026-08-07): eval loops
+round-trip on fine-grained findings without asking impact — the generator fixes nits, the
+evaluator finds more nits, the cap absorbs the budget. The accounting above prices *how much*
+verification ran; nothing priced *whether a finding was worth a round*. The finding template
+even had an `Impact:` line — free prose, routed on by nothing.
+
+**The change (three moves, all in-round; the deferred calibration loop is untouched):**
+
+1. **`finding_impact` joins the vocabulary** — `blocking | material | polish`,
+   evaluator-authored per finding, anchored to the story's acceptance criteria (`blocking`
+   names the criterion or hard-floor dimension it violates; `material` is user-observable;
+   `polish` has no user-observable consequence). Orthogonal to `failure_class`: class routes
+   *which path*, impact decides *whether a round is bought*. Only `product-defect` findings
+   are graded; the other classes keep conjunctive routing.
+2. **The verdict is derived, not chosen.** FAIL ⇔ ≥1 blocking/material finding or a
+   hard-floor breach. All-polish ⇒ mechanically PASS-with-notes: notes ride the response and
+   the PR body — surfaced, not buried — and buy no further round. The cap becomes explicitly
+   a ceiling, not a quota. Two anti-gaming rules: a hard-floor-dimension finding may not be
+   graded `polish`, and `blocking` must cite its anchor. Because the verdict is arithmetic
+   over evaluator-authored labels, either side can recompute it — a FAIL built from polish
+   findings is not a disagreement but an invalid response.
+3. **`findings_by_impact` joins the verification accounting** (record-only, consistent with
+   the deferral): five polish findings and five blocking findings must stop reading as the
+   same `findings_by_round` number, or the calibration loop — when it does activate — would
+   tune on a dishonest sensor.
+
+**Deliberately not done:** no auto-tuning (calibration stays deferred until the provider mix
+stabilizes), no third verdict state (PASS/FAIL stays binary; notes are an attachment), no
+polish-backlog machinery (notes ride existing surfaces; if a polish pattern repeats, layer
+distillation already has a proposal path).
+
+Grounding: Matt Pocock's eval-economics position ("evals are dead — long live observability
+and semi-automated QA") endorses exactly this shape — the judge stays in the live workflow,
+but its score must control the loop *economically*, not just mechanically.
+
+---
+
 ## References
 
 - `SIBYL/openspec/changes/archive/2026-07-15-SIBYL-189/` (`tasks.md`, `execution/eval.yaml`) and

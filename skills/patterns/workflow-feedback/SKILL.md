@@ -1,9 +1,9 @@
 ---
 name: aep-workflow-feedback
 description: >-
-  Captures process or stack learnings downstream and routes them back to AEP.
-  Use after /aep-wrap or /aep-reflect, or for "workflow feedback", "capture
-  learnings", and "pull learnings upstream".
+  Captures process learnings in a downstream project and routes them
+  upstream to AEP. Use after /aep-wrap or /aep-reflect, or for "capture
+  learnings".
 ---
 
 # Workflow Feedback
@@ -106,7 +106,7 @@ Read `.aep/config.yaml` to find registered downstream project paths. For each pr
 1. Check for `.dev-workflow/feedback.md` (standardized feedback from Capture mode).
 2. If no `feedback.md` exists, check `lessons-learned/**/*.md` (raw lessons from builds) — feedback may be incomplete, so read these directly when present.
 
-If a downstream has no feedback file, note it and move on — don't block on incomplete data. Postcondition: every registered downstream is either scanned or noted as having no feedback.
+If a downstream has no feedback file, note it and move on. Postcondition: every registered downstream is either scanned or noted as having no feedback.
 
 ### Step 2 — Filter upstream candidates
 

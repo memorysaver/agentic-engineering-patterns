@@ -93,6 +93,7 @@ verification: # the accounting block — see field rules below
   evaluator_model: <id> | null # MUST when an evaluator ran
   eval_rounds: <n> | null # MUST when an evaluator ran — from signals/eval-response-*.md count
   findings_by_round: [<n>, ...] | null # MUST when an evaluator ran — needs per-round persistence
+  findings_by_impact: { blocking: <n>, material: <n>, polish: <n> } | null # MUST when an evaluator ran — from the Impact: lines
   finding_dimensions: [<dimension>, ...] | null # dimensions breached across rounds; feeds re-weighting
   journey_scenarios_run: <n> | null # MUST when a journey ran — from the dogfood report
   preflight_refusals: [] # MUST — named tags; [] when preflight passed
@@ -115,6 +116,7 @@ optional sensors starves):
 | `tier`, `tier_escalated`, `scope_drift` | `.dev-workflow/verification-recipe.json` (null tier when absent)       |
 | `generator_model` / `evaluator_model`   | launch/spawn records, `status.json`, or the eval responses when stated |
 | `eval_rounds`, `findings_by_round`      | count of / findings per `signals/eval-response-*.md`                   |
+| `findings_by_impact`                    | totals of the `Impact:` labels across the same files                   |
 | `finding_dimensions`                    | dimensions of FAIL findings across the responses                       |
 | `journey_scenarios_run`                 | the `dogfood-*.md` unified report                                      |
 | `preflight_refusals`                    | named `REFUSING [...]` tags in dogfood/guard reports; `[]` when clean  |

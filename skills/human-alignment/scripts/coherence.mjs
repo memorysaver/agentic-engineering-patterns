@@ -21,17 +21,16 @@
 
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const GATE_VOCABULARY = new Set([
-  "not_started",
-  "running",
-  "scripted_passed",
-  "passed",
-  "failed",
-  "deferred",
-  "waived",
-]);
+import { loadVocabulary } from "./json-schema.mjs";
+
+// Read from references/aep-vocabulary.schema.json rather than restated here:
+// this file used to carry one of three incompatible spellings of the gate
+// vocabulary that shipped in the corpus simultaneously.
+const REFERENCES = join(dirname(fileURLToPath(import.meta.url)), "../references");
+const GATE_VOCABULARY = loadVocabulary(REFERENCES, "layer_gate_status");
 
 // Fields the schema defines on a layer gate. A consumer carrying others is
 // recording real meaning in a place no framework consumer can read (D12).

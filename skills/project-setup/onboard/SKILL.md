@@ -1,14 +1,14 @@
 ---
 name: aep-onboard
 description: >-
-  Installs, verifies, and explains Agentic Engineering Patterns (AEP). Use for
-  first-time AEP or plugin mentions, environment setup, tool checks, project
-  plugin configuration, or an overview; use /aep-scaffold to create a project.
+  Installs, verifies, and explains AEP itself: environment, tools, plugin
+  config. Use for first contact with AEP; creating a project is
+  /aep-scaffold.
 ---
 
 # Onboard
 
-Set up your environment for agentic TypeScript development and get oriented to how AEP thinks. Phase 0 points you to the mental-model tour; Phases 1–5 install the plugin, verify tools, and configure recommended plugins. Run once on first setup — returning users re-verifying their environment can skip Phase 0 and start at Phase 1.
+Set up your environment for agentic TypeScript development and get oriented to how AEP thinks. Phase 0 points you to the mental-model tour; Phases 1–5 install AEP, verify tools, and configure AEP's project guardrails. Run once on first setup — returning users re-verifying their environment can skip Phase 0 and start at Phase 1.
 
 ---
 
@@ -26,35 +26,27 @@ Read **[the installed orientation guide](references/orientation.md)** — the se
 
 ## Phase 1 — Install the Plugin
 
-Install the AEP skills with the [`skills`](https://github.com/vercel-labs/skills) CLI at **project level**, once per agent your project uses. Pin to the latest release and commit the installed files so the version is frozen for your team:
+Install AEP v4.0.0 with the [`skills`](https://github.com/vercel-labs/skills) CLI at **project level**, once per agent your project uses. Commit the installed files so the version is frozen for your team:
 
 ```bash
-# Claude Code (repeat with `-a codex` for Codex). Newest tag:
-# https://github.com/memorysaver/agentic-engineering-patterns/releases/latest
-npx skills add memorysaver/agentic-engineering-patterns@<latest-tag> -a claude-code --skill '*' -y
+# Run the command for each agent runtime this project uses.
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a claude-code --skill '*' -y
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a codex        --skill '*' -y
 ```
 
-This installs every AEP skill (the `aep-*` names) plus a `skills-lock.json` manifest — **commit both**. The lockfile is the project pin; upgrade it intentionally by rerunning the same command with the desired tag, then review and commit the resulting skill and lockfile diff.
+This installs every AEP skill (the `aep-*` names) plus a `skills-lock.json` manifest — **commit both**. The v4 layout is plain per-agent copies; shared or canonical symlink layouts are legacy compatibility only. The committed skill bytes are the durable project pin; upgrade intentionally by rerunning the same command with the desired tag, then review and commit the resulting skill and lockfile diff.
 
-### Optional add-ons — always ask the user
+Phase 1 installs only AEP and adds no companion project-level skill bundle. AEP's project record is self-contained: `/aep-build` captures lessons in `.dev-workflow/lessons.md`, `/aep-wrap` archives them in `lessons-learned/`, and `/aep-launch` recalls them. Host memory, when available, is only an accelerator over that repository record.
 
-AEP pairs with two project-level skills from [`memorysaver/skills`](https://github.com/memorysaver/skills). **Ask the user whether they want each**, and install only what they choose (newest tag at <https://github.com/memorysaver/skills/releases/latest>, once per agent):
+When adding or updating the project's `## AEP Workflow` section in `AGENTS.md` or `CLAUDE.md`, state that the main agent uses the `/aep-easy-explain` register for human-facing status and decisions: one line of context first, ASD-STE100 Simplified Technical English, and the project's own nouns.
 
-- **Behavioral guidelines in `AGENTS.md`?** → install `project-behavior`, then run it to scaffold/extend `AGENTS.md`.
-- **A project memory system (committed lessons + recall)?** → install `project-memory` (and `memory-forge`), run `project-memory` to bootstrap `project-memory/`, then add a concise `## Memory & Learning Loop` section to `AGENTS.md` that **layers** these onto AEP's native lessons loop instead of duplicating it. AEP already captures (`/aep-build` → `.dev-workflow/lessons.md`), archives (`/aep-wrap` → `lessons-learned/`), and recalls (`/aep-launch`); the supplement adds: `project-memory` recall at `/aep-dispatch` + persisting the archived lesson at `/aep-wrap` (qmd semantic recall), and `memory-forge` distilling settled lessons (≥7 days, ≥3 accrued) into skills at `/aep-reflect` / pre-PR.
-
-```bash
-npx skills add memorysaver/skills@<latest-tag> -a claude-code \
-  --skill project-behavior --skill project-memory --skill memory-forge -y
-```
-
-> **Note:** This installs the AEP skills themselves. Recommended third-party Claude Code plugins are configured at the project level in Phase 4 via `.claude/settings.json`; browser automation is added only after its local smoke test passes.
+> **Note:** Baseline onboarding installs AEP only. Optional third-party integrations are documented in [references/plugins.md](references/plugins.md) and stay outside this setup unless the user requests them separately.
 
 ---
 
 ## Phase 2 — Verify Required Tools
 
-Each tool below earns its place in the agentic workflow — `git` provides version control and worktrees (one isolated working tree per parallel agent), `bun` runs the TypeScript monorepo, `openspec` powers spec-driven development, an **executor** (`claude` _or_ `codex`) runs the implementation agents, and `gh` publishes PRs. `tmux` is **optional**: launches are native-first (see `/aep-executor`); tmux only hosts the pinned **legacy** mode and the generic-host fallback.
+Each tool below earns its place in the agentic workflow — `git` provides version control and worktrees (one isolated working tree per parallel agent), Node/npm run the pinned installer and OpenSpec, `bun` runs the TypeScript monorepo, `openspec` powers spec-driven development, an **executor** (`claude` _or_ `codex`) runs the implementation agents, and `gh` publishes PRs. Claude Code projects also need `jq` for AEP's concurrency hooks. `tmux` is **optional**: launches are native-first (see `/aep-executor`); tmux only hosts the pinned **legacy** mode and the generic-host fallback.
 
 Run this check:
 
@@ -64,31 +56,39 @@ command -v claude >/dev/null 2>&1 || command -v codex >/dev/null 2>&1 \
   && echo "executor:      OK" || echo "executor:      MISSING (install claude or codex)"
 
 # Required: everything else
-for cmd in bun git gh openspec; do
+for cmd in node npm bun git gh openspec; do
   printf "%-15s" "$cmd:"
-  which $cmd >/dev/null 2>&1 && echo "OK ($(which $cmd))" || echo "MISSING"
+  command -v "$cmd" >/dev/null 2>&1 && echo "OK ($(command -v "$cmd"))" || echo "MISSING"
 done
+node -e 'const [M,m]=process.versions.node.split(".").map(Number); process.exit(M>20||(M===20&&m>=19)?0:1)' \
+  && echo "node version:   OK (>=20.19)" || echo "node version:   TOO OLD (need >=20.19)"
+
+# Required only when Claude Code skills are installed: concurrency hooks parse tool input with jq
+if [ -e .claude/skills/aep-onboard/SKILL.md ]; then
+  printf "%-15s" "jq:"
+  command -v jq >/dev/null 2>&1 && echo "OK ($(command -v jq))" || echo "MISSING (required for Claude hooks)"
+fi
 
 # Optional (legacy/pinned-tmux mode only): tmux
 printf "%-15s" "tmux:"
-which tmux >/dev/null 2>&1 && echo "OK ($(which tmux))" || echo "MISSING (optional — only the legacy launch mode needs it)"
+command -v tmux >/dev/null 2>&1 && echo "OK ($(command -v tmux))" || echo "MISSING (optional — only the legacy launch mode needs it)"
 ```
 
 Install any missing tools:
 
-| Tool       | Purpose                                       | Install                                          |
-| ---------- | --------------------------------------------- | ------------------------------------------------ |
-| `git`      | Version control + worktrees                   | `xcode-select --install` (macOS)                 |
-| `bun`      | Package manager & runtime                     | `curl -fsSL https://bun.sh/install \| bash`      |
-| `claude`   | Executor: Claude Code CLI                     | `npm install -g @anthropic-ai/claude-code`       |
-| `codex`    | Executor: OpenAI Codex CLI                    | `npm install -g @openai/codex` _(alt to claude)_ |
-| `gh`       | GitHub CLI for PRs                            | `brew install gh`                                |
-| `openspec` | Spec-driven development (Node >= 20.19)       | `npm install -g @fission-ai/openspec@latest`     |
-| `tmux`     | Terminal multiplexer (optional — legacy mode) | `brew install tmux`                              |
+| Tool       | Purpose                                       | Install                                                  |
+| ---------- | --------------------------------------------- | -------------------------------------------------------- |
+| `node/npm` | Pinned skills installer + OpenSpec runtime    | Node >= 20.19 via the platform's preferred version tool  |
+| `git`      | Version control + worktrees                   | `xcode-select --install` (macOS)                         |
+| `bun`      | Package manager & runtime                     | `curl -fsSL https://bun.sh/install \| bash`              |
+| `claude`   | Executor: Claude Code CLI                     | `npm install -g @anthropic-ai/claude-code`               |
+| `codex`    | Executor: OpenAI Codex CLI                    | `npm install -g @openai/codex` _(alt to claude)_         |
+| `gh`       | GitHub CLI for PRs                            | `brew install gh`                                        |
+| `openspec` | Spec-driven development                       | `npm install -g @fission-ai/openspec@latest`             |
+| `jq`       | Claude Code concurrency-hook JSON parsing     | `brew install jq` / `apt-get install jq` _(Claude only)_ |
+| `tmux`     | Terminal multiplexer (optional — legacy mode) | `brew install tmux`                                      |
 
-All **required** tools (executor + `bun`/`git`/`gh`/`openspec`) must show OK
-before proceeding. You need **at least one executor** (claude or codex) — not
-both. `tmux` may be MISSING; that's fine — launches are native-first.
+All **required** tools (Node >=20.19, npm, executor, `bun`/`git`/`gh`/`openspec`, plus `jq` for a Claude install) must show OK before proceeding. You need **at least one executor** (claude or codex) — not both. `tmux` may be MISSING; that's fine — launches are native-first.
 
 > **Native-first launches:** the executor abstraction picks the host's native mode automatically (Claude Code background subagents/sessions, or Codex native subagents/exec workers) with live monitoring and steering, no tmux required — which is why `tmux` may show MISSING. See `/aep-executor`.
 
@@ -117,7 +117,7 @@ done
 > monitor + mid-flight-feedback loop — attach with `tmux attach -t <name>`.
 > Skills auto-detect cmux and never abort when it's absent. See `/aep-executor`.
 
-These are optional — the workflow works without them but is enhanced by them. On macOS, do not enable `agent-browser` until a one-command smoke test can launch a page without crashing Chrome:
+These are optional — the workflow works without them but is enhanced by them. On macOS, enable `agent-browser` once a one-command smoke test can launch a page without crashing Chrome:
 
 ```bash
 agent-browser navigate about:blank
@@ -127,13 +127,15 @@ If macOS shows a Google Chrome crash report with `_RegisterApplication`, `Transf
 
 ---
 
-## Phase 4 — Configure Project Plugins
+## Phase 4 — Configure AEP Project Guardrails (Claude Code only)
 
-Configure recommended plugins at the project level. These are not cosmetic — `superpowers` provides the planning/TDD skills that `/aep-design` assumes exist, `mgrep` powers deeper search, `frontend-design` is assumed by visual calibration work, `code-review` is used by `/aep-build`, and the hooks enforce the concurrency protocol that keeps parallel workspace agents from corrupting `product-context.yaml`. Plugin roles are summarized in [references/plugins.md](references/plugins.md).
+If this project has no `.claude/skills/aep-*` install, skip this phase. Codex enforces the workflow through its installed AEP instructions and native agent roles; it does not need `.claude/settings.json`.
+
+For Claude Code projects, install AEP's two concurrency hooks. They keep parallel workspace agents from corrupting `product-context.yaml`. Optional third-party plugins are outside baseline onboarding; AEP's core workflow and fallback paths operate without them.
 
 ### What to write
 
-Read `.claude/settings.json` if it exists, then merge **[references/settings-template.json](references/settings-template.json)** into it (create the file from the template if it's missing). The template carries three keys — `extraKnownMarketplaces`, `enabledPlugins`, and the two concurrency-protocol `hooks`.
+Read `.claude/settings.json` if it exists, then merge the `hooks.PreToolUse` entries from **[references/settings-template.json](references/settings-template.json)** into it (create the file from the template if it's missing). Preserve every existing setting and hook.
 
 **Verify** the two hooks landed:
 
@@ -144,28 +146,11 @@ jq '[.hooks.PreToolUse[].matcher]' .claude/settings.json
 
 > **Concurrency protocol hooks:** they block a workspace agent from editing, writing, or committing `product-context.yaml` and redirect it to signal files. This is defense-in-depth — the skill instructions also direct agents to use signals, but the hook catches model drift. Only the main session (`/aep-wrap`, `/aep-dispatch`, `/aep-reflect`) updates the YAML.
 
-### Optional browser automation
-
-Add `agent-browser` only after the Phase 3 smoke test succeeds — it launches a local Chrome that some macOS/Chrome combinations crash during application registration. Merge this extra block into `.claude/settings.json`:
-
-```json
-{
-  "extraKnownMarketplaces": {
-    "agent-browser": {
-      "source": { "source": "github", "repo": "vercel-labs/agent-browser" }
-    }
-  },
-  "enabledPlugins": {
-    "agent-browser@agent-browser": true
-  }
-}
-```
-
 ### Merging rules
 
-- Merge new entries into existing keys — preserve any other settings (`permissions`, `env`, etc.); do not overwrite them.
+- Merge new entries into existing keys, preserving any other settings (`permissions`, `env`, etc.).
 - If `hooks.PreToolUse` already exists, **append** these hook entries rather than replacing existing hooks.
-- If the file doesn't exist, create it from the template (all three keys).
+- If the file doesn't exist, create it from the hook-only template.
 
 ---
 
@@ -175,19 +160,25 @@ Add `agent-browser` only after the Phase 3 smoke test succeeds — it launches a
 echo "=== Core Tools ==="
 command -v claude >/dev/null 2>&1 || command -v codex >/dev/null 2>&1 \
   && echo "executor:      OK" || echo "executor:      MISSING (claude or codex)"
-for cmd in bun git gh openspec; do
+for cmd in node npm bun git gh openspec; do
   printf "%-15s" "$cmd:"
-  which $cmd >/dev/null 2>&1 && echo "OK" || echo "MISSING"
+  command -v "$cmd" >/dev/null 2>&1 && echo "OK" || echo "MISSING"
 done
+node -e 'const [M,m]=process.versions.node.split(".").map(Number); process.exit(M>20||(M===20&&m>=19)?0:1)' \
+  && echo "node version:   OK (>=20.19)" || echo "node version:   TOO OLD (need >=20.19)"
+if [ -e .claude/skills/aep-onboard/SKILL.md ]; then
+  printf "%-15s" "jq:"
+  command -v jq >/dev/null 2>&1 && echo "OK" || echo "MISSING (required for Claude hooks)"
+fi
 echo ""
 echo "=== Optional Tools ==="
 for cmd in tmux cmux agent-browser portless; do
   printf "%-15s" "$cmd:"
-  which $cmd >/dev/null 2>&1 && echo "OK" || echo "MISSING (optional)"
+  command -v "$cmd" >/dev/null 2>&1 && echo "OK" || echo "MISSING (optional)"
 done
 echo ""
 echo "=== Git Repo ==="
-[ -d .git ] && echo "git repo: OK" || echo "Not a git repo — run: git init"
+git rev-parse --is-inside-work-tree >/dev/null 2>&1 && echo "git repo: OK" || echo "Not a git repo — run: git init"
 git worktree list 2>/dev/null | head -5
 ```
 

@@ -1,6 +1,8 @@
 ---
 name: aep-scaffold
-description: Creates a new AEP project or converges an existing project's agentic infrastructure. Use for new project, scaffold, infrastructure setup, or skills-layout repair; use /aep-onboard for installation and orientation.
+description: >-
+  Creates a new AEP project or repairs an existing project's agentic
+  infrastructure and skills layout. Installing AEP itself is /aep-onboard.
 ---
 
 # Scaffold
@@ -298,7 +300,7 @@ For the full project layout after scaffolding completes, see [`references/result
 - **Show the full command and wait for confirmation** before running scaffold; include `--yes` (non-interactive), `--no-git` (in-place), and warn that in-place overwrites README.md, .gitignore, and package.json.
 - **Commit OpenSpec artifacts to git** — they are part of the project record.
 - **Never overwrite an existing OpenSpec config** — check `openspec/config.yaml` exists before `openspec init`.
-- **Never overwrite hand-authored content** (journeys, specs, prose) — the existing-project flow normalizes layout and upgrades generated infra idempotently, leaving hand-written files intact.
+- **Hand-authored content is never overwritten** (journeys, specs, prose) — the existing-project flow normalizes layout and upgrades generated infra idempotently, leaving hand-written files intact.
 - **Version re-pin is recommend-only** — scaffold prints the `npx skills add@<newtag>` commands; the user runs them in a deliberate own-PR re-pin.
 
 ---
@@ -306,9 +308,9 @@ For the full project layout after scaffolding completes, see [`references/result
 # Existing Project Flow — audit → confirm → converge
 
 For projects that already have source code. This flow is **idempotent**: run it to onboard an existing
-project **or** re-run it later to repair **drift** toward the current AEP standard (canonical cross-tool
-layout, BDD e2e skill, current pin). It **reports first, asks, then converges** — and **never overwrites
-hand-authored content**. Re-running a fully-converged project is a no-op ("already up to date").
+project **or** re-run it later to repair **drift** toward the current AEP standard (healthy per-agent
+skills layout, BDD e2e skill, current pin). It **reports first, asks, then converges**, under the Guardrails rule above —
+**hand-authored content survives**. Re-running a fully-converged project is a no-op ("already up to date").
 
 Read [`references/converge-flow.md`](references/converge-flow.md) for how to interpret each audit category,
 the observability→telemetry-candidate handling, and the per-category converge detail.
@@ -332,7 +334,7 @@ Run the read-only audit. Nothing is changed in this phase.
 bash "<aep-scaffold-dir>/scripts/audit.sh"
 ```
 
-It prints `[ok]`/`[DRIFT]` per check across categories A (canonical layout), B (e2e shape), C (infra) and
+It prints `[ok]`/`[DRIFT]` per check across categories A (skills layout), B (e2e shape), C (infra) and
 `[detected]`/`[ ]` for D (observability), and **exits non-zero while any `[DRIFT]` remains** (exit 0 when
 clean). See `references/converge-flow.md` for what each category means and the observability handling.
 
@@ -340,7 +342,7 @@ clean). See `references/converge-flow.md` for what each category means and the o
 
 ## Phase 2E: Report + Confirm Direction
 
-Present the audit as a **current → target** summary grouped by category (A canonical layout, B e2e shape,
+Present the audit as a **current → target** summary grouped by category (A skills layout, B e2e shape,
 C infra, D observability, E version pin). For each category with drift/gaps, list the **proposed change**
 and ask the user which to apply. **Default = fix all drift + gaps.** Use a per-category checklist (e.g.
 the AskUserQuestion-style confirm). Only confirmed categories are converged in Phase 3E.

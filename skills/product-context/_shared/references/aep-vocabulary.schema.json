@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/memorysaver/agentic-engineering-patterns/skills/aep-vocabulary.schema.json",
+  "title": "AEP cross-skill vocabulary",
+  "description": "The canonical declaration of every enumerated value more than one AEP skill reads or writes. Authored once in skills/product-context/_shared/references/ and materialized into each consuming skill by scripts/build-skills.sh, because the `skills` CLI installs one directory at a time and a validator cannot reach across install boundaries. Nothing validates against this document as a whole: consumers either load a named $def at runtime (coherence.mjs, derive.mjs) or declare a matching enum tagged with x-aep-vocab, which scripts/check-vocabulary.mjs proves identical. Adding a value here and nowhere else is the intended workflow — a half-applied taxonomy change is this repo's #1 bug class.",
+  "type": "object",
+  "$defs": {
+    "story_status": {
+      "title": "Story lifecycle state",
+      "description": "product-context.yaml stories[].status. Five stages on the normal path plus three exceptions that wait on a human. Written by /aep-dispatch (ready → in_progress), /aep-wrap (→ completed / failed, and pending → ready once dependencies complete), and a human (failed → pending is the one transition no agent may make).",
+      "enum": [
+        "pending",
+        "ready",
+        "in_progress",
+        "in_review",
+        "completed",
+        "blocked",
+        "failed",
+        "deferred"
+      ],
+      "x-aep-stages": {
+        "pending": "dependencies unmet or not yet dispatched",
+        "ready": "dependencies complete, eligible for dispatch",
+        "in_progress": "a workspace agent is building it",
+        "in_review": "PR open, under eval/CI",
+        "completed": "merged and wrapped",
+        "blocked": "a dependency failed — waits on a human",
+        "failed": "retries exhausted — only a human may reset it to pending",
+        "deferred": "postponed by a human"
+      }
+    },
+    "story_status_signal": {
+      "title": "Story state a workspace may report",
+      "description": "The subset of story_status a workspace agent writes into .dev-workflow/signals/status.json. A workspace never reports pending, ready, blocked, or deferred: those are control-plane states owned by the main session, and a workspace that claims one is reporting on work it does not own.",
+      "enum": ["in_progress", "in_review", "completed", "failed"],
+      "x-aep-subset-of": "story_status"
+    },
+    "layer_gate_status": {
+      "title": "Layer gate state",
+      "description": "product-context.yaml layer_gates[].status. Two-phase and coverage-checked: scripted_passed means the layer's Tier-1 suite is green (machinery proven, live product not yet); passed additionally requires every applicable higher tier green, every acceptance criterion covered, and prior-layer journeys replaying green. /aep-dispatch refuses to start layer N while layer N-1 is anything other than passed — scripted_passed still blocks.",
+      "enum": [
+        "not_started",
+        "running",
+        "scripted_passed",
+        "passed",
+        "failed",
+        "deferred",
+        "waived"
+      ],
+      "x-aep-stages": {
+        "not_started": "no gate run yet",
+        "running": "a gate run is in flight",
+        "scripted_passed": "Tier-1 green; higher tiers or coverage still pending",
+        "passed": "all applicable tiers green + coverage complete + regression replay green",
+        "failed": "a gate run failed on product behavior (distinct from a preflight REFUSING on environment)",
+        "deferred": "gate execution postponed by a human",
+        "waived": "a human accepted the layer without the full gate, on the record"
+      }
+    },
+    "dogfood_target": {
+      "title": "What Tier-2 journeys run against",
+      "description": "skills/e2e-test/policy.md dogfood_target — the surface and environment, not the tool. none is reserved for a repo with no runnable surface at all (pure config / schema / docs), where Tier 2 is N/A and there is no journeys/ dir.",
+      "oneOf": [
+        {
+          "enum": ["none", "cli", "local"]
+        },
+        {
+          "type": "string",
+          "pattern": "^deployed:\\S+$",
+          "description": "deployed:<url> — a deployed environment, typically reached after merge → deploy"
+        }
+      ],
+      "x-aep-listing": ["none", "cli", "local", "deployed:<url>"],
+      "x-aep-stages": {
+        "none": "no runnable surface (config / schema / docs repo)",
+        "cli": "the built command-line binary, driven by bash",
+        "local": "the local dev server ($BASE_URL from .dev-workflow/ports.env)",
+        "deployed:<url>": "a deployed environment"
+      }
+    },
+    "journey_target_type": {
+      "title": "Journey surface type",
+      "description": "A journey's target: — resolves which TOOL executes it (browser/device driver vs bash), where dogfood_target resolves the surface and environment. A target: web journey on a dogfood_target: cli project is a scaffolding error, not a preference.",
+      "enum": ["web", "mobile", "desktop", "cli"]
+    },
+    "journey_timing": {
+      "title": "When a journey is executed",
+      "description": "skills/e2e-test/policy.md journey_timing. Governs EXECUTION only, never authoring: the journey file is always a pre-merge /aep-build Phase 6 deliverable. Under post-deploy a merge sits at scripted_passed until the deployed dogfood flips it to passed.",
+      "enum": ["pre-merge", "post-deploy"]
+    },
+    "check_action_type": {
+      "title": "What the CHECK half of a tick may ask the ACT half to do",
+      "description": "The action vocabulary of the CHECK → ACT contract (executor check() emits the list, the orchestrator performs it). An action type outside this set is a request the ACT loop has no handler for — it would be silently dropped, which is why the contract is closed.",
+      "enum": ["nudge", "wrap", "launch", "escalate", "design"],
+      "x-aep-stages": {
+        "nudge": "deliver a message to a workspace over its backend transport",
+        "wrap": "run /aep-wrap for a completed workspace (max one per tick)",
+        "launch": "dispatch a story — or re-adopt an orphan when flagged readopt",
+        "escalate": "record an escalation for a human",
+        "design": "route a story to /aep-design instead of autonomous launch"
+      }
+    },
+    "dimension_preset": {
+      "title": "Which scoring rubric a verification recipe binds",
+      "description": "Derived with the tier in one artifact so depth and rubric never decouple. The derivation script currently emits every value except api-only, which remains selectable in manual /aep-validate flows — the vocabulary is the legal set, not the derivable subset. Canonical treatment: /aep-gen-eval → references/scoring-framework.md § Dimension Presets.",
+      "enum": [
+        "ui-heavy",
+        "api-only",
+        "security-sensitive",
+        "data-pipeline",
+        "mixed",
+        "product-design"
+      ]
+    },
+    "evaluator_effort": {
+      "title": "Evaluator effort hint riding the verification recipe",
+      "description": "Travels from the recipe to executor spawn_evaluator(). none belongs to the light tier (no evaluator spawns — build self-reviews); its omission from the prose spec while the emitter produced it is drift bug #5 of this refactor.",
+      "enum": ["none", "default", "highest"]
+    },
+    "finding_impact": {
+      "title": "How much a finding matters — the axis that decides whether it buys an eval round",
+      "description": "Evaluator-authored, per finding, anchored to the story's acceptance criteria (blocking must name the criterion or hard-floor dimension it violates). Orthogonal to failure_class: class says what KIND of failure routes where; impact says whether it is worth another generator round. Only product-defect findings are impact-graded — environment/harness-flake/scope keep their conjunctive routing. The verdict is DERIVED from these labels (eval-protocol.md), which is what makes the round-buying decision mechanical instead of a mood.",
+      "enum": ["blocking", "material", "polish"],
+      "x-aep-stages": {
+        "blocking": "violates a named acceptance criterion, breaches a hard-floor dimension, or is security/data-privacy class — fixed this round; security keeps its immediate-escalation canon",
+        "material": "user-observable defect or correctness risk the criteria did not enumerate — fixed in a round",
+        "polish": "nothing user-observable: style, naming, docs, micro-refactors — recorded and surfaced, buys no round"
+      }
+    },
+    "verification_tier": {
+      "title": "How much verification this story earns",
+      "description": "Derived into verification-recipe.json and published on status.json at Phase 5 entry. light scores no dimensions (structured self-review); standard runs the derived preset; deep runs it with nothing de-weighted and, where a second model family is available, prefers a different family from the generator. Canonical treatment: /aep-gen-eval → references/verification-economics.md.",
+      "enum": ["light", "standard", "deep"]
+    },
+    "failure_class": {
+      "title": "What kind of failure a FAIL is",
+      "description": "Assigned per finding, mandatory at every FAIL before a recovery rung is chosen — status.json is the autopilot's only workspace input, so a FAIL published without a class cannot be routed. Routing is conjunctive: every non-zero class routes and none masks another. Only product-defect climbs the recovery ladder.",
+      "enum": ["product-defect", "environment", "harness-flake", "scope"],
+      "x-aep-stages": {
+        "product-defect": "the built thing is wrong — finding → story / fix commit → gen-eval",
+        "environment": "an unmet precondition outside the product (credential, access, unseeded target) — the ops / environment_repair path, re-probed each tick",
+        "harness-flake": "the verification apparatus failed, not the product — quarantine and re-run after ratification",
+        "scope": "the spec and the work disagree — the human gate"
+      }
+    },
+    "error_class": {
+      "title": "Execution mechanics of a build/CI failure",
+      "description": "The pre-existing enum on status.json failure logs, recording HOW a run died. It stays; failure_class is the routing layer above it, defaulting per the error_class → failure_class mapping in verification-economics.md.",
+      "enum": ["test_failure", "timeout", "context_overflow", "merge_conflict"]
+    },
+    "e2e_tier": {
+      "title": "Verification tier",
+      "description": "Which tiers gate a layer is per-project (skills/e2e-test/policy.md). A CLI or library is 1 + 2, an API service 1 + 3, a web/mobile app 1 + 2 (+ 3); only a repo with no runnable surface is 1-only.",
+      "enum": [1, 2, 3],
+      "x-aep-stages": {
+        "1": "Scripted gates — proves the MACHINERY, in the project's own test framework",
+        "2": "Journey dogfood — proves the PRODUCT against real providers/env, from skills/e2e-test/journeys/",
+        "3": "API drivers — backend state, bulk setup, async flows, via throwaway scripts in .dev-workflow/"
+      }
+    }
+  }
+}

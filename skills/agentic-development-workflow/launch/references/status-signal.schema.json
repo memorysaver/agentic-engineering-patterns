@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/memorysaver/agentic-engineering-patterns/skills/aep-launch/status-signal.schema.json",
+  "title": ".dev-workflow/signals/status.json",
+  "description": "The workspace agent's progress signal — written by the workspace, read by the main session and the autopilot tick. This is the ONLY input the orchestrator has from a workspace: the main session reads these fields and updates product-context.yaml, and a workspace never writes that file itself. A field the orchestrator needs but this document does not declare is a field the orchestrator cannot route on.",
+  "type": "object",
+  "required": ["phase", "phase_name", "last_updated"],
+  "properties": {
+    "phase": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 13,
+      "description": "Current phase. A workspace's own run ends at 12 (merge); Phase 13 (archive) runs from the main session via /aep-wrap."
+    },
+    "phase_name": { "type": "string" },
+    "task_current": { "type": "string", "description": "Task being worked on (Phase 4 only)" },
+    "task_index": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "1-based index of the current task"
+    },
+    "task_total": { "type": "integer", "minimum": 0 },
+    "started_at": { "type": "string", "description": "ISO8601 of phase start" },
+    "last_updated": { "type": "string", "description": "ISO8601 of the last write" },
+    "blockers": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "What is preventing progress. Appended the moment a blocker appears, not at the next phase boundary — a declared blocker is what distinguishes a blocked workspace from a silent one in the stuck ladder."
+    },
+    "completion_pct": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "story_status": {
+      "x-aep-vocab": "story_status_signal",
+      "description": "Story state for /aep-dispatch sync. Set in_review at Phase 10 with pr_url, completed at Phase 12 with completed_at and cost_usd, failed with failure_log.",
+      "enum": ["in_progress", "in_review", "completed", "failed"]
+    },
+    "pr_url": { "type": ["string", "null"], "description": "Set once the PR exists (Phase 10+)" },
+    "cost_usd": {
+      "type": ["number", "null"],
+      "description": "Accumulated cost estimate for this story"
+    },
+    "completed_at": { "type": ["string", "null"], "description": "ISO8601, set at Phase 12" },
+    "blocked_on": {
+      "type": ["string", "null"],
+      "enum": ["human", null],
+      "description": "\"human\" while the worker waits on a decision, paired with a needs-human.md entry. A workspace in this state is gated, not stuck, and is exempt from stuck counting."
+    },
+    "verification_tier": {
+      "x-aep-vocab": "verification_tier",
+      "type": ["string", "null"],
+      "description": "Published from verification-recipe.json at Phase 5 entry; null before then. The autopilot's ④b nudges are tier-aware — a light workspace is nudged to self-review, not to spawn an evaluator.",
+      "enum": ["light", "standard", "deep"]
+    },
+    "tier_escalated": {
+      "type": "boolean",
+      "description": "True once the cap-exhaustion standard → deep auto-escalation has fired. eval_not_converging waits for the escalated cap too."
+    },
+    "self_review": {
+      "type": ["object", "null"],
+      "description": "The light tier's quality gate, written by the workspace after its structured self-review. Null for standard and deep.",
+      "required": ["result", "sha"],
+      "properties": {
+        "result": { "enum": ["PASS", "FAIL"] },
+        "sha": { "type": "string", "description": "The reviewed HEAD" },
+        "report": { "type": "string", "description": "e.g. .dev-workflow/code-review-<story>.md" }
+      }
+    },
+    "failure_log": {
+      "type": ["object", "null"],
+      "description": "Structured failure record (Phase 12 failure). failure_class is what the reader routes on; a FAIL published without one cannot be routed, and defaults follow the error_class → failure_class mapping in /aep-gen-eval → references/verification-economics.md.",
+      "required": ["failure_class"],
+      "properties": {
+        "error_class": {
+          "x-aep-vocab": "error_class",
+          "enum": ["test_failure", "timeout", "context_overflow", "merge_conflict"]
+        },
+        "failure_class": {
+          "x-aep-vocab": "failure_class",
+          "enum": ["product-defect", "environment", "harness-flake", "scope"]
+        },
+        "approach_summary": { "type": "string" },
+        "failure_point": { "type": "string" },
+        "root_cause": { "type": "string" },
+        "unexplored_alternatives": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "failure_classes": {
+      "type": ["object", "null"],
+      "description": "Per-class finding counts from the latest completed eval round or dogfood report, evaluator-authored (the generator never writes it). One round may carry findings of different classes, and a single scalar would lose one of them — routing is conjunctive over these counts: environment > 0 opens the ops path while product-defect > 0 keeps the eval/recovery path live in parallel, harness-flake > 0 quarantines, scope > 0 gates on a human.",
+      "additionalProperties": false,
+      "properties": {
+        "product-defect": { "type": "integer", "minimum": 0 },
+        "environment": { "type": "integer", "minimum": 0 },
+        "harness-flake": { "type": "integer", "minimum": 0 },
+        "scope": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

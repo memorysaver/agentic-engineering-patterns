@@ -1,6 +1,6 @@
-# AEP recommended plugins
+# Optional third-party integrations
 
-Configured in Phase 4 of `/aep-onboard` by merging `references/settings-template.json` into `.claude/settings.json`. Roles:
+These integrations are outside `/aep-onboard` baseline setup. AEP operates without them; add one only when the project has a concrete need and the user requests it. Roles:
 
 | Plugin            | Marketplace               | Purpose                                         |
 | ----------------- | ------------------------- | ----------------------------------------------- |

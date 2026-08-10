@@ -1,9 +1,9 @@
 ---
 name: aep-launch
 description: >-
-  Launches an autonomous workspace agent for a designed feature by creating its
-  worktree, selecting an /aep-executor backend, and optionally adding an
-  evaluator. Use after /aep-design or for "launch workspace" and "spawn agent".
+  Creates a designed feature's worktree and spawns its implementation agent,
+  plus an optional evaluator. Use after /aep-design or for "launch
+  workspace".
 ---
 
 # Launch
@@ -72,7 +72,7 @@ invents ad-hoc one-step-one-screen structure.
 ### 5. Clean up orphan worktree/branch from prior failed launches
 
 If a previous `/aep-launch` left a dead worktree/branch, recover per `references/orphan-recovery.md`
-before creating the worktree (idempotent checks; never touches a live workspace).
+before creating the worktree (idempotent checks that leave a live workspace alone).
 
 ---
 
@@ -163,7 +163,7 @@ Full recipes live in the /aep-executor references — spawn per the selected mod
 "aep-builder", …)` / background `codex exec --cd …`).
 - **legacy** — /aep-executor `tmux-session.md` (`tmux new-session` → readiness wait → `send-keys`).
 
-**Post-spawn liveness is mandatory — do not report "running" until it passes.** Record the
+**Post-spawn liveness is mandatory — a worker is "running" once the probe passes.** Record the
 backend-specific `worker_handle`: bare-hex Agent id for `native-bg-subagent`, Claude session id for
 `claude-bg`, Codex agent id for `codex-subagent`, Codex session id plus launch PID for `codex-exec`, or
 tmux session/pane for `legacy`. Apply both halves of the /aep-executor probe: confirm that handle with
@@ -224,7 +224,10 @@ behavior — write full criteria. Setup recipe (criteria assembly + bootstrap te
 ## After Launch: Monitor & Steer
 
 The main session watches and steers without interrupting the worker, via the signal files documented
-in `references/signals-spec.md` — `status.json` (current phase), `ready-for-review.flag`,
+in `references/signals-spec.md` — `status.json` (current phase, typed in
+`references/status-signal.schema.json`; check one with the installed skill's
+`scripts/validate-signal.mjs` — runnable command in `references/signals-spec.md` — which uses
+the shared `scripts/json-schema.mjs`), `ready-for-review.flag`,
 `needs-human.md`, and `feedback.md` (mid-flight steering, read at phase boundaries). If `needs-human.md`
 appears (or `status.json` shows `"blocked_on": "human"`), the worker has **gate-and-parked** on a
 decision — answer it through the mode's transport (Human-Gate Protocol in /aep-executor `backends.md`).

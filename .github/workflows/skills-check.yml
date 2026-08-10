@@ -10,10 +10,14 @@ on:
       - ".claude-plugin/marketplace.json"
       - "scripts/build-skills.sh"
       - "scripts/test-build-skills.sh"
+      - "scripts/check-vocabulary.mjs"
+      - "scripts/check-steering.mjs"
+      - "scripts/test-check-vocabulary.sh"
       - "scripts/check-skills-package.sh"
       - "scripts/test-scaffold-audit.sh"
       - "scripts/test-scaffold-converge.sh"
       - "scripts/test-derive-recipe.sh"
+      - "scripts/test-detect-backend.sh"
       - ".github/workflows/skills-check.yml"
   pull_request:
     paths:
@@ -22,10 +26,14 @@ on:
       - ".claude-plugin/marketplace.json"
       - "scripts/build-skills.sh"
       - "scripts/test-build-skills.sh"
+      - "scripts/check-vocabulary.mjs"
+      - "scripts/check-steering.mjs"
+      - "scripts/test-check-vocabulary.sh"
       - "scripts/check-skills-package.sh"
       - "scripts/test-scaffold-audit.sh"
       - "scripts/test-scaffold-converge.sh"
       - "scripts/test-derive-recipe.sh"
+      - "scripts/test-detect-backend.sh"
       - ".github/workflows/skills-check.yml"
 
 jobs:
@@ -40,6 +48,12 @@ jobs:
       - name: Generated-resource security fixtures
         run: bash scripts/test-build-skills.sh
 
+      # C4/C6 of docs/decisions/claude-5-context-engineering.md: a skill schema
+      # that restates a cross-skill enum must still match the canonical
+      # declaration. Half-applied taxonomy changes are this repo's #1 bug class.
+      - name: Cross-skill vocabulary agrees
+        run: node scripts/check-vocabulary.mjs
+
       - name: Skill package is complete, bounded, and officially valid
         run: bash scripts/check-skills-package.sh
 
@@ -51,6 +65,11 @@ jobs:
 
       - name: Verification-recipe derivation fixtures
         run: bash scripts/test-derive-recipe.sh
+
+      # C2: the executor mode matrix is a table people reason about; these are
+      # the executable half of it.
+      - name: Backend detection fixtures
+        run: bash scripts/test-detect-backend.sh
 
       # R7/R8 of docs/decisions/skill-authoring-standard.md: one corpus-wide
       # line budget for every SKILL.md — warn above 400, fail above 500.
@@ -66,6 +85,16 @@ jobs:
             fi
           done < <(find skills -name SKILL.md -not -path '*/node_modules/*')
           exit $fail
+
+      # C6 of docs/decisions/claude-5-context-engineering.md: ratchets, not
+      # one-time cuts — held per skill, so a failure names the file that grew a
+      # prohibition and the trade stays local. Raising an entry in
+      # evals/steering-baseline.json is a reviewable decision, not a fix.
+      - name: Steering ratchets (per skill)
+        run: node scripts/check-steering.mjs
+
+      - name: Vocabulary checker fixtures
+        run: bash scripts/test-check-vocabulary.sh
 
       # R8(b): the $BASE resolver block has exactly one canonical home —
       # git-ref's SKILL.md. The raw `aep.integration-branch` literal is

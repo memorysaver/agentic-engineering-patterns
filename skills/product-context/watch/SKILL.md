@@ -1,9 +1,9 @@
 ---
 name: aep-watch
 description: >-
-  Monitors bug trackers, errors, and telemetry from the main workspace, then
-  classifies, deduplicates, and creates backlog stories. Use for "watch",
-  "monitor for new work", "ingest errors", or telemetry-driven stories.
+  Ingests bug trackers, errors, and telemetry, then dedupes them into
+  backlog stories. Use for "monitor for new work" or telemetry-driven
+  stories.
 ---
 
 # Watch
@@ -39,14 +39,14 @@ finding — the thing that makes the loop _continuous_. It feeds the **same
 ## STOP — Orchestrator Boundary
 
 `/aep-watch` runs from the **main workspace only** and is an **orchestrator**, not
-an executor. Like `/aep-autopilot`, it never reads, reviews, edits, or evaluates
-**workspace code**. It reads only:
+an executor: the orchestrator boundary stated in `/aep-autopilot` applies here
+unchanged. It reads only:
 
 - the configured sources (via their APIs/feeds — see Step 1),
 - `product-context.yaml` (to dedupe and to write stories).
 
 If a finding needs code investigation, that happens inside a **workspace agent**
-after the story is dispatched — never in the watch session.
+after the story is dispatched.
 
 ```bash
 # Main workspace guard
@@ -69,7 +69,7 @@ itself does **not** read workspace code.
 
 Watch is driven entirely by `topology.routing.watch` in `product-context.yaml`.
 Each `sources[]` entry names a source `type` (its adapter and finding shape live
-in `references/telemetry-ingestion.md` — do not invent new source types here):
+in `references/telemetry-ingestion.md`, which is where the types are defined):
 
 ```yaml
 topology:
@@ -120,7 +120,7 @@ source data produces no new stories (the dedupe + `since` high-water mark guaran
 ### Step 0: Precondition — verify the map binding
 
 `/aep-watch` consumes telemetry sources, so first confirm `/aep-map` actually
-**bound** them — don't silently watch nothing. Run `coverage_check()` (the helper
+**bound** them, so a watch that covers nothing says so. Run `coverage_check()` (the helper
 in `references/telemetry-ingestion.md` §1.5) over the signals this watch needs:
 each `topology.routing.watch.sources[]` entry (and any `metric`/`error_stream` it
 relies on) must resolve to a wired `topology.routing.telemetry_sources` entry with
@@ -128,7 +128,7 @@ a `metric_map`.
 
 - **Covered** → proceed to Step 1.
 - **Not covered** (sources empty, or a referenced metric has no `metric_map`) →
-  **do not claim auto-coverage.** Surface:
+  report the gap rather than the coverage. Surface:
   `"telemetry binding incomplete for <missing> — run /aep-map (Telemetry Binding step) before /aep-watch can ingest it"`, skip the uncovered sources, and (if nothing is covered) stop the tick with that message. A missing binding **blocks**; it never silently no-ops.
 
 **Postcondition:** every covered source resolves to a wired `telemetry_sources`
@@ -140,8 +140,8 @@ self-describing and exempt), or the tick surfaced the incomplete-binding message
 For each entry in `watch.sources`, pull findings created/updated since
 `watch.since`, reducing each to the **finding record** and using the per-source
 adapters in `references/telemetry-ingestion.md` (→ The `/aep-watch` finding
-record; Dogfood-report adapter; Distillation adapter) — do not invent a new
-finding shape. Advance `watch.since` to the newest `last_seen` **only after** the
+record; Dogfood-report adapter; Distillation adapter), which define the finding
+shape. Advance `watch.since` to the newest `last_seen` **only after** the
 tick completes successfully (a failed tick re-pulls rather than dropping findings).
 
 - **File-glob sources (`dogfood_report`, `distillation`)** carry no per-item
@@ -181,8 +181,8 @@ of `product-context.yaml` (and existing `watch_proposals`). Skip a finding when:
   (same error signature, same endpoint, same metric).
 
 If a matching story is `completed`/`closed` and the issue has **recurred** (new
-occurrences after `completed_at`), do not silently recreate — add a note and
-surface as a regression for human attention. Never recreate work.
+occurrences after `completed_at`), add a note and surface it as a **regression**
+for human attention — a recurrence is new information about old work, not new work.
 
 **Postcondition:** every surviving finding has no matching open story and no prior
 `watch_origin.{source, external_id}`.

@@ -1,0 +1,66 @@
+# Autopilot Status
+
+**Status:** {{STATUS}}
+**Started:** {{STARTED_AT}}
+**Last tick:** {{LAST_TICK_AT}} (tick #{{TICK_COUNT}})
+
+## Active Workspaces
+
+| Workspace   | Story      | Phase           | Progress | Last Action        |
+| ----------- | ---------- | --------------- | -------- | ------------------ |
+| {{NAME}}    | {{STORY}}  | {{N}} ({{PHASE_NAME}}) | {{PCT}}% | {{LAST_ACTION}} |
+
+## Escalations
+
+<!-- One block per open escalation; omit the section when there are none. -->
+
+### {{STORY_ID}}: {{TYPE_TITLE}} ({{UNRESOLVED|ACKNOWLEDGED}})
+
+**Why:** {{REASON}}
+**What needs attention:** {{DETAILS}}
+**Expected action:** {{EXPECTED_HUMAN_ACTION}}
+
+## Stats
+
+- Stories completed: {{STORIES_COMPLETED}}
+- Stories failed: {{STORIES_FAILED}}
+- Total cost: ${{TOTAL_COST_USD}}
+- Total ticks: {{TOTAL_TICKS}}
+
+<!--
+When status is paused, append the block below. Its job is to make the pause
+self-explanatory to someone who was not watching: the specific measurements that
+tripped the gate, the decisions only a human can make, and the exact command
+that resumes. A paused status file that says only "design escalation" costs the
+human a state-file read to learn anything actionable.
+-->
+
+## PAUSED — Human Attention Required
+
+**Paused at:** {{PAUSED_AT}}
+**Reason:** {{REASON}}
+
+### Why autopilot paused
+
+{{STORY_ID}} '{{TITLE}}' was next in the dispatch queue (score: {{SCORE}}) but does
+not meet the criteria for autonomous implementation:
+
+- {{MEASUREMENT}} — e.g. Complexity: L (large scope)
+- {{MEASUREMENT}} — e.g. Acceptance criteria: 1 (minimum 3 required for autonomous dispatch)
+- {{MEASUREMENT}} — e.g. Activity: 'Settings' (UI-heavy — requires visual design decisions)
+
+### What decisions need human input
+
+1. **{{DECISION}}:** {{THE_ALTERNATIVES}}
+2. **{{DECISION}}:** {{THE_ALTERNATIVES}}
+
+### How to resume
+
+1. {{COMMAND}} — e.g. Run `/aep-design {{STORY_ID}}` to work through the design interactively
+2. Or {{ALTERNATIVE}} — e.g. add at least 3 specific acceptance criteria to product-context.yaml
+3. Then run `/aep-autopilot` to resume orchestration
+
+### Current state while paused
+
+- {{N}} workspaces still running ({{STORY_IDS}}) — they continue autonomously
+- {{N}} stories completed so far

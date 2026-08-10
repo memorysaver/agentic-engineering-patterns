@@ -28,7 +28,8 @@ assert_file_text() {
   [ "$actual" = "$expected" ] || fail "$file content changed"
 }
 
-# Claude-only installs must be promoted, linked, and remain stable on rerun.
+# A Claude-only plain install is complete: nothing is moved or linked, the
+# CLAUDE.md import appears, and a rerun is a no-op.
 case_dir="$TMP_ROOT/claude-only"
 mkdir -p "$case_dir/.claude/skills/aep-demo"
 printf 'claude-only\n' > "$case_dir/.claude/skills/aep-demo/SKILL.md"
@@ -38,36 +39,52 @@ printf '# Agent guide\n' > "$case_dir/AGENTS.md"
   bash "$CONVERGE" --categories A,C >/dev/null
   bash "$CONVERGE" --categories A,C >/dev/null
 )
-assert_file_text "claude-only" "$case_dir/.agents/skills/aep-demo/SKILL.md"
-[ -L "$case_dir/.claude/skills/aep-demo" ] || fail "Claude-only skill was not linked"
-[ "$(readlink "$case_dir/.claude/skills/aep-demo")" = '../../.agents/skills/aep-demo' ] || fail "wrong Claude link target"
+[ -d "$case_dir/.claude/skills/aep-demo" ] && [ ! -L "$case_dir/.claude/skills/aep-demo" ] || fail "Claude-only plain install was rewritten"
+assert_file_text "claude-only" "$case_dir/.claude/skills/aep-demo/SKILL.md"
+[ ! -e "$case_dir/.agents/skills/aep-demo" ] || fail "Claude-only skill was moved or copied to .agents"
 assert_file_text "@AGENTS.md" "$case_dir/CLAUDE.md"
 [ "$(grep -xcF '.dev-workflow/' "$case_dir/.gitignore")" -eq 1 ] || fail ".dev-workflow entry is not idempotent"
 [ "$(grep -xcF '.feature-workspaces/' "$case_dir/.gitignore")" -eq 1 ] || fail ".feature-workspaces entry is not idempotent"
-pass "Claude-only promotion and rerun"
+pass "Claude-only plain install left intact"
 
-# Codex-only installs must gain the corresponding Claude link.
+# A Codex-only plain install is complete: no Claude link is created and no
+# CLAUDE.md is owed.
 case_dir="$TMP_ROOT/codex-only"
 mkdir -p "$case_dir/.agents/skills/aep-demo"
 printf 'codex-only\n' > "$case_dir/.agents/skills/aep-demo/SKILL.md"
+printf '# Agent guide\n' > "$case_dir/AGENTS.md"
 (cd "$case_dir" && bash "$CONVERGE" --category A >/dev/null)
 assert_file_text "codex-only" "$case_dir/.agents/skills/aep-demo/SKILL.md"
-[ -L "$case_dir/.claude/skills/aep-demo" ] || fail "Codex-only skill was not exposed to Claude"
-pass "Codex-only exposure"
+[ ! -e "$case_dir/.claude/skills/aep-demo" ] && [ ! -L "$case_dir/.claude/skills/aep-demo" ] || fail "Codex-only skill grew a Claude link"
+[ ! -e "$case_dir/CLAUDE.md" ] || fail "CLAUDE.md was created without a Claude skill install"
+pass "Codex-only plain install left intact"
 
-# Byte-identical duplicate real directories may be collapsed safely.
+# An empty .claude/skills directory is scaffolding, not an install: no
+# CLAUDE.md is owed or created.
+case_dir="$TMP_ROOT/empty-claude-skills"
+mkdir -p "$case_dir/.claude/skills" "$case_dir/.agents/skills/aep-demo"
+printf 'codex-only\n' > "$case_dir/.agents/skills/aep-demo/SKILL.md"
+printf '# Agent guide\n' > "$case_dir/AGENTS.md"
+(cd "$case_dir" && bash "$CONVERGE" --category A >/dev/null)
+[ ! -e "$case_dir/CLAUDE.md" ] || fail "CLAUDE.md was created for an empty .claude/skills"
+pass "empty .claude/skills owes no CLAUDE.md"
+
+# Byte-and-mode-identical dual plain copies are a healthy dual install:
+# verified, never collapsed.
 case_dir="$TMP_ROOT/identical"
 mkdir -p "$case_dir/.agents/skills/aep-demo" "$case_dir/.claude/skills/aep-demo"
 printf 'same\n' > "$case_dir/.agents/skills/aep-demo/SKILL.md"
 printf 'same\n' > "$case_dir/.claude/skills/aep-demo/SKILL.md"
 (cd "$case_dir" && bash "$CONVERGE" --category A >/dev/null)
-[ -L "$case_dir/.claude/skills/aep-demo" ] || fail "identical duplicate was not collapsed"
+[ -d "$case_dir/.claude/skills/aep-demo" ] && [ ! -L "$case_dir/.claude/skills/aep-demo" ] || fail "identical dual install was collapsed"
 assert_file_text "same" "$case_dir/.agents/skills/aep-demo/SKILL.md"
-pass "identical duplicate collapse"
+assert_file_text "same" "$case_dir/.claude/skills/aep-demo/SKILL.md"
+pass "identical dual plain install left intact"
 
 # GNU stat treats BSD's `-f FORMAT` as filesystem mode and may emit output for
 # the valid path before returning non-zero for FORMAT. The mode probe must
-# capture one dialect at a time so failed-probe stdout cannot taint comparison.
+# capture one dialect at a time so a failed-probe stdout cannot turn a healthy
+# identical pair into a false skew.
 case_dir="$TMP_ROOT/gnu-stat-probe"
 mkdir -p "$case_dir/.agents/skills/aep-demo" "$case_dir/.claude/skills/aep-demo" "$case_dir/fake-bin"
 printf 'same\n' > "$case_dir/.agents/skills/aep-demo/SKILL.md"
@@ -85,11 +102,11 @@ printf '%s\n' \
   'exit 2' > "$case_dir/fake-bin/stat"
 chmod +x "$case_dir/fake-bin/stat"
 (cd "$case_dir" && PATH="$case_dir/fake-bin:$PATH" bash "$CONVERGE" --category A >/dev/null)
-[ -L "$case_dir/.claude/skills/aep-demo" ] || fail "GNU-stat-compatible identical copy was not collapsed"
+[ -d "$case_dir/.claude/skills/aep-demo" ] && [ ! -L "$case_dir/.claude/skills/aep-demo" ] || fail "GNU-stat probe rewrote a healthy identical pair"
 pass "GNU/BSD stat probe isolation"
 
-# Matching bytes with different executable modes are not identical: collapsing
-# them would silently discard runtime semantics.
+# Matching bytes with different executable modes are version skew: converge
+# must fail closed and change neither side.
 case_dir="$TMP_ROOT/mode-divergent"
 mkdir -p "$case_dir/.agents/skills/aep-demo/scripts" "$case_dir/.claude/skills/aep-demo/scripts"
 printf '#!/usr/bin/env bash\n' > "$case_dir/.agents/skills/aep-demo/scripts/run.sh"
@@ -101,10 +118,10 @@ if (cd "$case_dir" && bash "$CONVERGE" --category A >/dev/null 2>&1); then
 fi
 [ ! -L "$case_dir/.claude/skills/aep-demo" ] || fail "mode-divergent copy was collapsed"
 [ -x "$case_dir/.claude/skills/aep-demo/scripts/run.sh" ] || fail "Claude executable mode was lost"
-[ ! -x "$case_dir/.agents/skills/aep-demo/scripts/run.sh" ] || fail "canonical mode was changed"
+[ ! -x "$case_dir/.agents/skills/aep-demo/scripts/run.sh" ] || fail "Codex mode was changed"
 pass "mode-divergent duplicate preservation"
 
-# Divergent copies are ambiguous: fail closed and preserve both.
+# Divergent copies are version skew: fail closed and preserve both.
 case_dir="$TMP_ROOT/divergent"
 mkdir -p "$case_dir/.agents/skills/aep-a-same" "$case_dir/.claude/skills/aep-a-same"
 mkdir -p "$case_dir/.agents/skills/aep-z-demo" "$case_dir/.claude/skills/aep-z-demo"
@@ -118,12 +135,12 @@ fi
 assert_file_text "codex-copy" "$case_dir/.agents/skills/aep-z-demo/SKILL.md"
 assert_file_text "claude-copy" "$case_dir/.claude/skills/aep-z-demo/SKILL.md"
 [ ! -L "$case_dir/.claude/skills/aep-z-demo" ] || fail "divergent Claude copy was replaced"
-[ ! -L "$case_dir/.claude/skills/aep-a-same" ] || fail "preflight changed an earlier identical copy"
+[ ! -L "$case_dir/.claude/skills/aep-a-same" ] || fail "an identical sibling was rewritten"
 assert_file_text "same" "$case_dir/.claude/skills/aep-a-same/SKILL.md"
-pass "divergent duplicate preflight preservation"
+pass "divergent duplicate preservation"
 
-# A whole-directory symlink aliases canonical files and must never be traversed
-# by the per-skill replacement loop.
+# A whole-directory symlink aliases another runtime's files and must fail
+# closed, never be traversed or modified.
 case_dir="$TMP_ROOT/aliased-skills-dir"
 mkdir -p "$case_dir/.agents/skills/aep-demo" "$case_dir/.claude"
 printf 'aliased\n' > "$case_dir/.agents/skills/aep-demo/SKILL.md"
@@ -133,9 +150,10 @@ if (cd "$case_dir" && bash "$CONVERGE" --category A >/dev/null 2>&1); then
 fi
 assert_file_text "aliased" "$case_dir/.agents/skills/aep-demo/SKILL.md"
 [ -L "$case_dir/.claude/skills" ] || fail "whole-directory skills symlink was modified"
-pass "whole-directory symlink preservation"
+pass "whole-directory alias fail-closed"
 
-# A symlinked parent can make apparently relative writes escape the project.
+# A symlinked parent could make apparently relative paths point outside the
+# project: fail closed, touch nothing.
 case_dir="$TMP_ROOT/symlinked-parent"
 external_dir="$TMP_ROOT/external-agents"
 mkdir -p "$case_dir/.claude/skills/aep-demo" "$external_dir/skills"
@@ -149,6 +167,18 @@ fi
 assert_file_text "outside-must-stay-empty" "$external_dir/sentinel"
 pass "symlinked parent escape prevention"
 
+# A foreign per-skill link (anything but the exact legacy target) fails closed
+# and is left exactly as found.
+case_dir="$TMP_ROOT/foreign-link"
+mkdir -p "$case_dir/.claude/skills" "$case_dir/elsewhere"
+ln -s '../../elsewhere' "$case_dir/.claude/skills/aep-demo"
+if (cd "$case_dir" && bash "$CONVERGE" --category A >/dev/null 2>&1); then
+  fail "foreign skill link returned success"
+fi
+[ -L "$case_dir/.claude/skills/aep-demo" ] || fail "foreign link was removed"
+[ "$(readlink "$case_dir/.claude/skills/aep-demo")" = '../../elsewhere' ] || fail "foreign link target was rewritten"
+pass "foreign link fail-closed"
+
 # Write failures must propagate instead of reporting a successful converge.
 case_dir="$TMP_ROOT/write-failure"
 mkdir -p "$case_dir/.gitignore"
@@ -158,11 +188,13 @@ fi
 [ -d "$case_dir/.gitignore" ] || fail "invalid .gitignore fixture was modified"
 pass "write failure propagation"
 
-# No flags retains the documented all-mechanical-categories behavior.
+# No flags retains the documented all-mechanical-categories behavior — and
+# category A creates nothing on an empty project.
 case_dir="$TMP_ROOT/default-categories"
 mkdir -p "$case_dir"
 (cd "$case_dir" && bash "$CONVERGE" >/dev/null)
-[ -d "$case_dir/.agents/skills" ] || fail "default run did not apply category A"
+[ ! -e "$case_dir/.agents" ] || fail "default run created .agents"
+[ ! -e "$case_dir/CLAUDE.md" ] || fail "default run created CLAUDE.md without a Claude skill install"
 grep -qxF '.dev-workflow/' "$case_dir/.gitignore" || fail "default run did not apply category C"
 pass "default category compatibility"
 

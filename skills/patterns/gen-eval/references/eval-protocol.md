@@ -168,10 +168,10 @@ Used in multi-round mode (workspace context). Files live in `.dev-workflow/signa
 ### [PASS/FAIL]: [Finding title] ([Dimension]: [Score])
 
 - Failure-Class: [product-defect | environment | harness-flake | scope]
+- Impact: [blocking | material | polish] — [anchor: the acceptance criterion / hard-floor dimension violated, or why it is user-observable] (aep-vocab: finding_impact)
 - Steps to reproduce: [concrete steps]
 - Expected: [what should happen]
 - Actual: [what actually happens]
-- Impact: [why this matters]
 - Fix: [specific, actionable suggestion]
 
 ## Scores
@@ -182,16 +182,26 @@ Used in multi-round mode (workspace context). Files live in `.dev-workflow/signa
 - Security: [1-5] — [justification]
 - Code Quality: [1-5] — [justification]
 
-## Result: PASS / FAIL
+## Result: PASS / FAIL — derived, not chosen
 
-[If FAIL: which hard failure thresholds were violated]
+[FAIL requires its cause on the next line: the hard-floor breach, or the blocking/material findings]
 
 ## Verification Updates
 
 [Which items in feature-verification.json were updated, with new pass/fail status]
 ```
 
-**`Failure-Class` is evaluator-authored** — the generator never labels its own failure (same field-ownership rule as `passes` below). It routes the FAIL per `verification-economics.md` → Failure Taxonomy: only `product-defect` enters fix rounds / the recovery ladder; `environment` needs a named preflight refusal tag; `harness-flake` needs world-derivable reproduction evidence; `scope` needs a human acknowledgment. Without qualifying evidence, the class defaults to `product-defect`.
+**The Result line is derived, never chosen.** `FAIL` holds iff at least one finding is
+`Impact: blocking` or `material` (class `product-defect`), or a hard-floor dimension is
+breached. A response whose findings are all `polish` is mechanically **PASS with notes** —
+the notes ride the response and the PR body, they are surfaced rather than buried, and they
+buy no further round. Two label rules keep the grading honest: a finding on a hard-floor
+dimension (Security, Data Privacy) may not be graded `polish`, and a `blocking` grade must
+name the acceptance criterion or floor it violates. The evaluator authors findings and
+labels; the verdict is arithmetic over them — either side can recompute it, so a FAIL built
+from polish findings is not a disagreement, it is an invalid response.
+
+**`Failure-Class` and `Impact` are evaluator-authored** — the generator never labels its own failure (same field-ownership rule as `passes` below). It routes the FAIL per `verification-economics.md` → Failure Taxonomy: only `product-defect` enters fix rounds / the recovery ladder; `environment` needs a named preflight refusal tag; `harness-flake` needs world-derivable reproduction evidence; `scope` needs a human acknowledgment. Without qualifying evidence, the class defaults to `product-defect`.
 
 **Per-round persistence is required:** keep every `eval-response-<N>.md` until `/aep-wrap`'s convergence gather copies them — `findings_by_round` in the execution record's `verification:` block is computed from these files, and it is the sensor the calibration loop depends on. Never overwrite round N's response with round N+1's.
 
@@ -310,9 +320,13 @@ Task-level tracking for code evaluation. Format is intentionally JSON — models
 
 ### When to stop the loop
 
+The cap is a **ceiling, not a quota** — a loop with rounds remaining and nothing material
+left to find stops.
+
 | Condition                                              | Action                                       |
 | ------------------------------------------------------ | -------------------------------------------- |
 | All dimensions pass thresholds                         | **STOP — PASS**                              |
+| Round's findings are all `Impact: polish`              | **STOP — PASS with notes** (derived verdict) |
 | Round N reaches the tier cap (`standard`: 2)           | **AUTO-ESCALATE once to `deep`**, continue   |
 | Round N reaches max_rounds (`deep` / no recipe: 5)     | **STOP — ESCALATE** to human                 |
 | Same findings appear 3+ consecutive rounds             | **STOP — ESCALATE** (generator can't fix it) |

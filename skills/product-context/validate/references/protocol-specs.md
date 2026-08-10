@@ -16,8 +16,9 @@ The `/aep-dispatch` skill reads stories from `product-context.yaml` and computes
   module: string # package name (e.g., packages/db) or "integration"
   layer: integer # 0 = walking skeleton, 1+ = enrichment
   slice: integer # execution slice number (parallel batch)
-  status: string # pending | ready | in_progress | review | done | blocked | failed
-  business_value: string # critical | high | medium | low
+  status: string # story_status in references/aep-vocabulary.schema.json
+  priority: string # critical | high | medium | low
+  business_value: integer # 1-10; null derives from priority (critical=10, high=7, medium=4, low=1)
   complexity: string # S | M | L
   description: string # what changes when complete
   acceptance_criteria: list # testable conditions (minimum 3 for well-specified stories)

@@ -1,9 +1,8 @@
 ---
 name: aep-autopilot
 description: >-
-  Runs the dispatch-to-wrap cycle continuously for one layer from the main
-  workspace. Use for "autopilot", "hands-free", or unattended multi-story
-  execution; prefer /aep-dispatch for one story only.
+  Runs dispatch through wrap continuously for a whole layer, unattended. Use
+  for "autopilot" or "hands-free"; for a single story use /aep-dispatch.
 ---
 
 # Autopilot
@@ -21,10 +20,16 @@ a fixed-interval fallback driver. Rationale:
 **Where this fits:** `/aep-envision → /aep-map → /aep-validate → /aep-autopilot
 (goal: "layer N complete") → /aep-reflect`.
 
-**Session:** Main session only (never from a feature workspace).
+**Session:** Main session only — Step ① guards it.
 **State:** `.dev-workflow/autopilot-state.json` (machine-readable) +
-`.dev-workflow/autopilot-status.md` (human-readable). Schema, atomic-write, and
-tick-lock mechanics are canonical in `references/state-schema.md`.
+`.dev-workflow/autopilot-status.md` (human-readable). Every legal field is typed
+in [references/autopilot-state.schema.json](references/autopilot-state.schema.json);
+`references/state-schema.md` carries the atomic-write and tick-lock protocols.
+Check a state file with the installed skill's `scripts/validate-state.mjs`
+(shared validator: `scripts/json-schema.mjs`; runnable command in
+`references/state-schema.md` — resolve the skill root from the repo top like
+every packaged script, `.agents/skills/aep-autopilot` falling back to
+`.claude/skills/aep-autopilot`).
 
 ---
 
@@ -33,12 +38,12 @@ tick-lock mechanics are canonical in `references/state-schema.md`.
 **Read this first; it overrides everything below.** You are an **orchestrator**,
 not an executor. All code operations happen inside workspace agents. The main
 session assesses progress **via signal files and git metadata only** and steers
-workspaces through `executor.nudge()` — it never reads, reviews, edits,
-evaluates, or merges workspace code. Violating this boundary is autopilot's most
-common failure.
+workspaces through `executor.nudge()`. Crossing this boundary is autopilot's
+most common failure, so it has exactly two prohibitions and they live here.
 
-**Two hard prohibitions** (they cannot be phrased away — stated once, each paired
-with its positive action):
+**Two hard prohibitions.** Both govern the orchestrator's own tool use, which no
+probe can observe from outside — so unlike every other rule in AEP they carry no
+machine check, and each is stated once, paired with its positive action:
 
 - **Never read workspace source files** (no `Read`/`Grep`/`Bash` into a
   worktree) — **assess via signal files** (`.dev-workflow/signals/`) **and git
@@ -57,7 +62,7 @@ with its positive action):
 | Need                                         | Orchestrator action                                                                                                           |
 | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | Read workspace progress                      | Read `.feature-workspaces/<name>/.dev-workflow/signals/status.json`                                                           |
-| Check PR state                               | `gh pr view <number> --json state` (observe only — never act on merge)                                                        |
+| Check PR state                               | `gh pr view <number> --json state` (observe only)                                                                             |
 | Trigger code review / gen-eval               | `executor.nudge(<ws>, "<trigger>")` — the workspace runs its **own** evaluator                                                |
 | Send feedback / instructions                 | `executor.nudge()` or write `.feature-workspaces/<name>/.dev-workflow/signals/feedback.md`                                    |
 | Nudge a stuck agent                          | `executor.nudge(<ws>, "<nudge>")`                                                                                             |
@@ -144,8 +149,8 @@ Verify before proceeding:
    mkdir -p .dev-workflow
    ```
 
-2. Initialize `.dev-workflow/autopilot-state.json` (full schema in
-   `references/state-schema.md`):
+2. Initialize `.dev-workflow/autopilot-state.json` (every field typed in
+   `references/autopilot-state.schema.json`):
 
    ```json
    {
@@ -166,7 +171,7 @@ Verify before proceeding:
    ```
 
 3. Write initial `.dev-workflow/autopilot-status.md` (Status: Running, tick count
-   0, no active workspaces yet — format in `references/state-schema.md`).
+   0, no active workspaces yet — fill `templates/autopilot-status.md.tmpl`).
 
 4. Resolve the **launch mode + driver pair** (executor `detect()` + the driver ×
    backend matrix). On Claude Code the default mode is **native-bg-subagent** (no
@@ -221,8 +226,9 @@ architecture) human gates; both default to keeping the human in control:
   override always escalates, even with these flags on.
 
 Routing thresholds and the pause protocol live in the tick step that applies them
-(`references/tick-protocol.md` Step ⑥); the escalation-entry and paused
-`autopilot-status.md` shapes are in `references/state-schema.md`.
+(`references/tick-protocol.md` Step ⑥); the escalation entry is typed in
+`references/autopilot-state.schema.json` and the paused `autopilot-status.md`
+sections are in `templates/autopilot-status.md.tmpl`.
 
 > **`full_auto` does not touch journey authoring.** The journey FILE is always a
 > pre-merge build deliverable (`/aep-build` Phase 6 Step A authors it from the
@@ -245,8 +251,8 @@ duplicate actions.
 
 - **CHECK (cheap, isolated):** `executor.check(prompt, schema)` — a Haiku
   subagent (Claude Code) or `codex exec` one-shot (Codex) — reads
-  `autopilot-state.json` + every workspace `signals/` + `gh pr view` (**signals
-  only, never workspace code**), computes transitions / stuck / dispatch capacity,
+  `autopilot-state.json` + every workspace `signals/` + `gh pr view`, computes
+  transitions / stuck / dispatch capacity,
   **writes the updated `autopilot-state.json` + `autopilot-status.md`**, and
   returns the compact **action list**
   (`{summary, state_written, actions:[{type, workspace, story_id, message, reason}]}`
@@ -287,7 +293,12 @@ Read and display current autopilot state.
 
 ```bash
 cat .dev-workflow/autopilot-status.md
+ROOT=$(git rev-parse --show-toplevel); AP="$ROOT/.agents/skills/aep-autopilot"; [ -d "$AP" ] || AP="$ROOT/.claude/skills/aep-autopilot"
+node "$AP/scripts/derive-workspace-state.mjs"   # logical state + flags per workspace
 ```
+
+Render the explanation for the human in the `/aep-easy-explain` register: one line
+of context first, ASD-STE100 plain English, the project's own nouns.
 
 Also parse `.dev-workflow/autopilot-state.json` and present: **Status**
 (running / paused / stopped); **Uptime** (since `started_at`, tick count);
@@ -328,11 +339,12 @@ modified; no wraps or merges are triggered. To resume: `/aep-autopilot`.
 Rules with no natural step home (the ordering invariants, atomic write, and tick
 lock live in `references/tick-protocol.md` / `references/state-schema.md`):
 
-- **Require a real PASS before nudging a merge** — never treat SKIP-only test
-  results or "no checks" as passing; for integration/test stories require at
-  least one passing check OR an explicit eval-response PASS.
-- **Respect WIP limits** — never exceed `topology.routing.concurrency_limit`.
-- **Never dispatch a story with unmet dependencies** — even in autonomous mode.
+- **Require a real PASS before nudging a merge** — for integration/test stories
+  that means at least one passing check OR an explicit eval-response PASS.
+  SKIP-only results and "no checks" are absences of evidence, not passes.
+- **Respect WIP limits** — `topology.routing.concurrency_limit` is the ceiling.
+- **Dispatch only stories whose dependencies are all `completed`** — autonomous
+  mode included.
 
 ---
 

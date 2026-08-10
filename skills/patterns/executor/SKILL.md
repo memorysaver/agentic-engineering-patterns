@@ -2,8 +2,8 @@
 name: aep-executor
 description: >-
   Spawns and steers workspace agents across Claude Code and Codex backends.
-  Used by /aep-launch, /aep-build, and /aep-autopilot; invoke directly for
-  backend choice, launch mode, host/tmux detection, or workflow execution.
+  Use for backend choice, launch mode, or host detection; other skills call
+  it.
 ---
 
 # Executor Abstraction
@@ -98,9 +98,14 @@ orphan re-adoption.
 | [`references/tmux-session.md`](references/tmux-session.md)             | `legacy` recipes (tmux spawn/nudge/liveness, cmux tab ladder)                                               | When `legacy` is pinned or selected                                                                                     |
 | [`references/dogfood-validation.md`](references/dogfood-validation.md) | `dogfood_method()` host × mode detection, `e2e_tool()`, `target_url()` resolution                           | When running dogfood validation (consumed by `/aep-build`, `/aep-launch`, `/aep-watch`, the autopilot post-merge guard) |
 
-The skill also ships `scripts/spawn-liveness-probe.sh <name> <agent_id>` — the
-post-spawn liveness probe every spawner runs (recipe in `references/backends.md`
-§ Post-Spawn Liveness Probe).
+The skill also ships two probes, so the exact bash lives in one place instead of
+being retyped from a reference:
+
+- `scripts/detect-backend.sh [--lifetime long|ephemeral] [--opt-in workflow|tmux] [--json]`
+  — host, executor commands, native capabilities, pin, presentation surface, and
+  the selected `MODE`. `eval "$(bash scripts/detect-backend.sh)"` to use it.
+- `scripts/spawn-liveness-probe.sh <name> <agent_id>` — the post-spawn liveness
+  probe every spawner runs (`references/backends.md` § Post-Spawn Liveness Probe).
 
 ---
 
@@ -108,10 +113,10 @@ post-spawn liveness probe every spawner runs (recipe in `references/backends.md`
 
 Invoked directly, this skill reports what would happen:
 
-1. Run the detection recipe from `references/backends.md`.
-2. Print: host (claude/codex/generic), executor commands, native capabilities
-   (`BG_AVAILABLE`, `MULTI_AGENT_AVAILABLE`), pin, tmux/cmux presence,
-   orchestrator lifetime, and the **selected mode** with the reason.
+1. Run `bash scripts/detect-backend.sh` (add `--lifetime ephemeral` when this
+   invocation is a cron/launchd one-shot — the script cannot probe that).
+2. Report each field it prints, and say **why** that `MODE` won: which earlier
+   rule in the selection order did not match.
 3. If the user asked "why not workflow / why not tmux", explain the opt-in/pin
    gates.
 

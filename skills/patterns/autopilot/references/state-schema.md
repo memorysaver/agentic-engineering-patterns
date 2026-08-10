@@ -1,282 +1,65 @@
-# Autopilot State Schema
+# Autopilot State
 
-All autopilot state files live in `.dev-workflow/` on the main workspace (repo root). This reuses the existing `.dev-workflow/` pattern already established for workspace agents.
+All autopilot state lives in `.dev-workflow/` on the **main workspace** (repo root), reusing the
+directory workspace agents already report into. Three files, three audiences:
 
----
+| File                     | Audience              | Shape                                                                                   |
+| ------------------------ | --------------------- | ----------------------------------------------------------------------------------------- |
+| `autopilot-state.json`   | the tick              | [`autopilot-state.schema.json`](autopilot-state.schema.json) — every legal field, typed |
+| `autopilot-history.jsonl`| audit / post-mortem   | one line per tick, `$defs.history_entry` in the same schema                              |
+| `autopilot-status.md`    | the human             | [`../templates/autopilot-status.md.tmpl`](../templates/autopilot-status.md.tmpl)         |
 
-## `.dev-workflow/autopilot-state.json`
-
-Machine-readable state file. Read and written by the autopilot tick.
-
-```json
-{
-  "version": 1,
-  "status": "running",
-  "started_at": "2026-04-01T10:00:00Z",
-  "last_tick_at": "2026-04-01T10:25:00Z",
-  "tick_count": 5,
-  "tick_in_progress": null,
-
-  "workspaces": {
-    "auth-middleware": {
-      "story_id": "PROJ-003",
-      "backend": "native-bg-subagent",
-      "agent_id": "adfb6cb206155a92e",
-      "phase": 5,
-      "phase_name": "code-review",
-      "story_status": "in_progress",
-      "completion_pct": 60,
-      "pr_url": null,
-      "cost_usd": null,
-      "completed_at": null,
-      "failure_log": null,
-      "last_action": "review_triggered",
-      "last_action_at": "2026-04-01T10:20:00Z",
-      "code_review_triggered": true,
-      "code_review_triggered_at": "2026-04-01T10:20:00Z",
-
-      "eval_rounds_completed": 0,
-      "consecutive_stuck_ticks": 0,
-      "last_liveness_hash": null,
-      "blockers": []
-    }
-  },
-
-  "escalations": [
-    {
-      "type": "design_needed",
-      "story_id": "PROJ-010",
-      "workspace": null,
-      "reason": "Complexity L with 1 acceptance criterion, UI-heavy activity",
-      "details": "Story 'Add settings page' needs UI/UX decisions: layout structure, form grouping, navigation pattern. The current spec has only 'settings page exists' as acceptance criteria.",
-      "expected_human_action": "Run /aep-design PROJ-010 to refine the spec with concrete acceptance criteria, or add criteria directly to product-context.yaml. Then run /aep-autopilot start to resume.",
-      "created_at": "2026-04-01T10:15:00Z",
-      "acknowledged": false
-    }
-  ],
-
-  "guard_state": {
-    "PROJ-002": {
-      "pr_number": 142,
-      "deploy_status": "deployed",
-      "monitor_until": "2026-04-01T10:40:00Z",
-      "health": {
-        "ci_status": "green",
-        "error_rate": "ok",
-        "health_endpoint": "ok"
-      },
-      "dogfood_done": true,
-      "reverted": false,
-      "escalated": false
-    }
-  },
-
-  "stats": {
-    "stories_completed": 3,
-    "stories_failed": 0,
-    "total_ticks": 5,
-    "total_cost_usd": 12.5
-  }
-}
-```
-
-### Field Reference
-
-#### Top-level
-
-| Field              | Type         | Description                                                                 |
-| ------------------ | ------------ | --------------------------------------------------------------------------- |
-| `version`          | number       | Schema version (currently 1)                                                |
-| `status`           | enum         | `"running"`, `"paused"`, `"stopped"`                                        |
-| `started_at`       | string       | ISO8601 timestamp of `/aep-autopilot start`                                 |
-| `last_tick_at`     | string\|null | ISO8601 timestamp of last completed tick                                    |
-| `tick_count`       | number       | Total ticks completed                                                       |
-| `tick_in_progress` | string\|null | ISO8601 of currently running tick (tick lock). Null when no tick is active. |
-
-#### Workspace Entry
-
-| Field                      | Type         | Description                                                                                                                          |
-| -------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `story_id`                 | string       | Story ID from product-context.yaml                                                                                                   |
-| `backend`                  | string       | Executor mode this workspace was launched under: `native-bg-subagent`, `claude-bg`, `codex-subagent`, `codex-exec`, `legacy`         |
-| `agent_id`                 | string\|null | Handle for nudge/liveness/teardown: bg-subagent id (bare-hex) / bg session id / codex agent id / exec session id / tmux session name |
-| `phase`                    | number       | Current build phase (0-12) from signal                                                                                               |
-| `phase_name`               | string       | Human-readable phase name from signal                                                                                                |
-| `story_status`             | string       | `"in_progress"`, `"in_review"`, `"completed"`, `"failed"`                                                                            |
-| `completion_pct`           | number       | 0-100 from signal                                                                                                                    |
-| `pr_url`                   | string\|null | PR URL once created                                                                                                                  |
-| `cost_usd`                 | number\|null | Accumulated cost from signal                                                                                                         |
-| `completed_at`             | string\|null | ISO8601 completion timestamp                                                                                                         |
-| `failure_log`              | object\|null | Structured failure from signal                                                                                                       |
-| `last_action`              | string       | Last autopilot action for this workspace                                                                                             |
-| `last_action_at`           | string       | ISO8601 of last action                                                                                                               |
-| `code_review_triggered`    | boolean      | Whether autopilot has triggered gen/eval                                                                                             |
-| `code_review_triggered_at` | string\|null | When gen/eval was triggered                                                                                                          |
-
-| `eval_rounds_completed` | number | How many eval rounds the workspace has completed |
-| `consecutive_stuck_ticks` | number | Ticks with no progress change |
-| `last_liveness_hash` | string\|null | Hash of the mode's liveness-probe output at last tick (TaskList entry / worktree-activity probe / logs tail / worker.log / tmux pane). Used for liveness comparison. Null on first tick or after restart. |
-| `blockers` | string[] | Current blockers from signal |
-
-#### `last_action` Values
-
-| Value                   | Meaning                                               |
-| ----------------------- | ----------------------------------------------------- |
-| `"launched"`            | Workspace just launched via /aep-launch               |
-| `"readopted"`           | Orphaned worker re-spawned into the existing worktree |
-| `"review_triggered"`    | Gen/eval triggered via executor.nudge()               |
-| `"review_re_triggered"` | Gen/eval re-triggered after stuck                     |
-| `"detected_merged"`     | PR detected as merged by workspace agent              |
-| `"detected_closed"`     | PR detected as closed without merge                   |
-| `"wrapping"`            | /aep-wrap in progress                                 |
-| `"merge_nudged"`        | Sent nudge to proceed to Phase 12                     |
-| `"merge_stuck_nudged"`  | Sent stronger nudge for stuck Phase 12                |
-| `"nudged"`              | Sent stuck nudge via executor.nudge()                 |
-| `"escalated_stuck"`     | Escalated due to prolonged stuck                      |
-| `"human_gate"`          | Blocked on a human decision (needs-human.md)          |
-
-#### Escalation Entry
-
-| Field                   | Type         | Description                                                                                                                                                 |
-| ----------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `type`                  | enum         | `"design_needed"`, `"stuck"`, `"failed"`, `"layer_gate_failed"`, `"eval_not_converging"`, `"human_gate"`, `"post_merge_regression"`, `"environment_repair"` |
-| `story_id`              | string       | Related story ID                                                                                                                                            |
-| `workspace`             | string\|null | Workspace name (null if not yet launched)                                                                                                                   |
-| `reason`                | string       | One-line reason                                                                                                                                             |
-| `details`               | string       | Detailed explanation of why escalation triggered                                                                                                            |
-| `expected_human_action` | string       | What the human should do                                                                                                                                    |
-| `created_at`            | string       | ISO8601 timestamp                                                                                                                                           |
-| `acknowledged`          | boolean      | Whether human has seen this                                                                                                                                 |
-
-**`environment_repair`** (added by the verification-economics design): emitted when a gate/dogfood **preflight refuses** on unmet required preconditions (named `REFUSING [...]` tags — `environment` failure class, not a product failure). `details` carries the **ops checklist** — every named refusal tag plus the repair each implies (add secret `<NAME>` to CI, re-auth the deploy account, seed the fixture target). Unlike other escalation types it does **not** pause dispatch of remaining in-layer stories, and it self-clears: the refusing gate re-probes world-derived on each tick and resumes when the probes pass (tick-protocol.md → Layer Completion, REFUSED ≠ FAIL).
-
-#### `guard_state` Entry (post-merge guard, keyed by story_id)
-
-Persists the post-merge guard's per-story state so a tick is idempotent
-(deploy-once, dogfood-once, revert-once, escalate-once). See
-`references/post-merge-guard.md`.
-
-| Field           | Type    | Description                                                                       |
-| --------------- | ------- | --------------------------------------------------------------------------------- |
-| `pr_number`     | number  | Merged PR being guarded                                                           |
-| `deploy_status` | enum    | `"pending"`, `"deployed"`, `"failed"`                                             |
-| `monitor_until` | string  | ISO8601 — end of the `window_min` monitoring window                               |
-| `health`        | object  | Last reading per configured `health_signals` key (e.g. `ci_status`, `error_rate`) |
-| `dogfood_done`  | boolean | Whether host-aware post-deploy dogfood has run for this story                     |
-| `reverted`      | boolean | Whether a revert was already issued (guards against double-revert)                |
-| `escalated`     | boolean | Whether a `post_merge_regression` escalation was already emitted                  |
+The schema is the field reference: it carries the enums (`status`, `backend`, `last_action`,
+escalation `type`, `deploy_status`), the bounds (`phase` 0–12, `completion_pct` 0–100), and what each
+field means. `story_status` there is tagged `x-aep-vocab: story_status_signal` — the four states a
+workspace may report — and `scripts/check-vocabulary.mjs` fails CI if that copy drifts from the
+canonical vocabulary. Read the schema when you need a field; this file covers only the two protocols
+that are behavior rather than shape.
 
 ---
 
-## `.dev-workflow/autopilot-history.jsonl`
+## Tick lock
 
-Append-only audit trail. One JSON line per tick.
+`tick_in_progress` keeps two ticks from interleaving:
 
-```jsonl
-{"tick":1,"at":"2026-04-01T10:00:00Z","status":"running","actions":["initialized","dispatched PROJ-003"],"workspaces_active":1,"stories_completed_total":0}
-{"tick":2,"at":"2026-04-01T10:05:00Z","status":"running","actions":["synced 1 workspace","dispatched PROJ-004"],"workspaces_active":2,"stories_completed_total":0}
-{"tick":3,"at":"2026-04-01T10:10:00Z","status":"running","actions":["synced 2 workspaces","triggered review for PROJ-003"],"workspaces_active":2,"stories_completed_total":0}
-{"tick":4,"at":"2026-04-01T10:15:00Z","status":"paused","actions":["design escalation for PROJ-010"],"workspaces_active":2,"stories_completed_total":0}
-```
+1. **Before the tick** — read it. Set, and younger than `thresholds.tick_lock_stale_minutes` ([tick-protocol.json](tick-protocol.json)) → skip this tick.
+2. **Start of tick** — set it to now and write immediately.
+3. **End of tick** — set it to `null` and write.
 
----
-
-## `.dev-workflow/autopilot-status.md`
-
-Human-readable status file. Updated at the end of every tick.
-
-```markdown
-# Autopilot Status
-
-**Status:** Running
-**Started:** 2026-04-01 10:00
-**Last tick:** 2026-04-01 10:25 (tick #5)
-
-## Active Workspaces
-
-| Workspace       | Story    | Phase           | Progress | Last Action      |
-| --------------- | -------- | --------------- | -------- | ---------------- |
-| auth-middleware | PROJ-003 | 5 (code-review) | 60%      | review triggered |
-| user-model      | PROJ-004 | 10 (pr-created) | 90%      | detected_merged  |
-
-## Escalations
-
-### PROJ-010: Design Needed (UNRESOLVED)
-
-**Why:** Complexity L with 1 acceptance criterion, UI-heavy activity 'Settings'
-**What needs attention:** Story 'Add settings page' needs UI/UX decisions — layout structure, form grouping, navigation pattern
-**Expected action:** Run `/aep-design PROJ-010` to refine the spec, then `/aep-autopilot start`
-
-## Stats
-
-- Stories completed: 3
-- Stories failed: 0
-- Total cost: $12.50
-- Total ticks: 5
-```
-
-When **paused**, the status file includes additional sections:
-
-```markdown
-## PAUSED — Human Attention Required
-
-**Paused at:** 2026-04-01 10:15
-**Reason:** Design escalation for PROJ-010
-
-### Why autopilot paused
-
-Story PROJ-010 'Add settings page' was next in the dispatch queue (score: 8.5) but
-does not meet the criteria for autonomous implementation:
-
-- Complexity: L (large scope)
-- Acceptance criteria: 1 (minimum 3 required for autonomous dispatch)
-- Activity: 'Settings' (UI-heavy — requires visual design decisions)
-
-### What decisions need human input
-
-1. **Page layout:** Single page vs tabbed sections vs sidebar navigation
-2. **Form grouping:** How to organize settings (profile, notifications, privacy, etc.)
-3. **Interaction patterns:** Inline editing vs modal dialogs vs save-all-at-once
-
-### How to resume
-
-1. Run `/aep-design PROJ-010` to work through the design interactively
-2. Or add at least 3 specific acceptance criteria to product-context.yaml
-3. Then run `/aep-autopilot start` to resume orchestration
-
-### Current state while paused
-
-- 2 workspaces still running (PROJ-003, PROJ-004)
-- 3 stories completed so far
-- Paused workspaces will continue autonomously
-```
-
----
-
-## Tick Lock Mechanism
-
-The `tick_in_progress` field prevents overlapping ticks:
-
-1. **Before tick:** Read `tick_in_progress`. If set and less than 4 minutes old, skip this tick.
-2. **Start of tick:** Set `tick_in_progress` to current timestamp. Write state immediately.
-3. **End of tick:** Set `tick_in_progress` to null. Write state.
-
-If a tick crashes (lock never released), the next tick after 4 minutes will clear the stale lock and proceed.
-
----
-
-## Atomic Write Protocol
-
-To prevent state corruption from mid-write crashes:
+A crashed tick leaves the lock set; the first tick past that window treats it as stale,
+clears it, and proceeds. The staleness window is what makes a crash self-healing rather than a
+permanent stop.
 
 ```bash
-# Write to temp file
+# Postcondition after step 3: no tick claims to be running.
+node -e 'process.exit(JSON.parse(require("fs").readFileSync(".dev-workflow/autopilot-state.json")).tick_in_progress === null ? 0 : 1)'
+```
+
+---
+
+## Atomic write
+
+State is written whole, never edited in place, so a crash mid-write leaves the previous state intact
+rather than a truncated file:
+
+```bash
 cat > .dev-workflow/autopilot-state.json.tmp << 'EOF'
 { ... }
 EOF
-
-# Atomic rename (POSIX guarantees this is atomic)
-mv .dev-workflow/autopilot-state.json.tmp .dev-workflow/autopilot-state.json
+mv .dev-workflow/autopilot-state.json.tmp .dev-workflow/autopilot-state.json   # POSIX-atomic
 ```
 
-The autopilot skill instructs the agent to use this pattern. In practice, the agent writes the file and the filesystem handles atomicity.
+---
+
+## Validating a state file
+
+```bash
+ROOT=$(git rev-parse --show-toplevel); AP="$ROOT/.agents/skills/aep-autopilot"; [ -d "$AP" ] || AP="$ROOT/.claude/skills/aep-autopilot"
+node "$AP/scripts/validate-state.mjs" .dev-workflow/autopilot-state.json
+```
+
+Run it after a hand-edit or a crash recovery — it is an on-demand check;
+mandatory producer-side validation is deliberately outside v4.0.0's scope.
+It reports every violation with its path, so an
+unknown field or a value outside an enum names itself instead of surfacing three ticks later as
+behavior nobody can explain.

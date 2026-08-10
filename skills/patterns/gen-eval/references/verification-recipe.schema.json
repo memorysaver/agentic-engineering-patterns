@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/memorysaver/agentic-engineering-patterns/skills/aep-gen-eval/verification-recipe.schema.json",
+  "title": ".dev-workflow/verification-recipe.json",
+  "description": "The one artifact the tier derivation emits: tier + dimension preset + hard floors from one input set, so depth and rubric never decouple. Produced downstream by the derive script /aep-e2e-skill-scaffolding scaffolds (its emitter is the source of truth this schema follows — writing it surfaced that the prose spec had drifted: evaluator_effort was missing none, and the inputs field names disagreed with what actually ships). Read by /aep-launch (evaluator existence + criteria policy), /aep-build Phase 5 (binding tier), and the autopilot's tier-aware nudges via status.json. Tamper rule: the binding derivation only ratchets UP from the provisional tier, and customization may add dimensions or raise floors, never lower them.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "story_id",
+    "derived_at",
+    "base_sha",
+    "tier",
+    "tier_provisional",
+    "tier_escalated",
+    "scope_drift",
+    "referee_assets_touched",
+    "negative_assertion_delta",
+    "dimension_preset",
+    "hard_floors",
+    "max_rounds",
+    "evaluator_effort",
+    "inputs"
+  ],
+  "properties": {
+    "story_id": { "type": "string" },
+    "derived_at": { "type": "string", "description": "ISO8601 of the derivation run" },
+    "base_sha": {
+      "type": "string",
+      "description": "The resolved $BASE commit the diff was taken against"
+    },
+    "tier": {
+      "x-aep-vocab": "verification_tier",
+      "description": "The binding tier. Absent provisional input fails OPEN to deep — never to a default.",
+      "enum": ["light", "standard", "deep"]
+    },
+    "tier_provisional": {
+      "x-aep-vocab": "verification_tier",
+      "description": "The tier the dispatch brief carried in; binding only ratchets up from it",
+      "enum": ["light", "standard", "deep"]
+    },
+    "tier_escalated": {
+      "type": "boolean",
+      "description": "False at derivation; flipped by the cap-exhaustion standard → deep auto-escalation"
+    },
+    "scope_drift": {
+      "type": "boolean",
+      "description": "The binding diff left the declared files_affected"
+    },
+    "referee_assets_touched": {
+      "type": "boolean",
+      "description": "Tests/journeys/gates touched — never derives light; floors at standard"
+    },
+    "negative_assertion_delta": {
+      "type": "boolean",
+      "description": "More assertions removed than added; always forces at least one evaluation round"
+    },
+    "dimension_preset": {
+      "x-aep-vocab": "dimension_preset",
+      "enum": [
+        "ui-heavy",
+        "api-only",
+        "security-sensitive",
+        "data-pipeline",
+        "mixed",
+        "product-design"
+      ]
+    },
+    "hard_floors": {
+      "type": "object",
+      "description": "Dimension name → minimum score on the 0–4 scale. Keys come from the preset (scoring-framework.md); customization may add keys or raise values, never remove or lower.",
+      "additionalProperties": { "type": "integer", "minimum": 0, "maximum": 4 }
+    },
+    "max_rounds": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Eval-round cap for the binding tier (light 0, standard 2, deep 5; a negative assertion delta raises 0 to 1)"
+    },
+    "evaluator_effort": {
+      "x-aep-vocab": "evaluator_effort",
+      "enum": ["none", "default", "highest"]
+    },
+    "inputs": {
+      "type": "object",
+      "description": "The derivation's raw inputs, kept for audit — why this recipe says what it says",
+      "additionalProperties": false,
+      "required": ["sensitive_paths_matched", "files_in_diff"],
+      "properties": {
+        "sensitive_paths_matched": { "type": "array", "items": { "type": "string" } },
+        "files_in_diff": { "type": "integer", "minimum": 0 },
+        "preset_signals": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "ui": { "type": "integer", "minimum": 0 },
+            "data": { "type": "integer", "minimum": 0 },
+            "product": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "files_affected_declared": { "type": "integer", "minimum": 0 },
+        "scope_drift_files": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

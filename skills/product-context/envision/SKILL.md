@@ -1,9 +1,9 @@
 ---
 name: aep-envision
 description: >-
-  Validates and frames a product opportunity for downstream agents. Use to
-  start or revisit an idea, validate product direction, answer "what should we
-  build", or create the Context Document for /aep-map and /aep-design.
+  Validates and frames a product opportunity into the Context Document
+  downstream agents read. Use to start or revisit an idea, or for "what
+  should we build".
 ---
 
 # Envision
@@ -24,7 +24,7 @@ Transform a fuzzy product idea into a precise, testable product definition. Firs
 
 ## Before Starting
 
-Run the probe, then apply the matching case. Detection is automatic — never ask the user which mode is active.
+Run the probe, then apply the matching case: detection is automatic, so the probe answers which mode is active.
 
 ```bash
 ls product/index.yaml 2>/dev/null && echo "SPLIT MODE" || echo "V1 MODE"
@@ -41,7 +41,7 @@ Split vs V1 vs new-project semantics (including the one-time V1→split migratio
 
 ### How to run this phase
 
-Let the user describe the idea freely; do not impose structure yet. Extract the raw material:
+Let the user describe the idea freely, and extract the raw material as they go:
 
 - What triggered this idea — a personal pain, a market gap, a technology capability?
 - Who has this problem today, and how do they solve it now?

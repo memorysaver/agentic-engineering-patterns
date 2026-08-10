@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
   "run": {
-    "date": "2026-07-27",
+    "date": "2026-07-31",
     "model": "Claude Sonnet (Claude Code subagent)",
     "model_version": "Claude Code `model: sonnet` subagent; exact serving snapshot not exposed",
-    "input": "The 23 installed skill names and frontmatter descriptions only — no SKILL.md body, no repository access",
-    "method": "Independent re-run of the whole suite, required because aep-human-alignment's description was rewritten to lead with the supported emissions rather than the unproven one. The probe agent was given one file, instructed not to open any other and not to search for the expectation list, and asked to self-report confidence. It made exactly one tool call.",
-    "description_sha256": "2113ea6c9fc4e76786ce83175bac129339d040197b81482fa095d895110f9076"
+    "input": "The 23 installed skill names and frontmatter descriptions only \u2014 no SKILL.md body, no repository access",
+    "method": "Required by R7: the v4.0.0 description diet cut the metadata corpus from 4,940 to 3,369 characters, and a trigger set that shrinks can silently stop a skill firing. The probe agent was given the names, the descriptions, and the 40 prompts inline in its prompt, instructed to make no tool calls and not to look for the expectation list, and asked to self-report low-confidence ids. It made zero tool calls and reported none. 40/40 matched the expectations in skill-routing.json, including all 17 boundary probes.",
+    "description_sha256": "085482e04ad78c273a1ce2a79a1f92e3e9443c34e96b0ed49bd47965ea33ba75"
   },
   "observations": [
     {

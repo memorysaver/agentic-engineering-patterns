@@ -46,6 +46,7 @@ CONTROL PLANE (human + AI)              EXECUTION PLANE (agents build)
 | `/aep-autopilot`         | Hands-free autonomous orchestration                                         | `product-context.yaml` with ready stories                          | Continuous dispatch → build → wrap cycle                            | Main    |
 | `/aep-workflow`          | Author a custom multi-agent harness for a large/uncertain/verify-heavy task | A task too big, drift-prone, or verification-heavy for one context | A dynamic workflow (fan-out, verify, tournament, loop) + its result | Main    |
 | `/aep-workflow-feedback` | Capture or review process learnings                                         | Lessons from builds, downstream feedback files                     | Classified feedback in standardized format                          | Main    |
+| `/aep-easy-explain`      | Re-pitch the last message in plain language (user-typed only)               | You stopped following the agent's explanation                      | Same content, context-first, STE English, project nouns             | Main    |
 | `/aep-executor`          | Pick/operate a launch backend for workspace agents                          | Host capabilities + launch context                                 | Backend selection + spawn/steer/collect recipes                     | Both    |
 | `/aep-design-lens`       | Design guideline or usability/heuristic health-check for any UI             | Product description, spec, or running UI                           | Design suggestions + guideline + severity-scored health-check       | Both    |
 
@@ -74,6 +75,7 @@ CONTROL PLANE (human + AI)              EXECUTION PLANE (agents build)
 "Auto-file work from telemetry"     → /aep-watch
 "Capture process learnings"         → /aep-workflow-feedback
 "Pull learnings from downstreams"   → /aep-workflow-feedback
+"I stopped following — re-explain"  → /aep-easy-explain (type it yourself; the agent will not self-invoke)
 "I want hands-free mode"            → /aep-autopilot
 "How do AEP worktrees work?"        → /aep-git-ref
 "Set up my environment"             → /aep-onboard

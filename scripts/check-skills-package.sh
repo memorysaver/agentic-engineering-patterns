@@ -14,16 +14,18 @@ SKILLS_CLI_VERSION=${SKILLS_CLI_VERSION:-1.5.17}
 SKILLS_REF_VERSION=${SKILLS_REF_VERSION:-0.1.1}
 
 EXPECTED_NAMES="$TMP_ROOT/expected-names"
+ADVERTISED_NAMES="$TMP_ROOT/advertised-names"
 
 # Check the repository graph without introducing another YAML parser. Metadata
 # is read later from the actual installed units by the official Agent Skills
 # implementation, so discovery, validation, and budgets judge one artifact.
-node - "$EXPECTED_NAMES" <<'NODE'
+node - "$EXPECTED_NAMES" "$ADVERTISED_NAMES" <<'NODE'
 const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 
 const expectedNamesFile = process.argv[2];
+const advertisedNamesFile = process.argv[3];
 const errors = [];
 
 function walk(directory) {
@@ -95,26 +97,88 @@ for (const entry of safeCases) {
 for (const observation of safeObservations) {
   if (!safeCases.some((entry) => entry.id === observation.id)) errors.push(`routing observation has no expectation: ${observation.id}`);
 }
+// A skill's frontmatter decides its routing contract. disable-model-invocation
+// means the router never sees the skill: it needs no probe, pays no metadata
+// budget, and stays out of the routing digest — a probe recorded for it would
+// assert behavior the surface cannot exhibit.
+const sourceMeta = source.map((skillPath) => {
+  const text = fs.readFileSync(path.join(skillPath, "SKILL.md"), "utf8");
+  const front = (text.match(/^---\n([\s\S]*?)\n---/) || [, ""])[1];
+  return {
+    skillPath,
+    name: ((front.match(/^name:\s*(.+)$/m) || [])[1] || "").trim(),
+    userInvokedOnly: /^disable-model-invocation:\s*true\s*$/m.test(front),
+  };
+});
+for (const meta of sourceMeta) {
+  if (!meta.name) errors.push(`no frontmatter name in ${meta.skillPath}/SKILL.md`);
+}
+const duplicateSourceNames = duplicates(sourceMeta.map((meta) => meta.name));
+if (duplicateSourceNames.length) errors.push(`duplicate skill names: ${duplicateSourceNames.join(", ")}`);
+const advertisedNames = sourceMeta.filter((meta) => !meta.userInvokedOnly).map((meta) => meta.name).sort();
+const userInvokedNames = sourceMeta.filter((meta) => meta.userInvokedOnly).map((meta) => meta.name).sort();
+// The user-invoked-only contract is per-host: Claude Code reads the frontmatter
+// extension field, Codex reads agents/openai.yaml. Enforce the pair so a skill
+// cannot be hidden from one router and implicitly invocable on the other.
+// The Codex check is structural and canonical: the key counts only as the
+// DIRECT child of a top-level `policy:` mapping, at exactly two-space indent —
+// a same-named string at top level, under another section, or nested deeper
+// does not count.
+const codexImplicitInvocationDisabled = (text) => {
+  let inPolicy = false;
+  for (const line of text.split(/\r?\n/)) {
+    if (/^\s*(#|$)/.test(line)) continue;
+    if (/^\S/.test(line)) { inPolicy = /^policy:\s*(#.*)?$/.test(line); continue; }
+    if (inPolicy && /^  allow_implicit_invocation: false\s*(#.*)?$/.test(line)) return true;
+  }
+  return false;
+};
+// Deterministic self-test — all four shapes, before the function judges skills.
+const codexCheckSelfTest = [
+  ["policy:\n  allow_implicit_invocation: false\n", true],
+  ["allow_implicit_invocation: false\n", false],
+  ["interface:\n  allow_implicit_invocation: false\n", false],
+  ["policy:\n  nested:\n    allow_implicit_invocation: false\n", false],
+];
+for (const [yamlText, expected] of codexCheckSelfTest) {
+  if (codexImplicitInvocationDisabled(yamlText) !== expected) {
+    errors.push(`codexImplicitInvocationDisabled self-test failed on ${JSON.stringify(yamlText)} — expected ${expected}`);
+  }
+}
+for (const meta of sourceMeta) {
+  const codexPolicyPath = path.join(meta.skillPath, "agents", "openai.yaml");
+  const codexOptOut = fs.existsSync(codexPolicyPath)
+    && codexImplicitInvocationDisabled(fs.readFileSync(codexPolicyPath, "utf8"));
+  if (meta.userInvokedOnly && !codexOptOut) {
+    errors.push(`${meta.name} sets disable-model-invocation but lacks agents/openai.yaml with policy.allow_implicit_invocation: false — Codex would still implicitly invoke it`);
+  }
+  if (!meta.userInvokedOnly && codexOptOut) {
+    errors.push(`${meta.name} opts out of Codex implicit invocation but not Claude Code's — add disable-model-invocation: true or drop agents/openai.yaml`);
+  }
+}
+
 const directNames = safeCases.filter((entry) => entry.kind === "direct").map((entry) => entry.expected);
 const duplicateDirectNames = duplicates(directNames);
 if (duplicateDirectNames.length) errors.push(`skills with duplicate direct probes: ${duplicateDirectNames.join(", ")}`);
-const expectedNames = [...new Set(directNames)].sort();
-if (expectedNames.length !== source.length) {
-  errors.push(`direct routing coverage has ${expectedNames.length} skills; source catalog has ${source.length}`);
-}
+const probedNames = [...new Set(directNames)].sort();
+const unprobed = advertisedNames.filter((name) => !probedNames.includes(name));
+const overProbed = probedNames.filter((name) => !advertisedNames.includes(name));
+if (unprobed.length) errors.push(`advertised skills without a direct routing probe: ${unprobed.join(", ")}`);
+if (overProbed.length) errors.push(`routing probes for skills the router never sees: ${overProbed.join(", ")}`);
 for (const entry of safeCases) {
-  if (!expectedNames.includes(entry.expected)) errors.push(`routing case ${entry.id} expects unknown skill ${entry.expected}`);
+  if (!advertisedNames.includes(entry.expected)) errors.push(`routing case ${entry.id} expects unknown skill ${entry.expected}`);
   const selected = observationById.get(entry.id);
-  if (selected && !expectedNames.includes(selected)) errors.push(`routing case ${entry.id} selected unknown skill ${selected}`);
+  if (selected && !advertisedNames.includes(selected)) errors.push(`routing case ${entry.id} selected unknown skill ${selected}`);
 }
+const expectedNames = sourceMeta.map((meta) => meta.name).sort();
 
 const parity = JSON.parse(fs.readFileSync("evals/skill-behavior-parity.json", "utf8"));
 const parityCases = Array.isArray(parity.cases) ? parity.cases : [];
 const parityNames = parityCases.map((entry) => entry.skill);
 const duplicateParityNames = duplicates(parityNames);
 if (duplicateParityNames.length) errors.push(`duplicate behavior-parity skills: ${duplicateParityNames.join(", ")}`);
-const missingParity = expectedNames.filter((name) => !parityNames.includes(name));
-const unknownParity = parityNames.filter((name) => !expectedNames.includes(name));
+const missingParity = advertisedNames.filter((name) => !parityNames.includes(name));
+const unknownParity = parityNames.filter((name) => !advertisedNames.includes(name));
 if (missingParity.length) errors.push(`behavior parity is missing skills: ${missingParity.join(", ")}`);
 if (unknownParity.length) errors.push(`behavior parity contains unknown skills: ${unknownParity.join(", ")}`);
 if (!parity.run?.date || !parity.run?.method || !Array.isArray(parity.run?.review_scopes)) {
@@ -168,7 +232,15 @@ for (const sourceName of walk("skills").filter((file) => file.endsWith(".md")).s
     if (sourceSkill && targetSkill && sourceSkill !== targetSkill) {
       errors.push(`cross-skill relative link in ${sourceName}: ${rawTarget}`);
     }
-    if (normalized(sourceName).includes("/references/") && normalized(resolved).includes("/references/")) {
+    // Navigation debt is prose sending the reader to more prose. A pointer from
+    // a reference into a typed artifact in the same skill (schema, fixture,
+    // script) is where C2 wants the reader to land, not another hop — it
+    // terminates the chain instead of extending it.
+    if (
+      normalized(sourceName).includes("/references/") &&
+      normalized(resolved).includes("/references/") &&
+      resolved.endsWith(".md")
+    ) {
       referenceHops += 1;
     }
   }
@@ -193,8 +265,9 @@ if (errors.length) {
 }
 
 fs.writeFileSync(expectedNamesFile, `${expectedNames.join("\n")}\n`);
-console.log(`source catalog: ${source.length} skills; routing probes: ${safeCases.length}`);
-console.log(`behavior parity: ${parityCases.length}/${expectedNames.length} recorded scenario dry-runs`);
+fs.writeFileSync(advertisedNamesFile, `${advertisedNames.join("\n")}\n`);
+console.log(`source catalog: ${source.length} skills (${advertisedNames.length} advertised + ${userInvokedNames.length} user-invoked-only); routing probes: ${safeCases.length}`);
+console.log(`behavior parity: ${parityCases.length}/${advertisedNames.length} recorded scenario dry-runs`);
 console.log(`navigation debt ratchets: ${referenceHops}/26 reference hops; ${tocDebt}/28 unique long references without early TOC`);
 NODE
 
@@ -273,14 +346,28 @@ fi
 
 PROPERTIES_ROOT="$TMP_ROOT/properties"
 mkdir -p "$PROPERTIES_ROOT"
+# User-invoked-only skills carry Claude Code's disable-model-invocation
+# extension field, which the open-format validator (skills-ref) does not yet
+# know. Tolerate exactly that one complaint for exactly those skills — any
+# other validation error, on any skill, still fails.
+USER_INVOKED_NAMES="$TMP_ROOT/user-invoked-names"
+comm -23 "$EXPECTED_NAMES" "$ADVERTISED_NAMES" > "$USER_INVOKED_NAMES"
 validation_failures=0
+tolerated_fields=0
 while IFS= read -r name; do
   installed="$INSTALL_ROOT/.agents/skills/$name"
   if ! "${agent_skills[@]}" validate "$installed" >"$TMP_ROOT/validate-$name.log" 2>&1; then
-    echo "FAIL: official validation failed for $name" >&2
-    cat "$TMP_ROOT/validate-$name.log" >&2
-    validation_failures=$((validation_failures + 1))
-    continue
+    if grep -qxF "$name" "$USER_INVOKED_NAMES" \
+       && [ "$(grep -c '^  - ' "$TMP_ROOT/validate-$name.log")" -eq 1 ] \
+       && grep -q 'Unexpected fields in frontmatter: disable-model-invocation\.' "$TMP_ROOT/validate-$name.log"; then
+      echo "note: $name carries the disable-model-invocation extension field (Claude Code; outside the open format — tolerated)"
+      tolerated_fields=$((tolerated_fields + 1))
+    else
+      echo "FAIL: official validation failed for $name" >&2
+      cat "$TMP_ROOT/validate-$name.log" >&2
+      validation_failures=$((validation_failures + 1))
+      continue
+    fi
   fi
   if ! "${agent_skills[@]}" read-properties "$installed" >"$PROPERTIES_ROOT/$name.json" 2>"$TMP_ROOT/properties-$name.log"; then
     echo "FAIL: could not read official properties for $name" >&2
@@ -292,13 +379,17 @@ done < "$EXPECTED_NAMES"
 
 # Enforce the fixed front-tier metadata cost using the properties the official
 # implementation read from the installed package.
-node - "$PROPERTIES_ROOT" "$EXPECTED_NAMES" "evals/skill-routing-observations.json" <<'NODE'
+node - "$PROPERTIES_ROOT" "$EXPECTED_NAMES" "evals/skill-routing-observations.json" "$ADVERTISED_NAMES" <<'NODE'
 const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 
 const propertiesRoot = process.argv[2];
 const expectedNames = fs.readFileSync(process.argv[3], "utf8").trim().split("\n");
+// Only advertised skills pay the always-loaded metadata cost: a
+// disable-model-invocation skill's description is never shown to the router,
+// so it joins the shape checks but not the budget or the routing digest.
+const advertisedNames = new Set(fs.readFileSync(process.argv[5], "utf8").trim().split("\n"));
 const errors = [];
 let descriptionChars = 0;
 let descriptionWords = 0;
@@ -317,11 +408,15 @@ for (const expectedName of expectedNames) {
   }
   if (description.length > 300) errors.push(`description exceeds 300 characters for ${expectedName}: ${description.length}`);
   if (/[<>]/.test(description)) errors.push(`description contains angle brackets for ${expectedName}`);
+  if (!advertisedNames.has(name)) continue;
   descriptionChars += description.length;
   descriptionWords += description.trim().split(/\s+/).length;
   descriptionRecords.push(`${name}\0${description}`);
 }
-if (descriptionChars > 5000) errors.push(`description corpus exceeds 5000 characters: ${descriptionChars}`);
+// C3/C6 ratchet, tightened from 5000 at v4.0.0 once the diet landed at 3369.
+// Every character here is paid by every session of every downstream repo, so
+// the budget follows the corpus down rather than sitting where it was set.
+if (descriptionChars > 3400) errors.push(`description corpus exceeds 3400 characters: ${descriptionChars}`);
 
 const routingEvidence = JSON.parse(fs.readFileSync(process.argv[4], "utf8"));
 const descriptionSha256 = crypto.createHash("sha256").update(descriptionRecords.join("\n")).digest("hex");
@@ -333,9 +428,13 @@ if (errors.length) {
   for (const error of errors) console.error(`FAIL: ${error}`);
   process.exit(1);
 }
-console.log(`installed metadata: ${descriptionChars} chars / ${descriptionWords} words`);
+console.log(`installed metadata (advertised): ${descriptionChars} chars / ${descriptionWords} words`);
 console.log(`routing evidence: ${routingEvidence.observations.length} recorded selections bound to ${descriptionSha256.slice(0, 12)}`);
 NODE
 
 skill_count=$(wc -l < "$EXPECTED_NAMES" | tr -d ' ')
-echo "installed package: $skill_count/$skill_count skills discovered and officially valid"
+if [ "$tolerated_fields" -gt 0 ]; then
+  echo "installed package: $skill_count/$skill_count skills discovered and officially valid ($tolerated_fields tolerated extension field(s))"
+else
+  echo "installed package: $skill_count/$skill_count skills discovered and officially valid"
+fi

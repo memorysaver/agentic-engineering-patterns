@@ -1,6 +1,6 @@
 # Agentic Engineering Patterns
 
-A Claude Code plugin for building software products with AI agents — from raw idea to shipped MVP.
+An Agent Skills workflow for building software with current-generation coding agents — from raw idea to verified delivery.
 
 ## Why This Exists
 
@@ -30,75 +30,93 @@ AEP skills follow the open [Agent Skills](https://agentskills.io/) format, so an
 Claude Code, Codex, Cursor, OpenCode, and [70+ other agents](https://github.com/vercel-labs/skills#supported-agents) —
 can install them with the [`skills`](https://github.com/vercel-labs/skills) CLI. No clone, no copied scripts.
 
+### Quick start — v4.0.0
+
+Install AEP once for each agent runtime this project actually uses:
+
+```bash
+# Claude Code → ./.claude/skills/
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a claude-code --skill '*' -y
+
+# Codex → ./.agents/skills/
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a codex --skill '*' -y
+```
+
+These are plain, project-level, per-agent installs — do not consolidate them into a shared or
+canonical symlink layout. Commit the installed `aep-*` skill directories together with
+`skills-lock.json`; those committed bytes are the durable pin for the project. Then run
+`/aep-onboard` to verify OpenSpec, the executor, and the rest of the environment.
+
 ### Agent prompt
 
 Prefer to delegate the install? Paste this to your coding agent — it covers the AEP skills, the
 required OpenSpec CLI, the formatter fix, and wiring AEP into your `AGENTS.md` / `CLAUDE.md`:
 
 ```text
-Install the Agentic Engineering Patterns (AEP) skills into this project, pinned to the latest release.
+Set up Agentic Engineering Patterns (AEP) v4.0.0 completely in this repository. Perform the
+work; do not stop at a plan or a list of commands. Preserve existing project configuration and
+ask only when authentication, elevated privileges, or a destructive conflict blocks progress.
 
-1. Install the latest release for each agent this repo uses — find the newest tag at
-   https://github.com/memorysaver/agentic-engineering-patterns/releases/latest, then run once per agent:
-     npx skills add memorysaver/agentic-engineering-patterns@<latest-tag> -a claude-code --skill '*' -y
-     npx skills add memorysaver/agentic-engineering-patterns@<latest-tag> -a codex        --skill '*' -y
-   This writes the skills under .claude/skills/ and/or .agents/skills/ plus a skills-lock.json manifest.
+Baseline scope: AEP itself and its required tools. Do not install companion skill bundles,
+external memory packages, or optional third-party plugins. Do not run /aep-scaffold or start
+product work in this setup pass.
 
-2. Commit the installed skill files together with skills-lock.json. The lockfile pins content
-   hashes, not the git tag, so the committed files are what durably lock that release — after that,
-   teammates and CI need no install step.
+1. Inspect the repository before changing it:
+   - Initialize git if this is a new, unversioned project directory.
+   - Identify the current agent runtime, plus any other runtime already configured by this repo.
+     Install for the current runtime at minimum; do not add an unused runtime.
+   - Read existing AGENTS.md, CLAUDE.md, .claude/settings.json, formatter config, ignore files,
+     package metadata, and git status. Preserve unrelated content and user changes.
 
-3. If this repo auto-formats Markdown/JSON on commit (Prettier, oxfmt, Biome, dprint, a
-   lefthook/husky hook): exclude .claude/skills/**, .agents/skills/**, and skills-lock.json from
-   the formatter, then make the install commit with --no-verify. Otherwise reformatting rewrites
-   the skill files and breaks the lockfile hashes.
+2. Install v4.0.0 once for each runtime the repo actually uses. Keep plain per-agent copies:
+     npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a claude-code --skill '*' -y
+     npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a codex        --skill '*' -y
+   Claude Code installs to .claude/skills/; Codex installs to .agents/skills/. The install also
+   writes skills-lock.json. Never consolidate these directories into a shared symlink layout.
 
-4. Add a short section to AGENTS.md (and/or CLAUDE.md) so the workflow is discoverable:
+3. Find the installed aep-onboard/SKILL.md under the active runtime and follow it now. Phase 1 is
+   already complete, so perform Phase 0 and the applicable work in Phases 2-5:
+   - Install or repair required tools where safe. OpenSpec requires Node >= 20.19; install it with
+       npm install -g @fission-ai/openspec@latest
+     and verify `openspec --version`.
+   - For a Claude Code install, also install and verify `jq`; AEP's concurrency hooks require it.
+   - Treat Phase 3 tools as optional and report-only for this baseline.
+   - For Claude Code, merge only AEP's concurrency hooks into .claude/settings.json. For a
+     Codex-only repo, skip Claude settings. Preserve all existing settings and hooks.
+
+4. Merge this discoverability section into AGENTS.md. If the repo uses Claude Code, also make the
+   section visible from CLAUDE.md without overwriting its existing instructions:
      ## AEP Workflow
-     This project uses the Agentic Engineering Patterns (AEP) skills — a spec-driven, multi-agent
-     feature lifecycle in .claude/skills/ and/or .agents/skills/, pinned via skills-lock.json.
-     The skills are self-describing; start with `aep-onboard`. Upgrade by re-running
-     `npx skills add memorysaver/agentic-engineering-patterns@<newtag>` once per agent.
+     This project uses Agentic Engineering Patterns (AEP) v4.0.0 — a spec-driven, multi-agent
+     feature lifecycle installed in .claude/skills/ and/or .agents/skills/ and pinned by the
+     committed skill files plus skills-lock.json. The skills are self-describing; start with
+     /aep-onboard. Upgrade by explicitly re-pinning a new release once per runtime.
+     For human-facing status and decisions, use the /aep-easy-explain register: one line of
+     context first, ASD-STE100 Simplified Technical English, and this project's own nouns.
 
-5. Verify with `npx skills list`. Restore from the lockfile later with `npx skills experimental_install`.
+5. Protect the installed bytes. If Markdown/JSON formatting runs on commit (Prettier, oxfmt,
+   Biome, dprint, lefthook, husky, or similar), add exact exclusions for .claude/skills/**,
+   .agents/skills/**, and skills-lock.json while preserving the existing formatter policy.
 
-6. REQUIRED — install the OpenSpec CLI. AEP is a spec-driven workflow: its skills (/aep-scaffold,
-   /aep-dispatch, /aep-design, /aep-build, /aep-wrap) shell out to `openspec`, so it must be on PATH. Install it
-   globally (needs Node >= 20.19), then verify:
-     npm install -g @fission-ai/openspec@latest
-     openspec --version
-   AEP creates the per-project openspec/ artifacts itself — /aep-scaffold initializes them for a new
-   project, or run `openspec init` once in an existing repo.
+6. Do not declare success until all applicable gates pass:
+   - `npx -y skills@1.5.17 list --json -a <runtime>` reports all 24 AEP v4.0.0 skills for every installed runtime.
+   - aep-onboard and aep-easy-explain exist under every installed runtime.
+   - Node >=20.19, `openspec --version`, `git --version`, and at least one of `claude --version`
+     or `codex --version` succeed; `jq` succeeds for Claude Code; all other required
+     /aep-onboard Phase 5 checks pass.
+   - AGENTS.md/CLAUDE.md expose the AEP Workflow section, formatter exclusions are present when
+     needed, and no companion skill or external memory package was added.
 
-7. Then ALWAYS ASK the user which optional add-ons they want — both come from
-   memorysaver/skills (newest tag at https://github.com/memorysaver/skills/releases/latest):
-     a. "Set up behavioral guidelines (a coding-discipline preamble) in AGENTS.md?"
-        If yes → install `project-behavior`, then run it to scaffold/extend AGENTS.md.
-     b. "Set up a project memory system (committed lessons + recall)?"
-        If yes → install `project-memory` (and `memory-forge`), run project-memory to bootstrap
-        project-memory/, then add a concise "## Memory & Learning Loop" section to AGENTS.md that
-        LAYERS these onto AEP's native lessons loop — don't duplicate it. (AEP already captures
-        via /aep-build -> .dev-workflow/lessons.md, archives via /aep-wrap -> lessons-learned/, and
-        recalls via /aep-launch.) Keep it to a few lines; the skills are self-describing:
-          - project-memory — recall at /aep-dispatch, and at /aep-wrap persist the just-archived lesson
-            into project-memory/ for qmd-backed semantic recall.
-          - memory-forge — at /aep-reflect or before a PR, distill settled lessons (>=7 days, once
-            >=3 have accrued) into reusable skills the next agent auto-loads.
-   Install each chosen skill once per agent, then commit the installed files (the commit is the pin):
-     npx skills add memorysaver/skills@<latest-tag> -a claude-code --skill project-behavior -y
+7. After verification, stage only the AEP setup files and commit them together. Use --no-verify
+   only when a formatter hook would rewrite the pinned skill bytes. Do not include unrelated
+   pre-existing changes. Finish with a concise report containing installed runtimes, exact AEP
+   version, tool versions, files changed, verification results, commit SHA, and any real blocker.
 ```
-
-### Quick start
 
 > **Always name your agent with `-a`.** The CLI's auto-detect (and `--all` / `--agent '*'`)
 > installs into the cross-agent `.agents/skills/` directory — which **Claude Code does not read**
 > (Claude Code only loads `.claude/skills/`). Passing `-a claude-code` is what makes the install
 > land where Claude Code will find it.
-
-```bash
-# Claude Code — installs all AEP skills into ./.claude/skills/ at project level
-npx skills add memorysaver/agentic-engineering-patterns -a claude-code --skill '*'
-```
 
 Skills install with the `aep-` prefix (e.g. `aep-map`, `aep-build`) at **project level** — committed
 with your repo and shared with your team. Each installed skill carries its own templates and
@@ -111,8 +129,8 @@ install must include every `/aep-*` dependency named by the selected skill.
 (`-a a,b`) installs nothing. To cover several runtimes, run the command once per agent:
 
 ```bash
-npx skills add memorysaver/agentic-engineering-patterns -a claude-code --skill '*'   # → ./.claude/skills/
-npx skills add memorysaver/agentic-engineering-patterns -a codex      --skill '*'    # → ./.agents/skills/
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a claude-code --skill '*' -y # → ./.claude/skills/
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a codex --skill '*' -y        # → ./.agents/skills/
 ```
 
 ### Pinning a version
@@ -120,11 +138,11 @@ npx skills add memorysaver/agentic-engineering-patterns -a codex      --skill '*
 Append `@<git-ref>` (a release tag, branch, or commit) to lock what you install:
 
 ```bash
-npx skills add memorysaver/agentic-engineering-patterns@v1.2.0 -a claude-code --skill '*'
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a claude-code --skill '*' -y
 ```
 
 One caveat worth knowing: `skills-lock.json` records each skill's **content hash**, not the git
-tag. The lockfile alone therefore does **not** durably pin the version — `npx skills experimental_install`
+tag. The lockfile alone therefore does **not** durably pin the version — `npx -y skills@1.5.17 experimental_install`
 restores from the source repo's **default branch**, which only matches the lock while that branch
 still equals the locked content. To truly freeze a release, **commit the installed skill files**
 (under `.claude/skills/` and/or `.agents/skills/`) together with `skills-lock.json`. The committed
@@ -139,8 +157,8 @@ install at the new tag once per agent the repo uses, then commit the changed ski
 
 ```bash
 # Newest tag: https://github.com/memorysaver/agentic-engineering-patterns/releases/latest
-npx skills add memorysaver/agentic-engineering-patterns@<newtag> -a claude-code --skill '*' -y
-npx skills add memorysaver/agentic-engineering-patterns@<newtag> -a codex        --skill '*' -y
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@<newtag> -a claude-code --skill '*' -y
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@<newtag> -a codex        --skill '*' -y
 ```
 
 Then:
@@ -149,54 +167,21 @@ Then:
    `.agents/skills/`, brand-new files for any skills the release added (e.g. a new `aep-watch/`),
    and rewritten hashes in `skills-lock.json`. Jumping several releases at once also backfills any
    files your old pin predated — expect more new files than the changelog's headline.
-2. **Normalize `.claude/skills/aep-*` back to symlinks** if your layout shares one copy between
-   runtimes (see the gotcha below).
-3. **Bump the AGENTS.md pin note.** If your `AGENTS.md` states the pinned version in prose — the
+2. **Bump the AGENTS.md pin note.** If your `AGENTS.md` states the pinned version in prose — the
    canonical header's `… pinned at **vX.Y.Z**) are self-describing …` line — update it to the new
    tag so the doc doesn't drift from the installed bytes. It's hand-written, so the skill install
    won't touch it. Stage it in the **same commit** as the skill bytes.
-4. **Commit with `--no-verify`** so the pre-commit formatter doesn't rewrite the pinned bytes and
+3. **Commit with `--no-verify`** so the pre-commit formatter doesn't rewrite the pinned bytes and
    break the lockfile hashes (see [Keep your formatter off the skills](#keep-your-formatter-off-the-skills)).
-5. **Verify.** `npx skills list` shows the new versions, the AGENTS.md pin note matches the new tag,
+4. **Verify.** `npx -y skills@1.5.17 list` shows the new versions, the AGENTS.md pin note matches the new tag,
    and `git status` is clean.
 
-> **Gotcha — the `-a claude-code` symlink copy.** If your canonical layout keeps
-> `.agents/skills/<name>` as the **real files** and `.claude/skills/<name>` as a **symlink** →
-> `../../.agents/skills/<name>` (so both runtimes share one copy), then `npx skills add -a claude-code`
-> **replaces those symlinks with copied real directories.** `git status` then shows the tracked
-> symlinks as **deleted** plus a pile of untracked files — a spurious, layout-breaking diff. Run the
-> `-a codex` install (which writes the real `.agents/` files) as well, then run `/aep-scaffold` in
-> existing-project mode and confirm category A. Its converge script promotes the only copy,
-> collapses content-and-mode-identical duplicates, and stops for manual resolution when the two real copies
-> differ; it does not discard either side of an ambiguous pair.
->
-> Afterward `git status` shows only the real `.agents/skills/**` updates (no phantom deletions) and
-> both runtimes resolve to one set of bytes again. Repos that install real copies for each agent
-> (no symlinks) can skip this step.
+### Self-contained project record
 
-### Optional supplement: behavior + memory
-
-Two project-level capabilities AEP doesn't ship itself live in a separate repo,
-[`memorysaver/skills`](https://github.com/memorysaver/skills). Install them as an
-**optional supplement** — once per agent (`-a claude-code`, then `-a codex`):
-
-```bash
-npx skills add memorysaver/skills@<latest-tag> -a claude-code \
-  --skill project-behavior --skill project-memory --skill memory-forge
-```
-
-- **`project-behavior`** — scaffolds/extends your `AGENTS.md` with a behavioral preamble
-  (a Karpathy coding-discipline pack by default); run it after installing.
-- **`project-memory`** — a git-committable `project-memory/` store with qmd-backed semantic recall;
-  run it to set up, then add a concise `## Memory & Learning Loop` section to `AGENTS.md` that
-  **layers** it onto AEP's native lessons loop (recall at `/aep-dispatch`, persist at `/aep-wrap`) rather
-  than running a parallel one.
-- **`memory-forge`** — distills settled `project-memory/` lessons (>=7 days) into reusable skills at
-  `/aep-reflect` or before a PR — the distillation step AEP's native loop doesn't have.
-
-These aren't part of AEP's versioned release — pin them the same way you pin AEP: install the
-latest [`memorysaver/skills`](https://github.com/memorysaver/skills/releases/latest) release
-tag, then **commit the installed files** to freeze it.
+AEP does not install or recommend a companion skill bundle during onboarding. Its own workflow
+captures lessons (`/aep-build` → `.dev-workflow/lessons.md`), archives them (`/aep-wrap` →
+`lessons-learned/`), and recalls them (`/aep-launch`). The repository is the durable record. Host
+memory, when available, is an optional accelerator over that record, never a requirement.
 
 ### Keep your formatter off the skills
 
@@ -210,24 +195,23 @@ with `--no-verify` so the pinned bytes stay byte-for-byte intact.
 
 ```bash
 # List what's available before installing
-npx skills add memorysaver/agentic-engineering-patterns --list
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 --list
 
 # Install a specific standalone reference skill (workflow skills need their named /aep-* dependencies)
-npx skills add memorysaver/agentic-engineering-patterns -a claude-code --skill aep-git-ref
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a claude-code --skill aep-git-ref -y
 
 # Install globally (user-level, ~/.claude/skills) instead of project level
-npx skills add memorysaver/agentic-engineering-patterns -a claude-code -g --skill '*'
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a claude-code -g --skill '*' -y
 
 # Copy files instead of symlinking (when symlinks aren't supported)
-npx skills add memorysaver/agentic-engineering-patterns -a claude-code --skill '*' --copy
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a claude-code --skill '*' --copy -y
 
-# Update / remove / list installed
-npx skills update
-npx skills remove aep-map
-npx skills list
+# Remove / list installed (use the explicit re-pin flow above to upgrade AEP)
+npx -y skills@1.5.17 remove aep-map
+npx -y skills@1.5.17 list
 
 # Restore installed skills from skills-lock.json (e.g. after a fresh clone)
-npx skills experimental_install
+npx -y skills@1.5.17 experimental_install
 ```
 
 ### Skill groups → skill names
@@ -494,9 +478,9 @@ Verify tools                         Scaffold monorepo
                                       API layer, addons)
     │                                    │
     ▼                                    ▼
-Install plugins                      Initialize OpenSpec
-(superpowers, frontend-design,       (explore/propose/apply/archive
- mgrep; browser optional)            commands for spec-driven dev)
+Install project guards               Initialize OpenSpec
+(Claude concurrency hooks;           (explore/propose/apply/archive
+ Codex native instructions)          commands for spec-driven dev)
 ```
 
 ## The Feedback Loop
@@ -649,6 +633,7 @@ Generate a dimension-specific brief, explore or discuss, capture decisions for a
 | `/aep-executor`              | patterns                     | Host-agnostic backend for spawning/steering workspace agents                                                                              |
 | `/aep-autopilot`             | patterns                     | Autonomous dispatch-launch-monitor-wrap loop via `/loop`                                                                                  |
 | `/aep-workflow`              | patterns                     | Dynamic workflows — author a custom multi-agent harness for a task (+ sub-pattern catalog)                                                |
+| `/aep-easy-explain`          | patterns                     | Re-pitch the last message in plain language (user-typed only); also the main agent's explain-to-a-human register                          |
 | `/aep-workflow-feedback`     | patterns                     | Capture + review process learnings between downstream projects and AEP                                                                    |
 | `/aep-design-lens`           | patterns                     | Theory-grounded design guideline + heuristic health-check (HCI/design-theory catalog + task/data lens selection)                          |
 | `/aep-human-alignment`       | human-alignment              | Project pulse from `product-context.yaml` — where it stands, what is owed to a human and for how long, what changed since you last looked |

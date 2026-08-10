@@ -1,9 +1,8 @@
 ---
 name: aep-dispatch
 description: >-
-  Selects and routes one ready story by syncing signals, scoring the queue, and
-  handing off to /aep-design or /aep-launch. Use for "what's next", "dispatch",
-  or "pick a story"; use /aep-autopilot for continuous execution.
+  Picks one ready story and hands it to /aep-design or /aep-launch. Use for
+  "what's next" or "dispatch"; running continuously is /aep-autopilot.
 ---
 
 # Dispatch
@@ -199,7 +198,7 @@ available_slots = max_wip - current_wip
 
 Dispatch at most `available_slots` stories — this cap holds in every mode, including Dynamic Workflow. The integration/merge bottleneck (usually human PR review, not agent speed) is what `available_slots` protects: by Little's Law, `Lead Time = WIP / Throughput`, so dispatching beyond capacity creates traffic jams, not speed.
 
-**Gate:** WIP limit respected — do not dispatch when `available_slots <= 0`.
+**Gate:** dispatch while `available_slots > 0`; at zero the WIP limit is the answer.
 
 ### The Dispatch Lock
 
@@ -321,5 +320,5 @@ Batch dispatched: PROJ-003 (score 23.0), PROJ-004 (score 12.0)
 - **No stories ready:** All pending stories have unmet dependencies. Check if any `in_progress` stories are stuck (high attempt_count, old started_at). Suggest checking workspace progress or running `/aep-reflect`.
 - **All stories completed in active layer:** Trigger the layer gate test. If passed, advance to the next layer and re-run dispatch.
 - **All stories completed in all layers:** Product is done. Suggest `/aep-reflect` for final review.
-- **Layer gate failed:** Do not advance. Create fix stories based on gate failure, add to current layer, re-dispatch.
+- **Layer gate failed:** create fix stories from the failure, add them to the current layer, re-dispatch — the layer stays open until its gate passes.
 - **WIP limit reached:** No available slots. Show what's in progress and suggest waiting or reviewing PRs to unblock slots.

@@ -44,7 +44,7 @@ existing callers — `/aep-build` Phase 6 and the autopilot post-merge guard —
 are unchanged.
 
 ```
-e2e_tool(target_type):              # target_type ∈ {web, mobile, desktop, cli}; default web
+e2e_tool(target_type):              # target_type ∈ {web, mobile, desktop, cli}; default web (aep-vocab: journey_target_type)
   resolve HOST + mode via executor.detect()
   pref = topology.routing.e2e.tool.<target_type>            # optional pin; unset or 'auto' = NO pin
   if target_type == web and (pref unset or pref == 'auto'):
@@ -59,7 +59,7 @@ e2e_tool(target_type):              # target_type ∈ {web, mobile, desktop, cli
     if HOST == codex:
       if mode == codex-subagent and computer_use_enabled:     # desktop app
                                    return "codex-native"      # in-app browser + computer-use
-      elif playwright_available(): return "playwright-script" # GPT-5.4 writes + runs it
+      elif playwright_available(): return "playwright-script" # Codex writes + runs it
       elif agent_browser_healthy(): return "agent-browser"    # CLI fallback
       else:                        return "degrade"           # API checks
     # generic host
@@ -88,7 +88,7 @@ dogfood_method() := e2e_tool('web')   # back-compat wrapper — Phase 6 / post-m
 | Target → host                      | Native method (default)                                   | Detection                      | Fallback                          |
 | ---------------------------------- | --------------------------------------------------------- | ------------------------------ | --------------------------------- |
 | **web** · Claude Code              | `/agent-browser:dogfood`                                  | `agent_browser_healthy()`      | webwright → API/curl / human-eval |
-| **web** · Codex desktop            | native in-app browser + computer-use (GPT-5.4 multimodal) | desktop + computer-use enabled | Playwright → agent-browser CLI    |
+| **web** · Codex desktop            | native in-app browser + computer-use (multimodal)         | desktop + computer-use enabled | Playwright → agent-browser CLI    |
 | **web** · Codex headless / generic | write + run a Playwright script                           | `playwright_available()`       | agent-browser CLI → API checks    |
 | **mobile** · any host              | `agent-device` (iOS/Android native)                       | `agent_device_healthy()`       | API/contract checks               |
 | **desktop** · Codex (computer-use) | native in-app browser + computer-use                      | desktop + computer-use enabled | agent-browser (Electron/CDP)      |
@@ -97,7 +97,7 @@ dogfood_method() := e2e_tool('web')   # back-compat wrapper — Phase 6 / post-m
 
 > **Why web splits multiple ways.** Computer-use and the in-app (Atlas) browser
 > are **desktop-only**; `codex exec` (headless) has neither, so it writes and
-> runs a Playwright script (GPT-5.4 does this natively) and falls back to the
+> runs a Playwright script (Codex does this natively) and falls back to the
 > agent-browser CLI, then to API/curl. **webwright** is a Claude-side web
 > alternative when agent-browser is unavailable. **Mobile and desktop** are
 > distinct target tracks — a journey declares its `target:` and the selector
@@ -262,8 +262,8 @@ spawned as **`native-bg-subagent`** and confirmed live by the mandatory
 flag or roster (see [`backends.md`](backends.md) → Post-Spawn Liveness Probe).
 
 Screenshots captured by any method feed **each host's multimodal evaluator**:
-Claude evaluates natively; Codex is confirmed multimodal (GPT-5.4). This keeps
-the visual judgment in-host rather than crossing back to the orchestrator.
+Claude evaluates natively; Codex evaluates with its own multimodal model. This
+keeps the visual judgment in-host rather than crossing back to the orchestrator.
 
 The **orchestrator boundary holds.** The post-deploy step reads reports and
 signals and runs CLIs (`gh`, deploy tooling, `target_url` resolution) — it never

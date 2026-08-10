@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "note": "Per-skill steering ceilings (C1/C6 of docs/decisions/claude-5-context-engineering.md). A skill may fall below its entry; rising above it fails CI. Raising an entry is a reviewable decision, not a fix — the question it asks is which prohibition in THIS skill earned its place.",
+  "skills": {
+    "skills/agentic-development-workflow/build/SKILL.md": {
+      "negations": 11,
+      "imperatives": 2
+    },
+    "skills/agentic-development-workflow/design/SKILL.md": {
+      "negations": 0,
+      "imperatives": 0
+    },
+    "skills/agentic-development-workflow/git-ref/SKILL.md": {
+      "negations": 4,
+      "imperatives": 0
+    },
+    "skills/agentic-development-workflow/launch/SKILL.md": {
+      "negations": 3,
+      "imperatives": 0
+    },
+    "skills/agentic-development-workflow/wrap/SKILL.md": {
+      "negations": 3,
+      "imperatives": 0
+    },
+    "skills/human-alignment/SKILL.md": {
+      "negations": 7,
+      "imperatives": 0
+    },
+    "skills/patterns/autopilot/SKILL.md": {
+      "negations": 7,
+      "imperatives": 2
+    },
+    "skills/patterns/design-lens/SKILL.md": {
+      "negations": 4,
+      "imperatives": 0
+    },
+    "skills/patterns/easy-explain/SKILL.md": {
+      "negations": 1,
+      "imperatives": 0
+    },
+    "skills/patterns/executor/SKILL.md": {
+      "negations": 1,
+      "imperatives": 0
+    },
+    "skills/patterns/gen-eval/SKILL.md": {
+      "negations": 0,
+      "imperatives": 0
+    },
+    "skills/patterns/workflow-feedback/SKILL.md": {
+      "negations": 2,
+      "imperatives": 0
+    },
+    "skills/patterns/workflow/SKILL.md": {
+      "negations": 1,
+      "imperatives": 0
+    },
+    "skills/product-context/calibrate/SKILL.md": {
+      "negations": 1,
+      "imperatives": 0
+    },
+    "skills/product-context/dispatch/SKILL.md": {
+      "negations": 1,
+      "imperatives": 0
+    },
+    "skills/product-context/envision/SKILL.md": {
+      "negations": 0,
+      "imperatives": 0
+    },
+    "skills/product-context/map/SKILL.md": {
+      "negations": 2,
+      "imperatives": 0
+    },
+    "skills/product-context/model/SKILL.md": {
+      "negations": 1,
+      "imperatives": 0
+    },
+    "skills/product-context/reflect/SKILL.md": {
+      "negations": 2,
+      "imperatives": 0
+    },
+    "skills/product-context/validate/SKILL.md": {
+      "negations": 4,
+      "imperatives": 0
+    },
+    "skills/product-context/watch/SKILL.md": {
+      "negations": 1,
+      "imperatives": 0
+    },
+    "skills/project-setup/e2e-skill-scaffolding/SKILL.md": {
+      "negations": 3,
+      "imperatives": 0
+    },
+    "skills/project-setup/onboard/SKILL.md": {
+      "negations": 1,
+      "imperatives": 0
+    },
+    "skills/project-setup/scaffold/SKILL.md": {
+      "negations": 3,
+      "imperatives": 1
+    }
+  }
+}

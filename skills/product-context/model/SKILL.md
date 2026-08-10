@@ -1,9 +1,8 @@
 ---
 name: aep-model
 description: >-
-  Builds a human-reviewed OOUX/ORCA object map and noun-first UI blueprint. Use
-  after /aep-map, before UI stories, or for "object model", "object map",
-  "OOUX", "ORCA", and "noun-first IA".
+  Builds a human-reviewed OOUX object map and noun-first UI blueprint. Use
+  after /aep-map, before UI stories, or for "object model" and "OOUX".
 ---
 
 # Model
@@ -57,7 +56,7 @@ If nothing is UI-facing, say so and route the user straight to `/aep-dispatch`.
 `architecture.domain_model` from `product-context.yaml`; in **V1 mode** it reads
 everything from `product-context.yaml`. In both modes it writes the standalone
 artifacts under `product/` (create the directory in V1) — the object model is a
-stable design file, never inlined into operational YAML.
+stable design file; `product-context.yaml` carries the reference to it.
 
 If `stories` is empty, run `/aep-map` first. If no product definition exists, run
 `/aep-envision` first.
@@ -67,7 +66,7 @@ If `stories` is empty, run `/aep-map` first. If no product definition exists, ru
 - **Establishment** — no `product/object-model.yaml` yet → full ORCA over all
   UI-facing capabilities.
 - **Extension** — it exists → focused pass over only NEW objects/capabilities not
-  yet covered (e.g., a later layer introduced new activities). Do not redo
+  yet covered (e.g., a later layer introduced new activities). Extend rather than redo
   approved maps; extend them and re-gate only the delta.
 
 ---
@@ -76,13 +75,13 @@ If `stories` is empty, run `/aep-map` first. If no product definition exists, ru
 
 **If `/aep-map` already wrote draft artifacts** (`product/object-model.yaml` and
 `product/maps/<cap>/object-map.yaml` with `status: draft`), **read and refine them**
-— do not regenerate from scratch. Preserve their `provenance`/`source_evidence`,
+— preserve their `provenance`/`source_evidence`,
 fill gaps, and fix obvious errors. Generate fresh only when no draft exists. (Set
 `provenance.generated_by`/`status` to reflect reality — `aep-map` for an untouched
 draft, refined in place here.)
 
 Run the four ORCA rounds per `references/orca-process.md`, then the representation
-pass — this step is agent-driven, so mine, don't ask yet:
+pass — this step is agent-driven, so mine the evidence first:
 
 1. **Round O — Objects (Noun Foraging):** forage nouns, promote user-perceived
    things, demote implementation nouns, record `source_evidence` + `confidence`.

@@ -1,10 +1,9 @@
 ---
 name: aep-validate
 description: >-
-  Validates an AEP artifact with separate generator, evaluator, and optional
-  protocol-checker roles. Use for code review, implementation validation,
-  document or RFC validation, after /aep-envision, /aep-map, or /aep-design,
-  or for "validate", "verify", "dry-run", "evaluate", and "gen/eval".
+  Validates one artifact — code, document, or spec — with separate generator
+  and evaluator roles. Use for code review, "validate", "verify", or
+  "dry-run".
 ---
 
 # Validate
@@ -75,7 +74,10 @@ subscription to the problem rather than a fix for it.
 The derivations are specified in
 [references/drift-facts.md](references/drift-facts.md); `scripts/coherence.mjs`
 is the executable half, shared with `/aep-human-alignment` so the two cannot
-drift apart.
+drift apart. "The defined set" in row 2 is
+[references/aep-vocabulary.schema.json](references/aep-vocabulary.schema.json),
+which the checker loads at runtime — the gate states are declared once for the
+whole corpus, and `scripts/json-schema.mjs` is the shared validator behind it.
 
 ---
 

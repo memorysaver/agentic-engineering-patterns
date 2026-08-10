@@ -17,6 +17,186 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 > `/envision`, `/dispatch`, `/reflect`, …), which records product-state history
 > for that project. See [`docs/glossary.md`](docs/glossary.md).
 
+## [4.0.0] - 2026-08-10
+
+Major: the corpus is re-shaped for Claude 5 generation models, against
+[`docs/decisions/claude-5-context-engineering.md`](docs/decisions/claude-5-context-engineering.md).
+v3.0.0 asked how _much_ context a skill spends; this asks what _kind_ earns its
+place. Four conversions, plus the ratchets that keep them.
+
+### Added
+
+- **One canonical vocabulary** — `_shared/references/aep-vocabulary.schema.json`
+  declares every enumerated value more than one skill reads: `story_status` and
+  the four-state `story_status_signal` a workspace may report, `layer_gate_status`,
+  `dogfood_target`, `journey_target_type`, `journey_timing`, `e2e_tier`,
+  `check_action_type`, `dimension_preset`, `evaluator_effort`, `finding_impact`,
+  `verification_tier`, `failure_class`, `error_class` — fourteen in all. `coherence.mjs` and
+  `derive.mjs` load it at runtime; `scripts/check-vocabulary.mjs` proves every
+  other copy — in a schema (`x-aep-vocab`) or in prose (`(aep-vocab: <name>)`) —
+  still matches, in CI.
+- **Typed contracts where prose used to specify shape** —
+  `autopilot-state.schema.json` (+ `validate-state.mjs`),
+  `status-signal.schema.json` (+ `validate-signal.mjs`, which also enforces the
+  pairings a schema cannot: `failed` needs a `failure_log`, `in_review` needs a
+  `pr_url`), `tick-protocol.json` for the tick's thresholds and derived
+  states (+ `derive-workspace-state.mjs`), `action-list.schema.json` (the
+  CHECK → ACT contract — passed as the CHECK's structured-output schema), and
+  `verification-recipe.schema.json` (the tier/preset/floors artifact, following
+  the emitter that actually ships downstream). C2 as amended draws the line by
+  **kind**: a shape may not live in prose; procedure and rationale may not be
+  forced into JSON.
+- **Executable probes where recipes used to be retyped** —
+  `executor/scripts/detect-backend.sh` replaces 45 lines of detection bash and
+  the mode-selection pseudocode, with `scripts/test-detect-backend.sh` covering
+  every row of the mode matrix over stub hosts.
+- **Ratchets** in `skills-check.yml`: cross-skill vocabulary agreement, backend
+  detection fixtures, vocabulary-checker fixtures, and per-skill steering
+  ceilings (`evals/steering-baseline.json` via `scripts/check-steering.mjs`) that
+  may fall but not rise — held per skill so a failure names the file that grew a
+  prohibition instead of moving a corpus total nobody owns.
+- `skills/patterns/autopilot/templates/autopilot-status.md.tmpl` — the human
+  status file was a template living inside a reference document.
+
+### Changed
+
+- **Constraints are classified, not softened.** Every imperative in a SKILL.md is
+  a protocol invariant (kept, positively phrased, paired with its check), a
+  backend floor, or taste (deleted). 123 negation-steered lines → 63, of which
+  most are now prose describing behavior rather than steering; 5 hard imperatives
+  remain in SKILL.md, each load-bearing. The two orchestrator-boundary
+  prohibitions are documented as carrying no machine check, because none can
+  exist for a rule about the agent's own tool use.
+- `build-skills.sh` materializes shared resources into skills at **any depth**
+  (the vocabulary's consumers are nested below the product-context skills the
+  build was written for); the whole-kit `templates/` rule is scoped to
+  product-context, which owns that kit.
+- The minimal JSON-Schema validator is shared (`_shared/scripts/json-schema.mjs`)
+  rather than living inside `derive.mjs`.
+- `/aep-onboard` no longer authors a `## Memory & Learning Loop` section into a
+  downstream `AGENTS.md` or routes users to a companion skill bundle. What
+  belongs in the repo is what the host cannot know — the lessons themselves.
+- Navigation-debt counting no longer treats a reference → typed-artifact link as
+  a hop: it terminates a chain instead of extending one.
+
+### Fixed
+
+- **The layer-gate vocabulary shipped in three incompatible spellings.** The
+  schema template had six values, `coherence.mjs` had those plus `waived`, and
+  `derive.mjs` had neither `running` nor `failed` — so a gate legitimately
+  `running` was reported by the brief as a vocabulary violation. One declaration
+  now, and `waived` is documented in the schema template.
+- `validate/references/protocol-specs.md`, whose stated job is the exact
+  downstream contract, listed story statuses as `review | done` (no such states)
+  and typed `business_value` as the `priority` enum.
+- `signals-spec.md` bounded `phase` at 0–13 while the autopilot state bounded it
+  at 0–12. Both are 0–13, and the schema records that a workspace's own run ends
+  at 12 — Phase 13 (archive) runs from the main session.
+- **Drift bug #5, found writing `verification-recipe.schema.json`:** the recipe
+  spec in `verification-economics.md` disagreed with the derive script that
+  actually ships — `evaluator_effort` omitted `none` (the light tier's value),
+  the `inputs` field names differed (`declared_files_affected` vs the emitted
+  `files_affected_declared`), and two emitted fields were undocumented. The
+  schema follows the emitter; the stale prose block is now a pointer.
+- `/aep-wrap`'s cross-skill pointer to the YAML guardrails is R3 prose rather
+  than a bare path into another skill.
+
+### Added (patterns)
+
+- **`/aep-easy-explain`** — user-typed comprehension repair plus AEP's standing
+  explain-to-a-human register (context first, ASD-STE100 Simplified Technical
+  English, the project's own nouns), adapted from mattpocock/skills
+  `wait-what`. `disable-model-invocation: true` is the design: only the human
+  knows when they stopped following, and a model reaching for it would grade its
+  own clarity. Orchestrator surfaces (autopilot status/escalations, the
+  scaffolded AGENTS.md AEP Workflow section) adopt the register by default.
+  `check-skills-package.sh` learns the user-invoked-only contract: no routing
+  probe (the router never sees it), no metadata-budget charge, no digest entry —
+  and the open-format validator's one unknown-field complaint about the Claude
+  Code extension field is tolerated by exact match, nothing else. The contract
+  is per-host: `agents/openai.yaml` carries the Codex half, and the checker
+  requires the pair.
+
+### Removed (install + memory design)
+
+- **The canonical shared-symlink layout guidance is retired** — installs are
+  plain per-agent `skills` CLI copies; the normalize-to-symlinks upgrade step
+  and the `-a claude-code` symlink-copy gotcha are gone from README.
+- **External skill supplements are removed from baseline onboarding**
+  (`project-behavior`, `project-memory`, `memory-forge`): AEP's own loop captures
+  (`/aep-build`), archives (`/aep-wrap`), and recalls (`/aep-launch`) lessons —
+  the repo is the durable record, and host memory is an optional accelerator
+  over it, never assumed present.
+- **Third-party Claude Code plugins are optional integrations, not baseline
+  setup.** `/aep-onboard` Phase 4 now installs only AEP's concurrency hooks for
+  Claude projects and skips Claude settings in Codex-only projects.
+
+### Changed (eval economics — impact routing)
+
+- **A finding now says whether it matters.** `finding_impact`
+  (`blocking | material | polish`) joins the vocabulary, evaluator-authored and
+  anchored to acceptance criteria; the eval verdict is **derived** from the
+  labels (FAIL ⇔ ≥1 blocking/material or a hard-floor breach), an all-polish
+  round is mechanically PASS-with-notes, and the round cap is a ceiling, not a
+  quota. Fixes the observed failure mode of loops round-tripping on nits without
+  asking impact. `findings_by_impact` joins the verification accounting
+  (record-only; calibration stays deferred) so a round count of five polish
+  findings stops reading like five blocking ones. Amendment recorded in
+  `docs/decisions/verification-economics.md`.
+
+### Changed (routing metadata)
+
+- **Description corpus 4,940 → 3,369 characters (-32%)**, and the CI cap follows
+  it from 5,000 to 3,400 — every character is paid by every session of every
+  downstream repo. Re-verified per R7 by an independent triggering run (a Sonnet
+  subagent given only the 23 names, the 23 descriptions, and the 40 prompts,
+  making no tool calls): **40/40 matched**, all 17 boundary probes included.
+  `evals/skill-routing-observations.json` is re-bound to the new digest.
+- **The proposal to de-advertise existing skills and add a router was dropped,
+  not deferred.** `evals/skill-routing.json` asserts a direct probe for all 23
+  advertised skills, so the recorded routing contract says each must stay
+  selectable — de-advertising `/aep-onboard` would remove auto-discovery from
+  exactly the users who do not yet know the command names, and a router would
+  re-advertise, at its own cost, what it de-advertised. This is not a ban on
+  the field: `/aep-easy-explain` joins as the 24th skill **born**
+  user-typed-only (both hosts' native opt-outs), which de-advertises nothing —
+  the original 23 and their 40 recorded probes are untouched.
+
+### Fixed (release closure, 2026-08-09)
+
+- **The first README install path now expresses the v4 contract directly.** It
+  pins `skills@1.5.17` and AEP `v4.0.0`, shows Claude Code and Codex as peer
+  runtimes, keeps plain per-agent copies, and hands the installed project to
+  `/aep-onboard` without a companion skill bundle.
+- **The scaffold audit/converge enforce the v4 install contract instead of the
+  retired one.** Claude-only, Codex-only, and identical dual plain installs
+  audit clean; the legacy symlink layout stays legal where it already exists;
+  version skew (both agents carrying different copies of one skill) fails
+  closed toward the category E re-pin. `converge.sh` category A moves, deletes,
+  and links nothing — the promote/collapse machinery is gone, and `CLAUDE.md`
+  is created only where a Claude skill install exists. The fixture suites cover
+  both directions, keeping the fail-closed shapes (whole-directory alias,
+  symlinked parent, foreign link).
+- **`test-detect-backend.sh` is hermetic**: the fixture PATH is the stub dir
+  alone with real tools allowlisted by symlink, so a Linux runner's
+  `/usr/bin/tmux` can no longer turn the no-surface case into `legacy`.
+- **`/aep-easy-explain` is user-typed-only on both hosts**: the Codex half is
+  `agents/openai.yaml` (`policy.allow_implicit_invocation: false`) beside the
+  Claude Code frontmatter field, and `check-skills-package.sh` enforces the
+  per-host pair so a skill cannot be hidden from one router and implicitly
+  invocable on the other.
+- **Validator commands resolve on consumer paths**: `validate-state.mjs`,
+  `validate-signal.mjs`, and `derive-workspace-state.mjs` are documented with
+  the installed-skill-root resolver every packaged script uses, replacing
+  source-repo-relative paths that exist in no downstream repo. They remain
+  on-demand checks — mandatory producer-side validation is recorded as
+  deliberately outside v4.0.0's scope.
+- **Codex model names are roles, not generations**: the cheap high-frequency
+  tick tier is `AEP_CODEX_TICK_MODEL` (defaulting to the current generation's
+  cheap tier) in the two runnable recipes, and capability notes are
+  generation-neutral, so the corpus no longer contradicts whatever model
+  generation the host is on.
+
 ## [3.3.1] - 2026-07-27
 
 Patch: v3.3.0 documented the one-page brief as unproven and then shipped a
@@ -1313,6 +1493,7 @@ First stable baseline after the Jujutsu → git migration. Decision record:
 
 - Jujutsu (one-shot migration, no dual-mode period) and the `/jj-ref` skill.
 
+[4.0.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v3.3.1...v4.0.0
 [3.0.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.5.0...v3.0.0
 [1.5.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.3.2...v1.4.0

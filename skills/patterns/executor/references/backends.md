@@ -72,57 +72,33 @@ post-spawn liveness probe."
 ## Detection
 
 `detect()` resolves the **host**, its two **executor commands**, the **native
-capabilities**, any **explicit pin**, and the **presentation surface**.
+capabilities**, any **explicit pin**, the **presentation surface**, and the
+selected **mode** — as a script, because these probes are exact and retyped bash
+drifts:
 
 ```bash
-# --- HOST + executor commands ---
-#   $EXECUTOR       interactive session (stays alive — legacy/tmux, evaluator panes)
-#   $EXECUTOR_EXEC  headless one-shot   (runs the given prompt to completion, exits)
-if [ -n "$CLAUDECODE" ]; then
-  HOST=claude
-  EXECUTOR="claude --dangerously-skip-permissions"            # interactive; NO -p
-  EXECUTOR_EXEC="claude -p --dangerously-skip-permissions"    # -p/--print = non-interactive
-  READY_GREP='❯'
-elif command -v codex >/dev/null 2>&1 && { [ -n "$CODEX_HOME" ] || env | grep -q '^CODEX_'; }; then
-  HOST=codex
-  EXECUTOR="codex --dangerously-bypass-approvals-and-sandbox"
-  EXECUTOR_EXEC="codex exec --dangerously-bypass-approvals-and-sandbox"
-  READY_GREP=''
-else
-  HOST=generic
-  EXECUTOR="${AEP_EXECUTOR:-}"; EXECUTOR_EXEC="${AEP_EXECUTOR_EXEC:-$EXECUTOR}"; READY_GREP=''
-fi
-[ -z "$EXECUTOR" ] && { echo "executor unresolved — set \$AEP_EXECUTOR or run under Claude Code / Codex"; }
-
-# --- NATIVE CAPABILITIES ---
-# NOTE: agent-teams (the old TEAMS_AVAILABLE / CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS
-# gate) is NO LONGER consulted — claude-team was removed (silent spawn failure;
-# see the mode-matrix note). Do not select a mode from the teams flag alone.
-BG_AVAILABLE=$([ "$HOST" = claude ] && claude --help 2>/dev/null | grep -q -- '--bg' && echo yes || echo no)
-# ^ On Claude Code ≥ 2.1.x the one-shot `claude --bg` spawn flag was REMOVED
-#   (background agents are now the interactive `claude agents` view, not a
-#   scriptable flag). On such builds BG_AVAILABLE=no and claude-bg is skipped —
-#   the Claude Code default is native-bg-subagent (session-bound). If you need an
-#   OS-bound Claude worker for a cron/launchd driver and `--bg` is gone, that
-#   driver is unsupported on Claude Code — use Codex codex-exec or a long-lived
-#   in-session goal/loop driver instead.
-MULTI_AGENT_AVAILABLE=$([ "$HOST" = codex ] && codex features list 2>/dev/null | grep -q 'multi_agent.*true' && echo yes || echo no)
-WORKFLOW_CAPABLE=$([ "$HOST" = claude ] && echo yes || echo no)   # the host agent knows it has the Workflow tool
-
-# --- EXPLICIT PIN (the single manual lever besides "…with workflow") ---
-PIN=$(git config --get aep.executor-backend 2>/dev/null || true)   # e.g. "tmux"
-
-# --- PRESENTATION (for legacy mode): cmux needs a reachable CLI + a target pane,
-#     NOT $CMUX_SOCKET (the CLI drives cmux over its socket even when unset) ---
-CMUX="$(command -v cmux || echo /Applications/cmux.app/Contents/Resources/bin/cmux)"
-if [ -x "$CMUX" ] && { "$CMUX" tree 2>/dev/null | grep -q '◀ here' || [ -n "$CMUX_PANE_ID" ]; }; then
-  PRESENT=cmux
-elif command -v tmux >/dev/null 2>&1; then
-  PRESENT=tmux
-else
-  PRESENT=none
-fi
+eval "$(bash scripts/detect-backend.sh)"          # HOST, EXECUTOR, MODE, …
+bash scripts/detect-backend.sh --json             # same, as JSON
 ```
+
+**Orchestrator lifetime is the one input the script cannot probe — you know it,
+so you pass it.** You are _long-lived_ as an interactive session, a `/goal`- or
+`/loop`-driven session, or a living Codex main thread; you are _ephemeral_ when
+this invocation is a cron/launchd one-shot (a scheduled `codex exec` tick).
+Session-bound modes cannot outlive their parent, so a cron driver that omits
+`--lifetime ephemeral` selects a worker that dies with its session:
+
+```bash
+bash scripts/detect-backend.sh --lifetime ephemeral      # cron/launchd tick
+bash scripts/detect-backend.sh --opt-in workflow         # user said "…with workflow"
+bash scripts/detect-backend.sh --opt-in tmux             # user said "…with tmux"
+```
+
+An unresolved executor comes back as `EXECUTOR_UNRESOLVED=yes` rather than a
+non-zero exit — on a generic host, set `$AEP_EXECUTOR` (and optionally
+`$AEP_EXECUTOR_EXEC`) and re-run. `agent-teams` is deliberately not probed:
+`claude-team` was removed for silent spawn failure, so no mode is ever selected
+from the teams flag.
 
 > **Correct CLI invocations (verified against Claude Code 2.1.161+ / Codex 0.130.0):**
 >
@@ -145,19 +121,11 @@ long-lived orchestrator.
 
 ## Mode Selection
 
-Apply in order; first match wins. `workflow` is the only natural-language
-opt-in; `legacy` is the only pin.
-
-```
-workflow            IF user explicitly opted in ("…with workflow") AND WORKFLOW_CAPABLE
-legacy              IF PIN == tmux, or user said "…with tmux"
-native-bg-subagent  ELIF HOST == claude AND orchestrator is long-lived   # default on Claude Code
-claude-bg           ELIF HOST == claude AND BG_AVAILABLE                  # OS-bound (cron); only if `claude --bg` exists
-codex-subagent      ELIF HOST == codex AND MULTI_AGENT_AVAILABLE AND orchestrator is a living main thread
-codex-exec          ELIF HOST == codex
-legacy              ELIF PRESENT == cmux or PRESENT == tmux               (generic hosts)
-headless            ELSE
-```
+`MODE` from `detect-backend.sh` is the answer; the ordering that produces it —
+`workflow` (the only natural-language opt-in) → `legacy` (the only pin) → the
+host's session-bound default → its OS-bound fallback → a presentation-surface
+legacy mode → `headless` — lives in that script's selection block, and is
+exercised by `scripts/test-detect-backend.sh`.
 
 **Behavior change (2026-06): `claude-team` removed.** The agent-teams spawn path
 fails silently on Claude Code ≥ 2.1.x (see the mode-matrix note), so it is no
@@ -314,7 +282,11 @@ prompt: <the analysis prompt; OUTPUT ONLY the JSON in `schema`>
 **Codex — `codex exec` cheap one-shot:**
 
 ```bash
-codex exec -m gpt-5.4-mini -c model_reasoning_effort=low \
+# AEP_CODEX_TICK_MODEL is the ROLE knob: the host's cost-sensitive
+# high-frequency tier for CHECK/tick one-shots. The default names the current
+# generation's cheap tier; override it per repo/environment rather than
+# editing recipes when generations move.
+codex exec -m "${AEP_CODEX_TICK_MODEL:-gpt-5.6-luna}" -c model_reasoning_effort=low \
   -C "$PWD" --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox \
   --output-schema /tmp/aep-check.schema.json -o /tmp/aep-check.out.json \
   "<the analysis prompt>" < /dev/null
@@ -322,21 +294,16 @@ jq . /tmp/aep-check.out.json
 ```
 
 **Result schema (the CHECK → ACT contract):**
+[`action-list.schema.json`](action-list.schema.json) — every field, with the
+closed action-type vocabulary bound to `check_action_type` in the corpus
+vocabulary. Pass the file itself as the structured-output schema when spawning
+the CHECK — it is what `--output-schema` above should point at, resolved the
+same way as the liveness probe:
 
-```json
-{
-  "summary": "string — one-line human-readable status",
-  "state_written": true,
-  "actions": [
-    {
-      "type": "nudge | wrap | launch | escalate | design",
-      "workspace": "string | null",
-      "story_id": "string | null",
-      "message": "string | null — exact text for a nudge",
-      "reason": "string | null — for escalate/design"
-    }
-  ]
-}
+```bash
+AEP_EXECUTOR_DIR=.agents/skills/aep-executor
+[ -d "$AEP_EXECUTOR_DIR" ] || AEP_EXECUTOR_DIR=.claude/skills/aep-executor
+cp "$AEP_EXECUTOR_DIR/references/action-list.schema.json" /tmp/aep-check.schema.json
 ```
 
 ---
