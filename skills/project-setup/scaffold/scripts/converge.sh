@@ -158,7 +158,7 @@ fi
 
 if [ "$apply_e" -eq 1 ]; then
   echo "=== E. Version pin (recommend-only — never auto-run) ==="
-  echo "  npx skills add memorysaver/agentic-engineering-patterns@<newtag> -a claude-code --skill '*' -y"
-  echo "  npx skills add memorysaver/agentic-engineering-patterns@<newtag> -a codex        --skill '*' -y"
+  echo "  npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@<newtag> -a claude-code --skill '*' -y"
+  echo "  npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@<newtag> -a codex        --skill '*' -y"
   echo "  (run the line for each agent this repo installs), then re-run scripts/audit.sh, bump the AGENTS.md pin note, commit --no-verify"
 fi

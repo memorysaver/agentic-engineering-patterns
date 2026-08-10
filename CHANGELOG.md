@@ -17,11 +17,11 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 > `/envision`, `/dispatch`, `/reflect`, …), which records product-state history
 > for that project. See [`docs/glossary.md`](docs/glossary.md).
 
-## [4.0.0] - 2026-08-09
+## [4.0.0] - 2026-08-10
 
 Major: the corpus is re-shaped for Claude 5 generation models, against
 [`docs/decisions/claude-5-context-engineering.md`](docs/decisions/claude-5-context-engineering.md).
-v3.0.0 asked how *much* context a skill spends; this asks what *kind* earns its
+v3.0.0 asked how _much_ context a skill spends; this asks what _kind_ earns its
 place. Four conversions, plus the ratchets that keep them.
 
 ### Added
@@ -74,8 +74,8 @@ place. Four conversions, plus the ratchets that keep them.
 - The minimal JSON-Schema validator is shared (`_shared/scripts/json-schema.mjs`)
   rather than living inside `derive.mjs`.
 - `/aep-onboard` no longer authors a `## Memory & Learning Loop` section into a
-  downstream `AGENTS.md`. The optional memory skills document their own wiring;
-  what belongs in the repo is what the host cannot know — the lessons themselves.
+  downstream `AGENTS.md` or routes users to a companion skill bundle. What
+  belongs in the repo is what the host cannot know — the lessons themselves.
 - Navigation-debt counting no longer treats a reference → typed-artifact link as
   a hop: it terminates a chain instead of extending one.
 
@@ -122,12 +122,14 @@ place. Four conversions, plus the ratchets that keep them.
 - **The canonical shared-symlink layout guidance is retired** — installs are
   plain per-agent `skills` CLI copies; the normalize-to-symlinks upgrade step
   and the `-a claude-code` symlink-copy gotcha are gone from README.
-- **External memory add-ons are no longer recommended** (`project-memory`,
-  `memory-forge`): AEP's own loop captures (`/aep-build`), archives
-  (`/aep-wrap`), and recalls (`/aep-launch`) lessons — the repo is the durable
-  record, and host memory is an optional accelerator over it, never assumed
-  present. `project-behavior` (AGENTS.md behavioral preamble) remains the one
-  optional supplement.
+- **External skill supplements are removed from baseline onboarding**
+  (`project-behavior`, `project-memory`, `memory-forge`): AEP's own loop captures
+  (`/aep-build`), archives (`/aep-wrap`), and recalls (`/aep-launch`) lessons —
+  the repo is the durable record, and host memory is an optional accelerator
+  over it, never assumed present.
+- **Third-party Claude Code plugins are optional integrations, not baseline
+  setup.** `/aep-onboard` Phase 4 now installs only AEP's concurrency hooks for
+  Claude projects and skips Claude settings in Codex-only projects.
 
 ### Changed (eval economics — impact routing)
 
@@ -162,6 +164,10 @@ place. Four conversions, plus the ratchets that keep them.
 
 ### Fixed (release closure, 2026-08-09)
 
+- **The first README install path now expresses the v4 contract directly.** It
+  pins `skills@1.5.17` and AEP `v4.0.0`, shows Claude Code and Codex as peer
+  runtimes, keeps plain per-agent copies, and hands the installed project to
+  `/aep-onboard` without a companion skill bundle.
 - **The scaffold audit/converge enforce the v4 install contract instead of the
   retired one.** Claude-only, Codex-only, and identical dual plain installs
   audit clean; the legacy symlink layout stays legal where it already exists;
@@ -1487,6 +1493,7 @@ First stable baseline after the Jujutsu → git migration. Decision record:
 
 - Jujutsu (one-shot migration, no dual-mode period) and the `/jj-ref` skill.
 
+[4.0.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v3.3.1...v4.0.0
 [3.0.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.5.0...v3.0.0
 [1.5.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.3.2...v1.4.0
