@@ -84,15 +84,12 @@ product work in this setup pass.
    - For Claude Code, merge only AEP's concurrency hooks into .claude/settings.json. For a
      Codex-only repo, skip Claude settings. Preserve all existing settings and hooks.
 
-4. Merge this discoverability section into AGENTS.md. If the repo uses Claude Code, also make the
-   section visible from CLAUDE.md without overwriting its existing instructions:
-     ## AEP Workflow
-     This project uses Agentic Engineering Patterns (AEP) v4.0.0 — a spec-driven, multi-agent
-     feature lifecycle installed in .claude/skills/ and/or .agents/skills/ and pinned by the
-     committed skill files plus skills-lock.json. The skills are self-describing; start with
-     /aep-onboard. Upgrade by explicitly re-pinning a new release once per runtime.
-     For human-facing status and decisions, use the /aep-easy-explain register: one line of
-     context first, ASD-STE100 Simplified Technical English, and this project's own nouns.
+4. Wire the agent instruction files from the installed aep-onboard templates (its Phase 1.5):
+   AGENTS.md from templates/AGENTS.md.tmpl (it opens with the <!-- aep-agents-template --> marker
+   and carries the working agreement plus the AEP Workflow section), CLAUDE.md = @AGENTS.md when
+   Claude Code is installed, and Project-Convention/README.md from its template. If AGENTS.md
+   already exists, apply aep-onboard references/migrations.md from its marker instead of
+   overwriting it, and move project-specific content into Project-Convention/<topic>.md.
 
 5. Protect the installed bytes. If Markdown/JSON formatting runs on commit (Prettier, oxfmt,
    Biome, dprint, lefthook, husky, or similar), add exact exclusions for .claude/skills/**,
@@ -104,8 +101,9 @@ product work in this setup pass.
    - Node >=20.19, `openspec --version`, `git --version`, and at least one of `claude --version`
      or `codex --version` succeed; `jq` succeeds for Claude Code; all other required
      /aep-onboard Phase 5 checks pass.
-   - AGENTS.md/CLAUDE.md expose the AEP Workflow section, formatter exclusions are present when
-     needed, and no companion skill or external memory package was added.
+   - AGENTS.md opens with the template marker and exposes the AEP Workflow section, CLAUDE.md is
+     @AGENTS.md where Claude Code is installed, Project-Convention/README.md exists, formatter
+     exclusions are present when needed, and no companion skill or external memory package was added.
 
 7. After verification, stage only the AEP setup files and commit them together. Use --no-verify
    only when a formatter hook would rewrite the pinned skill bytes. Do not include unrelated

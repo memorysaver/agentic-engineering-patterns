@@ -42,6 +42,6 @@
 
 ## AEP Workflow
 
-This repository **is** [Agentic Engineering Patterns](https://github.com/memorysaver/agentic-engineering-patterns) (AEP): the `/aep-*` skills are authored here under `skills/` and consumed by downstream projects, not installed and run in this repository. Changes to how AEP works start with a decision document in `docs/decisions/` and ship as a tagged release with a `CHANGELOG.md` entry. The instruction-file templates a downstream receives live in `skills/project-setup/onboard/templates/`; this file is that template, dogfooded.
+This project runs on [Agentic Engineering Patterns](https://github.com/memorysaver/agentic-engineering-patterns) (AEP) v4.1.0 — a spec-driven, multi-agent feature lifecycle installed in `.claude/skills/` and/or `.agents/skills/` and pinned by the committed skill files plus `skills-lock.json`. The skills are self-describing; start with `/aep-onboard`. All AEP commands carry the `aep-` prefix (`/aep-dispatch`, `/aep-launch`, `/aep-build`, `/aep-wrap`, `/aep-autopilot`, …), including in bootstrap prompts sent to workspace agents. Upgrade by re-pinning a new release once per runtime, then applying `/aep-onboard` → `references/migrations.md` from the marker on this file's first line to the pinned release.
 
 For human-facing status and decisions, use the `/aep-easy-explain` register: one line of context first, ASD-STE100 Simplified Technical English, and this project's own nouns.

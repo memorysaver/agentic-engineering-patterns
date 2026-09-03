@@ -50,9 +50,13 @@ AskUserQuestion-style confirm). Only confirmed categories are converged.
 
 Each step is a no-op when already satisfied. **Never overwrite hand-authored content.**
 
-- **A. Skills layout** — `scripts/converge.sh` verifies the layout is healthy (plain per-agent installs or
-  the legacy symlink layout) and creates `CLAUDE.md = @AGENTS.md` only when a Claude skill install exists
-  and the file is absent (a hand-authored `CLAUDE.md` is flagged for manual merge, never clobbered). It
+- **A. Skills layout + instruction files** — `scripts/converge.sh` verifies the layout is healthy (plain
+  per-agent installs or the legacy symlink layout) and creates `CLAUDE.md = @AGENTS.md` only when a Claude
+  skill install exists and the file is absent (a hand-authored `CLAUDE.md` is flagged for manual merge,
+  never clobbered). The two instruction-file checks the audit adds in v4.1.0 — the
+  `<!-- aep-agents-template: vX.Y.Z -->` marker on `AGENTS.md` and `Project-Convention/README.md` —
+  are **model-driven**: follow `/aep-onboard` Phase 1.5 and its `references/migrations.md` from the
+  file's marker to the pinned release (the script reports them and changes nothing). It
   moves, deletes, and links nothing: aliased runtime roots and foreign links fail closed, and **version
   skew** — both agents carrying real but different copies of one skill — fails closed toward the category
   E re-pin. Project-owned skill exposure (real `skills/<name>` + both symlinks) is handled by the skill's

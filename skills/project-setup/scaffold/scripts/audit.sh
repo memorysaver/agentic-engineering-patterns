@@ -34,7 +34,8 @@ done
 # AEP pin (skills CLI) + latest release
 echo "=== AEP pin ==="
 [ -f "skills-lock.json" ] && echo "skills-lock.json: present" || echo "skills-lock.json: MISSING (skills CLI not used here)"
-grep -oE 'pinned at \*\*v[0-9.]+\*\*' AGENTS.md 2>/dev/null || echo "AGENTS.md pin note: none"
+marker=$(head -1 AGENTS.md 2>/dev/null | grep -oE 'aep-agents-template: v[0-9.]+' || true)
+echo "AGENTS.md template marker: ${marker:-none (pre-v4.1.0 — apply /aep-onboard references/migrations.md)}"
 echo "latest release: https://github.com/memorysaver/agentic-engineering-patterns/releases/latest"
 
 # ── Phase 1E: Audit (drift-aware), grouped by category ──
@@ -44,6 +45,8 @@ chk "skills-lock.json present"            test -f skills-lock.json
 chk "an agent install exists (.claude/skills or .agents/skills)" bash -c '[ -d .claude/skills ] || [ -d .agents/skills ]'
 chk "AGENTS.md present"                    test -f AGENTS.md
 chk "AGENTS.md has AEP Workflow section"   bash -c 'grep -q "AEP Workflow" AGENTS.md 2>/dev/null'
+chk "AGENTS.md opens with the template marker" bash -c 'head -1 AGENTS.md 2>/dev/null | grep -q "aep-agents-template: v"'
+chk "Project-Convention/README.md present"  test -f Project-Convention/README.md
 # CLAUDE.md is owed where a Claude skill install exists (at least one entry in
 # .claude/skills — an empty directory is scaffolding) or the file already does;
 # a Codex-only repo may still carry .claude/ for hooks and opsx aliases.
