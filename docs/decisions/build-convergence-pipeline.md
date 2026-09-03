@@ -2,7 +2,7 @@
 
 Why build-time runtime signal dies at `git worktree remove` while the methodology's whole purpose is retrospective and distillation-into-skills — and how to carry that signal into the archive, synthesize it per layer, and feed it back through `/aep-reflect`. Proven downstream in SIBYL across 21 layers; this document upstreams the project-agnostic shape. Complements [deterministic-orchestration.md](deterministic-orchestration.md) — the gather-before-archive ordering invariant proposed here is exactly the class of mechanical step that document argues must not live as recallable prose.
 
-> **Status:** Proposal (not yet implemented). This document records the design precisely so the implementation PR (target: v2.7.0) can be made and reviewed against it. It changes how AEP works, so it lives in `decisions/` per the [docs routing guide](../README.md).
+> **Status:** Accepted — implemented in **v2.7.0** (PR #22). This document records the design precisely; the implementation was reviewed against it. It changes how AEP works, so it lives in `decisions/` per the [docs routing guide](../README.md).
 
 > **Sourcing note:** The pipeline below was designed, implemented, and dogfooded in SIBYL (`SIBYL/docs/AEP-improvement-suggestion/2026-07-06-build-convergence-pipeline.md`, Status: implemented in SIBYL as SIBYL-owned determinism). SIBYL's harness-specific machinery (its `wrap-gather` / `distill` CLIs and YAML splice transactions) stays downstream; what upstreams here is the abstract three-phase shape and its determinism boundary.
 
