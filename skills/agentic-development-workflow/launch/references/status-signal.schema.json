@@ -52,7 +52,7 @@
     },
     "tier_escalated": {
       "type": "boolean",
-      "description": "Deprecated since v4.1.0: always false. There is no standard → deep auto-escalation; eval_not_converging fires when a blocking finding is still open after round 2."
+      "description": "Deprecated: always false. There is no standard → deep auto-escalation; eval_not_converging fires when a blocking finding is still open after round 2."
     },
     "self_review": {
       "type": ["object", "null"],

@@ -30,9 +30,9 @@ Extract each task's verification steps from `contracts.md` into
 - `commit_sha` starts `null`; the generator fills it (8-char prefix) after each
   task commit in Phase 4.
 - JSON is intentional — models tamper with JSON less than Markdown.
-- **Generator ownership rule:** the generator writes only `commit_sha`. It MUST
-  NOT modify `verification_steps` or `passes` — only the evaluator (or a human)
-  writes `passes` / `evaluated_by` / `round`.
+- **Generator ownership rule:** the generator writes only `commit_sha`; the
+  evaluator (or a human) writes `passes` / `evaluated_by` / `round`, and
+  `verification_steps` stay as generated.
 
 ---
 

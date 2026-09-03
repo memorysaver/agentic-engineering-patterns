@@ -45,13 +45,12 @@ It is the **source of truth** for the Phase 12 "Merge decision":
 > means a **crashed** run. A human who resumes the same `<name>` inherits its
 > autopilot mode (auto-merge) — remove the stale worktree first to build interactively.
 
-This marker is the **sole** mode signal — the worker must **not** infer mode from
-its cwd. The Phase 0 worktree guard relocates _every_ build (including an interactive
-one) into `.feature-workspaces/`, so "cwd under `.feature-workspaces/`" no longer
-distinguishes autonomous from interactive; and under Codex `codex-subagent`
-(`spawn_agent` has no cwd parameter) cwd is a soft contract anyway. The worker must
-**not** delete or overwrite `mode`; its own Phase 0 `mkdir -p .dev-workflow/signals`
-is idempotent and leaves this file intact.
+This marker is the **sole** mode signal — the worker reads it rather than its cwd.
+The Phase 0 worktree guard relocates _every_ build (including an interactive one) into
+`.feature-workspaces/`, so "cwd under `.feature-workspaces/`" does not distinguish
+autonomous from interactive; and under Codex `codex-subagent` (`spawn_agent` has no cwd
+parameter) cwd is a soft contract anyway. The worker reads the marker and leaves it in place:
+its own Phase 0 `mkdir -p .dev-workflow/signals` is idempotent and leaves this file intact.
 
 ```bash
 # Worker — Phase 12 detection (anchored to the worktree root, not cwd):
@@ -88,8 +87,7 @@ ROOT=$(git rev-parse --show-toplevel); AL="$ROOT/.agents/skills/aep-launch"; [ -
 node "$AL/scripts/validate-signal.mjs" .dev-workflow/signals/status.json
 ```
 
-It is an on-demand check — mandatory producer-side validation is deliberately
-outside v4.0.0's scope.
+It is an on-demand check; producer-side validation is not enforced.
 The validator also enforces the pairings the schema alone cannot: `failed` needs
 a `failure_log`, `in_review` needs a `pr_url`, `completed` needs a
 `completed_at`, and `blocked_on: human` needs a blocker saying what the human
@@ -226,9 +224,9 @@ resolved: human chose (a) httpOnly cookie — 2026-06-10T15:02:00Z
 
 **Written by:** Evaluator agent
 **Read by:** Generator agent
-**Format:** Follows the structure defined in `evaluator-criteria.md`
-
-See the "Evaluation Protocol" section in `evaluator-criteria.md` for the response format.
+**Format:** the response structure in `/aep-gen-eval` `references/eval-protocol.md`
+(Signal Files → eval-response-N.md), scored against the workspace's
+`evaluator-criteria.md`.
 
 ---
 
@@ -256,15 +254,13 @@ EOF
 
 ## Signal Polling
 
-Agents should check for signal files **at phase boundaries**, not continuously:
+Signal files are read **at phase boundaries** — there is no watcher and no continuous polling:
 
 - **Generator** checks `feedback.md` at the start of each new phase
 - **Evaluator** checks `eval-request.md` after completing its bootstrap (initial read of specs/contracts) and after writing each eval-response
 - **Main session** checks `status.json` and `ready-for-review.flag` when the user wants a progress update
 
-There is no filesystem watcher or continuous polling. Agents read signal files at natural transition points in the workflow.
-
-If a signal file doesn't exist yet, skip it and continue — it will be checked again at the next phase boundary.
+A signal file that doesn't exist yet is skipped and checked again at the next boundary.
 
 ---
 

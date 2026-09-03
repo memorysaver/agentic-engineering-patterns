@@ -13,8 +13,8 @@ feature branch, bootstrap an implementation agent through the **executor abstrac
 (`/aep-executor`, which picks the right mode for the current host), and optionally set up a
 separate evaluator agent.
 
-This skill does not hardwire `claude` + tmux — it delegates spawning and presentation to
-/aep-executor and selects a **native-first** mode (rationale: `docs/decisions/native-first-executor.md`).
+Spawning and presentation are delegated to /aep-executor, which selects a **native-first** mode
+(rationale: `docs/decisions/native-first-executor.md`).
 
 **Where this fits:**
 
@@ -136,10 +136,8 @@ integration branch.
 ```
 
 The preamble (`templates/bootstrap-preamble.md`) is the fixed operating agreement for an unattended
-build run — what only the build run knows: the run is unattended and its stop list is
-`merge-decision-cases.md`, progress claims are checked against tool results before they are reported,
-and the story sets the scope. The project's `AGENTS.md` carries the generic working agreement and is
-inherited by the worktree, so the preamble does not repeat it.
+build run — what only the build run knows. The project's `AGENTS.md` carries the generic working
+agreement and is inherited by the worktree, so the preamble does not repeat it.
 
 **The bootstrap is machine-assembled — never recalled** (anything an LLM re-types drifts; per
 `docs/decisions/deterministic-orchestration.md` → machine-assembled dispatch briefs). Assemble it from
@@ -162,9 +160,8 @@ Full recipes live in the /aep-executor references — spawn per the selected mod
 
 - **native-bg-subagent** (Claude Code default) — /aep-executor `claude-native.md`: Agent tool
   `run_in_background: true`, **no `team_name`**, prompt = worktree contract (absolute path +
-  "operate exclusively there") + `$PROMPT` + human-gate instructions. Pre-flight: if any agent-teams
-  team is active, `TeamDelete` it first (a live team re-routes teamless spawns through the broken
-  backend).
+  "operate exclusively there") + `$PROMPT` + human-gate instructions. Pre-flight: `TeamDelete` any
+  active agent-teams team (a live team re-routes teamless spawns).
 - **claude-bg** — /aep-executor `claude-native.md`: `claude --bg --dangerously-skip-permissions "$PROMPT"`
   in the worktree; record the printed session id.
 - **codex-subagent** / **codex-exec** — /aep-executor `codex-native.md` (`spawn_agent(agent_type:
@@ -209,8 +206,8 @@ Tell the user where to watch/steer, per mode:
 An evaluator is a **separate agent that independently reviews the generator's work** — spawned at
 Phase 5 (after implementation), not at launch; launch only writes the criteria file that makes the
 Phase 5 spawn happen. **Evaluator existence, criteria, and effort are derived from the dispatch
-brief's verification tier** (/aep-gen-eval `references/verification-economics.md`), not offered as a
-judgment call — which also gives autonomous launches a deterministic criteria policy:
+brief's verification tier** (/aep-gen-eval `references/verification-economics.md`), which gives
+autonomous launches a deterministic criteria policy:
 
 - **`light`** → write **no** `.dev-workflow/evaluator-criteria.md` — build Phase 5 self-reviews (and
   publishes `self_review` to `status.json`). If the **binding** derivation later upgrades the tier,
@@ -219,13 +216,12 @@ judgment call — which also gives autonomous launches a deterministic criteria 
 - **`standard`** → assemble the criteria file from the recipe's dimension preset + hard floors.
 - **`deep`** → assemble tailored criteria from the recipe with **nothing de-weighted**, and prefer a
   **different model family** from the generator where available. Every evaluator spawn (`standard`
-  and `deep`) carries the recipe's pinned `high` effort hint (it travels to
-  `executor.spawn_evaluator()`; the recipe does not select `xhigh`/`max`).
+  and `deep`) carries the recipe's pinned `high` effort hint through `executor.spawn_evaluator()`.
 
-The old full/light heuristics ("3+ tasks, UI-heavy, or security-sensitive → full",
-/aep-design `references/workflow-modes.md`) are **inputs to the dispatch-time tier derivation**, not a
-second decision rule consulted here. No brief / no tier (standalone launch): fail open to `deep`
-behavior — write full criteria. Setup recipe (criteria assembly + bootstrap template):
+The full/light signals (3+ tasks, UI-heavy, security-sensitive — /aep-design
+`references/workflow-modes.md`) are **inputs to the dispatch-time tier derivation**, so they are
+already priced into the brief's tier. No brief / no tier (standalone launch): fail open to `deep`
+behavior — write full criteria. Setup recipe (criteria assembly):
 `references/evaluator.md`. The eval loop and scoring contracts are canonical in /aep-gen-eval.
 
 ---
@@ -234,9 +230,9 @@ behavior — write full criteria. Setup recipe (criteria assembly + bootstrap te
 
 The main session watches and steers without interrupting the worker, via the signal files documented
 in `references/signals-spec.md` — `status.json` (current phase, typed in
-`references/status-signal.schema.json`; check one with the installed skill's
-`scripts/validate-signal.mjs` — runnable command in `references/signals-spec.md` — which uses
-the shared `scripts/json-schema.mjs`), `ready-for-review.flag`,
+`references/status-signal.schema.json`; check one with `scripts/validate-signal.mjs`, which uses
+the shared `scripts/json-schema.mjs` — runnable command in `references/signals-spec.md`),
+`ready-for-review.flag`,
 `needs-human.md`, and `feedback.md` (mid-flight steering, read at phase boundaries). If `needs-human.md`
 appears (or `status.json` shows `"blocked_on": "human"`), the worker has **gate-and-parked** on a
 decision — answer it through the mode's transport (Human-Gate Protocol in /aep-executor `backends.md`).

@@ -111,7 +111,7 @@ if [ -f "$LESSONS" ] && [ "$(wc -l < "$LESSONS")" -gt 12 ]; then   # >12 = conte
 fi
 ```
 
-If a file was copied, commit it via the **control-plane commit** (step 4): `git add lessons-learned/<change-name>.md`, message `docs: archive lessons from <change-name>`. This copy is **additive** alongside the step 2.5 convergence record — the archived `convergence/` dir is the full per-change record; `lessons-learned/` stays the fast-path index `/aep-reflect` Step 1 reads.
+If a file was copied, commit it via the **control-plane commit** (step 4): `git add lessons-learned/<change-name>.md`, message `docs: archive lessons from <change-name>`. The archived `convergence/` dir is the full per-change record; `lessons-learned/` stays the fast-path index `/aep-reflect` Step 1 reads.
 
 ### 6. Tear down the worker + worktree (`executor.teardown()`)
 
@@ -142,7 +142,7 @@ Then remove the worktree and delete the merged feature branch per /aep-git-ref "
 > **lessons-copied** = `lessons-learned/<change-name>.md` exists → **torn down** =
 > worktree path gone (cross-check `git worktree list`). Steps whose postcondition
 > already holds are skipped, never repeated. This is the pattern
-> `aep-autopilot/references/deterministic-orchestration.md` generalizes.
+> `/aep-autopilot` references/deterministic-orchestration.md generalizes.
 
 ---
 

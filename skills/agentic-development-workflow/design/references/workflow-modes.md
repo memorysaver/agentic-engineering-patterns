@@ -34,21 +34,20 @@ key decisions. The change is committed to `$BASE` (Commit step), so the `/aep-la
 sessions created from `$BASE` read the mode from `design.md` and act on it: full mode sets up the
 evaluator and runs every phase; light mode skips the evaluator and the review/dogfood phases.
 
-## Eval-loop behavior is subsumed by the verification tier
+## Eval-loop behavior is governed by the verification tier
 
-Light mode's **eval-loop half is no longer its own toggle**: in product-cycle mode, Light mode
-selects **`verification_tier: light`** (`/aep-gen-eval` → `references/verification-economics.md`,
-glossary: **Verification Tier**) — the tier then governs the Phase 5 loop (0 rounds, self-review),
-dogfood scope, and the launch criteria file through the one derivation everything else uses. The
-selection-criteria table above (task count, surface, risk) likewise no longer acts as an
-independently-consulted depth switch at launch — those signals are **inputs to the dispatch-time
-tier derivation**. What Light mode still owns outright is the design-time half: skipping Phase 3
+In product-cycle mode, Light mode selects **`verification_tier: light`** (`/aep-gen-eval` →
+`references/verification-economics.md`, glossary: **Verification Tier**), and the tier governs the
+Phase 5 loop (0 rounds, self-review), dogfood scope, and the launch criteria file through the one
+derivation everything else uses. The selection-criteria table above (task count, surface, risk)
+feeds that dispatch-time derivation rather than acting as a second depth switch at launch. What
+Light mode owns outright is the design-time half: skipping Phase 3
 (Design Review) and the build-phase skips (`/aep-build` Phase 6B/7/8 Light-mode skips). The
 binding re-derivation at Phase 5 entry can still **upgrade** a light story whose actual diff
 touches `sensitive_paths` or referee assets — mode is a plan, the diff is the fact. Standalone
-mode (no `product-context.yaml`, no derivation): this file's full/light choice keeps its original
-eval-loop meaning (full → run the loop; light → skip it), which maps to `deep`/`light` fail-open
-defaults.
+mode (no `product-context.yaml`, no derivation): this file's full/light choice carries the
+eval-loop meaning directly (full → run the loop; light → skip it), which maps to `deep`/`light`
+fail-open defaults.
 
 ## Tuning principle — re-evaluate with each model upgrade
 

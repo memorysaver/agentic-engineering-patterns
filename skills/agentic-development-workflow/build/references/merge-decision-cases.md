@@ -106,7 +106,7 @@ fallback.
 
 ---
 
-## Case C — interactive build ⇒ confirm before merge (unchanged)
+## Case C — interactive build ⇒ confirm before merge
 
 **Inputs:** a human runs `/aep-build` directly in their own session; no `mode`
 marker; cwd is not a launched worktree.

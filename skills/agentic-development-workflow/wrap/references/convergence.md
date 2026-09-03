@@ -4,8 +4,8 @@ The producer contract for the build-convergence pipeline (decision doc:
 `docs/decisions/build-convergence-pipeline.md` in the AEP repo — the canonical
 schema definition; this file is the operative contract `/aep-wrap` executes).
 
-Three phases, one determinism boundary: **mechanism decides WHEN and validates
-SHAPE; an isolated agent owns the JUDGMENT; skill amendments are proposal-only.**
+Three phases, one determinism boundary: **mechanism decides when and validates
+shape; an isolated agent owns the judgment; skill amendments are proposal-only.**
 
 > **Authoring note:** this file is authored in the wrap skill, not generated
 > from `_shared/` — `build-skills.sh` materializes shared resources only into
@@ -62,10 +62,10 @@ Then write `"$CONV"/execution-record.yaml` per the schema below — identity fie
 A project with richer telemetry (mutation testing, coverage probes, custom
 beacons) extends the copy list and `gathered_files` with the same rule.
 
-**The best-effort rule (absolute):** every copy and every field degrades on a
-missing source — an explicit `null` in the manifest, or simply no copy. The
-gather **never fails the wrap, never blocks, never throws.** A project without
-gen-eval still wraps cleanly with `gen_eval: []`.
+**The best-effort rule:** every copy and every field degrades on a missing
+source — an explicit `null` in the manifest, or simply no copy — and the gather
+never fails the wrap. A project without gen-eval still wraps cleanly with
+`gen_eval: []`.
 
 ### `execution-record.yaml` schema
 
@@ -87,7 +87,7 @@ gen_eval: # per-round summaries; [] if none
 review_findings: [] # one-line summaries from code-review artifacts; [] if none
 verification: # the accounting block — see field rules below
   tier: light | standard | deep # MUST — from verification-recipe.json; null only when no recipe exists (pre-tier consumers)
-  tier_escalated: false # MUST — deprecated since v4.1.0, always false (kept so earlier consumers parse)
+  tier_escalated: false # MUST — deprecated, always false (kept so existing consumers parse)
   scope_drift: true | false # MUST — binding diff left the declared files_affected
   generator_model: <id> | null # MUST when known — model swaps shift both escape rate and findings
   evaluator_model: <id> | null # MUST when an evaluator ran
@@ -105,9 +105,10 @@ Standalone mode (no `product-context.yaml`): `story_id` takes the change name.
 
 ### The `verification:` block — mandatory sensor floor
 
-Canon: `/aep-gen-eval` → `references/verification-economics.md` (Verification
-Accounting). The fields marked `MUST` are **file-derivable from artifacts the
-workflow already writes** — an implementation that leaves them null when their
+This block is the canonical `verification:` schema; `/aep-gen-eval` →
+`references/verification-economics.md` (Verification Accounting) points here for
+the fields and owns the tier and taxonomy mechanics they record. The fields marked
+`MUST` are **file-derivable from artifacts the workflow already writes** — an implementation that leaves them null when their
 source exists has not implemented the block (a calibration loop built on
 optional sensors starves):
 
