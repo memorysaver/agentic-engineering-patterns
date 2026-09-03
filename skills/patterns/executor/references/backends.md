@@ -492,16 +492,19 @@ and the rule that the main session never reads workspace code both still hold �
 only the spawn mechanism changes.
 
 **Evaluator-effort hint (all `spawn_evaluator()` recipes).** The spawn accepts an
-optional effort hint derived from the story's verification tier
-(`verification-recipe.json` → `evaluator_effort`; canon: `/aep-gen-eval` →
-`references/verification-economics.md`): `standard` → the session default;
-`deep` → the **highest evaluator effort the mode offers** (model/effort flags on
-`codex exec`, effort/model selection on a Task-subagent spawn, the priciest
-configured profile on legacy), and — where more than one model family is
-available — **prefer a different model family from the generator** (cross-family
-judging reduces correlated generator/judge blind spots). `light` never reaches
-these recipes (no evaluator is spawned). The hint is advisory per mode: a mode
-with one fixed evaluator profile ignores it without failing.
+effort hint from the story's verification recipe (`verification-recipe.json` →
+`evaluator_effort`; canon: `/aep-gen-eval` → `references/verification-economics.md`).
+Since v4.1.0 the value is `high` for every tier that spawns an evaluator: pin the
+mode's `high` level (the reasoning-effort flag on `codex exec`, the effort/model
+selection on a Task-subagent spawn, the `high` profile on legacy) rather than
+inheriting the operator's session default — on Claude Code that default is
+`xhigh`, where an eval-response is drafted twice. The recipe does not select
+`xhigh`/`max`; the deprecated values `default` and `highest` (pre-v4.1.0 recipes)
+are read as `high`. Where more than one model family is available, `deep`
+**prefers a different model family from the generator** (cross-family judging
+reduces correlated generator/judge blind spots). `light` never reaches these
+recipes (no evaluator is spawned). The hint is advisory per mode: a mode with
+one fixed evaluator profile ignores it without failing.
 
 **Codex caveat:** `spawn_agent` has no cwd parameter, so the codex-subagent
 binding is a directory contract hardened by the `aep-builder` role's

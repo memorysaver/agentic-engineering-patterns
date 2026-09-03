@@ -209,9 +209,10 @@ judgment call — which also gives autonomous launches a deterministic criteria 
   Phase 5 assembles the criteria from the binding recipe itself — the missing launch-time file never
   downgrades the gate (build SKILL.md Phase 5).
 - **`standard`** → assemble the criteria file from the recipe's dimension preset + hard floors.
-- **`deep`** → assemble tailored criteria from the recipe with **nothing de-weighted**, and record the
-  **highest-available evaluator effort** hint (it travels to `executor.spawn_evaluator()`; prefer a
-  different model family from the generator where available).
+- **`deep`** → assemble tailored criteria from the recipe with **nothing de-weighted**, and prefer a
+  **different model family** from the generator where available. Every evaluator spawn (`standard`
+  and `deep`) carries the recipe's pinned `high` effort hint (it travels to
+  `executor.spawn_evaluator()`; the recipe does not select `xhigh`/`max`).
 
 The old full/light heuristics ("3+ tasks, UI-heavy, or security-sensitive → full",
 /aep-design `references/workflow-modes.md`) are **inputs to the dispatch-time tier derivation**, not a

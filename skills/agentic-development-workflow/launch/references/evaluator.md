@@ -25,7 +25,7 @@ Phase 5:
 - **`light`** → stop: write no criteria file (Phase 5 self-reviews).
 - **`standard`** → the derived preset's dimensions, weights, and hard floors, with scale
   definitions tailored to this feature.
-- **`deep`** → the derived preset with nothing de-weighted, plus the top-effort hint.
+- **`deep`** → the derived preset with nothing de-weighted, plus the cross-family judge preference. The effort hint is the pinned `high` for every evaluator tier (v4.1.0).
 
 **Interactive customization only ratchets up.** With the user (when one is present), you may
 **add** dimensions (Originality, Accessibility, API Design, Performance, Data Integrity, …),

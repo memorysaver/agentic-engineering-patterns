@@ -116,13 +116,13 @@ CLI/TUI projects use a non-vacuous probe vocabulary: provider auth present, prov
 
 ## Verification Tiers
 
-Each story gets a **`verification_tier`** governing evaluator rounds, evaluator effort, and dogfood scope:
+Each story gets a **`verification_tier`** governing dogfood scope, full-suite timing, and judge family. **Every tier that spawns an evaluator caps at two rounds** (v4.1.0, F1/F2 of `docs/decisions/fable-5-1-behavioral-rebaseline.md`): round 1 scores; round 2 exists only to confirm the fix of a `blocking` finding; tiers never differ in round count, and every evaluator spawn pins `high` effort.
 
-| Tier                   | Evaluator rounds (cap)                      | Evaluator effort  | Dogfood scope (Phase 6B)          | Full-suite runs               |
-| ---------------------- | ------------------------------------------- | ----------------- | --------------------------------- | ----------------------------- |
-| **light**              | 0 (generator self-review, lenient)          | —                 | render smoke / none               | focused only                  |
-| **standard** (default) | **2** — one decisive fix-and-reverify cycle | session default   | impacted-surface journey + canary | focused; full once at land    |
-| **deep**               | up to 5 + full recovery ladder              | highest available | full journey + prior-layer replay | full pre-eval **and** at land |
+| Tier                   | Evaluator rounds (cap)                        | Evaluator effort | Judge family                                  | Dogfood scope (Phase 6B)          | Full-suite runs               |
+| ---------------------- | --------------------------------------------- | ---------------- | --------------------------------------------- | --------------------------------- | ----------------------------- |
+| **light**              | 0 (generator self-review, lenient)            | —                | —                                             | render smoke / none               | focused only                  |
+| **standard** (default) | **2** — round 2 only on a `blocking` finding  | pinned `high`    | any                                           | impacted-surface journey + canary | focused; full once at land    |
+| **deep**               | **2** — same rule                             | pinned `high`    | prefer a different family from the generator  | full journey + prior-layer replay | full pre-eval **and** at land |
 
 **The derivation function** (deterministic; ties resolve upward):
 
@@ -132,7 +132,7 @@ Each story gets a **`verification_tier`** governing evaluator rounds, evaluator 
 
 **Referee assets never derive `light`.** Test directories, journey specs (`skills/e2e-test/journeys/**`, including their `paths:` front-matter), the e2e skill's `policy.md`, and CI workflow definitions are the evidence base every later verifier stands on — a diff confined to them is a change to the _referee_, not a cheap change. **A diff touching referee assets floors at `standard`**, and a **negative assertion delta** (more test/`Verify` lines removed than added) always requires an evaluation round, whatever the tier. Journey `paths:` edits after first authoring trigger the same scope refusal as CI-workflow edits (§9).
 
-**Cap exhaustion is defined, not silent:** when `standard` exhausts its 2 rounds on a genuine `product-defect`, the story **auto-escalates once to `deep`** (recorded as `tier_escalated: true`) and continues the recovery ladder from where it left off; only after `deep`'s ladder exhausts does it reach the human gate. Ladder rungs re-key to _position past the tier's cap_, not absolute round numbers (recovery-ladder.md).
+**Cap exhaustion is defined, not silent:** a `blocking` finding still open after round 2 is the human gate (`eval_not_converging`), whatever the tier. There is no tier escalation as a rounds mechanism — v4.1.0 removed the `standard → deep` auto-escalation, and `tier_escalated` stays in the signal contract as a deprecated, always-`false` field so earlier consumers keep parsing. The gate record *proposes* the strategy changes the human or the autopilot policy may pick — a fresh generator on a different design path, or decomposing the story — instead of spending them as automatic rounds (recovery-ladder.md). `material` findings buy no round: the generator fixes them and attests each fix with its evidence in the eval-request addendum (eval-protocol.md).
 
 **The layer gate's depth is owned by `/aep-wrap`, independent of any story's tier.** A `light` integration story does not weaken the gate: full replay, coverage matrices, and evidence classes run at the gate whatever the tiers of the stories inside the layer.
 
@@ -190,9 +190,9 @@ Downstream projects get a runnable reference implementation (derivation function
 Gen-eval is not self-triggering — it is configured down the chain **autopilot → dispatch → launch → build**, and the tier must ride that exact chain or it governs nothing:
 
 - **Dispatch** computes the provisional tier into the machine-assembled brief.
-- **Launch is the tier's first real consumer**: evaluator _existence_ is the criteria file it writes (`.dev-workflow/evaluator-criteria.md`), and that decision is recipe-derived and mechanical — `light` → no criteria file (build self-reviews); `standard` → criteria from the derived preset; `deep` → tailored criteria + the highest-available evaluator effort (the effort hint travels to `executor.spawn_evaluator()`). This also gives autonomous launches a deterministic criteria policy.
+- **Launch is the tier's first real consumer**: evaluator _existence_ is the criteria file it writes (`.dev-workflow/evaluator-criteria.md`), and that decision is recipe-derived and mechanical — `light` → no criteria file (build self-reviews); `standard` → criteria from the derived preset; `deep` → tailored criteria with nothing de-weighted. Every evaluator spawn carries the pinned `high` effort hint (it travels to `executor.spawn_evaluator()`; the recipe never selects `xhigh`/`max`). This also gives autonomous launches a deterministic criteria policy.
 - **The workspace publishes the tier**: `status.json` carries `verification_tier`, `tier_escalated`, and the latest FAIL's `failure_class` (signals-spec.md is the schema owner) — that signal file is the **only** thing autopilot may read.
-- **Autopilot's monitoring is tier-aware**: nudges match the workspace's published tier (a `light` workspace is nudged to self-review, not to spawn an evaluator), and `eval_not_converging` fires only after the published tier's cap **plus** the automatic `standard → deep` escalation have both been spent.
+- **Autopilot's monitoring is tier-aware**: nudges match the workspace's published tier (a `light` workspace is nudged to self-review, not to spawn an evaluator), and `eval_not_converging` fires when a `blocking` finding is still open after the published tier's two rounds.
 
 ---
 
@@ -203,7 +203,7 @@ Gen-eval is not self-triggering — it is configured down the chain **autopilot 
 ```yaml
 verification:
   tier: light | standard | deep # MUST — from verification-recipe.json
-  tier_escalated: true | false # MUST — cap-exhaustion escalation fired
+  tier_escalated: false # MUST — deprecated since v4.1.0, always false (kept so earlier consumers parse)
   scope_drift: true | false # MUST — binding diff left the declared files_affected
   generator_model: <id> | null # MUST when known — model swaps shift both escape rate and findings
   evaluator_model: <id> | null # MUST when an evaluator ran
@@ -277,4 +277,4 @@ Additionally:
 | `/aep-autopilot` tick-protocol / state-schema / guard          | REFUSED ≠ FAIL; `environment_repair` escalation; tier-aware nudges                                                        |
 | `/aep-executor` dogfood-validation.md + backends.md            | `Failure-Class:` report line; evaluator-effort hint on `spawn_evaluator()`                                                |
 | `/aep-e2e-skill-scaffolding` policy + templates + references   | `sensitive_paths`, `live_policy`, probe sets, security gates, budget box, reference derivation script                     |
-| `eval-protocol.md` / recovery-ladder.md / scoring-framework.md | Evaluator-authored `failure_class`; tier-keyed rungs; recipe-derived presets + zero-blocking semantics                    |
+| `eval-protocol.md` / recovery-ladder.md / scoring-framework.md | Evaluator-authored `failure_class`; two-round ladder + gate options; recipe-derived presets + zero-blocking semantics                   |

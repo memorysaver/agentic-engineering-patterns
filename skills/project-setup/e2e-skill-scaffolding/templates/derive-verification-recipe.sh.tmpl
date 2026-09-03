@@ -121,13 +121,16 @@ else
   PRESET="mixed"; FLOORS='{}'
   echo "NOTE [preset-mixed] signals ui=$UI_N data=$DATA_N product=$PRODUCT_N — no single preset dominates; mixed with default thresholds" >&2
 fi
+# v4.1.0: every tier that spawns an evaluator caps at two rounds and pins high effort
+# (F1/F3, docs/decisions/fable-5-1-behavioral-rebaseline.md). Tiers differ in scope and
+# judge family, never in round count.
 case "$TIER" in
   light)    MAX_ROUNDS=0; EFFORT="none" ;;
-  standard) MAX_ROUNDS=2; EFFORT="default" ;;
-  deep)     MAX_ROUNDS=5; EFFORT="highest" ;;
+  standard) MAX_ROUNDS=2; EFFORT="high" ;;
+  deep)     MAX_ROUNDS=2; EFFORT="high" ;;
 esac
 # A negative assertion delta always requires at least one evaluation round, whatever the tier.
-[ "$NEG_DELTA" = true ] && [ "$MAX_ROUNDS" -eq 0 ] && { MAX_ROUNDS=1; TIER=standard; EFFORT="default"; }
+[ "$NEG_DELTA" = true ] && [ "$MAX_ROUNDS" -eq 0 ] && { MAX_ROUNDS=1; TIER=standard; EFFORT="high"; }
 
 cat > "$OUT" <<JSON
 {

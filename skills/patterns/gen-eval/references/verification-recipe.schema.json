@@ -40,7 +40,7 @@
     },
     "tier_escalated": {
       "type": "boolean",
-      "description": "False at derivation; flipped by the cap-exhaustion standard → deep auto-escalation"
+      "description": "Deprecated since v4.1.0: always false. There is no standard → deep auto-escalation; the field is kept so earlier recipes and consumers still validate"
     },
     "scope_drift": {
       "type": "boolean",
@@ -73,11 +73,11 @@
     "max_rounds": {
       "type": "integer",
       "minimum": 0,
-      "description": "Eval-round cap for the binding tier (light 0, standard 2, deep 5; a negative assertion delta raises 0 to 1)"
+      "description": "Eval-round cap for the binding tier (light 0; standard and deep 2 since v4.1.0; a negative assertion delta raises 0 to 1). A pre-v4.1.0 recipe may carry 5 for deep — the protocol cap of 2 still governs"
     },
     "evaluator_effort": {
       "x-aep-vocab": "evaluator_effort",
-      "enum": ["none", "default", "highest"]
+      "enum": ["none", "high", "default", "highest"]
     },
     "inputs": {
       "type": "object",

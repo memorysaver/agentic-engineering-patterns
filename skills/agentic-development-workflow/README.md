@@ -156,7 +156,7 @@ GENERATOR                                           EVALUATOR
        ▼
   All PASS ──► Phase 9: cleanup + publish
 
-  Max 5 rounds, then escalate to human
+  Max 2 rounds (round 2 only for a blocking finding), then escalate to human
 ```
 
 ---

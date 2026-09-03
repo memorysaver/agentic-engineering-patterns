@@ -87,7 +87,7 @@ gen_eval: # per-round summaries; [] if none
 review_findings: [] # one-line summaries from code-review artifacts; [] if none
 verification: # the accounting block — see field rules below
   tier: light | standard | deep # MUST — from verification-recipe.json; null only when no recipe exists (pre-tier consumers)
-  tier_escalated: true | false # MUST — cap-exhaustion escalation fired
+  tier_escalated: false # MUST — deprecated since v4.1.0, always false (kept so earlier consumers parse)
   scope_drift: true | false # MUST — binding diff left the declared files_affected
   generator_model: <id> | null # MUST when known — model swaps shift both escape rate and findings
   evaluator_model: <id> | null # MUST when an evaluator ran

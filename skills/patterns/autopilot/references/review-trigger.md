@@ -111,7 +111,7 @@ Escalation entry:
   "type": "eval_not_converging",
   "story_id": "<id>",
   "workspace": "<name>",
-  "reason": "Gen/eval loop failed to converge after 5 rounds",
+  "reason": "Gen/eval loop failed to converge after 2 rounds (blocking finding still open)",
   "details": "Persistent failures on [dimensions]. Generator cannot fix: [specific issues].",
   "expected_human_action": "Review the eval findings in .feature-workspaces/<name>/.dev-workflow/signals/eval-response-5.md and decide: fix manually, adjust the spec, or defer the story.",
   "created_at": "<ISO8601>",
