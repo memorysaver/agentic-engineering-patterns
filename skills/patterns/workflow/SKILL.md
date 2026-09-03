@@ -46,8 +46,8 @@ to split — adversarial verification and fan-out are.
 
 Otherwise **stay single-context**: an ordinary coding task that fits one window, or
 a verification need a single `/aep-gen-eval` loop already covers, does not need a
-panel of agents. Use workflows "creatively to push Claude Code in ways you haven't
-previously" — not as a default wrapper around routine work.
+panel of agents. A workflow is a deliberate choice for one task, not a default
+wrapper around routine work.
 
 ---
 

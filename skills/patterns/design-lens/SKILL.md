@@ -26,7 +26,7 @@ graphical-perception lenses when shaping a data-heavy screen).
 
 ---
 
-## When to Use — and When NOT To
+## When to Use — and Its Boundaries
 
 Reach for this skill to produce a **design guideline** before agents build, to run a
 **usability / heuristic health-check** on a drafted or running UI, or when a design

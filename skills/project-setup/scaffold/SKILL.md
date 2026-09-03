@@ -250,7 +250,7 @@ BASE_URL=http://localhost:<web-port>
 SERVER_URL=http://localhost:<server-port>
 ```
 
-Use the template and the full MUST/MAY contract in [`references/workspace-hook.md`](references/workspace-hook.md), filling in project-specific values from the stack chosen in Phase 1.
+Use the template and the full contract in [`references/workspace-hook.md`](references/workspace-hook.md), filling in project-specific values from the stack chosen in Phase 1.
 
 ```bash
 chmod +x .claude/hooks/workspace-setup.sh
@@ -309,20 +309,20 @@ For the full project layout after scaffolding completes, see [`references/result
 
 For projects that already have source code. This flow is **idempotent**: run it to onboard an existing
 project **or** re-run it later to repair **drift** toward the current AEP standard (healthy per-agent
-skills layout, BDD e2e skill, current pin). It **reports first, asks, then converges**, under the Guardrails rule above —
-**hand-authored content survives**. Re-running a fully-converged project is a no-op ("already up to date").
+skills layout, BDD e2e skill, current pin). It reports first, asks, then converges, under the Guardrails
+rule above.
 
-Read [`references/converge-flow.md`](references/converge-flow.md) for how to interpret each audit category,
-the observability→telemetry-candidate handling, and the per-category converge detail.
+Read [`references/converge-flow.md`](references/converge-flow.md) — the canonical account of this flow:
+how to read each audit category, the observability→telemetry-candidate handling, and the per-category
+converge detail.
 
 In commands below, replace `<aep-scaffold-dir>` with the absolute directory containing this `SKILL.md`; it is notation, not an environment variable or a target-project-relative path.
 
 ## Phase 0E: Status Check (stack + pin)
 
 `scripts/audit.sh` opens by detecting language, package manager, monorepo tool, backend/frontend signal,
-and the AEP pin vs latest release. Interpret per `references/converge-flow.md`: recommend **bun** (TS/JS)
-or **uv** (Python) if the package manager is undetected; the frontend signal sets the default e2e `target`
-(React Native → mobile; Tauri/Electrobun → desktop; else web).
+and the AEP pin vs latest release. Interpret those readings per `references/converge-flow.md` →
+"Reading the audit" (package-manager recommendation, default e2e `target`).
 
 ---
 
@@ -334,18 +334,16 @@ Run the read-only audit. Nothing is changed in this phase.
 bash "<aep-scaffold-dir>/scripts/audit.sh"
 ```
 
-It prints `[ok]`/`[DRIFT]` per check across categories A (skills layout), B (e2e shape), C (infra) and
-`[detected]`/`[ ]` for D (observability), and **exits non-zero while any `[DRIFT]` remains** (exit 0 when
-clean). See `references/converge-flow.md` for what each category means and the observability handling.
+It prints `[ok]`/`[DRIFT]` per check and **exits non-zero while any `[DRIFT]` remains** (exit 0 when
+clean). What each category (A–E) means and how observability is handled: `references/converge-flow.md`.
 
 ---
 
 ## Phase 2E: Report + Confirm Direction
 
-Present the audit as a **current → target** summary grouped by category (A skills layout, B e2e shape,
-C infra, D observability, E version pin). For each category with drift/gaps, list the **proposed change**
-and ask the user which to apply. **Default = fix all drift + gaps.** Use a per-category checklist (e.g.
-the AskUserQuestion-style confirm). Only confirmed categories are converged in Phase 3E.
+Present the audit as a **current → target** summary per category, ask which categories to apply
+(**default = fix all drift + gaps**), and converge only the confirmed ones in Phase 3E. The summary
+shape is in `references/converge-flow.md` → "Report + confirm".
 
 ---
 
@@ -360,9 +358,8 @@ bash "<aep-scaffold-dir>/scripts/converge.sh" --category A --category C
 
 Pass only confirmed mechanical categories (`A`, `C`, or `E`), repeating `--category`; skip the script if none were confirmed. E only prints a re-pin recommendation; B and D remain model-driven.
 
-- **B. E2E-test skill** — delegate to **`/aep-e2e-skill-scaffolding`** (creates or upgrades to BDD in
-  canonical cross-tool form; migrates a legacy `.claude/skills/e2e-test` real dir; never overwrites
-  hand-written journeys).
+- **B. E2E-test skill** — delegate to **`/aep-e2e-skill-scaffolding`**; it creates or upgrades the skill
+  idempotently.
 - **C. Remaining infra** — for each missing item: git repo (`git init -b main && git add -A && git commit
 -m "chore: initial commit"`); OpenSpec (follow [Phase 5](#phase-5-initialize-openspec)); workspace hook
   (follow [Phase 7](#phase-7-generate-workspace-setup-hook)).
@@ -376,8 +373,6 @@ Re-run the audit until it **exits 0** — every confirmed category then reads `[
 ```bash
 bash "<aep-scaffold-dir>/scripts/audit.sh"
 ```
-
-A fully-converged project re-running this flow produces no changes — **idempotent**.
 
 ---
 

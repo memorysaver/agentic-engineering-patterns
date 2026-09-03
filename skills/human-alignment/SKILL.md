@@ -50,8 +50,8 @@ It prints what you are owed and for how long, the transitions since your cursor,
 what needs you (dependency-ordered), and open work that has stopped moving. The
 cursor defaults to the last orientation document's commit.
 
-Emission 3 — the rest of this file — is worth its cost only at its own clock.
-Generating it per invocation is the mistake revisions 1–9 made.
+Emission 3 — the rest of this file — is worth its cost only at its own clock,
+not per invocation.
 
 ## Step 0 — choose the emission (do this first)
 
@@ -108,8 +108,8 @@ brief has no stage for stops the derive rather than rendering as stage 1.
 
 The census classifies every populated path in the plan file against
 `scripts/source-census.json` as `derived` / `ignored` (**with a reason**) /
-`unhandled`. An unhandled path is a field this brief cannot see — every content
-defect the first implementation shipped was one. Add a rule before proceeding.
+`unhandled`. An unhandled path is a field this brief cannot see, and an unseen
+field is where a content defect comes from. Add a rule before proceeding.
 
 → _census reports zero unhandled paths; facts JSON exists and validates._
 
@@ -147,8 +147,8 @@ The five that fail an audit fastest:
 2. **Translate** — re-author every story title and changelog entry as a
    consequence sentence bound to its id in the anchor.
 3. **No naked numbers, in digits or in words.** Every number is `data-fact`.
-   `five`, `eight`, `three quarters` are numbers too — that hole once shipped
-   "five tasks in two days" when the truth was eight.
+   `five`, `eight`, `three quarters` are numbers too — a word spelling a count
+   is still a claim about a count.
 4. **Every assertive block cites what it rests on** — `data-claims="<paths>"`,
    or `data-authored` if it is narrative that can cite nothing. A claim the
    facts do not carry is not a sentence to write more carefully; it is a fact to

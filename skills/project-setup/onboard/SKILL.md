@@ -34,11 +34,9 @@ npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.1.0 -a clau
 npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.1.0 -a codex        --skill '*' -y
 ```
 
-This installs every AEP skill (the `aep-*` names) plus a `skills-lock.json` manifest — **commit both**. The v4 layout is plain per-agent copies; shared or canonical symlink layouts are legacy compatibility only. The committed skill bytes are the durable project pin; upgrade intentionally by rerunning the same command with the desired tag, then review and commit the resulting skill and lockfile diff.
+This installs every AEP skill (the `aep-*` names) plus a `skills-lock.json` manifest — **commit both**. Each agent runtime gets its own copy; a shared-symlink layout already in place stays legal. The committed skill bytes are the durable project pin; upgrade intentionally by rerunning the same command with the desired tag, then review and commit the resulting skill and lockfile diff.
 
-Phase 1 installs only AEP and adds no companion project-level skill bundle. AEP's project record is self-contained: `/aep-build` captures lessons in `.dev-workflow/lessons.md`, `/aep-wrap` archives them in `lessons-learned/`, and `/aep-launch` recalls them. Host memory, when available, is only an accelerator over that repository record.
-
-> **Note:** Baseline onboarding installs AEP only. Optional third-party integrations are documented in [references/plugins.md](references/plugins.md) and stay outside this setup unless the user requests them separately.
+Phase 1 installs AEP alone. AEP's project record is self-contained: `/aep-build` captures lessons in `.dev-workflow/lessons.md`, `/aep-wrap` archives them in `lessons-learned/`, and `/aep-launch` recalls them; host memory, when available, is an accelerator over that record. Optional third-party integrations are listed in [references/plugins.md](references/plugins.md) and are added only when the user asks.
 
 ---
 
@@ -47,7 +45,7 @@ Phase 1 installs only AEP and adds no companion project-level skill bundle. AEP'
 The instruction files are versioned with AEP. Three templates ship with this skill under `templates/`: `AGENTS.md.tmpl` (the generic working agreement, the `## AEP Workflow` section with the pinned release and the `/aep-easy-explain` register, and a `## Project Context` pointer to `project-convention/`), `CLAUDE.md.tmpl` (`@AGENTS.md`), and `project-convention/README.md.tmpl` (the convention index: how the project runs on AEP, the `docs/` routing table, the directories AEP owns, how to add a convention). The first line of `AGENTS.md` is the marker `<!-- aep-agents-template: vX.Y.Z -->`; `/aep-scaffold`'s audit reads it, and [references/migrations.md](references/migrations.md) keys its upgrade steps to it.
 
 - **No `AGENTS.md` yet:** copy the three templates into place as-is (`project-convention/README.md` at the repository root) and commit them with the install.
-- **Existing `AGENTS.md`:** read its marker (none ⇒ pre-v4.1.0) and apply every section of `references/migrations.md` between it and the pinned release, in order. Project-specific content moves into `project-convention/<topic>.md`, one file per topic, linked from the README; nothing project-specific stays in `AGENTS.md`. A hand-authored `CLAUDE.md` is merged into `AGENTS.md` by hand before it becomes `@AGENTS.md`.
+- **Existing `AGENTS.md`:** read its marker and apply every section of `references/migrations.md` from it to the pinned release, in order. Project-specific content moves into `project-convention/<topic>.md`, one file per topic, linked from the README; nothing project-specific stays in `AGENTS.md`. A hand-authored `CLAUDE.md` is merged into `AGENTS.md` by hand before it becomes `@AGENTS.md`.
 - **Codex-only repo:** skip `CLAUDE.md`.
 
 **Verify:** `head -1 AGENTS.md` prints the marker for the pinned release; `head -1 CLAUDE.md` prints `@AGENTS.md` where Claude Code is installed; `project-convention/README.md` exists.
@@ -100,8 +98,6 @@ Install any missing tools:
 
 All **required** tools (Node >=20.19, npm, executor, `bun`/`git`/`gh`/`openspec`, plus `jq` for a Claude install) must show OK before proceeding. You need **at least one executor** (claude or codex) — not both. `tmux` may be MISSING; that's fine — launches are native-first.
 
-> **Native-first launches:** the executor abstraction picks the host's native mode automatically (Claude Code background subagents/sessions, or Codex native subagents/exec workers) with live monitoring and steering, no tmux required — which is why `tmux` may show MISSING. See `/aep-executor`.
-
 > **Note on parallelism:** Each parallel feature agent runs in its own `git worktree` at `.feature-workspaces/<name>/` on its own `feat/<name>` branch. Worktrees share the underlying `.git/objects` (no history duplication) but each adds one full working-tree copy on disk — budget accordingly when running many agents in parallel.
 
 ---
@@ -121,11 +117,9 @@ done
 | `agent-browser` | Browser automation testing                                                                                     | Claude Code plugin: `agent-browser@agent-browser` |
 | `portless`      | Port management (.localhost)                                                                                   | `bun add -g portless`                             |
 
-> **cmux is a convenience, not a requirement.** It only adds clickable tabs for
-> watching legacy-mode tmux sessions (when `aep.executor-backend tmux` is
-> pinned). Without it, pinned workspaces still run in tmux with the full
-> monitor + mid-flight-feedback loop — attach with `tmux attach -t <name>`.
-> Skills auto-detect cmux and never abort when it's absent. See `/aep-executor`.
+> **cmux is a convenience.** Without it, pinned tmux workspaces still run with the
+> full monitor + mid-flight-feedback loop — attach with `tmux attach -t <name>`.
+> See `/aep-executor`.
 
 These are optional — the workflow works without them but is enhanced by them. On macOS, enable `agent-browser` once a one-command smoke test can launch a page without crashing Chrome:
 
@@ -218,7 +212,7 @@ You have an idea and a fresh repo.
 /aep-envision  →  /aep-map  →  /aep-validate  →  /aep-scaffold  →  /aep-autopilot
 ```
 
-`/aep-envision` validates the opportunity and extracts the activity backbone. `/aep-map` decomposes it into a system map + story graph + agent topology. `/aep-validate` runs gen/eval checks. `/aep-scaffold` creates the monorepo + OpenSpec. `/aep-autopilot` (optional) takes over hands-free — or drive it manually with `/aep-dispatch → /aep-design → /aep-launch → /aep-build → /aep-wrap`.
+`/aep-autopilot` is optional — drive the same loop manually with `/aep-dispatch → /aep-design → /aep-launch → /aep-build → /aep-wrap`.
 
 ### Path B — Onboarding an existing project
 
@@ -228,7 +222,7 @@ You have a codebase and want to add AEP workflows to it.
 /aep-scaffold  →  /aep-dispatch  →  /aep-design  →  /aep-launch  →  /aep-build  →  /aep-wrap
 ```
 
-`/aep-scaffold` adds agentic infrastructure (OpenSpec, workspace hooks, E2E skeleton) to existing code. Then start a feature cycle with `/aep-dispatch`. Use `/aep-envision` later if you want to retrofit a product context.
+`/aep-scaffold` adds the agentic infrastructure (OpenSpec, workspace hooks, E2E skeleton) to existing code; `/aep-envision` retrofits a product context later.
 
 ### Path C — Single feature, no product context
 
@@ -238,7 +232,7 @@ You just want to ship one feature with AEP workflows.
 /aep-design  →  /aep-launch  →  /aep-build  →  /aep-wrap
 ```
 
-`/aep-design` produces an OpenSpec change on the integration branch (`$BASE`). `/aep-launch` spawns an isolated git worktree on a `feat/<name>` branch and boots the agent. `/aep-build` implements, tests, reviews, and merges. `/aep-wrap` archives and removes the worktree.
+`/aep-design` produces the OpenSpec change on the integration branch (`$BASE`); the rest runs in an isolated worktree on `feat/<name>`, which `/aep-wrap` archives and removes.
 
 ### Path D — Hands-free autonomous mode
 

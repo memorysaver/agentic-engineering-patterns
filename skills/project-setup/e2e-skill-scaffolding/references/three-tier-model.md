@@ -72,10 +72,10 @@ what a gate's `passed` requires:
 
 "+ coverage" means: every acceptance criterion in the layer maps to ≥1 proving test across the applicable
 tiers (`coverage.criteria_covered == criteria_total`, deliberate gaps recorded as `WAIVER:`). A **CLI**
-project is no longer journey-less — its Tier-2 journey is **bash-driven** (`target: cli`: run the built
-binary, assert exit code / stdout / fs), so its gate needs T1 **+ T2** + coverage like any other surface.
-Only a genuine `none`-target layer (no runnable surface at all) is journey-less — its `passed` is Tier-1
-green **plus** every criterion proven by a scripted case / API check.
+project's Tier-2 journey is **bash-driven** (`target: cli`: run the built binary, assert exit code /
+stdout / fs), so its gate needs T1 **+ T2** + coverage like any other surface. Only a `none`-target layer
+(no runnable surface at all) is journey-less — its `passed` is Tier-1 green **plus** every criterion
+proven by a scripted case / API check.
 
 **The per-project choice is recorded in the generated skill's `policy.md`** (`applicable_tiers`,
 `dogfood_target` = `none`/`cli`/`local`/`deployed:<url>`, `journey_timing`, `live_policy` =
@@ -84,8 +84,7 @@ scaffold time, then read by `/aep-build` and `/aep-wrap`. That's the single sour
 tiers gate _this_ project", so a CLI tool is never asked for a Cloudflare/UI check it doesn't need, and a
 pre-release web app can dogfood post-deploy against prod. `live_policy` prices the **cost-bearing** half
 of Tier-2 (live model calls, quota-metered targets): under `milestone_gates_only`, non-milestone gates run
-zero-cost smokes and the absent live half stays SKIP. No copy lives in `AGENTS.md` — the skill is
-canonical cross-tool, so every runtime reads the same `policy.md`.
+zero-cost smokes and the absent live half stays SKIP.
 
 ## The two-phase gate (coverage, not one green test)
 
@@ -103,13 +102,9 @@ declares: an unmet required precondition is a named `REFUSING [...]` refusal (`e
 checklist, zero scenarios), distinct from both SKIP (optional capability absent) and FAIL (product
 misbehaved).
 
-`/aep-build` Phase 6 is **journey-first**: Step A **authors a scenario per acceptance criterion before any
-dogfood** (a Tier-2 scenario by default; a Tier-1 case where deterministic; a Tier-3 API check for
-backend/async state) and commits the journey **pre-merge**, independent of `journey_timing` — only the
-journey's _execution_ is governed by timing. Step B runs it and confirms coverage, authoring any straggler
-and re-running until covered or a `WAIVER:` is recorded. `/aep-wrap` then performs the two-phase flip and
-asks the human before advancing — it **executes, never authors**, so a layer that reaches the gate with no
-journey file is a COVERAGE FAILURE that stays `scripted_passed`. The full state machine is in
+Journeys are authored **pre-merge** — one scenario per acceptance criterion, before any dogfood — and
+only their _execution_ follows `journey_timing`. The authoring/execution split, the coverage loop, the
+evidence-class rule, and each skill's touch point are in
 [`layer-gate-loop.md`](layer-gate-loop.md).
 
 ## Graceful degradation
@@ -124,11 +119,10 @@ Tier-3 driver scripts and any committed gate scripts are CI-ready: auto-source `
 with fallback defaults, handle missing tools gracefully (SKIP not FAIL), exit 1 on any FAIL. Journeys
 (Tier 2) are agent-executed and run in the dogfood phase, **not blocking CI** unless wired explicitly.
 
-> **Migration note (BDD journeys ≠ CI gate).** This skill no longer generates per-feature
-> `<feature>-e2e.sh` bash scripts. A repo whose CI globbed `.claude/skills/e2e-test/scripts/*-e2e.sh`
-> will now loop over nothing and pass vacuously. If you need a **CI-blocking** E2E check, keep it in
-> **Tier 1** (the project's framework tests) or write a **Tier 3** API-driver script with an exit code —
-> the agent-executed journey is the manual layer-gate half, not a pipeline gate.
+> **BDD journeys ≠ CI gate.** A **CI-blocking** E2E check lives in **Tier 1** (the project's framework
+> tests) or in a **Tier 3** API-driver script with an exit code — the agent-executed journey is the manual
+> layer-gate half, not a pipeline gate. The skill generates no per-feature `<feature>-e2e.sh` scripts, so
+> a CI job that globs `.claude/skills/e2e-test/scripts/*-e2e.sh` loops over nothing and passes vacuously.
 
 ## Evaluator integration
 
