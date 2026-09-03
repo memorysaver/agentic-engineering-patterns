@@ -140,11 +140,11 @@ After applying fixes, append a changelog entry to the artifact:
 
 ## Rules for Applying Fixes
 
-1. **Only modify the artifact being validated** — never create new files or modify other artifacts as a side effect
+1. **Only modify the artifact being validated** — no new files, and no side-effect edits to other artifacts
 2. **Preserve the artifact's existing structure** — don't reorganize sections unless the fix requires it
 3. **Add, don't replace** — when adding missing fields, don't remove existing fields
 4. **Mark decisions as open questions** — if a fix requires a judgment call the agent can't make, add it as an `open_question` with a default assumption and revisit trigger
-5. **Present findings before fixing** — always show the user the findings and let them approve before applying changes. They may disagree with some findings or want to prioritize differently.
+5. **Present findings before fixing** — show the user the findings and let them approve before applying changes; they may disagree with a finding or want a different priority.
 6. **Fix blocking issues first** — if time is limited, blocking issues take priority over important, which take priority over minor
 
 ---

@@ -1,6 +1,6 @@
 # Scoring Framework
 
-Calibration document for evaluator agents. The evaluator is a **separate agent** from the generator — this separation is critical because agents consistently praise their own work.
+Calibration document for evaluator agents. The evaluator is a **separate agent** from the generator, because agents consistently praise their own work.
 
 > "When asked to evaluate work they've produced, agents tend to respond by confidently praising the work — even when, to a human observer, the quality is obviously mediocre."
 > — Anthropic, "Harness Design for Long-Running Application Development"
@@ -22,9 +22,9 @@ Calibration document for evaluator agents. The evaluator is a **separate agent**
 
 ## Default Dimensions (Code)
 
-Evaluate each dimension on a 1–5 scale. Score honestly — the value of evaluation comes from catching problems the generator missed.
+Evaluate each dimension on a 1–5 scale, against the scale definitions rather than an overall impression — the value of the evaluation is the problems it catches that the generator missed.
 
-> **Customize per project:** These dimensions are defaults. Anthropic's research found that scoring dimensions should be task-specific and weighted toward areas where the model falls short. Adjust based on where you observe the generator producing mediocre output.
+> **Customize per project:** these dimensions are defaults. Anthropic's harness-design research found scoring dimensions work best task-specific and weighted toward the areas where the model falls short — adjust to where you observe the generator producing mediocre output.
 
 ### 1. Completeness (1–5)
 
@@ -115,7 +115,7 @@ Any of these conditions means the evaluation **FAILS** and the generator must fi
 
 **Overall pass:** All dimensions >= 3 AND Completeness >= 4 AND no dimension at 1.
 
-**PASS means zero blocking findings against these thresholds — nothing more.** A perfect aggregate score is **never** a gate condition: a "must return exactly 5.00/5.00 with zero findings" merge gate trains the generator to satisfy the evaluator instead of the product (Goodhart's law) and turns ordinary convergence into round exhaustion. Projects may raise individual dimension floors (see `verification-economics.md` — customization only ratchets up), but the gate is always threshold-based, never perfection-based.
+**PASS means zero blocking findings against these thresholds — nothing more.** A perfect aggregate score is not a gate condition: it trains the generator to satisfy the evaluator instead of the product (Goodhart's law) and turns ordinary convergence into round exhaustion. Projects may raise individual dimension floors (customization only ratchets up — `verification-economics.md`); the gate stays threshold-based.
 
 ---
 
@@ -386,7 +386,7 @@ Generator must fix both issues before re-evaluation.
 
 ## Anti-Patterns
 
-These are common evaluator failure modes — watch for them:
+Common evaluator failure modes:
 
 | Anti-Pattern           | What Happens                                | Why It's Wrong                                                                                      |
 | ---------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------- |
@@ -404,17 +404,7 @@ These are common evaluator failure modes — watch for them:
 
 ### How to use presets
 
-**In the build workflow, preset selection is recipe-derived, not an independent judgment.** The verification-tier derivation (`verification-economics.md`) emits one **verification recipe** — tier + dimension preset + dimension hard floors — from one input set, so depth and rubric never decouple:
-
-| Derivation input                                                                        | Preset                                                                                           |
-| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `sensitive_paths` match                                                                 | **Security-sensitive** (its `Security ≥ 4` / `Data Privacy ≥ 4` floors join the tier hard floor) |
-| `ui`-kind module / `calibration_type` in {visual-design, ux-flow} / `object_model_refs` | **UI-heavy** (only these stories pay for Visual Design — the most expensive dimension)           |
-| data/migration paths                                                                    | **Data pipeline** (Data Integrity floor)                                                         |
-| story-map / product-context artifacts                                                   | **Product & Design dimensions**                                                                  |
-| otherwise                                                                               | **Mixed** with default thresholds                                                                |
-
-Per tier: `light` scores no dimensions (self-review); `standard` runs the derived preset; `deep` runs it with no de-weighted dimensions, preferring a different model family from the generator where available.
+**In the build workflow, preset selection is recipe-derived, not an independent judgment.** Read `dimension_preset` and `hard_floors` from `.dev-workflow/verification-recipe.json` and score that preset; the derivation that produced them is `/aep-gen-eval` → `references/verification-economics.md` → The Verification Recipe.
 
 **Customization only ratchets up:** the user (or launch) may **add** dimensions or **raise** thresholds — never drop a derived preset's hard-floor dimensions or lower a derived floor. Same tamper-resistance rule as the tier binding.
 

@@ -17,9 +17,7 @@ Core law: **cheap and tamper-evident validators run in the inner loop, always; e
 7. [The Verification Recipe](#the-verification-recipe)
 8. [Verification Accounting](#verification-accounting)
 9. [Tamper-Evident Evidence Classes](#tamper-evident-evidence-classes)
-10. [Worked Examples](#worked-examples)
-11. [Anti-Patterns](#anti-patterns)
-12. [Cross-References](#cross-references)
+10. [Cross-References](#cross-references)
 
 ---
 
@@ -49,12 +47,12 @@ failure_class: product-defect | environment | harness-flake | scope   (aep-vocab
 
 | Class            | Meaning                                                                                                       | Routes to                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | ---------------- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `product-defect` | The built thing is wrong                                                                                      | The existing path: finding → story / fix commit → gen-eval. **Security-critical product defects keep their existing immediate escalation** (recovery-ladder.md → When to Skip): they skip the ladder to a human on the first FAIL — the taxonomy adds routing, it never removes an escalation.                                                                                                                                                                                                                                     |
-| `environment`    | A precondition outside the worktree is unmet (secrets, credentials, wrong account, unreachable target, quota) | An **ops checklist surfaced to the human/orchestrator. Never auto-files a code story; never enters the recovery ladder; never spends an evaluation round.** The gate stays refused with a named tag until the environment is repaired, then re-runs. The checklist may _recommend_ human-filed hardening stories through the normal path. **Exception — unmet in-repo dependencies** (an unmerged story, an unbuilt sibling module) are a sequencing problem: they route to `/aep-dispatch` re-ordering, not to the ops checklist. |
+| `product-defect` | The built thing is wrong                                                                                      | Finding → story / fix commit → gen-eval. **Security-critical product defects escalate immediately** (recovery-ladder.md → When to Skip): they skip the ladder to a human on the first FAIL.                                                                                                                                                                                                                                                                                                                                        |
+| `environment`    | A precondition outside the worktree is unmet (secrets, credentials, wrong account, unreachable target, quota) | An **ops checklist surfaced to the human/orchestrator**: it files no code story, enters no recovery ladder, and spends no evaluation round — the repair is outside the worktree, where repair machinery cannot reach. The gate stays refused with a named tag until the environment is repaired, then re-runs. The checklist may _recommend_ human-filed hardening stories through the normal path. **Exception — unmet in-repo dependencies** (an unmerged story, an unbuilt sibling module) are a sequencing problem: they route to `/aep-dispatch` re-ordering, not to the ops checklist. |
 | `harness-flake`  | The test machinery itself misbehaved (race, port collision, known-red baseline)                               | Quarantine + a harness story; the product gate re-runs after quarantine.                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `scope`          | The acceptance criterion is wrong, the story is mis-sliced, or the spec is internally contradictory           | `/aep-reflect` re-slicing, not repair rounds. (The ladder's existing "spec contradiction" skip maps here.)                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `scope`          | The acceptance criterion is wrong, the story is mis-sliced, or the spec is internally contradictory           | `/aep-reflect` re-slicing, not repair rounds (the ladder's "spec contradiction" skip maps here).                                                                                                                                                                                                                                                                                                                                                                                                                         |
 
-**The taxonomy check is mandatory at every FAIL, before choosing a recovery rung.** Only `product-defect` climbs the ladder. The ladder's existing skip rules map onto classes: security → `product-defect` + immediate escalation; spec contradiction → `scope`; missing credential/access → `environment`; unbuilt in-repo dependency → dispatch re-ordering.
+The taxonomy check runs at every FAIL, before a recovery rung is chosen: only `product-defect` climbs the ladder. The ladder's skip rules map onto classes: security → `product-defect` + immediate escalation; spec contradiction → `scope`; missing credential/access → `environment`; unbuilt in-repo dependency → dispatch re-ordering.
 
 **Ownership check (dual-class incidents).** When a refused precondition is created or managed by artifacts _in this repo_ (deploy config, IaC, wrangler bindings, seed scripts), the ops checklist is paired with a `product-defect` finding for the wiring — otherwise the ops path becomes a way to mask product defects behind hand-repair.
 
@@ -63,8 +61,8 @@ failure_class: product-defect | environment | harness-flake | scope   (aep-vocab
 A taxonomy that lives only in prose is the drift class `docs/decisions/deterministic-orchestration.md` documents. Each surface carries the class in a typed field:
 
 - **Tier-2/3 dogfood and post-merge guard reports** — the unified report (`/aep-executor` → dogfood-validation.md) carries a required `**Failure-Class:**` line per finding; the `dogfood_report` adapter (telemetry-ingestion.md in `/aep-reflect` / `/aep-watch`) parses it and **never auto-files** `environment` / `harness-flake` / `scope` findings.
-- **Phase 5 evaluation FAILs** — the **evaluator** (not the generator) writes `failure_class` into `eval-response-<N>.md` / `feature-verification.json`, consistent with the existing field-ownership rule (the generator cannot mark its own work as passing; eval-protocol.md → Field ownership).
-- **Build/CI failures** — `status.json` failure logs carry `failure_class` alongside the existing `error_class` enum (`test_failure | timeout | context_overflow | merge_conflict` — aep-vocab: error_class). `error_class` records execution mechanics and stays; `failure_class` is the routing layer above it.
+- **Phase 5 evaluation FAILs** — the **evaluator** (not the generator) writes `failure_class` into `eval-response-<N>.md` / `feature-verification.json`, consistent with the field-ownership rule (the generator cannot mark its own work as passing; eval-protocol.md → Field ownership).
+- **Build/CI failures** — `status.json` failure logs carry `failure_class` alongside the `error_class` enum (`test_failure | timeout | context_overflow | merge_conflict` — aep-vocab: error_class). `error_class` records execution mechanics and stays; `failure_class` is the routing layer above it.
 
 ### `error_class` → `failure_class` default mapping
 
@@ -116,7 +114,7 @@ CLI/TUI projects use a non-vacuous probe vocabulary: provider auth present, prov
 
 ## Verification Tiers
 
-Each story gets a **`verification_tier`** governing dogfood scope, full-suite timing, and judge family. **Every tier that spawns an evaluator caps at two rounds** (v4.1.0, F1/F2 of `docs/decisions/fable-5-1-behavioral-rebaseline.md`): round 1 scores; round 2 exists only to confirm the fix of a `blocking` finding; tiers never differ in round count, and every evaluator spawn pins `high` effort.
+Each story gets a **`verification_tier`** governing dogfood scope, full-suite timing, and judge family. Every tier that spawns an evaluator caps at two rounds: round 1 scores; round 2 exists only to confirm the fix of a `blocking` finding. Tiers differ in scope, judge family, and pinned effort — not in round count, and every evaluator spawn pins `high` effort (rationale: `docs/decisions/fable-5-1-behavioral-rebaseline.md`).
 
 | Tier                   | Evaluator rounds (cap)                        | Evaluator effort | Judge family                                  | Dogfood scope (Phase 6B)          | Full-suite runs               |
 | ---------------------- | --------------------------------------------- | ---------------- | --------------------------------------------- | --------------------------------- | ----------------------------- |
@@ -132,7 +130,7 @@ Each story gets a **`verification_tier`** governing dogfood scope, full-suite ti
 
 **Referee assets never derive `light`.** Test directories, journey specs (`skills/e2e-test/journeys/**`, including their `paths:` front-matter), the e2e skill's `policy.md`, and CI workflow definitions are the evidence base every later verifier stands on — a diff confined to them is a change to the _referee_, not a cheap change. **A diff touching referee assets floors at `standard`**, and a **negative assertion delta** (more test/`Verify` lines removed than added) always requires an evaluation round, whatever the tier. Journey `paths:` edits after first authoring trigger the same scope refusal as CI-workflow edits (§9).
 
-**Cap exhaustion is defined, not silent:** a `blocking` finding still open after round 2 is the human gate (`eval_not_converging`), whatever the tier. There is no tier escalation as a rounds mechanism — v4.1.0 removed the `standard → deep` auto-escalation, and `tier_escalated` stays in the signal contract as a deprecated, always-`false` field so earlier consumers keep parsing. The gate record *proposes* the strategy changes the human or the autopilot policy may pick — a fresh generator on a different design path, or decomposing the story — instead of spending them as automatic rounds (recovery-ladder.md). `material` findings buy no round: the generator fixes them and attests each fix with its evidence in the eval-request addendum (eval-protocol.md).
+**Cap exhaustion is defined, not silent:** a `blocking` finding still open after round 2 is the human gate (`eval_not_converging`), whatever the tier. There is no tier escalation as a rounds mechanism; `tier_escalated` stays in the signal contract as a deprecated, always-`false` field so consumers that read it keep parsing. The gate record *proposes* the strategy changes the human or the autopilot policy may pick — a fresh generator on a different design path, or decomposing the story — instead of spending them as automatic rounds (recovery-ladder.md). `material` findings buy no round: the generator fixes them and attests each fix with its evidence in the eval-request addendum (eval-protocol.md).
 
 **The layer gate's depth is owned by `/aep-wrap`, independent of any story's tier.** A `light` integration story does not weaken the gate: full replay, coverage matrices, and evidence classes run at the gate whatever the tiers of the stories inside the layer.
 
@@ -151,7 +149,7 @@ The tier is derived **twice**, because the honest inputs change between planning
 
 **At binding, a tier may only go up, never down** — a story cannot talk its way into a cheaper class by under-declaring scope, and impacted-journey selection (build Phase 8) keys off the merged diff, never the declaration.
 
-**Pre-merge re-check (Phase 12):** commits added after the last PASS (review fixes, human-eval fixes) re-run the derivation; a post-eval drift into `sensitive_paths` upgrades the tier and requires one fresh evaluation round at the new tier — this rides the existing stale-eval rule, it does not add a new mechanism.
+**Pre-merge re-check (Phase 12):** commits added after the last PASS (review fixes, human-eval fixes) re-run the derivation; a post-eval drift into `sensitive_paths` upgrades the tier and requires one fresh evaluation round at the new tier, under the stale-eval rule.
 
 ---
 
@@ -179,9 +177,7 @@ The recipe's shape is [`verification-recipe.schema.json`](verification-recipe.sc
 — every field typed, the three enums bound to the corpus vocabulary
 (`verification_tier`, `dimension_preset`, `evaluator_effort`). The schema
 follows the **emitter** (the derive script `/aep-e2e-skill-scaffolding`
-scaffolds), which is what actually runs downstream; the prose block that used
-to sit here had drifted from it — `evaluator_effort` omitted `none` (the
-light tier's value) and the `inputs` field names disagreed with what ships.
+scaffolds), which is what runs downstream.
 
 Downstream projects get a runnable reference implementation (derivation function + preflight probe stubs + recipe emission) shipped with `/aep-e2e-skill-scaffolding`; AEP itself ships no runtime.
 
@@ -198,31 +194,14 @@ Gen-eval is not self-triggering — it is configured down the chain **autopilot 
 
 ## Verification Accounting
 
-`execution-record.yaml` (`/aep-wrap` → convergence.md) carries a `verification:` block. Fields split into a **mandatory file-derivable floor** — every field marked `MUST` is computable from artifacts the workflow already writes, and an implementation that leaves them null has not implemented this design — and best-effort fields that stay nullable. A calibration loop built on optional sensors starves.
+Verification spend is recorded per story in the `verification:` block of `execution-record.yaml`. Its fields and their gather sources are `/aep-wrap` → `references/convergence.md` → The `verification:` block; the rule this reference owns is that **every field marked `MUST` there is file-derivable** from artifacts the workflow already writes, so an implementation that leaves one null when its source exists has not implemented the design. A calibration loop built on optional sensors starves.
 
-```yaml
-verification:
-  tier: light | standard | deep # MUST — from verification-recipe.json
-  tier_escalated: false # MUST — deprecated since v4.1.0, always false (kept so earlier consumers parse)
-  scope_drift: true | false # MUST — binding diff left the declared files_affected
-  generator_model: <id> | null # MUST when known — model swaps shift both escape rate and findings
-  evaluator_model: <id> | null # MUST when an evaluator ran
-  eval_rounds: <n> | null # MUST when an evaluator ran — from signals/eval-response-*.md count
-  findings_by_round: [<n>, ...] | null # MUST when an evaluator ran — needs per-round persistence
-  findings_by_impact: { blocking: <n>, material: <n>, polish: <n> } | null # MUST when an evaluator ran — totals across rounds; five polish findings and five blocking findings must not read as the same number
-  finding_dimensions: [<dimension>, ...] | null # dimensions breached across rounds; feeds re-weighting
-  journey_scenarios_run: <n> | null # MUST when a journey ran — from the dogfood report
-  preflight_refusals: [] # MUST — named tags; [] when preflight passed
-  cost_usd: <n> | null # best-effort — verification share when separable
-  escaped_defects: [] # filled retroactively by /aep-reflect
-```
-
-Suite-level economics (`suite_runs`, `suite_seconds`) live in the **layer budget box** (the layer-gate evidence doc), where `/aep-wrap` actually runs the suites — not in the per-story record. **Per-round eval persistence** (keeping `eval-response-<N>.md` through wrap's gather) is an explicit requirement: `findings_by_round` is the loosening signal the calibration loop depends on, and `findings_by_impact` is what makes that signal honest — a round count alone cannot distinguish a loop finding real defects from one round-tripping on polish (the observed failure mode this field was added for). Impact grading and the derived verdict are specified in eval-protocol.md; the vocabulary is `finding_impact` in `aep-vocabulary.schema.json`.
+Suite-level economics (`suite_runs`, `suite_seconds`) live in the **layer budget box** (the layer-gate evidence doc), where `/aep-wrap` actually runs the suites — not in the per-story record. **Per-round eval persistence** (keeping `eval-response-<N>.md` through wrap's gather) is an explicit requirement: `findings_by_round` is the loosening signal the calibration loop depends on, and `findings_by_impact` is what makes that signal honest — a round count alone cannot distinguish a loop finding real defects from one round-tripping on polish. Impact grading and the derived verdict are specified in eval-protocol.md; the vocabulary is `finding_impact` in `aep-vocabulary.schema.json`.
 
 ### Closing the loop
 
 - **Escape-rate ingestion:** when `/aep-reflect` classifies a post-merge bug, it traces the bug to the story that introduced it and appends to that story's `escaped_defects`. Escape rate is **per story per tier** (escapes ÷ stories at that tier — well-defined even for `light`'s zero rounds). Ambiguous multi-story escapes attribute to the **layer**, never to no one.
-- **Bidirectional calibration, dampened.** Layer distillation (proposal-only, convergence.md §2) may propose tier-derivation adjustments in both directions — but loosening feels good immediately while escapes surface a layer later, the textbook oscillation setup. Dampening rules: **loosening proposals require ≥2 layers of `findings_by_round` evidence and zero unresolved escape attributions; loosen at most one notch per layer; the `sensitive_paths` hard floor is never loosenable.** Tightening has no damper. **Calibration proposals must condition on model version** (`generator_model` / `evaluator_model`): a model swap shifts escape rate and findings-per-round simultaneously, and a loop that cannot see the swap misattributes the shift to tier settings. Verification assets get the same lifecycle: distillation may propose merging or retiring journeys that have replayed green for N layers with no coverage loss. Proposals only; a human applies them.
+- **Bidirectional calibration, dampened.** Layer distillation (proposal-only, convergence.md §2) may propose tier-derivation adjustments in both directions. Loosening lands immediately while the escapes it causes surface a layer later, so loosening is damped: **a loosening proposal requires ≥2 layers of `findings_by_round` evidence and zero unresolved escape attributions; it loosens at most one notch per layer; the `sensitive_paths` hard floor stays.** Tightening has no damper. Calibration proposals **condition on model version** (`generator_model` / `evaluator_model`): a model swap shifts escape rate and findings-per-round at once, and a loop blind to the swap misattributes the shift to tier settings. Verification assets get the same lifecycle: distillation may propose merging or retiring journeys that have replayed green for N layers with no coverage loss. Proposals only; a human applies them.
 - **The layer budget box:** each layer gate's evidence doc records expected vs. actual verification spend (rounds, suite runs/time, scenarios, `cost_usd` where known). **Expected values are human-owned** — set at layer planning or accepted from a distillation proposal, never authored by the loop graded against them. **Cold start:** the first instrumented layer runs with no box and only records; its observed actuals plus a human-chosen margin become the next layer's expected values. On overrun, `/aep-wrap` surfaces a **scope-vs-verification tradeoff to the human** at the layer-advance gate — the loop asks, it does not silently grind.
 
 ---
@@ -232,7 +211,7 @@ Suite-level economics (`suite_runs`, `suite_seconds`) live in the **layer budget
 A layer gate may flip to `passed` only when its evidence includes **at least one class the generator cannot modify**:
 
 1. a CI run bound to the merged SHA — **valid as tamper-evident only when the workflow definitions are outside the story's diff scope** (a diff touching `.github/workflows/**` triggers a scope refusal or human review; a generator that edits its own referee is not evidence — the same refusal covers the rest of the referee-asset class: journey `paths:` re-scoping after first authoring, and `policy.md` edits outside a scaffold run);
-2. journey execution performed by `/aep-wrap` (executes-never-authors — existing canon);
+2. journey execution performed by `/aep-wrap` (executes-never-authors);
 3. **read-only golden fixtures with a ledger-equality oracle** — fixture trees the generator's workspace cannot write, verified by before/after equality of durable state (SHA-256 ledger comparison; screenshots stay diagnostic, never a pass condition);
 4. production telemetry ingested by `/aep-watch`.
 
@@ -240,29 +219,6 @@ Additionally:
 
 - **Evaluator prompts are machine-assembled, and spawn authority leaves the player.** The orchestrating layer — not the generator — assembles the evaluator's context (criteria file, contract file, diff range), so the generator cannot curate what its judge sees. Where an orchestrating layer exists (autopilot; the main session in interactive runs), **it owns the evaluator spawn**; in genuinely standalone builds the spawn recipe stays generator-invoked, but in every mode the machine-assembled evaluator prompt marks `eval-request.md` as the **generator's untrusted claim** — data to verify, never framing to adopt.
 - **`policy.md` owns the `live_policy` decision** for cost-bearing dogfoods (live model calls, quota- or fee-metered targets): `every_gate | milestone_gates_only | none`, with the milestone list named in the policy. Non-milestone gates use zero-cost render smokes / scripted tiers, and their preflight does not probe the optional live half, whose absence stays SKIP.
-
----
-
-## Worked Examples
-
-**An environment incident, replayed.** A mandatory post-deploy dogfood fails on a missing CI secret and a wrong cloud account. Under this reference: the deploy-independent preflight refuses pre-merge on the first story (`REFUSING [dogfood-secret-absent:<NAME>]` — the secret _name_ was checkable without any deploy); whatever slips through, the gate-time target-bound preflight refuses (`REFUSING [auth-identity-mismatch:<got≠want>]`) before any scenario spend. Classification is `environment` by construction; the ownership check pairs it with `product-defect` findings for any unwired deploy config — filed as ordinary stories, not spun into recovery loops. A tracked literal-credential fallback never reaches that path: the inner-loop secret scan catches it pre-merge as a typed gate. Zero journey scenarios wasted, zero evaluation rounds, no misclassified recovery stories. The loop still pauses on the human ops checklist — environment repair is genuinely human work — but immediately, cheaply, and correctly labeled, with the gate re-probing on each tick so repair auto-resumes.
-
-**A display-positioning story, replayed.** Provisional: multi-module `files_affected`, contract obligations, not a walking-skeleton layer, no `sensitive_paths` match → `standard`. Binding: the merged diff stays inside declared scope → `standard` holds. Round 1 catches two real findings; the fixes land; round 2 passes with zero blocking findings — exactly `standard`'s one fix-and-reverify cycle. What the tier removes: a second full-suite run (the land verify already runs the suite on merged main) and the top-shelf evaluator profile for a cosmetic story. The journey and real-target dogfood stay: they are the tamper-evident half of the gate.
-
-**A tests-only diff.** A quarantine story rewrites a flaky spec file. Path-wise it is "docs-like" — but it touches referee assets, so it floors at `standard`; and it removes more `Verify` lines than it adds, so a negative assertion delta forces one evaluation round regardless. The cheapest self-reviewed tier is unreachable for changes to the referee by construction.
-
----
-
-## Anti-Patterns
-
-- **Perfect-score gates.** "Exactly 5.00/5.00 with zero findings" trains the generator to satisfy the evaluator, not the product, and turns ordinary convergence into round exhaustion. PASS is zero blocking findings.
-- **Self-classified failures.** A generator that labels its own FAIL `harness-flake` or `environment` is player, referee, and witness at once; spend-reducing classes require non-generator evidence, and the default is `product-defect`.
-- **Environment failures fed to code-repair machinery.** A missing secret is not a 2.79/5.00 code problem; no evaluation round may be spent before the taxonomy step runs.
-- **Per-story full-regression replay.** O(layers × stories) journey executions; full replay belongs to the layer gate and its checkpoints.
-- **Uninstrumented verification.** A loop that records `cost_usd: 0` forever cannot know it is over-verifying; unpriced spend grows until it displaces the product.
-- **The verification ratchet.** A lessons loop that only ever adds verification converges on a process that verifies instead of shipping; calibration must be able to loosen and retire — with dampers.
-- **Scaling verification with judge rounds.** The only scaling direction that gets more expensive and more gameable at once; add typed gates and real-environment evidence instead.
-- **Self-curated evidence.** A generator that assembles its own evaluator's context, writes the fixtures it is graded against, or edits the CI workflows that judge it, is not being verified.
 
 ---
 

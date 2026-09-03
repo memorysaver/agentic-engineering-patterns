@@ -114,7 +114,7 @@ Round 2 (bought only by a blocking finding):
   4. Blocking finding still open → escalate to human (eval_not_converging), proposing options
 ```
 
-**`max_rounds` is tier-derived**, read from `.dev-workflow/verification-recipe.json` when it exists (see `verification-economics.md`): `light` → 0 rounds (generator self-review); `standard` and `deep` → 2. A recipe written by a pre-v4.1.0 derive script may say 5 for `deep`; the loop still stops at 2 — this protocol's cap governs, not the file. With no recipe (standalone / non-adopting projects) the cap is also 2. There is no `standard → deep` escalation; `tier_escalated` is deprecated and stays `false`.
+**`max_rounds` is tier-derived**, read from `.dev-workflow/verification-recipe.json` when it exists (see `verification-economics.md`): `light` → 0 rounds (generator self-review); `standard` and `deep` → 2. With no recipe (standalone / non-adopting projects) the cap is also 2, and a recipe carrying a larger number does not raise it — this protocol's cap governs. There is no `standard → deep` escalation; `tier_escalated` is deprecated and stays `false`.
 
 ### Choosing the mode
 
@@ -193,7 +193,7 @@ whose findings are `material` and/or `polish` only is mechanically **PASS with n
 `material` findings are **fix-and-attest** — the generator fixes them and records each fix
 with its evidence (commit, test, or probe) in an addendum to `eval-request.md`; `polish` notes
 ride the response and the PR body. Both are surfaced rather than buried, and neither buys a
-further round (v4.1.0). Two label rules keep the grading honest: a finding on a hard-floor
+further round. Two label rules keep the grading honest: a finding on a hard-floor
 dimension (Security, Data Privacy) may not be graded `polish`, and a `blocking` grade must
 name the acceptance criterion or floor it violates. The evaluator authors findings and
 labels; the verdict is arithmetic over them — either side can recompute it, so a FAIL built
@@ -279,25 +279,12 @@ Task-level tracking for code evaluation. Format is intentionally JSON — models
 | `round`              | **Evaluator only**  | Which eval round                                        |
 | `notes`              | **Evaluator only**  | Detailed findings for this task                         |
 
-**Critical rule:** The generator MUST NOT modify `verification_steps`, `passes`, `evaluated_by`, `round`, or `notes`. The generator may write `commit_sha` after each Phase 4 task commit. Only the evaluator or a human can update the verification fields. This ensures the generator cannot mark its own work as passing.
+The table is the whole rule: the generator writes `commit_sha` after each Phase 4 task commit, and the evaluator (or a human) owns `verification_steps`, `passes`, `evaluated_by`, `round`, and `notes` — which is what keeps the generator from marking its own work as passing.
 
 ### Example (real-world, round 1)
 
 ```json
 [
-  {
-    "task": "feat: expose WORKSPACE_CONTAINER DO binding in wrangler config",
-    "commit_sha": "a1b2c3d4",
-    "verification_steps": [
-      "wrangler.jsonc includes workspace_container durable_object binding",
-      "WorkspaceContainer class is exported from the entrypoint",
-      "wrangler dev starts without binding errors"
-    ],
-    "passes": true,
-    "evaluated_by": "evaluator-round-1",
-    "round": 1,
-    "notes": "All three steps verified. Binding present, class exported, dev server starts clean."
-  },
   {
     "task": "feat: add source_type column to marketplace_plugins table",
     "commit_sha": "e5f6g7h8",
@@ -337,9 +324,8 @@ left to find stops.
 
 ## Round history
 
-- Round 1: FAIL (Correctness 2, Security 2) — 4 findings
-- Round 2: FAIL (Correctness 3, Security 2) — 3 findings (1 fixed, 0 new)
-- Round 3: FAIL (Security 2) — 2 findings (1 fixed, 0 new)
+- Round 1: FAIL (Correctness 2, Security 2) — 4 findings, 2 blocking
+- Round 2: FAIL (Correctness 3, Security 2) — 1 blocking finding still open
 
 ## Persistent issues
 
@@ -355,7 +341,7 @@ left to find stops.
 
 | Artifact type         | Max rounds                                                       | Typical rounds  |
 | --------------------- | ---------------------------------------------------------------- | --------------- |
-| Code (implementation) | tier-derived (light 0 / standard 2 / deep 5); 5 without a recipe | 1-2             |
+| Code (implementation) | tier-derived (light 0 / standard 2 / deep 2); 2 without a recipe | 1-2             |
 | Code (PR review)      | 1                                                                | 1 (single-pass) |
 | Product context       | 1                                                                | 1 (single-pass) |
 | Design artifacts      | 1-2                                                              | 1               |

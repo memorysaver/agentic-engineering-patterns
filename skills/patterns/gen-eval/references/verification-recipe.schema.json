@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/memorysaver/agentic-engineering-patterns/skills/aep-gen-eval/verification-recipe.schema.json",
   "title": ".dev-workflow/verification-recipe.json",
-  "description": "The one artifact the tier derivation emits: tier + dimension preset + hard floors from one input set, so depth and rubric never decouple. Produced downstream by the derive script /aep-e2e-skill-scaffolding scaffolds (its emitter is the source of truth this schema follows — writing it surfaced that the prose spec had drifted: evaluator_effort was missing none, and the inputs field names disagreed with what actually ships). Read by /aep-launch (evaluator existence + criteria policy), /aep-build Phase 5 (binding tier), and the autopilot's tier-aware nudges via status.json. Tamper rule: the binding derivation only ratchets UP from the provisional tier, and customization may add dimensions or raise floors, never lower them.",
+  "description": "The one artifact the tier derivation emits: tier + dimension preset + hard floors from one input set, so depth and rubric never decouple. Produced downstream by the derive script /aep-e2e-skill-scaffolding scaffolds, whose emitter is the source of truth this schema follows. Read by /aep-launch (evaluator existence + criteria policy), /aep-build Phase 5 (binding tier), and the autopilot's tier-aware nudges via status.json. Tamper rule: the binding derivation only ratchets UP from the provisional tier, and customization may add dimensions or raise floors, never lower them.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -40,7 +40,7 @@
     },
     "tier_escalated": {
       "type": "boolean",
-      "description": "Deprecated since v4.1.0: always false. There is no standard → deep auto-escalation; the field is kept so earlier recipes and consumers still validate"
+      "description": "Deprecated: always false. There is no standard → deep auto-escalation; the field is kept so recipes and consumers that carry it still validate"
     },
     "scope_drift": {
       "type": "boolean",
@@ -73,10 +73,11 @@
     "max_rounds": {
       "type": "integer",
       "minimum": 0,
-      "description": "Eval-round cap for the binding tier (light 0; standard and deep 2 since v4.1.0; a negative assertion delta raises 0 to 1). A pre-v4.1.0 recipe may carry 5 for deep — the protocol cap of 2 still governs"
+      "description": "Eval-round cap for the binding tier (light 0; standard and deep 2; a negative assertion delta raises 0 to 1). A recipe carrying a larger number does not raise the cap — the protocol cap of 2 governs (eval-protocol.md)"
     },
     "evaluator_effort": {
       "x-aep-vocab": "evaluator_effort",
+      "description": "Effort pinned on every evaluator spawn. none is the light tier (no evaluator spawns); default and highest are deprecated aliases of high",
       "enum": ["none", "high", "default", "highest"]
     },
     "inputs": {

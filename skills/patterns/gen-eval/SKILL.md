@@ -30,14 +30,7 @@ Dual-use: consumer skills read this skill's `references/` files — the canonica
 
 ## The Core Principle
 
-**Generator and evaluator must be separate agents.** This is not optional — it is the single most impactful quality improvement in agentic workflows.
-
-Why:
-
-1. Agents cannot honestly evaluate their own work (demonstrated by Anthropic research)
-2. Self-evaluation produces inflated scores and rationalized problems
-3. Separate evaluation catches issues the generator is blind to
-4. The cost of a second agent is trivial compared to shipping broken work
+**Generator and evaluator are separate agents.** Self-evaluation produces inflated scores and rationalized problems (the finding quoted above); an independent evaluator catches what the generator is blind to.
 
 > **Scaling up:** generator/evaluator is the canonical instance of _adversarial
 > verification_. When one task produces many findings/claims that each need an
@@ -58,7 +51,7 @@ These files are the canonical homes for the gen/eval contracts every consumer (`
 | [`references/eval-protocol.md`](references/eval-protocol.md)                   | Eval request/response format, verification JSON schema, the eval loop (request → response → fix → re-evaluate), execution contexts (Task subagent, codex exec, tmux, workflow), the needs-human gate record        | Running the evaluation loop, tracking verification state                          |
 | [`references/recovery-ladder.md`](references/recovery-ladder.md)               | Two-round recovery ladder (same fix → re-ground → human gate proposing fresh generator / decompose) for a `blocking` finding that survives round 1                                                                                        | A `blocking` finding is still open after round 1                                    |
 | [`references/findings-format.md`](references/findings-format.md)               | Severity categorization (blocking/important/minor), deduplication protocol, presentation format, changelog entry format                                                                                            | Consolidating findings from multiple agents, presenting results                   |
-| [`references/verification-economics.md`](references/verification-economics.md) | Validator placement matrix, failure taxonomy + classification authority, environment preflight, verification tiers + two-point derivation, verification recipe, accounting schema, tamper-evident evidence classes | Routing a FAIL, deriving verification depth, pricing/recording verification spend |
+| [`references/verification-economics.md`](references/verification-economics.md) | Validator placement matrix, failure taxonomy + classification authority, environment preflight, verification tiers + two-point derivation, verification recipe, accounting sensors, tamper-evident evidence classes | Routing a FAIL, deriving verification depth, pricing/recording verification spend |
 
 ---
 
