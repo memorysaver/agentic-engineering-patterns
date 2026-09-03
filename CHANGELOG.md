@@ -57,6 +57,19 @@ decision documents are the contract:
 - **No model-era fossils (F6).** The adw README capability diagram, the workflow
   pattern-catalog routing example (effort on one model, not opus/sonnet), and
   `/aep-workflow`'s sizing rule (duration alone is not a reason to split a context).
+- **Corpus pass — F7 archaeology out, F8 one canonical home (all 24 skills).** Every skill
+  reviewed against the Fable 5.1 guideline and for restatement inside the story loop. Skill
+  text now states current rules without version numbers, PR numbers, incident IDs, or
+  downstream project names (61 → 12 such phrases; the rest are ordinary English); protocols
+  canonical in one file are pointer-only everywhere else; eleven contradictions fixed toward
+  canon (five-round leftovers in eval-protocol, review-trigger, launch evaluator.md, and
+  dispatch workflow-mode; a `pending` gate status and an `estimated_size` field that exist
+  nowhere; a stale coherence-check location; a mis-pointed eval-response format; a wrong
+  canonical install root). All-caps imperatives 51 → 15 (verbatim nudge payloads and bash
+  text), steering 75/6 → 63/0. Authored prose −2.6%, story-loop path −4.6%; build's SKILL.md
+  37.6 → 34.5 KB, gen-eval's verification-economics.md 39.5 → 34.2 KB. Product-context and
+  patterns READMEs now list all their skills. Phase structure is untouched (horizon: a
+  behavior eval before de-prescription).
 - **`/aep-scaffold` audit** reads the `<!-- aep-agents-template: vX.Y.Z -->` marker instead
   of the prose `pinned at **vX**` note and checks `project-convention/README.md`.
 - Stale Status lines closed: build-convergence-pipeline and deterministic-orchestration

@@ -31,6 +31,36 @@ The v4.0.0 audit of this corpus against the prompt-audit checklist is **clean on
 - **F5 — The bootstrap carries what only the build run knows.** `/aep-launch` prepends a fixed preamble (`launch/templates/bootstrap-preamble.md`) to every workspace bootstrap: the run is unattended and the stop list is `merge-decision-cases.md`; progress claims are audited against tool results before they are reported; changes and committed tests stay within what the story asks; edits are surgical where the result is the same. The generic working agreement is *not* repeated here — the worktree inherits the project's `AGENTS.md` (see [project-convention-and-upgrade-path.md](project-convention-and-upgrade-path.md)).
 - **F6 — No model-era fossils.** Capability diagrams and routing examples describe the current generation without naming retired models; the one routing example routes by *effort* on one model, not by model family.
 
+## Amendment (2026-09-03): the corpus pass — F7 and F8
+
+The owner asked for two things after F1–F6 landed: every skill reviewed against the Fable 5.1 guideline, and the corpus reviewed for token efficiency from the angle that the story loop re-reads the same skills on every cycle. Two rules were added and applied across all 24 skills in one pass (five groups, one editing agent each, one integration review):
+
+- **F7 — Archaeology stays out of skill text.** Skill prose states the current rule as if it were the only rule that ever existed. Version numbers, PR numbers, incident IDs, downstream project names, "drift bug #N", "no longer", "previously" belong in `CHANGELOG.md` and `docs/decisions/`; a skill may carry a pointer to the rationale, not the narrative. Exceptions: the install pin in `/aep-onboard` Phase 1, `references/migrations.md` (a ledger by design), the pinned release in `AGENTS.md.tmpl`, `legacy` as a mode name, and a schema `description` that names a value as a deprecated alias (without the version).
+- **F8 — One canonical home per protocol; every other mention is pointer-only.** Where a protocol is canonical in one file (tiers and taxonomy in gen-eval's `verification-economics.md`, the eval loop in `eval-protocol.md`, the `verification:` block in wrap's `convergence.md`, signals in launch's `signals-spec.md`, stop conditions in build's `merge-decision-cases.md`, `$BASE` in git-ref, journey authoring in e2e's `layer-gate-loop.md`, executor modes in `backends.md`, the tick in `tick-protocol.md`), every other file carries at most the one or two lines its reader must act on plus the pointer. Rendered templates stay self-contained. When two files disagree, the canonical home wins and the other is fixed.
+
+**Measured (authored prose, generated copies excluded):**
+
+| Measure | Before | After |
+| --- | ---: | ---: |
+| Authored skill prose (md + tmpl) | 1,049,687 B | 1,022,920 B (−2.6%) |
+| Story-loop path (dispatch, launch, build, wrap, autopilot, gen-eval, executor) | 469,111 B | 447,497 B (−4.6%) |
+| `SKILL.md` total lines | 5,261 | 5,179 |
+| Archaeology phrases in skill text | 61 | 12 (all ordinary English: "previously impossible", "no longer appears") |
+| All-caps MUST / NEVER / ALWAYS / CRITICAL / IMPORTANT | 51 | 15 (nudge payloads delivered verbatim, bash `echo` text, table column labels) |
+| Steering baseline: negation lines / hard imperatives | 75 / 6 | 63 / 0 |
+
+**Contradictions the pass surfaced and fixed toward canon (eleven):** eval-protocol's round-budget table and escalation example still said five rounds; `review-trigger.md` escalated after "5 rounds" and "3 consecutive rounds"; launch's `evaluator.md` said `deep` = 5; dispatch's `workflow-mode.md` said `deep` runs "the full cap at top effort"; validate's `protocol-specs.md` listed a gate status `pending` that the vocabulary does not have and referenced an `estimated_size` field that exists nowhere; `drift-facts.md` said the coherence check "belongs in `/aep-validate`… until then" when validate Step 0 already runs it; `signals-spec.md` sent the eval-response format to the per-workspace criteria file instead of `eval-protocol.md`; `patterns/README.md` named `.agents/skills` the canonical install root against the per-agent install contract; autopilot's SKILL declared "exactly two prohibitions" and stated a third; `orchestration-learning.md` carried an example that "passed after 3 rounds".
+
+**The byte reduction is modest by design.** The pass removed dated instructions, restatement, and contradiction; it did not remove phases, gates, schemas, exact commands, or examples that pin a format, and the phase structure of the five largest `SKILL.md` files stays (horizon, below). The token win that matters is in the loop: build's `SKILL.md` fell from 37.6 KB to 34.5 KB and now points at gen-eval, e2e, executor, and its own references instead of re-teaching them; gen-eval's `verification-economics.md` fell from 39.5 KB to 34.2 KB and no longer carries the `verification:` block, the worked incidents, or the anti-pattern list.
+
+**Tooling fact the pass surfaced, recorded for editors:** `scripts/build-skills.sh` materializes a `_shared/` file into a skill only while that skill's `SKILL.md` mentions the literal path; trimming the mention un-declares the copy, `--check` reports the managed-file set as stale, and the next full build deletes the file — which breaks any sibling script that imports it (`validate-state.mjs` and `validate-signal.mjs` import `json-schema.mjs`). Two groups hit this and restored the mention. The rule is now in `project-convention/skills.md`.
+
+**Follow-ups this pass did not take (each is a contract change):**
+
+- `findings-format.md` grades consolidated findings `Blocking / Important / Minor` while every eval-response grades `blocking / material / polish` (`finding_impact`). Two near-synonym scales in one skill; reconciling them touches the `(aep-vocab)` listings and validate's consolidation format.
+- `launch/references/evaluator.md` no longer carries a copy of the evaluator prompt (pointer to `agent-contracts.md`); the criteria-file assembly it still owns could move to the recipe emitter in a later release.
+- `map/SKILL.md`'s `topology.routing.retry_routing` default (`same agent 2x → fresh agent 1x → human`) is a story-routing field, not the eval ladder, and was left; it reads like the old ladder and may confuse a reader.
+
 ## What is deliberately not done (horizon)
 
 - **Phase de-prescription of the large SKILL.md files** (scaffold, autopilot, build, dispatch, git-ref). The guide says over-prescriptive skills reduce Fable 5.1 output quality *and* says to A/B before removing. v4.0.0's amendment records that no behavior eval exists (parity was a dry-run inventory). Removing phases without one would be the guide's own anti-pattern. Trigger: a behavior eval that runs one story end-to-end under both corpora.
