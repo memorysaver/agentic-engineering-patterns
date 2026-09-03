@@ -63,24 +63,12 @@ Every dispatch run follows the same 7-step protocol. Each step is idempotent —
 
 Sync workspace signals into the YAML **before** computing anything — stale YAML shows `in_progress` for stories already done and keeps downstream stories `pending` when they are actually ready.
 
-```
-For each story with status: in_progress or in_review:
-  workspace = story.assigned_to
-  signal_path = .feature-workspaces/<workspace>/.dev-workflow/signals/status.json
-
-  Read signal file (if exists):
-    If signal.story_status == "completed":
-      Update YAML: story.status → completed
-      Update: story.completed_at = signal.completed_at
-      Update: story.pr_url = signal.pr_url
-      Update: story.cost_usd = signal.cost_usd
-    If signal.story_status == "in_review":
-      Update YAML: story.status → in_review
-      Update: story.pr_url = signal.pr_url
-    If signal.story_status == "failed":
-      Update YAML: story.status → failed
-      Append signal.failure_log to story.failure_logs
-```
+For each story with status `in_progress` or `in_review`, read
+`.feature-workspaces/<story.assigned_to>/.dev-workflow/signals/status.json` and copy the record
+into the story: `signal.story_status` → `story.status`, plus `completed_at` / `pr_url` /
+`cost_usd` on `completed`, `pr_url` on `in_review`, and `failure_log` appended to
+`story.failure_logs` on `failed`. A story whose signal file is absent stays as it is. The signal
+shape is canonical in `/aep-launch` → `references/signals-spec.md`.
 
 **Postcondition:** every `in_progress`/`in_review` story's YAML status matches its signal file.
 
@@ -217,14 +205,11 @@ For each selected story, dispatch atomically:
 5. THEN create OpenSpec change and workspace
 ```
 
-The commit happens BEFORE the workspace is created. Two consecutive `/aep-dispatch` runs: Run 1 writes `in_progress` and commits. Run 2 reads `in_progress`, skips. No double dispatch.
+The commit happens before the workspace is created, which is what makes a second run safe: run 1 writes `in_progress` and commits, run 2 reads `in_progress` and skips.
 
-> **Mechanical ordering invariant [lock-before-workspace].** This step is
-> deterministic WHEN+SHAPE — a precondition re-read, a state flip, a commit,
-> in that order. It is exactly the class of step that drifts when left to
-> recall and holds when owned by mechanism; a project scaling dispatch should
-> put it behind a typed gate (a verb that refuses `[story-not-ready]` /
-> `[dependencies-completed]` by name). See `aep-autopilot`
+> **Mechanical ordering invariant [lock-before-workspace].** A project scaling
+> dispatch puts this ordering behind a typed gate — a verb that refuses
+> `[story-not-ready]` / `[dependencies-completed]` by name. See `aep-autopilot`
 > `references/deterministic-orchestration.md`.
 
 ---
@@ -243,7 +228,7 @@ Assemble the handoff package per `references/context-assembly.md`, pruned to the
 
 ## Commit and Push Before Handoff
 
-> **CRITICAL:** Commit and push ALL dispatch artifacts (YAML updates, OpenSpec changes, changelog) to remote BEFORE handing off to `/aep-launch`. If the dispatch commit stays local, it is lost when workspace PRs merge to the integration branch and you rebase. The push ensures OpenSpec changes survive on the remote.
+Push every dispatch artifact (YAML updates, OpenSpec changes, changelog) to the remote before handing off to `/aep-launch`: a dispatch commit that stays local is lost when workspace PRs merge to the integration branch and you rebase.
 
 Append to the `changelog` section:
 
@@ -257,9 +242,7 @@ Append to the `changelog` section:
 
 Then commit and push per `/aep-git-ref` "Control-Plane Commits": `git add product-context.yaml openspec/changes/`, commit (`feat: dispatch <ids> — Layer N Wave M`), and push to `$BASE` (resolve `$BASE` per `/aep-git-ref` "Resolving `$BASE`").
 
-**Verify the push succeeded** before proceeding to handoff. If push fails (e.g., remote conflict), resolve before launching workspaces.
-
-**Postcondition:** the dispatch commit is present on `origin/$BASE`.
+**Postcondition:** the dispatch commit is present on `origin/$BASE` — on a push failure (remote conflict), resolve it before launching workspaces.
 
 ---
 

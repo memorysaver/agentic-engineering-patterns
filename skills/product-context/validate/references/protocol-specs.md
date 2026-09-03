@@ -6,7 +6,7 @@ Reference document for the Protocol Checker agent. Defines the exact requirement
 
 ## Dispatch Protocol Requirements
 
-The `/aep-dispatch` skill reads stories from `product-context.yaml` and computes `dispatch_score` for ranking. Every story MUST have these fields for dispatch to function.
+The `/aep-dispatch` skill reads stories from `product-context.yaml` and computes `dispatch_score` for ranking. Every story carries these fields; dispatch cannot rank one that lacks them.
 
 ### Required Story Fields
 
@@ -58,7 +58,7 @@ dispatch_epoch: integer # starts at 0, incremented each dispatch run
 layer_gates:
   - layer: integer
     name: string
-    status: string # pending | passed | failed
+    status: string # layer_gate_status in references/aep-vocabulary.schema.json
     description: string
     tests: list
     pass_criteria: string
@@ -125,8 +125,7 @@ If the build agent uses verification tracking:
 
 Rules:
 
-- Generator MUST NOT modify `verification_steps` or `passes`
-- Only evaluator or human updates these fields
+- `verification_steps` and `passes` are written only by the evaluator or a human — the separation that stops the generator grading itself.
 
 ### Signal Protocol
 
@@ -169,10 +168,10 @@ topology:
 
 ## Common Protocol Violations
 
-These are the most frequently caught issues (ranked by frequency from real validations):
+The most frequently caught issues:
 
-1. **Missing `business_value` field** — map skill doesn't produce it, dispatch requires it
-2. **`estimated_size` vs `complexity`** — map uses `small/medium/large`, dispatch expects `S/M/L`
+1. **Missing `business_value` field** — dispatch reads it; `null` is legal (score derives from priority), absent is not
+2. **Size spelled `small` / `medium` / `large`** — `complexity` is `S` / `M` / `L`
 3. **Missing `dispatch_epoch`** — top-level field required for idempotent dispatch runs
 4. **Missing `attempt_count` and `failure_logs`** — required for retry routing
 5. **Layer gate missing `status` field** — dispatch checks this for layer advancement

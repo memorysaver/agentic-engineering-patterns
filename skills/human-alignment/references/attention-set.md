@@ -8,8 +8,7 @@ predicate list — and drifts. This spec is the single definition. It is a
 **derived view**: computed on read, never stored.
 
 > Decision record: [`docs/decisions/human-alignment.md`](https://github.com/memorysaver/agentic-engineering-patterns/blob/main/docs/decisions/human-alignment.md) D7.
-> First consumer: `/aep-human-alignment`. `/aep-autopilot` escalation and
-> `/aep-watch` alerting re-point here in later releases.
+> Consumer: `/aep-human-alignment`.
 
 ## Why derived, not stored
 
@@ -17,9 +16,8 @@ predicate list — and drifts. This spec is the single definition. It is a
   story is failed _and_ needs a human; one enum cannot carry both.
 - Half the signals are **not stories at all** (amendment log, object maps,
   calibration, open questions).
-- A stored copy of a derivable truth is a second source. Validation will not
-  catch it when it drifts — the OBS-4 shape, and this repo's most common bug
-  class.
+- A stored copy of a derivable truth is a second source; validation does not
+  catch it when it drifts.
 
 ## The signal predicates
 

@@ -2,8 +2,8 @@
 
 How `/aep-reflect` (and `/aep-watch`) pull real-world signals automatically, and
 how a layer's **quantitative** outcome contract is evaluated without a human.
-This augments the interactive reflect flow — it never replaces human review by
-default. (Gap G5.)
+It augments the interactive reflect flow rather than replacing human review,
+which stays the default.
 
 > **Authoring note:** this file is canonical in
 > `skills/product-context/_shared/references/`; `scripts/build-skills.sh`
@@ -78,7 +78,7 @@ report** (`## <title>` / `**Severity:**` / `**Category:**` / `**Repro:**` /
 This adapter parses each `##` finding into the **`/aep-watch` Step 1 finding
 record** (the operative shape Step 3 dedupes and Step 4 turns into a story — _not_
 the 5-field telemetry record above, which is the classifier's conceptual input)
-so the **same** Step 2 classifier consumes it — closing the G6 self-feeding loop
+so the **same** Step 2 classifier consumes it — closing the self-feeding loop
 for **every** dogfood trigger, not just the guard path. It is a **file glob**, not
 a network source: self-describing, so `coverage_check` (§1.5) does not gate it.
 
@@ -224,8 +224,8 @@ coverage_check(needed_signals):
 **On `covered == false`:** surface
 `"telemetry binding incomplete for <missing> — run /aep-map (observability step)"`
 and **block the auto path** (watch refuses to claim auto-coverage; reflect falls
-back to the human pause; autopilot pauses). Missing wiring must **block auto,
-never silently no-op** — that's the v2 human-in-the-loop default.
+back to the human pause; autopilot pauses). Missing wiring **blocks auto rather
+than silently no-opping** — the human stays in the loop.
 
 ---
 
@@ -239,7 +239,7 @@ When covered, evaluate per `topology.routing.auto_outcome_eval`:
 
 | Metric `type`                                        | `auto_outcome_eval: quantitative`                                                                                                     | default (`none`)               |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| **quantitative** (numeric, measurable from a source) | fetch actual value via the matching `telemetry_sources` query, apply `keep_if`/`otherwise` mechanically, record result — **no pause** | human pause (current behavior) |
+| **quantitative** (numeric, measurable from a source) | fetch actual value via the matching `telemetry_sources` query, apply `keep_if`/`otherwise` mechanically, record result — **no pause** | human pause |
 | **qualitative**                                      | human pause — **unless** `full_auto: true` (then agent-judgment auto-eval)                                                            | human pause                    |
 
 On a **fetch failure or ambiguity**, fall back to the human pause (fail safe, not
@@ -253,7 +253,7 @@ fail open). Record every auto-evaluation in the `changelog`:
 
 ---
 
-## 3. `full_auto` interaction (A1)
+## 3. `full_auto` interaction
 
 `topology.routing.full_auto` (default **false**) is the master switch. It only
 changes the **qualitative** path:

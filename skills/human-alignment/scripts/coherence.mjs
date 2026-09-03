@@ -26,9 +26,8 @@ import { fileURLToPath } from "node:url";
 
 import { loadVocabulary } from "./json-schema.mjs";
 
-// Read from references/aep-vocabulary.schema.json rather than restated here:
-// this file used to carry one of three incompatible spellings of the gate
-// vocabulary that shipped in the corpus simultaneously.
+// Read from references/aep-vocabulary.schema.json rather than restated here, so
+// the gate vocabulary has exactly one spelling across the corpus.
 const REFERENCES = join(dirname(fileURLToPath(import.meta.url)), "../references");
 const GATE_VOCABULARY = loadVocabulary(REFERENCES, "layer_gate_status");
 

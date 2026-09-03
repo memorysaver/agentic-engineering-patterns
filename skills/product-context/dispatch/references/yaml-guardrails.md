@@ -20,7 +20,7 @@ npx tsx -e "
 "
 ```
 
-**If validation fails, fix the YAML before committing.** Do not commit broken YAML under any circumstances.
+**If validation fails, fix the YAML before committing.**
 
 ## Common YAML Pitfalls in product-context.yaml
 
@@ -42,7 +42,7 @@ acceptance_criteria:
   - "Generate page redesigned for multi-step video workflow: intent prompt input, multi-step progress display"
 ```
 
-**Rule:** Never end a list item with `:` followed by indented sub-items. Either quote the item or flatten the sub-list.
+**Rule:** When a list item ends with `:` above indented sub-items, quote the whole item or flatten the sub-list.
 
 ### 2. Embedded double quotes inside list items
 

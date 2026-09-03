@@ -41,7 +41,7 @@ Collect observations from all sources:
 - **Lessons learned:** Read `lessons-learned/*.md` (observations captured by workspace agents during builds); summarize recurring errors, solutions that worked, missing documentation.
 - **Layer distillations:** Read `lessons-learned/distillations/*.yaml` — the proposal-only synthesis written by `/aep-wrap` Reflect and Advance when a layer completes. Normalize each item via the `distillation` adapter (`references/telemetry-ingestion.md` → Distillation adapter): `refinements` → refinement (with `target_layer`), `skill_amendments` → process (proposed, never auto-applied), `weak_areas` → discovery/refinement.
 
-**Automated ingestion (optional):** Error logs, analytics, and monitoring can be pulled in directly per `references/telemetry-ingestion.md`, normalized into the same observation format Step 2 classifies. Configure endpoints under `topology.routing.telemetry_sources`. Automation augments the interactive sources; ingested records merge with human input before classification, and the human still reviews each classification.
+**Automated ingestion (optional):** Error logs, analytics, and monitoring can be pulled in directly per `references/telemetry-ingestion.md`, normalized into the same observation format Step 2 classifies. Configure endpoints under `topology.routing.telemetry_sources`. Ingested records merge with human input before classification, and the human still reviews each classification.
 
 **Postcondition:** every source above is reviewed and its findings normalized into observation records for Step 2 (or the source is explicitly empty this cycle).
 
@@ -80,7 +80,7 @@ New requirement or invalidated assumption.
 
 Fundamentally changes the bet — the original opportunity hypothesis is wrong or has shifted.
 
-- **Action:** Back to `/aep-envision` Phase 0. This is rare but critical to recognize. Signs: the problem you're solving isn't the problem users actually have, or a market shift made the opportunity moot.
+- **Action:** Back to `/aep-envision` Phase 0. Signs: the problem you're solving isn't the problem users actually have, or a market shift made the opportunity moot.
 
 ### Process
 
@@ -96,11 +96,11 @@ Observations about the workflow itself, not the product (permission stalls, sign
 
 ## Step 2.5: Re-slice the Map
 
-After classifying all feedback, review the current layer assignments. Release lines are pencil marks — they shift based on what you learned. This is normal iteration.
+After classifying all feedback, review the current layer assignments. Release lines are pencil marks — they shift based on what you learned.
 
 For each layer not yet built: review story priorities against the classified feedback; promote stories from later layers when learning shows they're needed sooner and demote ones that turned out less critical; add new stories from classified Refinements to the appropriate layer; update the `layer` assignments in the `stories` section of `product-context.yaml`.
 
-**Key rule:** Re-slicing does NOT require going back to `/aep-envision` — you route there only when the backbone (user activities) or product framing changes, not when layer assignments shift. See `docs/decisions/release-line-adjustments.md` for the full framework.
+**Key rule:** Re-slicing does not require going back to `/aep-envision` — you route there only when the backbone (user activities) or product framing changes, not when layer assignments shift. See `docs/decisions/release-line-adjustments.md` for the full framework.
 
 **Postcondition:** `layer` assignments in `stories` reflect the classified feedback (or are unchanged because nothing moved).
 

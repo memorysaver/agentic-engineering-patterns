@@ -17,6 +17,6 @@ ls product-context.yaml 2>/dev/null
 
 ## Rules
 
-- Detection is automatic — the user never picks a mode manually, and skills never ask which mode is active.
+- Detection is automatic — the probe answers which mode is active, so no skill asks the user.
 - Preserve all sections a skill is not updating, in either mode.
 - Stable design artifacts (object model, object maps, calibration files) live under `product/` in both modes — create the directory in V1 mode when needed.
