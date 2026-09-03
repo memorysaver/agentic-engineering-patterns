@@ -89,13 +89,14 @@ Model capability ─────────────────────
 
 ◄── more scaffolding needed          less scaffolding needed ──►
 
-Sonnet 4.5 era:          Opus 4.6 era:           Future:
-┌──────────────┐         ┌──────────────┐        ┌──────────────┐
-│ Sprint chunks │         │              │        │              │
-│ Context resets│         │ Full sessions│        │ Even simpler │
-│ Per-sprint QA │         │ End-of-run QA│        │ evaluator?   │
-│ Heavy scaffold│         │ Light scaffold│       │ Fewer phases │
-└──────────────┘         └──────────────┘        └──────────────┘
+Earlier generations:        Claude 5 generation (current target):
+┌────────────────┐          ┌──────────────────────────────────┐
+│ Sprint chunks   │          │ One session per story             │
+│ Context resets  │          │ Two-round evaluator; only a       │
+│ Per-sprint QA   │          │   blocking finding buys round 2   │
+│ Heavy scaffold  │          │ Light scaffold: goals + gates     │
+└────────────────┘          └──────────────────────────────────┘
+Next: fewer phases — after a behavior eval shows the removed phase was not load-bearing
 
 This workflow supports:
   Full mode ── All phases + evaluator    (complex features)

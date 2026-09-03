@@ -47,8 +47,10 @@ end to shape the final result.
 **Primitive.** A single classifier `agent()` whose structured result drives a
 branch / model choice; often the first stage of a `pipeline`.
 
-**AEP example.** `/aep-dispatch` deciding story type, or a model-routing classifier
-that sends simple stories to a cheaper tier and hard ones to Opus.
+**AEP example.** `/aep-dispatch` deciding story type, whose complexity drives how much
+verification the story earns (its tier) — not which model family runs it. Route by effort on
+one model first (one model keeps one cache namespace); add a second model family only after
+measuring that it wins on cost per completed task.
 
 ```js
 const klass = await agent(`Classify this task: ${task}. Return {type, complexity}.`, {
@@ -61,8 +63,8 @@ const klass = await agent(`Classify this task: ${task}. Return {type, complexity
     required: ["type", "complexity"],
   },
 });
-const model = klass.complexity === "high" ? "opus" : "sonnet";
-const result = await agent(handlerPromptFor(klass.type), { model });
+// complexity feeds the verification tier downstream; the handler is chosen by type
+const result = await agent(handlerPromptFor(klass.type), { label: `handle:${klass.type}` });
 ```
 
 ---
