@@ -9,6 +9,11 @@ it in context only.
 
 ```
 <project>/
+├── AGENTS.md                     # from /aep-onboard templates/AGENTS.md.tmpl — line 1 is the
+│                                 #   <!-- aep-agents-template: vX.Y.Z --> marker the audit reads
+├── CLAUDE.md                     # @AGENTS.md (when Claude Code is installed)
+├── Project-Convention/
+│   └── README.md                 # convention index (by reference); one file per added convention
 ├── skills/
 │   └── e2e-test/                # REAL dir — canonical, BDD layer-gate e2e (cross-tool)
 │       ├── SKILL.md  ├── policy.md  └── scripts/seed.sh

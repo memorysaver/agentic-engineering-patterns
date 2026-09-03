@@ -169,7 +169,7 @@ cat .feature-workspaces/<name>/.dev-workflow/signals/ready-for-review.flag
 **Created:** Whenever the worker hits a decision only the human can make
 
 ```markdown
-## 2026-06-10T14:30:00Z — Phase 5 (eval round 4)
+## 2026-06-10T14:30:00Z — Phase 5 (eval round 2)
 
 **Question:** Eval keeps failing Security on the token storage approach. Options: (a) httpOnly cookie, (b) encrypted localStorage. Spec is silent.
 **Context:** Both pass functional criteria; the choice affects the API contract.
