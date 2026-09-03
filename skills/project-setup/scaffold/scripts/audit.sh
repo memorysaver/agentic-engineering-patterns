@@ -46,7 +46,7 @@ chk "an agent install exists (.claude/skills or .agents/skills)" bash -c '[ -d .
 chk "AGENTS.md present"                    test -f AGENTS.md
 chk "AGENTS.md has AEP Workflow section"   bash -c 'grep -q "AEP Workflow" AGENTS.md 2>/dev/null'
 chk "AGENTS.md opens with the template marker" bash -c 'head -1 AGENTS.md 2>/dev/null | grep -q "aep-agents-template: v"'
-chk "Project-Convention/README.md present"  test -f Project-Convention/README.md
+chk "project-convention/README.md present"  test -f project-convention/README.md
 # CLAUDE.md is owed where a Claude skill install exists (at least one entry in
 # .claude/skills — an empty directory is scaffolding) or the file already does;
 # a Codex-only repo may still carry .claude/ for hooks and opsx aliases.

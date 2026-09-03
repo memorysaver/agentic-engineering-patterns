@@ -44,13 +44,13 @@ Phase 1 installs only AEP and adds no companion project-level skill bundle. AEP'
 
 ## Phase 1.5 — Wire the Agent Instruction Files
 
-The instruction files are versioned with AEP. Three templates ship with this skill under `templates/`: `AGENTS.md.tmpl` (the generic working agreement, the `## AEP Workflow` section with the pinned release and the `/aep-easy-explain` register, and a `## Project Context` pointer to `Project-Convention/`), `CLAUDE.md.tmpl` (`@AGENTS.md`), and `Project-Convention/README.md.tmpl` (the convention index: how the project runs on AEP, the `docs/` routing table, the directories AEP owns, how to add a convention). The first line of `AGENTS.md` is the marker `<!-- aep-agents-template: vX.Y.Z -->`; `/aep-scaffold`'s audit reads it, and [references/migrations.md](references/migrations.md) keys its upgrade steps to it.
+The instruction files are versioned with AEP. Three templates ship with this skill under `templates/`: `AGENTS.md.tmpl` (the generic working agreement, the `## AEP Workflow` section with the pinned release and the `/aep-easy-explain` register, and a `## Project Context` pointer to `project-convention/`), `CLAUDE.md.tmpl` (`@AGENTS.md`), and `project-convention/README.md.tmpl` (the convention index: how the project runs on AEP, the `docs/` routing table, the directories AEP owns, how to add a convention). The first line of `AGENTS.md` is the marker `<!-- aep-agents-template: vX.Y.Z -->`; `/aep-scaffold`'s audit reads it, and [references/migrations.md](references/migrations.md) keys its upgrade steps to it.
 
-- **No `AGENTS.md` yet:** copy the three templates into place as-is (`Project-Convention/README.md` at the repository root) and commit them with the install.
-- **Existing `AGENTS.md`:** read its marker (none ⇒ pre-v4.1.0) and apply every section of `references/migrations.md` between it and the pinned release, in order. Project-specific content moves into `Project-Convention/<topic>.md`, one file per topic, linked from the README; nothing project-specific stays in `AGENTS.md`. A hand-authored `CLAUDE.md` is merged into `AGENTS.md` by hand before it becomes `@AGENTS.md`.
+- **No `AGENTS.md` yet:** copy the three templates into place as-is (`project-convention/README.md` at the repository root) and commit them with the install.
+- **Existing `AGENTS.md`:** read its marker (none ⇒ pre-v4.1.0) and apply every section of `references/migrations.md` between it and the pinned release, in order. Project-specific content moves into `project-convention/<topic>.md`, one file per topic, linked from the README; nothing project-specific stays in `AGENTS.md`. A hand-authored `CLAUDE.md` is merged into `AGENTS.md` by hand before it becomes `@AGENTS.md`.
 - **Codex-only repo:** skip `CLAUDE.md`.
 
-**Verify:** `head -1 AGENTS.md` prints the marker for the pinned release; `head -1 CLAUDE.md` prints `@AGENTS.md` where Claude Code is installed; `Project-Convention/README.md` exists.
+**Verify:** `head -1 AGENTS.md` prints the marker for the pinned release; `head -1 CLAUDE.md` prints `@AGENTS.md` where Claude Code is installed; `project-convention/README.md` exists.
 
 ---
 

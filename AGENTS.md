@@ -5,7 +5,7 @@
 
 - Read `README.md` before starting work to understand the project's purpose and concepts.
 - Treat the repository's documentation and code as the source of truth. Do not invent architecture, commands, conventions, or requirements.
-- This project's conventions live in `Project-Convention/`. Read `Project-Convention/README.md` first and open only the files that apply to the task.
+- This project's conventions live in `project-convention/`. Read `project-convention/README.md` first and open only the files that apply to the task.
 
 ## Working Agreement
 
@@ -27,7 +27,7 @@
 
 - First privately identify what information is needed; gather independent items in parallel when possible.
 - Inspect relevant files before editing. Prefer `rg` and `rg --files` for searches.
-- Verify changes in proportion to their risk using the repository's existing checks (see `Project-Convention/`).
+- Verify changes in proportion to their risk using the repository's existing checks (see `project-convention/`).
 - Add permanent tests only when requested or when the repository already tests that kind of behavior. Keep them focused on the requested behavior.
 - Use temporary checks when useful, but do not commit disposable artifacts.
 - Never claim a command or test passed unless it was run successfully. Report the exact checks performed and any checks that could not run.

@@ -24,10 +24,10 @@ infra() {
   printf 'policy\n' > "$root/skills/e2e-test/policy.md"
   ln -s '../../skills/e2e-test' "$root/.agents/skills/e2e-test"
   ln -s '../../skills/e2e-test' "$root/.claude/skills/e2e-test"
-  # v4.1.0: the instruction files carry the template marker and a Project-Convention index.
+  # v4.1.0: the instruction files carry the template marker and a project-convention index.
   printf '<!-- aep-agents-template: v4.1.0 -->\n# AEP Workflow\n' > "$root/AGENTS.md"
   printf '@AGENTS.md\n' > "$root/CLAUDE.md"
-  mkdir -p "$root/Project-Convention" && printf '# Project Conventions\n' > "$root/Project-Convention/README.md"
+  mkdir -p "$root/project-convention" && printf '# Project Conventions\n' > "$root/project-convention/README.md"
   printf '{}\n' > "$root/skills-lock.json"
   printf '#!/usr/bin/env bash\n' > "$root/.claude/hooks/workspace-setup.sh"
   printf '.dev-workflow/\n.feature-workspaces/\n' > "$root/.gitignore"

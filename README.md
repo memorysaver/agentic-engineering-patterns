@@ -87,9 +87,9 @@ product work in this setup pass.
 4. Wire the agent instruction files from the installed aep-onboard templates (its Phase 1.5):
    AGENTS.md from templates/AGENTS.md.tmpl (it opens with the <!-- aep-agents-template --> marker
    and carries the working agreement plus the AEP Workflow section), CLAUDE.md = @AGENTS.md when
-   Claude Code is installed, and Project-Convention/README.md from its template. If AGENTS.md
+   Claude Code is installed, and project-convention/README.md from its template. If AGENTS.md
    already exists, apply aep-onboard references/migrations.md from its marker instead of
-   overwriting it, and move project-specific content into Project-Convention/<topic>.md.
+   overwriting it, and move project-specific content into project-convention/<topic>.md.
 
 5. Protect the installed bytes. If Markdown/JSON formatting runs on commit (Prettier, oxfmt,
    Biome, dprint, lefthook, husky, or similar), add exact exclusions for .claude/skills/**,
@@ -102,7 +102,7 @@ product work in this setup pass.
      or `codex --version` succeed; `jq` succeeds for Claude Code; all other required
      /aep-onboard Phase 5 checks pass.
    - AGENTS.md opens with the template marker and exposes the AEP Workflow section, CLAUDE.md is
-     @AGENTS.md where Claude Code is installed, Project-Convention/README.md exists, formatter
+     @AGENTS.md where Claude Code is installed, project-convention/README.md exists, formatter
      exclusions are present when needed, and no companion skill or external memory package was added.
 
 7. After verification, stage only the AEP setup files and commit them together. Use --no-verify

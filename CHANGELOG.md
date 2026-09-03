@@ -58,7 +58,7 @@ decision documents are the contract:
   pattern-catalog routing example (effort on one model, not opus/sonnet), and
   `/aep-workflow`'s sizing rule (duration alone is not a reason to split a context).
 - **`/aep-scaffold` audit** reads the `<!-- aep-agents-template: vX.Y.Z -->` marker instead
-  of the prose `pinned at **vX**` note and checks `Project-Convention/README.md`.
+  of the prose `pinned at **vX**` note and checks `project-convention/README.md`.
 - Stale Status lines closed: build-convergence-pipeline and deterministic-orchestration
   (shipped v2.7.0), human-alignment (shipped v3.3.0).
 
@@ -66,12 +66,12 @@ decision documents are the contract:
 
 - **Versioned instruction-file templates (P1/P2).** `/aep-onboard` ships
   `templates/AGENTS.md.tmpl` (the generic working agreement, an `## AEP Workflow` section,
-  and a `## Project Context` pointer to `Project-Convention/`), `CLAUDE.md.tmpl`
-  (`@AGENTS.md`), and `Project-Convention/README.md.tmpl`. `AGENTS.md` opens with the
+  and a `## Project Context` pointer to `project-convention/`), `CLAUDE.md.tmpl`
+  (`@AGENTS.md`), and `project-convention/README.md.tmpl`. `AGENTS.md` opens with the
   template marker; new Phase 1.5 copies the files on a fresh repo or applies the migrations
   from the marker on an existing one. The README agent prompt and the scaffold converge
   flow point at the template instead of carrying their own wording.
-- **`Project-Convention/` (P3).** The by-reference convention surface: how the project runs
+- **`project-convention/` (P3).** The by-reference convention surface: how the project runs
   on AEP, the rule that all documents live under `docs/` with a routing table, the
   directories AEP owns and a downstream must not reorganize, a root-stays-clean rule, and
   one file per added convention linked from the index. Nothing project-specific is inlined
@@ -82,7 +82,7 @@ decision documents are the contract:
 - **`references/migrations.md`** in `/aep-onboard` — one section per release from v4.1.0,
   keyed to the marker; the v4.1.0 section carries the seven downstream steps.
 - This repository dogfoods the template (P5): `AGENTS.md` is the template with the marker;
-  repository conventions live in `Project-Convention/` (`README.md`, `skills.md`,
+  repository conventions live in `project-convention/` (`README.md`, `skills.md`,
   `release.md`).
 
 ### Deprecated

@@ -54,7 +54,7 @@ Each step is a no-op when already satisfied. **Never overwrite hand-authored con
   per-agent installs or the legacy symlink layout) and creates `CLAUDE.md = @AGENTS.md` only when a Claude
   skill install exists and the file is absent (a hand-authored `CLAUDE.md` is flagged for manual merge,
   never clobbered). The two instruction-file checks the audit adds in v4.1.0 — the
-  `<!-- aep-agents-template: vX.Y.Z -->` marker on `AGENTS.md` and `Project-Convention/README.md` —
+  `<!-- aep-agents-template: vX.Y.Z -->` marker on `AGENTS.md` and `project-convention/README.md` —
   are **model-driven**: follow `/aep-onboard` Phase 1.5 and its `references/migrations.md` from the
   file's marker to the pinned release (the script reports them and changes nothing). It
   moves, deletes, and links nothing: aliased runtime roots and foreign links fail closed, and **version
