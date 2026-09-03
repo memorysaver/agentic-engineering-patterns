@@ -1,8 +1,8 @@
 # Post-Merge Guard Protocol
 
-The post-merge monitoring window that runs **after** a story is merged and wrapped. Today autopilot wraps a merged story and forgets it; this guard keeps watching the deployed result for a bounded window, runs the host-aware dogfood against the live environment, and — only when explicitly enabled — can revert a hard service regression. It is the safety net that makes unattended autonomy survivable: the difference between "merged and walked away" and "merged, verified the deploy is healthy, and rolled back if it wasn't".
+The post-merge monitoring window that runs **after** a story is merged and wrapped: it keeps watching the deployed result for a bounded window, runs the host-aware dogfood against the live environment, and — only when explicitly enabled — reverts a hard service regression. It is what makes unattended autonomy survivable: the difference between "merged and walked away" and "merged, verified the deploy is healthy, and rolled back if it wasn't".
 
-> **BOUNDARY REMINDER:** This step is an **orchestrator** action, identical in posture to the rest of the tick. It reads CI/health signals, reads dogfood reports, and runs `gh` / deploy / CLI commands — it **NEVER** reads workspace source code, **NEVER** spawns reviewers or evaluators from main, and **NEVER** forms code-quality opinions. The dogfood itself runs via `dogfood_method()` (see `dogfood-validation.md`) using the host's native browser tooling, producing a signals-only report the orchestrator consumes. See SKILL.md "STOP — Orchestrator Boundaries".
+> **Boundary.** This step is an orchestrator action, identical in posture to the rest of the tick: it reads CI/health signals and dogfood reports and runs `gh` / deploy / CLI commands, and it reads no workspace source and spawns no reviewer or evaluator from main — the rule and its reason are in SKILL.md "STOP — Orchestrator Boundaries". The dogfood itself runs via `dogfood_method()` (see `dogfood-validation.md`) using the host's native browser tooling, producing a signals-only report the orchestrator consumes.
 
 ---
 
@@ -21,7 +21,7 @@ The guard is a **post-deploy step that runs after Step ③ wrap** in the [tick p
   │  3. each tick within window:                                      │
   │       • read health_signals (CI / error-rate / health endpoint)   │
   │       • run host-aware dogfood against target_url(staging|prod)    │
-  │  4. classify findings → ONE of two issue paths (below)            │
+  │  4. classify findings → one of two issue paths (below)            │
   │  5. window elapsed, all green → close guard_state (healthy)       │
   └───────────────────────────────────────────────────────────────────┘
 ```
@@ -91,9 +91,9 @@ run dogfood(method, url) → report (severity/category/repro/failure-class, sign
 
 ## Step PG.4: Two Issue Paths — Kept Strictly Separate
 
-The design fixes two **distinct** failure shapes (`g4-dogfood-validation-design.md` → "發現問題時的行為"). Do not conflate them: a dogfood UX finding is **never** a revert, and a service regression is **never** a new backlog story.
+Two **distinct** failure shapes, kept apart: a dogfood UX finding is never a revert, and a service regression is never a new backlog story.
 
-### Path 1: Dogfood-found UX / functional issues → create story (NOT a revert)
+### Path 1: Dogfood-found UX / functional issues → create story (not a revert)
 
 The deploy is healthy at the service level, but the dogfood surfaced a UX or functional defect (broken flow, visual regression, wrong copy, dead link). This is feedback, not an outage.
 
@@ -107,7 +107,7 @@ The deploy is healthy at the service level, but the dogfood surfaced a UX or fun
 
 A health signal is **confirmed red** (or the deploy failed). The deployed service is degraded — users are affected now. Behavior is governed by `topology.routing.post_merge_guard.auto_revert`:
 
-> **DEFAULT IS CONSERVATIVE — `auto_revert: false`.** With auto-revert off (the default), the guard **warns and escalates only**: it adds a `post_merge_regression` escalation, pauses if the story is on the critical path, and waits for a human to confirm the revert. Automatic reverting is **opt-in** and presumes the architectural back-pressure below is in place.
+> **The default is conservative — `auto_revert: false`.** With auto-revert off, the guard **warns and escalates only**: it adds a `post_merge_regression` escalation, pauses if the story is on the critical path, and waits for a human to confirm the revert. Automatic reverting is **opt-in** and presumes the architectural back-pressure below is in place.
 
 - **`auto_revert: false` (default):** add escalation, do not touch the merge.
   ```json
@@ -158,7 +158,7 @@ topology:
         # - smoke_check
 ```
 
-Reuses `topology.routing.deploy_targets.{staging_url,production_url}` and `topology.routing.dogfood.{post_deploy_env,on_issue}` from the G4 dogfood design — the guard does not duplicate URL/method config.
+Reuses `topology.routing.deploy_targets.{staging_url,production_url}` and `topology.routing.dogfood.{post_deploy_env,on_issue}`, which `dogfood-validation.md` owns — the guard does not duplicate URL/method config.
 
 ---
 
@@ -198,7 +198,7 @@ Idempotency rules:
 
 ## Cross-References
 
-- [tick-protocol.md](./tick-protocol.md) — Step ③ wrap (the guard opens immediately after wrap); this guard is the new post-deploy step that runs across subsequent ticks.
+- [tick-protocol.md](./tick-protocol.md) — Step ③ wrap (the guard opens immediately after wrap); the guard is the post-deploy step that runs across subsequent ticks.
 - `dogfood-validation.md` — `dogfood_method()` host × mode detection, `target_url(env)` resolution, and the unified report format the guard consumes.
 - `/aep-reflect` — the classifier both issue paths feed: Path 1 (UX/functional → new story) and Path 2 (incident → learning + follow-up story).
 - [state-schema.md](./state-schema.md) — where `guard_state` lives in `autopilot-state.json`.

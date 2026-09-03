@@ -89,7 +89,7 @@ escalation ladder) is Step ④'s **Monitoring Protocol**. The prompt texts and
 
 | Detection condition                          | Trigger (tick-protocol.md Step ④b) |
 | -------------------------------------------- | ---------------------------------- |
-| 1 — Phase ≥ 5, no eval started               | First Trigger (gentle)             |
+| 1 — Phase ≥ 5, no eval started               | First trigger                      |
 | 2 — Stuck at Phase 5, already triggered      | Re-trigger (URGENT)                |
 | 3 — Phase 10+, eval older than latest commit | Fresh Review for PR                |
 | 4 — Moved past Phase 5 with a FAIL eval      | Send Back to Phase 5               |
@@ -100,9 +100,8 @@ escalation ladder) is Step ④'s **Monitoring Protocol**. The prompt texts and
 
 Escalate to human when:
 
-- Workspace has completed 5 eval rounds without PASS (workspace's own max convergence)
+- The published tier's two rounds are spent and a `blocking` finding is still open
 - Workspace has not responded to 2 trigger attempts over 30 minutes
-- Eval response shows the same findings 3+ consecutive rounds (not converging)
 
 Escalation entry:
 
@@ -113,7 +112,7 @@ Escalation entry:
   "workspace": "<name>",
   "reason": "Gen/eval loop failed to converge after 2 rounds (blocking finding still open)",
   "details": "Persistent failures on [dimensions]. Generator cannot fix: [specific issues].",
-  "expected_human_action": "Review the eval findings in .feature-workspaces/<name>/.dev-workflow/signals/eval-response-5.md and decide: fix manually, adjust the spec, or defer the story.",
+  "expected_human_action": "Review the eval findings in .feature-workspaces/<name>/.dev-workflow/signals/eval-response-<N>.md and decide: fix manually, adjust the spec, or defer the story.",
   "created_at": "<ISO8601>",
   "acknowledged": false
 }

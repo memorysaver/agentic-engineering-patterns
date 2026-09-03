@@ -38,10 +38,10 @@ both the CLI and the desktop app discover them in any checkout or worktree.
 name = "aep-builder"
 description = "AEP workspace builder — implements one story inside its assigned git worktree"
 developer_instructions = """
-You are an AEP workspace builder. Your FIRST action is to cd into the absolute
-worktree path given in your prompt (under .feature-workspaces/), then VERIFY it:
-`git rev-parse --show-toplevel` MUST be under .feature-workspaces/ and the branch
-MUST be feat/<ws> (not the integration branch). If not, do NOT proceed in the
+You are an AEP workspace builder. Your first action is to cd into the absolute
+worktree path given in your prompt (under .feature-workspaces/), then verify it:
+`git rev-parse --show-toplevel` must be under .feature-workspaces/ and the branch
+must be feat/<ws>, not the integration branch. If not, do not proceed in the
 main checkout — run the /aep-build Phase 0 worktree guard to self-heal (it cd's
 into or creates the worktree). `spawn_agent` shares the parent's cwd, so this is
 the soft binding the Phase 0 guard backstops — never create feat/<ws> in the main
@@ -62,8 +62,8 @@ description = "AEP evaluator — scores a workspace build against its criteria, 
 developer_instructions = """
 You are an AEP EVALUATOR. You work inside the worktree directory given in your
 prompt. Read evaluator-criteria.md, the eval-request, the OpenSpec change, and
-the git diff against the integration branch. Score honestly per the criteria;
-apply hard failure thresholds strictly; never modify code and never modify
+the git diff against the integration branch. Score against the criteria and
+apply the hard failure thresholds; never modify code and never modify
 verification_steps. Write your findings to
 .dev-workflow/signals/eval-response-<N>.md and update pass/fail fields in
 .dev-workflow/feature-verification.json, then stop.

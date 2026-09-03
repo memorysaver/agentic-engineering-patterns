@@ -24,22 +24,19 @@ a fixed-interval fallback driver. Rationale:
 **State:** `.dev-workflow/autopilot-state.json` (machine-readable) +
 `.dev-workflow/autopilot-status.md` (human-readable). Every legal field is typed
 in [references/autopilot-state.schema.json](references/autopilot-state.schema.json);
-`references/state-schema.md` carries the atomic-write and tick-lock protocols.
-Check a state file with the installed skill's `scripts/validate-state.mjs`
-(shared validator: `scripts/json-schema.mjs`; runnable command in
-`references/state-schema.md` — resolve the skill root from the repo top like
-every packaged script, `.agents/skills/aep-autopilot` falling back to
-`.claude/skills/aep-autopilot`).
+`references/state-schema.md` carries the atomic-write and tick-lock protocols
+and the runnable command that checks a state file (`scripts/validate-state.mjs`,
+over the shared `scripts/json-schema.mjs`).
 
 ---
 
 ## STOP — Orchestrator Boundaries
 
-**Read this first; it overrides everything below.** You are an **orchestrator**,
-not an executor. All code operations happen inside workspace agents. The main
-session assesses progress **via signal files and git metadata only** and steers
-workspaces through `executor.nudge()`. Crossing this boundary is autopilot's
-most common failure, so it has exactly two prohibitions and they live here.
+You are an **orchestrator**, not an executor. All code operations happen inside
+workspace agents; the main session assesses progress **via signal files and git
+metadata only** and steers workspaces through `executor.nudge()`. Crossing this
+boundary is autopilot's most common failure, so it has exactly two prohibitions
+and they live here.
 
 **Two hard prohibitions.** Both govern the orchestrator's own tool use, which no
 probe can observe from outside — so unlike every other rule in AEP they carry no
@@ -49,11 +46,14 @@ machine check, and each is stated once, paired with its positive action:
   worktree) — **assess via signal files** (`.dev-workflow/signals/`) **and git
   metadata** (`gh pr view`, `git diff --stat`) only. Pulling implementation into
   the orchestrator's context makes it form code-quality opinions and act on them.
+  A code reviewer spawned from main is the same crossing in another shape:
+  signals-only analysis is not code review, and handing that agent the worktree
+  only completes the crossing.
 - **Never `gh pr merge` from the orchestrator** — **guide the workspace agent to
-  merge.** The worker owns Phase 12 (rebase, CI, comment resolution) and **MUST**
-  merge when its checks pass; "PR ready" is not a worker stop point. This binds
-  MAIN only — never leak it into a worker prompt: telling a worker "do not merge"
-  / "stop at ready" leaves a CLEAN, mergeable PR parked forever (the known
+  merge.** The worker owns Phase 12 (rebase, CI, comment resolution) and merges
+  when its checks pass; "PR ready" is not a worker stop point. This binds MAIN
+  only — never leak it into a worker prompt: telling a worker "do not merge" /
+  "stop at ready" leaves a CLEAN, mergeable PR parked forever (the
   `codex-subagent` shared-session failure). Every merge nudge says _"merge when
   Phase 12 passes."_
 
@@ -70,10 +70,8 @@ machine check, and each is stated once, paired with its positive action:
 | Get code fixed / tested / evaluated / merged | `executor.nudge()` — the workspace owns building, testing, eval, and Phase-12 merge; monitor `eval-response-*.md` for results |
 
 The CHECK delegate (below) reading signals is **not** a boundary violation — it
-offloads the orchestrator's own signal bookkeeping to a cheap context and never
-reads code. Spawning a **code reviewer** from main stays categorically forbidden —
-signals-only analysis ≠ code review, and "but I could give it the worktree" is not
-a valid exception.
+offloads the orchestrator's own signal bookkeeping to a cheap context and reads
+no code.
 
 ### Two gen/eval concerns — strictly separate
 
@@ -91,11 +89,10 @@ Every workspace action goes through three executor verbs:
 `executor.nudge(ws, msg)` (deliver an instruction), `executor.liveness(ws)` (is
 it really working — **process exists AND worktree active**, never roster/state
 membership), and `executor.check(prompt, schema)` (cheap, context-isolated
-read). Their per-mode transport (`SendMessage(to: agentId)` / `feedback.md` /
-`send_input` / `codex exec resume` / `tmux send-keys`), the driver × backend
-matrix, the post-spawn liveness probe, and the spawn / orphan-re-adoption recipes
-are canonical in **/aep-executor** `references/backends.md` — consult it for the
-mode you detected. Autopilot requires a **steerable, driver-compatible** mode; if
+read). Per-mode transport, the driver × backend matrix, the post-spawn liveness
+probe, and the spawn / orphan-re-adoption recipes are canonical in
+**/aep-executor** `references/backends.md` — consult it for the mode you
+detected. Autopilot requires a **steerable, driver-compatible** mode; if
 detection yields only workflow/headless (no mid-stage surface — that batch path
 is the `/aep-dispatch … with workflow` orchestrator, not something autopilot
 drives), report that autopilot needs a steerable mode and stop.
@@ -198,11 +195,11 @@ Codex launchd `codex exec` snippet): `references/drivers.md`.
 | OS-scheduled, unattended              | **loop** via cron/launchd | schedule `codex exec … "/aep-autopilot tick"` (OS-bound modes only)                                    |
 
 **Driver × backend compatibility:** a long-lived driver (goal, or in-session
-`/loop`) supports **any** steerable mode (session-bound workers live with the
-orchestrator session). A cron/launchd **fresh-session-per-tick** run supports
-**OS-bound modes only** (**claude-bg**, **codex-exec**, **legacy**) and only via
-`/loop` or an external scheduler — `/goal` is in-session and cannot drive one.
-**Goal-driver invariants:** scoped to ONE layer; the evaluator judges only the
+`/loop`) supports any steerable mode; a cron/launchd **fresh-session-per-tick**
+run supports **OS-bound modes only** (claude-bg, codex-exec, legacy), driven by
+`/loop` or an external scheduler because `/goal` is in-session. Full matrix:
+/aep-executor `references/backends.md`.
+**Goal-driver invariants:** scoped to one layer; the evaluator judges only the
 **signals-only** surfaced status line (step ⑦); the per-tick wait floor is
 mandatory (without it `/goal` hot-loops the instant a turn ends); and
 `--max-turns` (plus a Codex `token_budget`) always bounds it.
@@ -230,14 +227,14 @@ Routing thresholds and the pause protocol live in the tick step that applies the
 `references/autopilot-state.schema.json` and the paused `autopilot-status.md`
 sections are in `templates/autopilot-status.md.tmpl`.
 
-> **`full_auto` does not touch journey authoring.** The journey FILE is always a
+> **`full_auto` does not touch journey authoring.** The journey file is always a
 > pre-merge build deliverable (`/aep-build` Phase 6 Step A authors it from the
 > layer's acceptance criteria, committed with the feature). So under
 > `full_auto: false` + `journey_timing: post-deploy` the journey must **already
-> exist** before the post-deploy layer-gate handback — the handback is
-> **EXECUTION + flip only, never authoring**. A layer reaching its gate with no
-> journey file is a `/aep-wrap` COVERAGE FAILURE (the build should have authored
-> it), not a human-authoring task at the gate.
+> exist** before the post-deploy layer-gate handback — the handback executes and
+> flips, never authors. A layer reaching its gate with no journey file is a
+> `/aep-wrap` COVERAGE FAILURE (the build should have authored it), not a
+> human-authoring task at the gate.
 
 ---
 
@@ -247,36 +244,29 @@ The per-tick handler invoked by the driver (goal or loop); also runnable manuall
 at any time. **Idempotent** — re-running with no external state change produces no
 duplicate actions.
 
-**Execution model — CHECK → ACT.** Each tick is two halves:
-
-- **CHECK (cheap, isolated):** `executor.check(prompt, schema)` — a Haiku
-  subagent (Claude Code) or `codex exec` one-shot (Codex) — reads
-  `autopilot-state.json` + every workspace `signals/` + `gh pr view`, computes
-  transitions / stuck / dispatch capacity,
-  **writes the updated `autopilot-state.json` + `autopilot-status.md`**, and
-  returns the compact **action list**
-  (`{summary, state_written, actions:[{type, workspace, story_id, message, reason}]}`
-  — schema in /aep-executor `references/backends.md`). Token-heavy reading stays in
-  the throwaway agent.
-- **ACT (orchestrator):** execute the returned actions — `nudge`, `wrap` (max one
-  per tick), `launch` (max one per tick), `escalate` / `design`. Few actions, so
-  the main session stays cheap.
-- On Codex the whole tick already runs as an isolated `codex exec`, so CHECK can
-  run inline; on Claude Code the long-lived session is why CHECK is delegated.
+**Execution model — CHECK → ACT.** Each tick reads in a cheap, context-isolated
+agent (`executor.check()` — a Haiku subagent on Claude Code, a `codex exec`
+one-shot on Codex) that writes the updated `autopilot-state.json` +
+`autopilot-status.md` and returns an action list; the orchestrator then performs
+those actions (`nudge`, `wrap`, `launch`, `escalate` / `design`), so the
+token-heavy reading stays out of the long-lived session. On Codex the whole tick
+is already an isolated `codex exec`, so its CHECK can run inline. Which steps
+fall on which half is in `references/tick-protocol.md`; the action list is typed
+in /aep-executor `references/action-list.schema.json`.
 
 **Tick summary (①–⑦, invariant per step).** Full step recipes — the CHECK prompt
-content and the ACT templates (including the ④b/④c nudge prompt texts) — are
-**canonical in `references/tick-protocol.md`**:
+content, the ACT templates (including the ④b/④c nudge prompt texts), and every
+threshold — are **canonical in `references/tick-protocol.md`**:
 
 ```
-① READ STATE       cat autopilot-state.json; exit if status≠running or a tick lock is <4min old; else set the tick lock.
-② SYNC SIGNALS     fold each workspace signals/status.json into state; blocked_on==human → escalate human_gate (NOT stuck); orphan (session-bound mode, by REAL liveness) → emit a re-adopt launch into the EXISTING worktree.
-③ WRAP COMPLETED   story_status==completed → /aep-wrap (max ONE per tick, [one-wrap-per-tick]); remove from state; then skip to ⑦.
+① READ STATE       cat autopilot-state.json; exit if status≠running or a fresh tick lock is held; else take the tick lock.
+② SYNC SIGNALS     fold each workspace signals/status.json into state; blocked_on==human → escalate human_gate (not stuck); orphan (session-bound mode, by real liveness) → emit a re-adopt launch into the existing worktree.
+③ WRAP COMPLETED   story_status==completed → /aep-wrap (max one per tick, [one-wrap-per-tick]); remove from state; then skip to ⑦.
 ③.5 POST-MERGE GUARD  for each merged story, watch deploy health + host-aware dogfood across a window; UX finding → /aep-reflect story; confirmed hard regression → escalate (or revert if auto_revert). See references/post-merge-guard.md.
-④ GUIDE COMPLETION per workspace: ④a check PR state; ④b quality gate — no eval PASS → trigger the workspace's OWN gen/eval via executor.nudge(); ④c eval PASS + PR open → nudge toward Phase-12 merge (once). NEVER spawn reviewers; NEVER gh pr merge.
-⑤ DETECT STUCK     (phase, completion_pct) unchanged vs last tick → run executor.liveness() before counting; 6 ticks→nudge, 12→escalate; human-gate exempt.
-⑥ DISPATCH NEW WORK  capacity? run /aep-dispatch scoring (steps 1-3); wave + layer-gate + grouped-change ordering; dispatch-ready → /aep-launch, otherwise escalate or auto-design; max ONE launch per tick ([one-launch-per-tick]); runs after ③ ([wrap-before-dispatch]).
-⑦ WRITE STATE + SURFACE + WAIT  atomic write state (.tmp → rename); append autopilot-history.jsonl; update autopilot-status.md; release the tick lock. GOAL DRIVER ONLY: surface the signals-only AUTOPILOT status line, then wait the per-tick floor before ending the turn.
+④ GUIDE COMPLETION per workspace: ④a check PR state; ④b quality gate — no eval PASS → trigger the workspace's own gen/eval via executor.nudge(); ④c eval PASS + PR open → nudge toward Phase-12 merge (once).
+⑤ DETECT STUCK     (phase, completion_pct) unchanged vs last tick → run executor.liveness() before counting; then the stuck ladder (observe → nudge → escalate); human-gate exempt.
+⑥ DISPATCH NEW WORK  capacity? run /aep-dispatch scoring (steps 1-3); wave + layer-gate + grouped-change ordering; dispatch-ready → /aep-launch, otherwise escalate or auto-design; max one launch per tick ([one-launch-per-tick]); runs after ③ ([wrap-before-dispatch]).
+⑦ WRITE STATE + SURFACE + WAIT  atomic write state (.tmp → rename); append autopilot-history.jsonl; update autopilot-status.md; release the tick lock. Goal driver only: surface the signals-only AUTOPILOT status line, then wait the per-tick floor before ending the turn.
 ```
 
 The `[bracketed]` tags are **mechanical ordering invariants** — deterministic
@@ -337,14 +327,13 @@ modified; no wraps or merges are triggered. To resume: `/aep-autopilot`.
 ## Guardrails
 
 Rules with no natural step home (the ordering invariants, atomic write, and tick
-lock live in `references/tick-protocol.md` / `references/state-schema.md`):
+lock live in `references/tick-protocol.md` / `references/state-schema.md`; the
+WIP ceiling `topology.routing.concurrency_limit` and the dependencies-`completed`
+gate are Step ⑥'s dispatch check):
 
 - **Require a real PASS before nudging a merge** — for integration/test stories
   that means at least one passing check OR an explicit eval-response PASS.
   SKIP-only results and "no checks" are absences of evidence, not passes.
-- **Respect WIP limits** — `topology.routing.concurrency_limit` is the ceiling.
-- **Dispatch only stories whose dependencies are all `completed`** — autonomous
-  mode included.
 
 ---
 

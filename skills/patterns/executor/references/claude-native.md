@@ -1,18 +1,9 @@
 # Claude Code Native Backends — `native-bg-subagent` & `claude-bg`
 
-Per-operation recipes for the two Claude Code native modes. Both replace tmux —
-and the **removed `claude-team`** — with capabilities built into Claude Code;
-neither requires tmux, cmux, agent teams, or any hook. Detection and selection
-live in `backends.md` — read that first, including the mandatory
-[Post-Spawn Liveness Probe](backends.md#post-spawn-liveness-probe).
-
-> **`claude-team` was removed (2026-06).** On Claude Code ≥ 2.1.x the agent-teams
-> spawn path fails **silently** — the launch command is truncated in a detached
-> `claude-swarm-<pid>` tmux pane and never submitted, so no worker starts, yet the
-> team roster still reports the member "active". A live team also **poisons
-> teamless background spawns** (they re-route through the same broken backend).
-> `native-bg-subagent` is the replacement default. See
-> `docs/decisions/remove-claude-team.md`.
+Per-operation recipes for the two Claude Code native modes. Both use capabilities
+built into Claude Code: neither requires tmux, cmux, agent teams, or any hook.
+Detection and selection live in `backends.md` — read that first, including the
+mandatory [Post-Spawn Liveness Probe](backends.md#post-spawn-liveness-probe).
 
 | Mode                   | Mechanism                                              | Lifetime                                   | Steering                                   | Human gate                                           |
 | ---------------------- | ------------------------------------------------------ | ------------------------------------------ | ------------------------------------------ | ---------------------------------------------------- |
@@ -39,9 +30,9 @@ before declaring the worker running.
 ### Prerequisite: no active team
 
 ```
-# A live agent-teams team re-routes EVEN teamless background spawns through the
-# broken agent-teams tmux backend. If a team exists, shut its members down and
-# TeamDelete it BEFORE spawning.
+# A live agent-teams team re-routes even teamless background spawns through the
+# agent-teams backend, where the launch command never submits. If a team exists,
+# shut its members down and TeamDelete it before spawning.
 list_agents / TaskList → if a team "aep" exists: shutdown members, then TeamDelete
 ```
 
@@ -53,7 +44,7 @@ a background subagent with the Agent tool — **no `team_name`**:
 ```
 Agent tool:
   run_in_background: true
-  # NO team_name — a team (active or newly created) routes through the broken backend
+  # NO team_name — a team (active or newly created) routes through the agent-teams backend, where the spawn silently never starts
   prompt: |
     You operate EXCLUSIVELY in <abs-repo-path>/.feature-workspaces/<ws>
     on branch feat/<ws>. cd there first; never edit files outside it.
@@ -152,13 +143,12 @@ restarts and is attachable from any terminal. This is the only Claude Code mode
 that survives a cron/launchd fresh-session-per-tick driver (see the driver ×
 backend matrix in `backends.md`).
 
-> **`--bg` availability (verify per build).** On Claude Code ≥ 2.1.x the one-shot
-> `claude --bg` spawn flag was **removed** — `claude agents` is now an interactive
-> _agent view_, not a scriptable one-shot spawn. The capability probe below gates
-> this mode: when `--bg` is absent, `BG_AVAILABLE=no` and detection skips
-> claude-bg, leaving **native-bg-subagent** (session-bound) as the Claude Code
-> default. If a build re-introduces a scriptable background-spawn flag, update the
-> spawn recipe here accordingly.
+> **`--bg` availability (verify per build).** A build may ship no one-shot
+> `claude --bg` spawn flag — `claude agents` is then an interactive _agent view_,
+> not a scriptable one-shot spawn. The capability probe below gates this mode:
+> when `--bg` is absent, `BG_AVAILABLE=no` and detection skips claude-bg, leaving
+> **native-bg-subagent** (session-bound) as the Claude Code default. If a build
+> offers a scriptable background-spawn flag, update the spawn recipe here.
 
 ### Capability probe
 

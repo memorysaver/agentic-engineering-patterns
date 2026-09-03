@@ -10,12 +10,10 @@ description: >-
 
 A reusable abstraction for **running implementation work in an isolated
 workspace**, independent of which agent host (Claude Code, Codex) or which
-mechanism (native background subagents, background sessions, native subagents,
-exec workers, tmux, dynamic workflows) is available. Lifecycle skills speak one
-vocabulary of operations; this skill maps each operation to a concrete recipe
-per mode. It is consumed as a library by `/aep-launch`, `/aep-build`, and
-`/aep-autopilot`, and can be invoked standalone to dry-run detection (see
-[Standalone Usage](#standalone-usage)).
+mechanism is available. Lifecycle skills speak one vocabulary of operations;
+this skill maps each operation to a concrete recipe per mode. It is consumed as
+a library by `/aep-launch`, `/aep-build`, and `/aep-autopilot`, and can be
+invoked standalone to dry-run detection (see [Standalone Usage](#standalone-usage)).
 
 **Native-first:** Claude Code launches use a native in-process background subagent
 (`native-bg-subagent`, the default) or — where the `claude --bg` flag exists —
@@ -24,11 +22,6 @@ native background sessions (`claude-bg`); Codex launches use native subagents
 **`legacy`** mode — selected only by explicit pin
 (`git config aep.executor-backend tmux`) or on generic hosts. Every mode runs its
 worker in an AEP-created git worktree at `.feature-workspaces/<ws>`.
-
-> **`claude-team` removed (2026-06):** the agent-teams spawn path fails silently
-> on Claude Code ≥ 2.1.x (truncated launch command in a detached tmux pane; roster
-> still shows the worker "active"). Replaced by `native-bg-subagent` + a mandatory
-> post-spawn liveness probe. See `docs/decisions/remove-claude-team.md`.
 
 ---
 
@@ -72,19 +65,19 @@ per mode.
 
 ## The Modes (summary)
 
-| Mode                   | Backend                                 | Lifetime      | Selected when                                                          |
-| ---------------------- | --------------------------------------- | ------------- | ---------------------------------------------------------------------- |
-| **native-bg-subagent** | Agent tool `run_in_background`, no team | session-bound | **Claude Code default** + long-lived orchestrator                      |
-| **claude-bg**          | native background sessions              | OS-bound      | Claude Code, `claude --bg` present (cron driver / OS-bound need)       |
-| **codex-subagent**     | native multi_agent (`spawn_agent`)      | session-bound | Codex with a living main thread (desktop app or interactive CLI)       |
-| **codex-exec**         | headless `codex exec --cd` workers      | OS-bound      | Codex + cron driver, or hard isolation demanded                        |
-| **legacy**             | tmux session (+ optional cmux tab)      | OS-bound      | explicit pin (`aep.executor-backend tmux`), or generic host w/ tmux    |
-| **workflow**           | CC dynamic-workflow fan-out             | session-bound | explicit opt-in ("…with workflow") + Claude Code (see `/aep-workflow`) |
-| **headless**           | one-shot native subagent                | session-bound | last resort                                                            |
+| Mode                   | Lifetime      | Selected when                                                          |
+| ---------------------- | ------------- | ---------------------------------------------------------------------- |
+| **native-bg-subagent** | session-bound | **Claude Code default** + long-lived orchestrator                      |
+| **claude-bg**          | OS-bound      | Claude Code, `claude --bg` present (cron driver / OS-bound need)       |
+| **codex-subagent**     | session-bound | Codex with a living main thread (desktop app or interactive CLI)       |
+| **codex-exec**         | OS-bound      | Codex + cron driver, or hard isolation demanded                        |
+| **legacy**             | OS-bound      | explicit pin (`aep.executor-backend tmux`), or generic host w/ tmux    |
+| **workflow**           | session-bound | explicit opt-in ("…with workflow") + Claude Code (see `/aep-workflow`) |
+| **headless**           | session-bound | last resort                                                            |
 
-Read `references/backends.md` for the detection recipe, the full selection
-order, the driver × backend compatibility matrix, the human-gate protocol, and
-orphan re-adoption.
+Read `references/backends.md` for each mode's mechanism, the detection recipe,
+the full selection order, the driver × backend compatibility matrix, the
+human-gate protocol, and orphan re-adoption.
 
 ---
 
@@ -126,7 +119,7 @@ This does not spawn anything — it is a dry-run of `detect()`.
 
 ## Rationale
 
-Why native-first (tmux demoted to a pinned `legacy` mode), why AEP still owns the
+Why native modes come first and tmux is a pinned `legacy` mode, why AEP owns the
 worktree, why session-bound vs OS-bound is a first-class axis, why human gates are
 hub-and-spoke, and why autopilot drives only steerable modes are recorded in
 `docs/decisions/native-first-executor.md`,

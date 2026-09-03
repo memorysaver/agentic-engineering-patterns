@@ -139,26 +139,6 @@ Write findings to .dev-workflow/autopilot-learnings.md using this structure:
 
 ## Findings
 
-### Finding: Complexity L stories take 4x longer and fail 2x more than rated
-
-**Category:** estimate_accuracy
-**Evidence:** L stories averaged 3.2 hours vs S at 0.8 hours (4x, not 4x as rated).
-L stories had 40% failure rate vs S at 20%. PROJ-007 and PROJ-012 both failed on
-first attempt.
-**Recommendation:** Consider splitting L stories into 2-3 M stories before dispatch.
-Update /aep-map guidance to discourage L complexity.
-**Severity:** important
-
-### Finding: Auth module stories consistently fail on Security dimension
-
-**Category:** module_pattern
-**Evidence:** PROJ-003 and PROJ-008 both received Security score 2 on first eval
-round. Both eventually passed after 3 rounds. No other module had security failures.
-**Recommendation:** Add explicit security acceptance criteria to auth module stories
-in product-context.yaml. Consider adding security-focused evaluator criteria preset
-for auth stories.
-**Severity:** suggestion
-
 ### Finding: Stories with 5+ acceptance criteria completed 30% faster
 
 **Category:** spec_quality
