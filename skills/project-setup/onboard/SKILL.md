@@ -26,12 +26,12 @@ Read **[the installed orientation guide](references/orientation.md)** — the se
 
 ## Phase 1 — Install the Plugin
 
-Install AEP v4.0.0 with the [`skills`](https://github.com/vercel-labs/skills) CLI at **project level**, once per agent your project uses. Commit the installed files so the version is frozen for your team:
+Install AEP v4.1.0 with the [`skills`](https://github.com/vercel-labs/skills) CLI at **project level**, once per agent your project uses. Commit the installed files so the version is frozen for your team:
 
 ```bash
 # Run the command for each agent runtime this project uses.
-npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a claude-code --skill '*' -y
-npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a codex        --skill '*' -y
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.1.0 -a claude-code --skill '*' -y
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.1.0 -a codex        --skill '*' -y
 ```
 
 This installs every AEP skill (the `aep-*` names) plus a `skills-lock.json` manifest — **commit both**. The v4 layout is plain per-agent copies; shared or canonical symlink layouts are legacy compatibility only. The committed skill bytes are the durable project pin; upgrade intentionally by rerunning the same command with the desired tag, then review and commit the resulting skill and lockfile diff.

@@ -17,6 +17,85 @@ bug fixes → **patch**; removing or breaking a skill contract → **major**.
 > `/envision`, `/dispatch`, `/reflect`, …), which records product-state history
 > for that project. See [`docs/glossary.md`](docs/glossary.md).
 
+## [4.1.0] - 2026-09-03
+
+Minor: the execution plane is re-baselined for Claude Fable 5.1 and the instruction
+files a downstream receives become a versioned template with an upgrade path. Two
+decision documents are the contract:
+[`docs/decisions/fable-5-1-behavioral-rebaseline.md`](docs/decisions/fable-5-1-behavioral-rebaseline.md)
+(F1–F6) and
+[`docs/decisions/project-convention-and-upgrade-path.md`](docs/decisions/project-convention-and-upgrade-path.md)
+(P1–P5). Downstream steps are in the shipped
+`skills/project-setup/onboard/references/migrations.md`, tracked per release from here on.
+
+### Changed
+
+- **Two evaluator rounds, every tier (F1/F2).** `standard` and `deep` cap at 2; tiers
+  differ in dogfood scope, full-suite timing, and judge family — never in round count.
+  Round 2 is bought only by a `blocking` finding; `material` findings are fix-and-attest
+  (fixed, evidenced in the eval-request addendum, verdict PASS with notes); `polish` still
+  buys nothing. The `standard → deep` auto-escalation is removed; a blocking finding still
+  open after round 2 is the human gate, whose record proposes the former ladder rungs —
+  fresh generator, decompose — as options instead of spending them as rounds. The recovery
+  ladder compresses to same fix → re-ground; the "same findings 3+ rounds" stop row is gone.
+- **Pinned evaluator effort (F3).** Every evaluator spawn pins the mode's `high` effort
+  instead of inheriting the operator's session default (`xhigh` on Claude Code, where an
+  eval-response is drafted twice). `evaluator_effort` gains `high`; `default` and `highest`
+  stay as deprecated aliases read as `high`, so a v4.0.0-generated recipe still validates.
+  The rendered `derive-verification-recipe.sh` template emits `max_rounds: 2` /
+  `evaluator_effort: high` (fixtures updated); a re-pin alone does not regenerate it —
+  see the migration steps.
+- **Evaluator prompt register (F4).** `gen-eval/references/agent-contracts.md`, the
+  evaluator's spawn prompt, keeps every contract line and drops the volume: 18 all-caps
+  MUST/NEVER lines and `CRITICAL: Score honestly` become plain requirements with reasons.
+  `scripts/check-steering.mjs` now scans an explicit allowlist of gen-eval prompt payloads
+  beside every `SKILL.md`; the baseline carries their entries.
+- **`/aep-launch` bootstrap preamble (F5).** `templates/bootstrap-preamble.md` is prepended
+  to every workspace bootstrap: the run is unattended and its stop list is
+  `merge-decision-cases.md`, progress claims are checked against tool results before they
+  are reported, the story sets the scope and the committed-test footprint.
+- **No model-era fossils (F6).** The adw README capability diagram, the workflow
+  pattern-catalog routing example (effort on one model, not opus/sonnet), and
+  `/aep-workflow`'s sizing rule (duration alone is not a reason to split a context).
+- **`/aep-scaffold` audit** reads the `<!-- aep-agents-template: vX.Y.Z -->` marker instead
+  of the prose `pinned at **vX**` note and checks `Project-Convention/README.md`.
+- Stale Status lines closed: build-convergence-pipeline and deterministic-orchestration
+  (shipped v2.7.0), human-alignment (shipped v3.3.0).
+
+### Added
+
+- **Versioned instruction-file templates (P1/P2).** `/aep-onboard` ships
+  `templates/AGENTS.md.tmpl` (the generic working agreement, an `## AEP Workflow` section,
+  and a `## Project Context` pointer to `Project-Convention/`), `CLAUDE.md.tmpl`
+  (`@AGENTS.md`), and `Project-Convention/README.md.tmpl`. `AGENTS.md` opens with the
+  template marker; new Phase 1.5 copies the files on a fresh repo or applies the migrations
+  from the marker on an existing one. The README agent prompt and the scaffold converge
+  flow point at the template instead of carrying their own wording.
+- **`Project-Convention/` (P3).** The by-reference convention surface: how the project runs
+  on AEP, the rule that all documents live under `docs/` with a routing table, the
+  directories AEP owns and a downstream must not reorganize, a root-stays-clean rule, and
+  one file per added convention linked from the index. Nothing project-specific is inlined
+  into `AGENTS.md`; the downstream `## Project Conventions (authoritative)` pattern and the
+  downstream-authored "Agent behavioral guidelines" block (whose "if uncertain, ask / if
+  unclear, stop" lines contradict unattended operation on the current generation) are
+  retired by migration.
+- **`references/migrations.md`** in `/aep-onboard` — one section per release from v4.1.0,
+  keyed to the marker; the v4.1.0 section carries the seven downstream steps.
+- This repository dogfoods the template (P5): `AGENTS.md` is the template with the marker;
+  repository conventions live in `Project-Convention/` (`README.md`, `skills.md`,
+  `release.md`).
+
+### Deprecated
+
+- `tier_escalated` (recipe, status signal, convergence block): always `false`; kept so
+  earlier consumers parse.
+- `evaluator_effort: default | highest`: aliases of `high`.
+
+### Not done (recorded as horizon in the Fable decision doc)
+
+- Phase de-prescription of the large `SKILL.md` files — waits for a behavior eval.
+- PR #17 (walking skeleton as a living artifact) — rebase or close is the owner's call.
+
 ## [4.0.0] - 2026-08-10
 
 Major: the corpus is re-shaped for Claude 5 generation models, against
@@ -1493,6 +1572,7 @@ First stable baseline after the Jujutsu → git migration. Decision record:
 
 - Jujutsu (one-shot migration, no dual-mode period) and the `/jj-ref` skill.
 
+[4.1.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v4.0.0...v4.1.0
 [4.0.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v3.3.1...v4.0.0
 [3.0.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.5.0...v3.0.0
 [1.5.0]: https://github.com/memorysaver/agentic-engineering-patterns/compare/v1.4.0...v1.5.0
