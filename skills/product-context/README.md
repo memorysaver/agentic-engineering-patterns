@@ -2,7 +2,7 @@
 
 A persistent product-level planning layer that captures the "what and why" of the entire product in a single YAML file. Used for both initial product planning and ongoing iteration.
 
-Five skills, one feedback loop:
+Eight skills, one feedback loop:
 
 ```
 /aep-envision → /aep-map → /aep-validate → [ /aep-dispatch → /aep-design → /aep-build → /aep-wrap ] → /aep-reflect → loop
@@ -15,6 +15,9 @@ Five skills, one feedback loop:
 | [/aep-validate](validate/SKILL.md) | Generator/evaluator validation of any artifact | After any generation phase, before proceeding |
 | [/aep-dispatch](dispatch/SKILL.md) | Pick next story, create OpenSpec change        | Ready to start building a feature             |
 | [/aep-reflect](reflect/SKILL.md)   | Classify feedback + update context             | After shipping, after user testing            |
+| [/aep-model](model/SKILL.md)       | OOUX object map + noun-first UI blueprint      | After /aep-map, before UI stories             |
+| [/aep-calibrate](calibrate/SKILL.md) | Turn a human's judgment into agent-applicable criteria | A works-vs-right gap, a .5 layer     |
+| [/aep-watch](watch/SKILL.md)       | Ingest trackers, errors, telemetry into backlog stories | Scheduled work discovery            |
 
 ## Single Source of Truth: `product-context.yaml`
 

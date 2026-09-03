@@ -5,7 +5,7 @@ workflow plugin doesn't know your stack — this script does. `/aep-scaffold` Ph
 
 ## Contract
 
-The hook **MUST**:
+The hook always:
 
 - Install dependencies (bun/npm/pnpm/cargo/uv/etc.).
 - Start the dev server (or verify it's running).
@@ -18,7 +18,7 @@ The hook **MUST**:
   ```
 - Handle port scanning for parallel workspace isolation.
 
-The hook **MAY**: validate `.env` files against `.env.example`; run database migrations; seed test
+The hook may also: validate `.env` files against `.env.example`; run database migrations; seed test
 accounts (call `skills/e2e-test/scripts/seed.sh` if present); clean container/cache state; copy config
 from the main workspace (for worktree isolation).
 

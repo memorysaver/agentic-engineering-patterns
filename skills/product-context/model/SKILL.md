@@ -15,7 +15,7 @@ voice, and journey stay in `/aep-calibrate` (visual-design, copy-tone, ux-flow).
 
 > **The one rule:** a story-map slice cuts _scope_, not _interface type_. Keep the
 > backbone's one-step-one-screen as object-first structure; translating it into a
-> wizard is the deepest trap this skill exists to prevent. MVP slice ≠ wizard.
+> wizard is the trap this skill exists to prevent.
 
 **Where this fits:**
 
@@ -66,8 +66,8 @@ If `stories` is empty, run `/aep-map` first. If no product definition exists, ru
 - **Establishment** — no `product/object-model.yaml` yet → full ORCA over all
   UI-facing capabilities.
 - **Extension** — it exists → focused pass over only NEW objects/capabilities not
-  yet covered (e.g., a later layer introduced new activities). Extend rather than redo
-  approved maps; extend them and re-gate only the delta.
+  yet covered (e.g., a later layer introduced new activities). Extend approved maps
+  and re-gate only the delta.
 
 ---
 

@@ -8,8 +8,8 @@ project re-running the flow is a no-op ("already up to date").
 
 The AEP plugin install contract is **plain per-agent installs**: the skills CLI copies real `aep-*` dirs
 into `.claude/skills/` (claude-code) and/or `.agents/skills/` (codex), and either side alone is a complete
-install. The retired v3 symlink layout (`.claude/skills/aep-*` → `../../.agents/skills/aep-*`) stays legal
-where it already exists — this flow verifies health and normalizes toward nothing. The runtime roots
+install. A symlink layout already in place (`.claude/skills/aep-*` → `../../.agents/skills/aep-*`) stays
+legal — this flow verifies health and normalizes toward nothing. The runtime roots
 themselves must be real directories when present (a whole-directory alias fails closed). Project-owned
 skills are unchanged: `/aep-e2e-skill-scaffolding` owns that layout (real `skills/<name>/` dir +
 `.claude/skills/<name>` and `.agents/skills/<name>` symlinks into both runtimes).
@@ -48,19 +48,22 @@ AskUserQuestion-style confirm). Only confirmed categories are converged.
 
 ## Converge (Phase 3E) — apply only confirmed changes
 
-Each step is a no-op when already satisfied. **Never overwrite hand-authored content.**
+Each step is a no-op when already satisfied.
 
-- **A. Skills layout** — `scripts/converge.sh` verifies the layout is healthy (plain per-agent installs or
-  the legacy symlink layout) and creates `CLAUDE.md = @AGENTS.md` only when a Claude skill install exists
-  and the file is absent (a hand-authored `CLAUDE.md` is flagged for manual merge, never clobbered). It
+- **A. Skills layout + instruction files** — `scripts/converge.sh` verifies the layout is healthy (plain
+  per-agent installs or an existing symlink layout) and creates `CLAUDE.md = @AGENTS.md` only when a
+  Claude skill install exists and the file is absent (a hand-authored `CLAUDE.md` is flagged for manual
+  merge, never clobbered). The two instruction-file checks — the
+  `<!-- aep-agents-template: vX.Y.Z -->` marker on `AGENTS.md` and `project-convention/README.md` —
+  are **model-driven**: follow `/aep-onboard` Phase 1.5 and its `references/migrations.md` from the
+  file's marker to the pinned release (the script reports them and changes nothing). It
   moves, deletes, and links nothing: aliased runtime roots and foreign links fail closed, and **version
   skew** — both agents carrying real but different copies of one skill — fails closed toward the category
   E re-pin. Project-owned skill exposure (real `skills/<name>` + both symlinks) is handled by the skill's
   own generator — for e2e-test that's `/aep-e2e-skill-scaffolding` (next step).
 - **B. E2E-test skill** — delegate to **`/aep-e2e-skill-scaffolding`**. It creates (absent) or upgrades
   (thin-legacy / real-non-bdd → BDD) the skill in canonical cross-tool form, idempotently, migrating a
-  legacy `.claude/skills/e2e-test` real dir into `skills/` first and never overwriting hand-written
-  journeys.
+  legacy `.claude/skills/e2e-test` real dir into `skills/` first.
 - **C. Infrastructure (fill gaps)** — for each `[DRIFT]`/missing item, generate it, never overwriting
   existing files:
   - **Git repo:** `git init -b main && git add -A && git commit -m "chore: initial commit"`. AEP
@@ -69,7 +72,7 @@ Each step is a no-op when already satisfied. **Never overwrite hand-authored con
   - **OpenSpec:** follow `/aep-scaffold` **Phase 5: Initialize OpenSpec**.
   - **Workspace hook:** follow `/aep-scaffold` **Phase 7** using the detected stack.
   - **Gitignore:** applied by `scripts/converge.sh` (`.dev-workflow/`, `.feature-workspaces/`).
-- **E. Version pin — detect + recommend (do NOT auto-run).** Re-pinning AEP is a deliberate, own-PR action
+- **E. Version pin — detect and recommend only.** Re-pinning AEP is a deliberate, own-PR action
   (README), so `scripts/converge.sh` only **prints** the `npx skills add@<newtag>` commands for the user
   to run themselves.
 

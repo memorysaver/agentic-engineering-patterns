@@ -30,16 +30,16 @@ AEP skills follow the open [Agent Skills](https://agentskills.io/) format, so an
 Claude Code, Codex, Cursor, OpenCode, and [70+ other agents](https://github.com/vercel-labs/skills#supported-agents) —
 can install them with the [`skills`](https://github.com/vercel-labs/skills) CLI. No clone, no copied scripts.
 
-### Quick start — v4.0.0
+### Quick start — v4.1.0
 
 Install AEP once for each agent runtime this project actually uses:
 
 ```bash
 # Claude Code → ./.claude/skills/
-npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a claude-code --skill '*' -y
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.1.0 -a claude-code --skill '*' -y
 
 # Codex → ./.agents/skills/
-npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a codex --skill '*' -y
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.1.0 -a codex --skill '*' -y
 ```
 
 These are plain, project-level, per-agent installs — do not consolidate them into a shared or
@@ -53,7 +53,7 @@ Prefer to delegate the install? Paste this to your coding agent — it covers th
 required OpenSpec CLI, the formatter fix, and wiring AEP into your `AGENTS.md` / `CLAUDE.md`:
 
 ```text
-Set up Agentic Engineering Patterns (AEP) v4.0.0 completely in this repository. Perform the
+Set up Agentic Engineering Patterns (AEP) v4.1.0 completely in this repository. Perform the
 work; do not stop at a plan or a list of commands. Preserve existing project configuration and
 ask only when authentication, elevated privileges, or a destructive conflict blocks progress.
 
@@ -68,9 +68,9 @@ product work in this setup pass.
    - Read existing AGENTS.md, CLAUDE.md, .claude/settings.json, formatter config, ignore files,
      package metadata, and git status. Preserve unrelated content and user changes.
 
-2. Install v4.0.0 once for each runtime the repo actually uses. Keep plain per-agent copies:
-     npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a claude-code --skill '*' -y
-     npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a codex        --skill '*' -y
+2. Install v4.1.0 once for each runtime the repo actually uses. Keep plain per-agent copies:
+     npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.1.0 -a claude-code --skill '*' -y
+     npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.1.0 -a codex        --skill '*' -y
    Claude Code installs to .claude/skills/; Codex installs to .agents/skills/. The install also
    writes skills-lock.json. Never consolidate these directories into a shared symlink layout.
 
@@ -84,28 +84,26 @@ product work in this setup pass.
    - For Claude Code, merge only AEP's concurrency hooks into .claude/settings.json. For a
      Codex-only repo, skip Claude settings. Preserve all existing settings and hooks.
 
-4. Merge this discoverability section into AGENTS.md. If the repo uses Claude Code, also make the
-   section visible from CLAUDE.md without overwriting its existing instructions:
-     ## AEP Workflow
-     This project uses Agentic Engineering Patterns (AEP) v4.0.0 — a spec-driven, multi-agent
-     feature lifecycle installed in .claude/skills/ and/or .agents/skills/ and pinned by the
-     committed skill files plus skills-lock.json. The skills are self-describing; start with
-     /aep-onboard. Upgrade by explicitly re-pinning a new release once per runtime.
-     For human-facing status and decisions, use the /aep-easy-explain register: one line of
-     context first, ASD-STE100 Simplified Technical English, and this project's own nouns.
+4. Wire the agent instruction files from the installed aep-onboard templates (its Phase 1.5):
+   AGENTS.md from templates/AGENTS.md.tmpl (it opens with the <!-- aep-agents-template --> marker
+   and carries the working agreement plus the AEP Workflow section), CLAUDE.md = @AGENTS.md when
+   Claude Code is installed, and project-convention/README.md from its template. If AGENTS.md
+   already exists, apply aep-onboard references/migrations.md from its marker instead of
+   overwriting it, and move project-specific content into project-convention/<topic>.md.
 
 5. Protect the installed bytes. If Markdown/JSON formatting runs on commit (Prettier, oxfmt,
    Biome, dprint, lefthook, husky, or similar), add exact exclusions for .claude/skills/**,
    .agents/skills/**, and skills-lock.json while preserving the existing formatter policy.
 
 6. Do not declare success until all applicable gates pass:
-   - `npx -y skills@1.5.17 list --json -a <runtime>` reports all 24 AEP v4.0.0 skills for every installed runtime.
+   - `npx -y skills@1.5.17 list --json -a <runtime>` reports all 24 AEP v4.1.0 skills for every installed runtime.
    - aep-onboard and aep-easy-explain exist under every installed runtime.
    - Node >=20.19, `openspec --version`, `git --version`, and at least one of `claude --version`
      or `codex --version` succeed; `jq` succeeds for Claude Code; all other required
      /aep-onboard Phase 5 checks pass.
-   - AGENTS.md/CLAUDE.md expose the AEP Workflow section, formatter exclusions are present when
-     needed, and no companion skill or external memory package was added.
+   - AGENTS.md opens with the template marker and exposes the AEP Workflow section, CLAUDE.md is
+     @AGENTS.md where Claude Code is installed, project-convention/README.md exists, formatter
+     exclusions are present when needed, and no companion skill or external memory package was added.
 
 7. After verification, stage only the AEP setup files and commit them together. Use --no-verify
    only when a formatter hook would rewrite the pinned skill bytes. Do not include unrelated
@@ -129,8 +127,8 @@ install must include every `/aep-*` dependency named by the selected skill.
 (`-a a,b`) installs nothing. To cover several runtimes, run the command once per agent:
 
 ```bash
-npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a claude-code --skill '*' -y # → ./.claude/skills/
-npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a codex --skill '*' -y        # → ./.agents/skills/
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.1.0 -a claude-code --skill '*' -y # → ./.claude/skills/
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.1.0 -a codex --skill '*' -y        # → ./.agents/skills/
 ```
 
 ### Pinning a version
@@ -138,7 +136,7 @@ npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a code
 Append `@<git-ref>` (a release tag, branch, or commit) to lock what you install:
 
 ```bash
-npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a claude-code --skill '*' -y
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.1.0 -a claude-code --skill '*' -y
 ```
 
 One caveat worth knowing: `skills-lock.json` records each skill's **content hash**, not the git
@@ -195,16 +193,16 @@ with `--no-verify` so the pinned bytes stay byte-for-byte intact.
 
 ```bash
 # List what's available before installing
-npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 --list
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.1.0 --list
 
 # Install a specific standalone reference skill (workflow skills need their named /aep-* dependencies)
-npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a claude-code --skill aep-git-ref -y
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.1.0 -a claude-code --skill aep-git-ref -y
 
 # Install globally (user-level, ~/.claude/skills) instead of project level
-npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a claude-code -g --skill '*' -y
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.1.0 -a claude-code -g --skill '*' -y
 
 # Copy files instead of symlinking (when symlinks aren't supported)
-npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.0.0 -a claude-code --skill '*' --copy -y
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.1.0 -a claude-code --skill '*' --copy -y
 
 # Remove / list installed (use the explicit re-pin flow above to upgrade AEP)
 npx -y skills@1.5.17 remove aep-map

@@ -43,10 +43,8 @@ Each derivation below yields facts of the shape:
 
 **Not `coverage.uncovered`.** That array is the worklist `/aep-build` fills while
 authoring the missing scenarios, so it is empty precisely when the gate never
-opened — the highest-drift case. In a real 41-gate consumer, all nine
-coverage-bearing gates had `uncovered: []`, including one declaring 38 criteria
-with zero covered. A detector pointed at that field derives nothing from exactly
-the case it exists to catch.
+opened — the highest-drift case. A detector pointed at that field derives nothing
+from exactly the case it exists to catch.
 
 `uncovered[]` remains the **detail channel**: when populated it names which
 criteria and their `plan` / `WAIVER: <reason>`, and the provenance anchor cites
@@ -79,10 +77,8 @@ amendments".
 fails is evidence that the spec and the code disagree.
 
 Closed stories' failure logs are **history** — overcome, kept as record,
-counted separately. In the reference consumer, 10 of 12 log-bearing stories were
-closed (8 `completed`, 2 `deferred`), leaving 2 real drift facts out of 12
-candidates. Counting all 12 would have reported a project six times more
-troubled than it was.
+counted separately. Counting them alongside the open ones reports a project far
+more troubled than it is.
 
 Open = not in `{completed, deferred}`.
 
@@ -96,9 +92,9 @@ three ways — layers where _every_ story is completed, layers where every story
 is completed-or-deferred, layers with _any_ completed story — and a surface that
 reports one number under another's definition is a drift fact about itself.
 
-This is the OBS-4 class: a control plane can be semantically incoherent and
-still pass validation. The same check belongs in `/aep-validate` so incoherence
-cannot silently pass; until then, the surface is the only place it shows.
+A control plane can be semantically incoherent and still pass validation, which
+is why `/aep-validate` Step 0 runs the same derivation mechanically
+(`scripts/coherence.mjs`) before any agent spends judgment on it.
 
 ## 5 · Declared vs. actual architecture
 
@@ -110,10 +106,10 @@ it does"_ — and the one that earns human trust, because it cannot be produced 
 restating the YAML.
 
 **Today it usually cannot be computed.** No schema field binds a declared module
-to source paths, so in the reference consumer the code's 20 workspace packages
-and the YAML's 32 conceptual modules had **zero name overlap**: the declared
-architecture is not code-addressable at all. That gap is itself a drift fact —
-report it rather than pretending the graphs agree.
+to source paths, so the conceptual modules in the YAML and the packages in the
+repo routinely share **no names at all**: the declared architecture is not
+code-addressable. That gap is itself a drift fact — report it rather than
+pretending the graphs agree.
 
 **Framework recommendation:** add `architecture.modules[].paths` — a glob
 binding from declared module to source paths — so dependency-cruiser-class

@@ -89,10 +89,8 @@ Each story follows the **Story Spec** format (see `templates/story-spec.md`) and
 After decomposition agents produce their stories, map each story to a user activity from `product.activities` (and, in split mode, set `story.capability` to the owning `capabilities[]` id — this is how dispatch/launch later locate the story's Object Map; leave null in v1/single-journey, where the default capability is the project slug):
 
 - Stories that directly enable a user-facing capability get the activity they serve (e.g., "Create presigned upload URL" → `create-profile` because it enables the user to upload a selfie).
-- **Infrastructure/foundation stories that don't map to any specific user activity leave `activity` as null.** These are implementation enablers — they appear in the architecture view but NOT in the user journey story map. This is correct and expected.
+- **Infrastructure/foundation stories that don't map to any specific user activity leave `activity` as null.** These are implementation enablers — they appear in the architecture view but not in the user journey story map, which shows the user's perspective.
 - Integration stories use the primary user activity they validate end-to-end.
-
-Not every story needs an activity. The story map shows the user's perspective — technical plumbing is visible in the architecture view.
 
 ### Walking Skeleton (Layer 0)
 
@@ -113,7 +111,7 @@ A dedicated agent receives all stories and produces:
 - **Story Graph:** A directed acyclic graph organized by layer, showing dependencies and parallelism opportunities.
 - **Waves (Execution Slices):** Within each layer, group stories into waves that can be dispatched as a batch. A wave is a set of stories with no mutual dependencies that can run fully in parallel. (The YAML field is `stories[].slice`; the user-facing term is "wave.")
 - **Critical path per layer:** The longest dependency chain, determining minimum time to complete that layer.
-- **Layer gates:** The integration test definition that must pass before advancing to the next layer. Each gate also lists its **planned `journeys:`** (`skills/e2e-test/journeys/<NN-slug>.md`, one per capability area; empty when `dogfood_target == none`). Those journeys are a **pre-merge build deliverable** — `/aep-build` Phase 6 authors them from this layer's `acceptance_criteria` (one scenario per criterion, each `Then` → a concrete `Verify`, intent-level & tool-agnostic), committed with the feature **before any dogfood**. `journey_timing` (set in `skills/e2e-test/policy.md`) governs only **when** those journeys are _executed_ (pre-merge vs at the post-deploy gate), never when they are authored; `live_policy` (same file: `every_gate | milestone_gates_only | none`) governs which gates spend the **cost-bearing live half** of that execution — when proposing milestone layers, name them so they can be listed in `policy.md`. (`journeys:` is the plan; `evidence.journeys` records what actually ran.)
+- **Layer gates:** The integration test definition that must pass before advancing to the next layer. Each gate also lists its **planned `journeys:`** (`skills/e2e-test/journeys/<NN-slug>.md`, one per capability area; empty when `dogfood_target == none`) — `journeys:` is the plan, `evidence.journeys` records what actually ran. Who authors those journeys and when they execute is canonical in `/aep-e2e-skill-scaffolding` → `references/layer-gate-loop.md`; the `live_policy` that prices the cost-bearing live half sits in `skills/e2e-test/policy.md`, so when proposing milestone layers, name them so they can be listed there.
 
 Write all stories to the `stories` section of `product-context.yaml`. Also populate the `waves` section grouping stories by layer + wave.
 
@@ -214,7 +212,7 @@ Commit and push per `/aep-git-ref` "Control-Plane Commits": `git add product-con
 - `stories` — layered story graph with waves (all stories start `status: pending`)
 - `waves` — stories grouped by layer + wave for batch dispatch
 - `topology` — agent roles, handoff contracts, routing rules
-- `layer_gates` — integration test definitions per layer (aligned with outcome contracts if defined); list each gate's planned `journeys:` (the pre-merge journey deliverables `/aep-build` authors from the layer's acceptance criteria; an empty list when `dogfood_target == none`). Which gates spend live dogfood is priced by `policy.md` `live_policy`, not stored here.
+- `layer_gates` — integration test definitions per layer (aligned with outcome contracts if defined), each with its planned `journeys:` (an empty list when `dogfood_target == none`). Which gates spend live dogfood is priced by `policy.md` `live_policy`, not stored here.
 - `cost` — initial cost budgets and tracking structure
 - `changelog` — append an entry recording what was added
 
@@ -257,4 +255,4 @@ If the project has UI-facing capabilities, approve the Object Map drafts before 
 /aep-dispatch
 ```
 
-`/aep-dispatch` reads the story graph from `product-context.yaml` and begins moving stories through the state machine (`pending → ready → in_progress → ...`), routing each through `/aep-design → /aep-launch → /aep-build → /aep-wrap`. For UI-facing stories it injects the approved Object Map slice and refuses to dispatch if no approved Object Map exists.
+`/aep-dispatch` reads the story graph from `product-context.yaml` and moves stories through the state machine, routing each through `/aep-design → /aep-launch → /aep-build → /aep-wrap`.

@@ -29,6 +29,16 @@ const update = process.argv.includes("--update");
 const NEGATION = /never |do not |don't |must not |avoid /i;
 const IMPERATIVE = /\bNEVER\b|\bMUST\b|\bALWAYS\b/;
 
+// F4 (docs/decisions/fable-5-1-behavioral-rebaseline.md): reference files that are
+// spawned as prompts are steered text too, and the evaluator prompt escaped this
+// ratchet for a release because only SKILL.md was scanned. Listed explicitly —
+// a glob over references/ would sweep in schemas and runbooks that are not prompts.
+const PROMPT_PAYLOADS = [
+  "skills/patterns/gen-eval/references/agent-contracts.md",
+  "skills/patterns/gen-eval/references/eval-protocol.md",
+  "skills/patterns/gen-eval/references/scoring-framework.md",
+];
+
 function skillFiles(dir, out = []) {
   for (const entry of readdirSync(dir)) {
     const path = join(dir, entry);
@@ -39,7 +49,8 @@ function skillFiles(dir, out = []) {
 }
 
 const counts = {};
-for (const file of skillFiles(SKILLS).sort()) {
+const scanned = [...skillFiles(SKILLS), ...PROMPT_PAYLOADS.map((p) => join(REPO, p))];
+for (const file of scanned.sort()) {
   const lines = readFileSync(file, "utf8").split("\n");
   counts[relative(REPO, file)] = {
     negations: lines.filter((l) => NEGATION.test(l)).length,
@@ -55,7 +66,7 @@ if (update) {
     JSON.stringify(
       {
         schema_version: 1,
-        note: "Per-skill steering ceilings (C1/C6 of docs/decisions/claude-5-context-engineering.md). A skill may fall below its entry; rising above it fails CI. Raising an entry is a reviewable decision, not a fix — the question it asks is which prohibition in THIS skill earned its place.",
+        note: "Per-skill steering ceilings (C1/C6 of docs/decisions/claude-5-context-engineering.md; F4 of fable-5-1-behavioral-rebaseline.md adds the gen-eval prompt payloads). A file may fall below its entry; rising above it fails CI. Raising an entry is a reviewable decision, not a fix — the question it asks is which prohibition in THIS file earned its place.",
         skills: counts,
       },
       null,
@@ -63,7 +74,7 @@ if (update) {
     ) + "\n",
   );
   console.log(
-    `steering baseline recorded: ${Object.keys(counts).length} skills, ${total("negations")} negation lines, ${total("imperatives")} hard imperatives`,
+    `steering baseline recorded: ${Object.keys(counts).length} files (SKILL.md + ${PROMPT_PAYLOADS.length} prompt payloads), ${total("negations")} negation lines, ${total("imperatives")} hard imperatives`,
   );
   process.exit(0);
 }
@@ -105,5 +116,5 @@ if (errors.length) {
   process.exit(1);
 }
 console.log(
-  `steering: ${total("negations")} negation lines, ${total("imperatives")} hard imperatives across ${Object.keys(counts).length} skills — none above its baseline`,
+  `steering: ${total("negations")} negation lines, ${total("imperatives")} hard imperatives across ${Object.keys(counts).length} files (SKILL.md + prompt payloads) — none above its baseline`,
 );

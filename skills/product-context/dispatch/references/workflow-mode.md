@@ -35,10 +35,9 @@ Machine-assembled dispatch briefs.
 Workflow mode bypasses `/aep-launch` entirely, so the tier cannot ride the criteria file — the
 STEP-0 brief carries each story's **provisional verification tier** (from
 `references/context-assembly.md`; grouped stories take the max), and the workflow's **verify
-stage — that mode's evaluator — honors the tier's round cap and dimension preset**
-(`/aep-gen-eval` → `references/verification-economics.md`): `light` → self-review only,
-`standard` → one decisive fix-and-reverify cycle against the derived preset, `deep` → the full
-cap at top effort. The build stage still runs the binding re-derivation at its Phase 5 entry;
+stage — that mode's evaluator — honors the tier's round cap, pinned evaluator effort, and
+dimension preset** as `/aep-gen-eval` → `references/verification-economics.md` → Verification
+Tiers defines them. The build stage still runs the binding re-derivation at its Phase 5 entry;
 the verify stage reads the resulting `verification-recipe.json` from the story's worktree.
 
 ## WIP limit still applies
@@ -57,10 +56,10 @@ mode (dynamic workflow) — autonomous, billed, background; **no mid-stage steer
 human gates **park and return here** for confirmation, then gated stories resume"
 before authoring the workflow.
 
-This is the hands-free batch path: autonomous, billed, background. Steering is at
-stage boundaries only — but human decisions are NOT lost: a worker that hits one
-returns a `gated` result (gate-and-park), this session asks you, and the story
-resumes in its worktree with your answer. Use it when you want a wave built
+This is the hands-free batch path: autonomous, billed, background. Human decisions
+survive it — a worker that hits a gate returns a `gated` result (gate-and-park),
+this session asks you, and the story resumes in its worktree with your answer.
+Use it when you want a wave built
 autonomously without watching individual workers. Requires Claude Code + Workflow
 tool (see `/aep-executor` `references/backends.md` → "Mode: workflow"). If the host
 can't support it, fall back to Wave Batch and say so.

@@ -138,8 +138,7 @@ The last two are the **runnable reference implementation** of the verification-e
 (`/aep-gen-eval` → `references/verification-economics.md`): `preflight.sh` realizes the named-refusal
 probe sets `policy.md` declares; `derive-verification-recipe.sh` is the binding tier derivation
 `/aep-build` Phase 5 runs to emit `.dev-workflow/verification-recipe.json`. Both are project-owned
-and meant to be adapted (precedent: `seed.sh`, `aep-scaffold`'s `audit.sh`/`converge.sh`) — AEP
-still ships no runtime.
+and meant to be adapted.
 
 **Conditional on the policy** — `journeys/` + `tool-selection.md` are emitted for **every dogfoodable
 target**, including `cli` (its journeys carry `target: cli` and dogfood the built binary via bash). Skip
@@ -208,10 +207,9 @@ green + every acceptance criterion proven + prior-layer journeys replay). See
 [`references/three-tier-model.md`](references/three-tier-model.md).
 
 - If `product-context.yaml` exists:
-  - Ensure each `layer_gates[]` entry uses the **canonical enriched shape** — `status` (including
-    `scripted_passed`), a `coverage` block (`criteria_total` / `criteria_covered` / `uncovered`), and
-    structured `evidence` (`scripted` / `journeys` / `matrix`). Existing gate state stays as it is; just
-    add the missing `coverage` / `evidence` keys (back-compat: older gates without them still parse).
+  - Ensure each `layer_gates[]` entry carries the canonical shape (`status`, `coverage`, `evidence`)
+    from `references/layer-gate-loop.md` → "`product-context.yaml` shape". Existing gate state stays as
+    it is; just add the missing `coverage` / `evidence` keys (a gate without them still parses).
   - Ensure `docs/layer-gates/` exists; seed `docs/layer-gates/0.md` from
     `skills/e2e-test/layer-gate-evidence.template.md` when it is absent.
 - If not (standalone project): journeys still organize by layer; the gate is a manual checkbox in

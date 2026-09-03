@@ -30,14 +30,7 @@ Dual-use: consumer skills read this skill's `references/` files — the canonica
 
 ## The Core Principle
 
-**Generator and evaluator must be separate agents.** This is not optional — it is the single most impactful quality improvement in agentic workflows.
-
-Why:
-
-1. Agents cannot honestly evaluate their own work (demonstrated by Anthropic research)
-2. Self-evaluation produces inflated scores and rationalized problems
-3. Separate evaluation catches issues the generator is blind to
-4. The cost of a second agent is trivial compared to shipping broken work
+**Generator and evaluator are separate agents.** Self-evaluation produces inflated scores and rationalized problems (the finding quoted above); an independent evaluator catches what the generator is blind to.
 
 > **Scaling up:** generator/evaluator is the canonical instance of _adversarial
 > verification_. When one task produces many findings/claims that each need an
@@ -56,9 +49,9 @@ These files are the canonical homes for the gen/eval contracts every consumer (`
 | [`references/scoring-framework.md`](references/scoring-framework.md)           | Dimension definitions (1-5 scale), hard failure thresholds, dimension presets (UI, API, security, data, mixed), few-shot examples, anti-patterns                                                                   | Setting up evaluation criteria, scoring work, calibrating evaluators              |
 | [`references/agent-contracts.md`](references/agent-contracts.md)               | Generator/evaluator role separation, prompt templates (generator, evaluator, protocol checker), context assembly rules                                                                                             | Spawning evaluation agents, assembling prompts                                    |
 | [`references/eval-protocol.md`](references/eval-protocol.md)                   | Eval request/response format, verification JSON schema, the eval loop (request → response → fix → re-evaluate), execution contexts (Task subagent, codex exec, tmux, workflow), the needs-human gate record        | Running the evaluation loop, tracking verification state                          |
-| [`references/recovery-ladder.md`](references/recovery-ladder.md)               | Escalating change-strategy ladder (same-fix → re-ground → fresh generator → decompose → human gate) for a stalled eval loop                                                                                        | A FAIL loop is not converging after 2+ rounds                                     |
+| [`references/recovery-ladder.md`](references/recovery-ladder.md)               | Two-round recovery ladder (same fix → re-ground → human gate proposing fresh generator / decompose) for a `blocking` finding that survives round 1                                                                                        | A `blocking` finding is still open after round 1                                    |
 | [`references/findings-format.md`](references/findings-format.md)               | Severity categorization (blocking/important/minor), deduplication protocol, presentation format, changelog entry format                                                                                            | Consolidating findings from multiple agents, presenting results                   |
-| [`references/verification-economics.md`](references/verification-economics.md) | Validator placement matrix, failure taxonomy + classification authority, environment preflight, verification tiers + two-point derivation, verification recipe, accounting schema, tamper-evident evidence classes | Routing a FAIL, deriving verification depth, pricing/recording verification spend |
+| [`references/verification-economics.md`](references/verification-economics.md) | Validator placement matrix, failure taxonomy + classification authority, environment preflight, verification tiers + two-point derivation, verification recipe, accounting sensors, tamper-evident evidence classes | Routing a FAIL, deriving verification depth, pricing/recording verification spend |
 
 ---
 
@@ -81,7 +74,7 @@ What is being evaluated? Options:
 | -------------- | ------------------------------------------------------ | --------------------------------------------------------------- |
 | **Parallel**   | Generator + Evaluator spawned simultaneously           | Documents, designs, product context — agents work independently |
 | **Sequential** | Generator first, then Evaluator reads generator's work | Code review — evaluator needs to see the implementation         |
-| **Loop**       | Generator → Evaluator → fix → repeat (max 5 rounds)    | Active development — generator can fix issues between rounds    |
+| **Loop**       | Generator → Evaluator → fix → re-evaluate (max 2 rounds)    | Active development — generator can fix issues between rounds    |
 
 ### Step 3: Configure dimensions
 
@@ -99,7 +92,7 @@ Read `references/agent-contracts.md` for prompt templates. Customize the templat
 
 Read `references/findings-format.md` to consolidate, categorize, and present findings, then converge to one of two checkable end states:
 
-- **Fixes applied and re-scored:** the generator applies the fixes and the artifact passes a fresh evaluation round with no blocking findings remaining. If rounds stall, climb `references/recovery-ladder.md` before escalating to a human.
+- **Fixes applied and re-scored:** the generator applies the fixes and the artifact passes a fresh evaluation round with no blocking findings remaining. The cap is two rounds; a `blocking` finding still open after round 2 escalates per `references/recovery-ladder.md`.
 - **Findings handed off:** a consolidated findings file is written to a named path (e.g. `<artifact-dir>/eval-findings.md`) for a downstream owner to act on.
 
 ---

@@ -24,7 +24,6 @@ sibling files:
 7. [Mode: workflow (dynamic-workflow fan-out)](#mode-workflow-dynamic-workflow-fan-out)
 8. [Orphan Re-adoption](#orphan-re-adoption)
 9. [The Worktree-Context Constraint](#the-worktree-context-constraint)
-10. [Legacy B1–B4 Mapping](#legacy-b1b4-mapping)
 
 ---
 
@@ -45,16 +44,6 @@ _OS-bound_ workers (bg sessions, exec processes, tmux sessions) survive it.
 | **workflow**           | CC dynamic workflow fan-out             | session-bound | Workflow tool pipeline                                                       | none mid-stage (steer at stage boundaries)                   | gate-and-park → main agent (structured `gated` result + `needs-human.md`) | `/workflows` + signals             |
 | **headless**           | one-shot native subagent                | session-bound | Task/Agent tool, worktree-bound                                              | none                                                         | gate-and-park → main agent (re-spawn w/ answer)                           | signals + PR                       |
 
-> **`claude-team` was removed (2026-06).** On Claude Code ≥ 2.1.x the agent-teams
-> spawn path fails **silently**: the teams runtime pastes the long
-> `claude … --agent-id <name>@<team> --settings '<big JSON>'` launch command into
-> a detached `claude-swarm-<pid>` tmux pane, the `--settings` JSON is **truncated
-> mid-string and never submitted**, so no worker process ever starts — yet the
-> team roster still lists the member as "active". A live team also **poisons
-> teamless background spawns** (they auto-route through the same broken tmux
-> backend). `native-bg-subagent` replaces it as the Claude Code default. See
-> `docs/decisions/remove-claude-team.md`.
-
 **Announce the selection.** Before spawning, state which mode and why — e.g.
 "Claude Code → `native-bg-subagent`: in-process background subagent (Agent tool,
 `run_in_background`, no team); pull-steer via `feedback.md`; verified live by the
@@ -65,7 +54,8 @@ post-spawn liveness probe."
 > **not** an `@<team>` id. It is non-blocking and auto-notifies on completion.
 > (A foreground in-process subagent also works but blocks the orchestrator turn.)
 > **Pre-spawn:** if any team is active, `TeamDelete` it first — a live team
-> re-routes teamless spawns into the broken agent-teams tmux backend.
+> re-routes teamless spawns through the agent-teams backend, where the launch
+> command never submits and the roster still reports the member "active".
 
 ---
 
@@ -96,9 +86,8 @@ bash scripts/detect-backend.sh --opt-in tmux             # user said "…with tm
 
 An unresolved executor comes back as `EXECUTOR_UNRESOLVED=yes` rather than a
 non-zero exit — on a generic host, set `$AEP_EXECUTOR` (and optionally
-`$AEP_EXECUTOR_EXEC`) and re-run. `agent-teams` is deliberately not probed:
-`claude-team` was removed for silent spawn failure, so no mode is ever selected
-from the teams flag.
+`$AEP_EXECUTOR_EXEC`) and re-run. `agent-teams` is deliberately not probed: no
+mode is ever selected from the teams flag.
 
 > **Correct CLI invocations (verified against Claude Code 2.1.161+ / Codex 0.130.0):**
 >
@@ -110,13 +99,6 @@ from the teams flag.
 > `--rc` is **not** a real Claude Code flag. Codex's full-bypass flag is
 > `--dangerously-bypass-approvals-and-sandbox` (no `--yolo` / `--full-auto`).
 
-**Orchestrator lifetime is not shell-probable — the agent knows it.** You are
-_long-lived_ when you're an interactive session or a `/loop`-driven session
-(Claude Code) or a living Codex main thread (desktop or interactive CLI). You
-are _ephemeral_ when this invocation is a cron/launchd-spawned one-shot (e.g. a
-scheduled `codex exec` autopilot tick). Session-bound modes require a
-long-lived orchestrator.
-
 ---
 
 ## Mode Selection
@@ -127,18 +109,14 @@ host's session-bound default → its OS-bound fallback → a presentation-surfac
 legacy mode → `headless` — lives in that script's selection block, and is
 exercised by `scripts/test-detect-backend.sh`.
 
-**Behavior change (2026-06): `claude-team` removed.** The agent-teams spawn path
-fails silently on Claude Code ≥ 2.1.x (see the mode-matrix note), so it is no
-longer selectable. The Claude Code default is now **native-bg-subagent** (Agent
-tool, `run_in_background`, no team). The teams env flag is ignored. There is no
-"…with agent team" opt-in — the backend is broken, not merely de-prioritized.
-
-**Behavior change vs v1.x:** Claude Code with tmux installed no longer
-auto-selects tmux — native modes win. Users who want the tmux+cmux workflow
-back pin it: `git config aep.executor-backend tmux`.
+The Claude Code default is **native-bg-subagent** (Agent tool,
+`run_in_background`, no team): the agent-teams flag is ignored and there is no
+"…with agent team" opt-in. Native modes also win over an installed tmux — the
+tmux+cmux workflow is reached by pinning it:
+`git config aep.executor-backend tmux`.
 
 > **Post-spawn liveness probe is mandatory (never trust a flag or roster).**
-> Selecting a mode does NOT mean its spawn worked. After ANY spawn, before
+> Selecting a mode does not mean its spawn worked. After any spawn, before
 > declaring the worker "running", run the probe in
 > [Post-Spawn Liveness Probe](#post-spawn-liveness-probe). On failure, tear the
 > dead spawn down and use the current host's fallback pair exactly once.
@@ -162,13 +140,10 @@ mode. Session-bound workers cannot outlive their parent, so:
 
 A consumer that needs steering (autopilot) must pick a mode compatible with its
 driver: on Claude Code, `/goal` (or `/loop`) + `native-bg-subagent` (or
-`claude-bg` where `--bg` exists); on Codex, in-thread `/goal` (or manual ticks)
-
-- `codex-subagent`, or cron ticks
-
-* `codex-exec`. **The goal driver is in-session only** — it cannot drive a
-  fresh-session-per-tick scheduler, so the cron/launchd row is always the
-  `/loop`/`codex exec` path.
+`claude-bg` where `--bg` exists); on Codex, in-thread `/goal` (or manual ticks) +
+`codex-subagent`, or cron ticks + `codex-exec`. **The goal driver is in-session
+only** — it cannot drive a fresh-session-per-tick scheduler, so the cron/launchd
+row is always the `/loop`/`codex exec` path.
 
 ---
 
@@ -222,12 +197,11 @@ git worktree prune
 
 ### Post-Spawn Liveness Probe
 
-**Run after EVERY spawn, before declaring the worker "running".** A spawn call
-returning, a flag being set, or a roster/state entry saying "active" is **NOT**
-evidence the worker started. (The removed `claude-team` mode failed exactly here:
-the launch command was truncated in a tmux pane and never submitted, yet the team
-roster still showed the member "active" — a silently dead worktree the autopilot
-only flagged 30+ minutes later.)
+**Run after every spawn, before declaring the worker "running".** A spawn call
+returning, a flag being set, or a roster/state entry saying "active" is not
+evidence the worker started: a launch command that never submits leaves a roster
+reporting "active" over a silently dead worktree the autopilot flags only 30+
+minutes later.
 
 A worker is **live** only if BOTH hold within `N` seconds (default 90):
 
@@ -441,10 +415,10 @@ authored it.
 > agent's worktree on a **stale `origin/<base>`**, not the local
 > integration-branch HEAD — which in a dispatch flow already carries the
 > dispatch-lock commit, so the worker starts from a base that predates its own
-> dispatch and the drift surfaces only at merge time (observed downstream:
-> every dispatch of a layer needed a hand-run rebase; `worktree.baseRef=head`
-> did not fix it). If you must use host isolation, the dispatch brief MUST
-> carry a machine-assembled STEP-0 rebase line — post-lock
+> dispatch and the drift surfaces only at merge time (in the field, every
+> dispatch of a layer then needed a hand-run rebase; `worktree.baseRef=head`
+> does not fix it). If you must use host isolation, the dispatch brief
+> carry a machine-assembled STEP-0 rebase line: post-lock
 > `SHA=$(git rev-parse "$BASE")`, then `git checkout -B story/<id> <sha>` in
 > the brief — never a recalled SHA. See `aep-autopilot`
 > `references/deterministic-orchestration.md`.
@@ -457,8 +431,8 @@ Session-bound workers (native-bg-subagents, Codex subagents) die when the
 orchestrator session dies, but their **work does not** — it lives in the worktree
 and `.dev-workflow/`. When an orchestrator (re)starts and finds state claiming an
 active workspace, **decide orphan-vs-live by the real-liveness probe, never by
-roster/state membership** (a roster can show a never-started worker as "active" —
-the `claude-team` failure mode). Treat as an orphan when the
+roster/state membership** (a roster can show a never-started worker as
+"active"). Treat as an orphan when the
 [Post-Spawn Liveness Probe](#post-spawn-liveness-probe) fails — the agent process
 is gone (TaskList / `list_agents` / `claude agents` empty) **or** the worktree
 shows no activity:
@@ -479,11 +453,11 @@ live only in an agent's context.
 
 ## The Worktree-Context Constraint
 
-**Every spawned worker and evaluator MUST be bound to the workspace worktree** —
-by process cwd (claude-bg, codex-exec, legacy, evaluator execs) or by prompt
+**Every spawned worker and evaluator is bound to the workspace worktree** — by
+process cwd (claude-bg, codex-exec, legacy, evaluator execs) or by prompt
 contract (native-bg-subagent, codex-subagent, headless).
 
-This is not optional. The autopilot orchestrator boundary forbids spawning a
+The autopilot orchestrator boundary forbids spawning a
 reviewer/agent "from main" precisely because such an agent lacks the
 workspace's files, git state, and eval history. Binding the spawned agent to
 the worktree gives it exactly that context, so the boundary's intent is
@@ -492,40 +466,21 @@ and the rule that the main session never reads workspace code both still hold �
 only the spawn mechanism changes.
 
 **Evaluator-effort hint (all `spawn_evaluator()` recipes).** The spawn accepts an
-optional effort hint derived from the story's verification tier
-(`verification-recipe.json` → `evaluator_effort`; canon: `/aep-gen-eval` →
-`references/verification-economics.md`): `standard` → the session default;
-`deep` → the **highest evaluator effort the mode offers** (model/effort flags on
-`codex exec`, effort/model selection on a Task-subagent spawn, the priciest
-configured profile on legacy), and — where more than one model family is
-available — **prefer a different model family from the generator** (cross-family
-judging reduces correlated generator/judge blind spots). `light` never reaches
-these recipes (no evaluator is spawned). The hint is advisory per mode: a mode
-with one fixed evaluator profile ignores it without failing.
+effort hint from the story's verification recipe (`verification-recipe.json` →
+`evaluator_effort`; canon: `/aep-gen-eval` → `references/verification-economics.md`).
+The value is `high` for every tier that spawns an evaluator: pin the mode's
+`high` level (the reasoning-effort flag on `codex exec`, the effort/model
+selection on a Task-subagent spawn, the `high` profile on legacy) rather than
+inheriting the operator's session default — on Claude Code that default is
+`xhigh`, where an eval-response is drafted twice. The recipe does not select
+`xhigh`/`max`, and the deprecated values `default` and `highest` read as `high`.
+`deep` additionally prefers a judge from a different model family than the
+generator; `light` spawns no evaluator and never reaches these recipes. The hint
+is advisory per mode: a mode with one fixed evaluator profile ignores it without
+failing.
 
 **Codex caveat:** `spawn_agent` has no cwd parameter, so the codex-subagent
 binding is a directory contract hardened by the `aep-builder` role's
 `developer_instructions` (see `codex-native.md`). The contract stays inside the
 `workspace-write` sandbox because `.feature-workspaces/` is under the project
 root. Hard enforcement is available via `codex-exec`.
-
----
-
-## Legacy B1–B4 Mapping
-
-For readers of v1.2–v1.5 docs and ADRs:
-
-| Old                   | New                                                       |
-| --------------------- | --------------------------------------------------------- |
-| B1 (tmux + cmux tab)  | `legacy` with cmux present                                |
-| B2 (tmux only)        | `legacy`                                                  |
-| B3 (native subagent)  | `codex-subagent` (Codex) / `headless` (one-shot fallback) |
-| B4 (dynamic workflow) | `workflow`                                                |
-
-New in v1.6: `claude-bg`, `codex-exec`, the human-gate protocol, and orphan
-re-adoption. See `docs/decisions/native-first-executor.md`.
-
-**Removed 2026-06:** `claude-team` (silent agent-teams spawn failure) — replaced
-by **`native-bg-subagent`** as the Claude Code default, plus the mandatory
-[Post-Spawn Liveness Probe](#post-spawn-liveness-probe). See
-`docs/decisions/remove-claude-team.md`.

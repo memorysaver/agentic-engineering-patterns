@@ -43,8 +43,8 @@ AEP organizes work as a Jeff Patton story map:
   dispatch, monitoring, wrap-up, and context updates.
 - A **workspace session** stays in `.feature-workspaces/<name>` on
   `feat/<name>` and owns implementation, verification, and its pull request.
-- Signal files are the durable coordination channel. Do not rely on two agents
-  sharing conversational context.
+- Signal files are the durable coordination channel; two agents share no
+  conversational context.
 
 ## 3. Skills by responsibility
 

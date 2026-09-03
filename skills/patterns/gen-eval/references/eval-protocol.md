@@ -102,23 +102,19 @@ Generator and evaluator are spawned via the Claude API or SDK as separate conver
 Round 1:
   1. Generator writes eval-request.md
   2. Evaluator reads request + artifacts + criteria
-  3. Evaluator scores, writes eval-response-1.md
+  3. Evaluator scores, writes eval-response-1.md (every finding carries Impact + Failure-Class)
   4. Generator reads response
-  5. If PASS → done
-  6. If FAIL → generator fixes issues
+  5. No blocking finding → done (material findings: fix, attest in the eval-request addendum; PASS with notes)
+  6. Blocking finding → generator re-grounds (re-reads spec + design + contracts), then fixes
 
-Round 2:
-  1. Generator writes updated eval-request.md (notes what was fixed)
+Round 2 (bought only by a blocking finding):
+  1. Generator writes updated eval-request.md (what was fixed, with evidence)
   2. Evaluator re-evaluates
-  3. If PASS → done
-  4. If FAIL → generator fixes again
-
-...repeat up to max_rounds (tier-derived; see below)...
-
-If not converged → escalate to human
+  3. No blocking finding → done
+  4. Blocking finding still open → escalate to human (eval_not_converging), proposing options
 ```
 
-**`max_rounds` is tier-derived**, read from `.dev-workflow/verification-recipe.json` when it exists (see `verification-economics.md`): `light` → 0 rounds (generator self-review), `standard` → 2, `deep` → 5. When `standard` exhausts its cap on a genuine `product-defect`, the story auto-escalates once to `deep` (`tier_escalated: true`) and continues the recovery ladder from where it left off. With no recipe (standalone / non-adopting projects), the default stays 5 — today's behavior.
+**`max_rounds` is tier-derived**, read from `.dev-workflow/verification-recipe.json` when it exists (see `verification-economics.md`): `light` → 0 rounds (generator self-review); `standard` and `deep` → 2. With no recipe (standalone / non-adopting projects) the cap is also 2, and a recipe carrying a larger number does not raise it — this protocol's cap governs. There is no `standard → deep` escalation; `tier_escalated` is deprecated and stays `false`.
 
 ### Choosing the mode
 
@@ -184,7 +180,7 @@ Used in multi-round mode (workspace context). Files live in `.dev-workflow/signa
 
 ## Result: PASS / FAIL — derived, not chosen
 
-[FAIL requires its cause on the next line: the hard-floor breach, or the blocking/material findings]
+[FAIL requires its cause on the next line: the hard-floor breach, or the blocking findings]
 
 ## Verification Updates
 
@@ -192,10 +188,12 @@ Used in multi-round mode (workspace context). Files live in `.dev-workflow/signa
 ```
 
 **The Result line is derived, never chosen.** `FAIL` holds iff at least one finding is
-`Impact: blocking` or `material` (class `product-defect`), or a hard-floor dimension is
-breached. A response whose findings are all `polish` is mechanically **PASS with notes** —
-the notes ride the response and the PR body, they are surfaced rather than buried, and they
-buy no further round. Two label rules keep the grading honest: a finding on a hard-floor
+`Impact: blocking` (class `product-defect`), or a hard-floor dimension is breached. A response
+whose findings are `material` and/or `polish` only is mechanically **PASS with notes**:
+`material` findings are **fix-and-attest** — the generator fixes them and records each fix
+with its evidence (commit, test, or probe) in an addendum to `eval-request.md`; `polish` notes
+ride the response and the PR body. Both are surfaced rather than buried, and neither buys a
+further round. Two label rules keep the grading honest: a finding on a hard-floor
 dimension (Security, Data Privacy) may not be graded `polish`, and a `blocking` grade must
 name the acceptance criterion or floor it violates. The evaluator authors findings and
 labels; the verdict is arithmetic over them — either side can recompute it, so a FAIL built
@@ -220,10 +218,12 @@ from polish findings is not a disagreement, it is an invalid response.
 ```
 
 `recovery_rung` (optional) tracks which rung of the
-[recovery ladder](recovery-ladder.md) the generator is on when `eval_result`
-keeps failing — `same_fix` | `reground` | `fresh_generator` | `decompose`. The
-autopilot tick reads it to know the ladder is being climbed before it emits an
-`eval_not_converging` escalation.
+[recovery ladder](recovery-ladder.md) the generator is on when a `blocking`
+finding survives round 1 — `same_fix` | `reground` are the two in-loop rungs;
+`fresh_generator` | `decompose` are recorded only when the human gate (or the
+autopilot policy) picked that option after round 2. The autopilot tick reads it
+to see the round-2 attempt is under way before it emits an `eval_not_converging`
+escalation.
 
 ### needs-human.md (worker writes — the human-gate record)
 
@@ -279,25 +279,12 @@ Task-level tracking for code evaluation. Format is intentionally JSON — models
 | `round`              | **Evaluator only**  | Which eval round                                        |
 | `notes`              | **Evaluator only**  | Detailed findings for this task                         |
 
-**Critical rule:** The generator MUST NOT modify `verification_steps`, `passes`, `evaluated_by`, `round`, or `notes`. The generator may write `commit_sha` after each Phase 4 task commit. Only the evaluator or a human can update the verification fields. This ensures the generator cannot mark its own work as passing.
+The table is the whole rule: the generator writes `commit_sha` after each Phase 4 task commit, and the evaluator (or a human) owns `verification_steps`, `passes`, `evaluated_by`, `round`, and `notes` — which is what keeps the generator from marking its own work as passing.
 
 ### Example (real-world, round 1)
 
 ```json
 [
-  {
-    "task": "feat: expose WORKSPACE_CONTAINER DO binding in wrangler config",
-    "commit_sha": "a1b2c3d4",
-    "verification_steps": [
-      "wrangler.jsonc includes workspace_container durable_object binding",
-      "WorkspaceContainer class is exported from the entrypoint",
-      "wrangler dev starts without binding errors"
-    ],
-    "passes": true,
-    "evaluated_by": "evaluator-round-1",
-    "round": 1,
-    "notes": "All three steps verified. Binding present, class exported, dev server starts clean."
-  },
   {
     "task": "feat: add source_type column to marketplace_plugins table",
     "commit_sha": "e5f6g7h8",
@@ -323,15 +310,12 @@ Task-level tracking for code evaluation. Format is intentionally JSON — models
 The cap is a **ceiling, not a quota** — a loop with rounds remaining and nothing material
 left to find stops.
 
-| Condition                                              | Action                                       |
-| ------------------------------------------------------ | -------------------------------------------- |
-| All dimensions pass thresholds                         | **STOP — PASS**                              |
-| Round's findings are all `Impact: polish`              | **STOP — PASS with notes** (derived verdict) |
-| Round N reaches the tier cap (`standard`: 2)           | **AUTO-ESCALATE once to `deep`**, continue   |
-| Round N reaches max_rounds (`deep` / no recipe: 5)     | **STOP — ESCALATE** to human                 |
-| Same findings appear 3+ consecutive rounds             | **STOP — ESCALATE** (generator can't fix it) |
-| Evaluator finds new issues each round (not converging) | **STOP — ESCALATE** after max_rounds         |
-| Generator and evaluator disagree on pass/fail          | **STOP — ESCALATE** for human judgment       |
+| Condition                                                        | Action                                                                                          |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| No `blocking` finding and every hard floor holds                 | **STOP — PASS**, or **PASS with notes** when `material`/`polish` findings exist (derived verdict) |
+| Round 1 has a `blocking` finding                                  | Re-ground, fix, attest, **buy round 2**                                                         |
+| Round 2 still has a `blocking` finding (old or new)              | **STOP — ESCALATE** to human (`eval_not_converging`), proposing fresh generator / decompose     |
+| Generator and evaluator disagree on pass/fail                    | **STOP — ESCALATE** for human judgment                                                          |
 
 ### Escalation format
 
@@ -340,9 +324,8 @@ left to find stops.
 
 ## Round history
 
-- Round 1: FAIL (Correctness 2, Security 2) — 4 findings
-- Round 2: FAIL (Correctness 3, Security 2) — 3 findings (1 fixed, 0 new)
-- Round 3: FAIL (Security 2) — 2 findings (1 fixed, 0 new)
+- Round 1: FAIL (Correctness 2, Security 2) — 4 findings, 2 blocking
+- Round 2: FAIL (Correctness 3, Security 2) — 1 blocking finding still open
 
 ## Persistent issues
 
@@ -358,7 +341,7 @@ left to find stops.
 
 | Artifact type         | Max rounds                                                       | Typical rounds  |
 | --------------------- | ---------------------------------------------------------------- | --------------- |
-| Code (implementation) | tier-derived (light 0 / standard 2 / deep 5); 5 without a recipe | 1-2             |
+| Code (implementation) | tier-derived (light 0 / standard 2 / deep 2); 2 without a recipe | 1-2             |
 | Code (PR review)      | 1                                                                | 1 (single-pass) |
 | Product context       | 1                                                                | 1 (single-pass) |
 | Design artifacts      | 1-2                                                              | 1               |

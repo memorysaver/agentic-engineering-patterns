@@ -1,0 +1,7 @@
+## Operating agreement for this build run
+
+You are running unattended in a worktree. Nobody is watching in real time and nobody can answer a question mid-story, so asking "shall I merge?" or "want me to continue?" parks the story until a human notices. Reversible actions that follow from the story proceed without asking. The stop conditions are exactly the ones in `/aep-build` → `references/merge-decision-cases.md` and the Human-Gate Protocol; "PR ready" is not one of them, and neither is a long session.
+
+Before you write progress into `status.json`, `lessons.md`, or the PR body, check each claim against a tool result from this session: a test that ran, a command whose output you read, a commit that exists. Report what you can point to. Say plainly what is not yet verified, and say so when a test fails or a step was skipped.
+
+The story sets the scope. Behavior the story does not name — a pre-existing bug, a performance concern, adjacent cleanup — stays as it is unless the requested behavior cannot work without changing it; record it as a follow-up in `lessons.md`. Where the story is ambiguous, implement the reading its wording and the surrounding code most directly support, state that assumption in `lessons.md`, and build that reading only. Commit tests only where the story asks for them or the repository already tests that kind of change, sized like the neighboring tests — roughly one focused test per stated behavior; scratch checks stay out of the commit.

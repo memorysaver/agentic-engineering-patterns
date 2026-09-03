@@ -93,7 +93,7 @@ Continue the conversation from Phase 0, now on product specifics:
 
 Organize everything into the **Context Document** (`templates/context-document.md`) and present the draft. Populate `product.quality_dimensions` — for each declared dimension record dimension, criticality, first calibration layer, and rationale.
 
-Quality standard: **every statement must be convertible into a verification condition.** "The system should be performant" fails; "API p95 latency < 200ms" passes. Untestable statements are not precise enough for agents to act on.
+Quality standard: **every statement must be convertible into a verification condition.** "The system should be performant" fails; "API p95 latency < 200ms" passes.
 
 ### Stage 3: Stress Test (independent agents)
 
@@ -113,7 +113,7 @@ The user resolves each item — by refining the document, or by marking it an ex
    - `opportunity` (from Phase 0)
    - `personas` (list with `id`, `description`, `jtbd`)
    - `capabilities` (≥1 entry; single-journey products get one)
-   - `product`: `problem`, `goals`, `non_goals`, `mvp_boundary`, `constraints`, `layers`, `activities`, `failure_model`, `security_model`, `success_criteria`, `quality_dimensions`, `open_questions`, `decisions`, `stress_test`
+   - `product` — the Context Document's fields, listed in `templates/product-context-schema.yaml`
 2. Write operational init to `product-context.yaml`: header (`schema: v1`, `project`, `version`, `updated_at`, `dispatch_epoch: 0`), `calibration.plan` (mapped from quality_dimensions), `calibration.history: []`, a `changelog` entry; leave other operational sections empty (populated by `/aep-map`).
 
 **V1 mode:** write everything to `product-context.yaml` using `templates/product-context-schema.yaml` as the structural reference. If quality dimensions were declared, also write `calibration.plan`. On subsequent runs, update the relevant sections and preserve all others (e.g. `architecture`, `stories`, `topology`).

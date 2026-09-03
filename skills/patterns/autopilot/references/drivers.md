@@ -63,9 +63,9 @@ only when the thread is **idle**, the goal is active, and it is within budget;
 
 ## Loop driver (fallback — `--loop <interval>`)
 
-The fixed-interval driver, unchanged from earlier versions. Use it for hosts
-without `/goal`, for fully-unattended **OS-scheduled** runs (cron/launchd — `/goal`
-is in-session-only), or when you simply want a fixed cadence. The loop driver does
+The fixed-interval driver. Use it for hosts without `/goal`, for fully-unattended
+**OS-scheduled** runs (cron/launchd — `/goal` is in-session-only), or when you
+simply want a fixed cadence. The loop driver does
 **not** self-terminate; stop it with `/aep-autopilot stop`.
 
 ### Claude Code — `/loop` (GA, in-session, long-lived)

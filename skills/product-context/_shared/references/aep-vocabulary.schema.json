@@ -114,16 +114,22 @@
     },
     "evaluator_effort": {
       "title": "Evaluator effort hint riding the verification recipe",
-      "description": "Travels from the recipe to executor spawn_evaluator(). none belongs to the light tier (no evaluator spawns — build self-reviews); its omission from the prose spec while the emitter produced it is drift bug #5 of this refactor.",
-      "enum": ["none", "default", "highest"]
+      "description": "Travels from the recipe to executor spawn_evaluator(). none belongs to the light tier (no evaluator spawns — build self-reviews). high pins the mode's high effort on every evaluator spawn (rationale: docs/decisions/fable-5-1-behavioral-rebaseline.md): the recipe never selects xhigh/max, and the spawn does not inherit the operator's session default. default and highest are deprecated aliases some derive scripts still emit — spawn recipes and validators read both as high.",
+      "enum": ["none", "high", "default", "highest"],
+      "x-aep-stages": {
+        "none": "light tier — no evaluator spawns; build self-reviews",
+        "high": "the pinned evaluator effort for every tier that spawns an evaluator (standard, deep)",
+        "default": "deprecated alias of high",
+        "highest": "deprecated alias of high"
+      }
     },
     "finding_impact": {
       "title": "How much a finding matters — the axis that decides whether it buys an eval round",
-      "description": "Evaluator-authored, per finding, anchored to the story's acceptance criteria (blocking must name the criterion or hard-floor dimension it violates). Orthogonal to failure_class: class says what KIND of failure routes where; impact says whether it is worth another generator round. Only product-defect findings are impact-graded — environment/harness-flake/scope keep their conjunctive routing. The verdict is DERIVED from these labels (eval-protocol.md), which is what makes the round-buying decision mechanical instead of a mood.",
+      "description": "Evaluator-authored, per finding, anchored to the story's acceptance criteria (blocking must name the criterion or hard-floor dimension it violates). Orthogonal to failure_class: class says what KIND of failure routes where; impact says whether it buys another evaluator round — only blocking does. Only product-defect findings are impact-graded — environment/harness-flake/scope keep their conjunctive routing. The verdict is DERIVED from these labels (eval-protocol.md), which is what makes the round-buying decision mechanical instead of a mood.",
       "enum": ["blocking", "material", "polish"],
       "x-aep-stages": {
         "blocking": "violates a named acceptance criterion, breaches a hard-floor dimension, or is security/data-privacy class — fixed this round; security keeps its immediate-escalation canon",
-        "material": "user-observable defect or correctness risk the criteria did not enumerate — fixed in a round",
+        "material": "user-observable defect or correctness risk the criteria did not enumerate — fix-and-attest: the generator fixes it and records the evidence (commit, test, or probe) in the eval-request addendum; the verdict stays PASS with notes and no round is bought",
         "polish": "nothing user-observable: style, naming, docs, micro-refactors — recorded and surfaced, buys no round"
       }
     },
@@ -145,7 +151,7 @@
     },
     "error_class": {
       "title": "Execution mechanics of a build/CI failure",
-      "description": "The pre-existing enum on status.json failure logs, recording HOW a run died. It stays; failure_class is the routing layer above it, defaulting per the error_class → failure_class mapping in verification-economics.md.",
+      "description": "The enum on status.json failure logs, recording HOW a run died. failure_class is the routing layer above it, defaulting per the error_class → failure_class mapping in verification-economics.md.",
       "enum": ["test_failure", "timeout", "context_overflow", "merge_conflict"]
     },
     "e2e_tier": {

@@ -1,8 +1,8 @@
 # Human Alignment: A Project Brief Surface for AEP
 
-> **Status:** Proposed. Decision doc only, per the decision-doc-first convention
-> (PR #17, PR #24 precedent) — no schema, skill, or marketplace edits in this PR;
-> implementation follows in a separate PR reviewed against this document.
+> **Status:** Accepted — implemented in **v3.3.0** (PR #29; v3.3.1 gated the brief
+> behind an explicit ask). Authored decision-doc-first (PR #28, no schema, skill, or
+> marketplace edits); the implementation was reviewed against this document.
 >
 > **Revision 2 (2026-07-24):** revised after a three-lens adversarial review
 > (SIBYL-contract fidelity · guizang/archify integration · goal-achievement

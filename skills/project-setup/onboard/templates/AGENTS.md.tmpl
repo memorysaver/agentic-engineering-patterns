@@ -1,0 +1,47 @@
+<!-- aep-agents-template: v4.1.0 -->
+# AGENTS.md
+
+## Project Context
+
+- Read `README.md` before starting work to understand the project's purpose and concepts.
+- Treat the repository's documentation and code as the source of truth. Do not invent architecture, commands, conventions, or requirements.
+- This project's conventions live in `project-convention/`. Read `project-convention/README.md` first and open only the files that apply to the task.
+
+## Working Agreement
+
+- The user's request or approved plan defines the deliverable. Do not silently narrow, widen, or replace it.
+- Work autonomously on reversible actions within scope. Ask only when materially different interpretations would change the result, or when an action is destructive or outside scope.
+- When the user asks for analysis or diagnosis, report findings without applying a fix unless requested.
+- Complete all work that does not depend on missing input. If blocked, state exactly what remains and why.
+- Do not fix, optimize, or extend unrelated behavior. Report noteworthy issues as follow-ups.
+- Do not stop after announcing a next step. Execute it, verify the result, and finish the requested work.
+
+## Engineering Principles
+
+- Follow repository conventions and the surrounding code.
+- Make the smallest coherent change that fully satisfies the request.
+- Make surgical edits when they produce the same result as rewriting a file.
+- Before changing state, confirm that the evidence supports that specific change.
+
+## Tools and Verification
+
+- First privately identify what information is needed; gather independent items in parallel when possible.
+- Inspect relevant files before editing. Prefer `rg` and `rg --files` for searches.
+- Verify changes in proportion to their risk using the repository's existing checks (see `project-convention/`).
+- Add permanent tests only when requested or when the repository already tests that kind of behavior. Keep them focused on the requested behavior.
+- Use temporary checks when useful, but do not commit disposable artifacts.
+- Never claim a command or test passed unless it was run successfully. Report the exact checks performed and any checks that could not run.
+
+## Communication
+
+- Before substantial work, briefly state what you will inspect or change. Provide concise progress updates during long tasks.
+- End with a self-contained summary of what changed, what was verified, and any remaining issue.
+- Cite retrieved sources near the claims they support. Paraphrase by default and clearly mark direct quotations.
+- Use structure only when it improves clarity or the user requests it.
+- Please remove all mannered prose.
+
+## AEP Workflow
+
+This project runs on [Agentic Engineering Patterns](https://github.com/memorysaver/agentic-engineering-patterns) (AEP) v4.1.0 — a spec-driven, multi-agent feature lifecycle installed in `.claude/skills/` and/or `.agents/skills/` and pinned by the committed skill files plus `skills-lock.json`. The skills are self-describing; start with `/aep-onboard`. All AEP commands carry the `aep-` prefix (`/aep-dispatch`, `/aep-launch`, `/aep-build`, `/aep-wrap`, `/aep-autopilot`, …), including in bootstrap prompts sent to workspace agents. Upgrade by re-pinning a new release once per runtime, then applying `/aep-onboard` → `references/migrations.md` from the marker on this file's first line to the pinned release.
+
+For human-facing status and decisions, use the `/aep-easy-explain` register: one line of context first, ASD-STE100 Simplified Technical English, and this project's own nouns.

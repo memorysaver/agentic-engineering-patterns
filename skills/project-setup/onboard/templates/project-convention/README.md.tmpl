@@ -1,0 +1,49 @@
+# Project Conventions
+
+This directory is the project's convention surface. `AGENTS.md` carries the generic working agreement; everything specific to this repository lives here, one file per topic, linked from this index. Read this file first; open only the files the task touches.
+
+## How this project runs
+
+This project runs on the AEP workflow. `product-context.yaml` is the source of truth for what gets built. Work moves through `/aep-dispatch` → `/aep-design` → `/aep-launch` → `/aep-build` → `/aep-wrap`, and `/aep-autopilot` drives that loop unattended. The main agent updates product context and writes the OpenSpec change before any handoff; workspace agents build in isolated worktrees and report through signal files. Start with `/aep-onboard`.
+
+## Where documents go
+
+All documents live under `docs/`. The repository root holds only `README.md`, `AGENTS.md`, `CLAUDE.md`, `CHANGELOG.md`, `LICENSE`, and tool configuration; setup, development, and licensing notes go under `docs/setup/`.
+
+| Category   | Directory          | What goes here                                                                    | Naming                     |
+| ---------- | ------------------ | --------------------------------------------------------------------------------- | -------------------------- |
+| Decisions  | `docs/decisions/`  | Design decisions, ADRs, post-mortems that change how this project works           | descriptive slug           |
+| Setup      | `docs/setup/`      | Environment, development, deployment, licensing notes                             | descriptive slug           |
+| Research   | `docs/research/`   | Exploratory studies, source reviews, gap analyses written before a decision exists | descriptive slug           |
+| Plans      | `docs/plans/`      | Design plans, from `/aep-design` or hand-written                                  | `YYYY-MM-DD-<topic>.md`    |
+| Tech-stack | `docs/tech-stack/` | Technology gotchas and library quirks that apply beyond one story                 | `<technology>-<topic>.md`  |
+| Audits     | `docs/audits/`     | Point-in-time evidence: migrations, compatibility checks, security reviews        | `YYYY-MM-DD-<scope>.md`    |
+| Prototypes | `docs/prototypes/` | Throwaway explorations kept for reference                                         | descriptive slug           |
+
+Routing questions, in order: "Is it a reasoned change to how we work?" → decisions. "Does it apply beyond one story?" → tech-stack. "Is it evidence tied to a date?" → audits. "Is it a plan for something not yet built?" → plans. Otherwise research, setup, or prototypes. Lessons from build runs are not documents: `/aep-wrap` archives them under `lessons-learned/`, so `docs/` carries no parallel lessons directory.
+
+## Directories AEP owns
+
+Keep these where they are and in the shape the skills write them; reorganizing them breaks the skills that read them.
+
+| Path                                                             | Written by                                        | Notes                                                   |
+| ---------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------- |
+| `product-context.yaml`, `product/`, `maps/`                      | `/aep-envision`, `/aep-map`, `/aep-model`, `/aep-reflect` | product context; edited by the main agent only  |
+| `openspec/`                                                      | `/aep-design`, `/aep-wrap`                        | specs and archived changes                              |
+| `lessons-learned/` (+ `process/`, `retrospectives/`, `distillations/`) | `/aep-wrap`, `/aep-reflect`, `/aep-autopilot` | the build-lesson archive; recalled by `/aep-launch`  |
+| `calibration/`                                                   | `/aep-calibrate`                                  | design-system and tone specs                            |
+| `dogfood-output/`                                                | `/aep-build` Phase 6                              | screenshots and journey evidence                        |
+| `docs/layer-gates/`                                              | `/aep-wrap`                                       | layer-gate evidence                                     |
+| `docs/human-alignment/`                                          | `/aep-human-alignment`                            | the project brief                                       |
+| `skills/e2e-test/`                                               | `/aep-e2e-skill-scaffolding`                      | `policy.md`, journeys, derive and preflight scripts     |
+| `.dev-workflow/`, `.feature-workspaces/`                         | `/aep-launch`, `/aep-build`                       | per-workspace runtime state; not hand-edited            |
+
+## Conventions
+
+One file per convention, one line each here. Add a line when you add a file.
+
+- _(none yet — typical first files: `layout.md` for where code goes, `stack.md`, `commands.md`, `release.md`, `testing.md`)_
+
+## Adding a convention
+
+Write it as a file in this directory: the rule, its reason, and how it is checked. Link it above with one line. Nothing project-specific goes into `AGENTS.md`.

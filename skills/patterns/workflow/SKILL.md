@@ -31,7 +31,9 @@ The core judgment: a workflow trades **significantly more tokens** for isolated
 context windows + focused goals + a deterministic orchestrator instead of one long,
 drifting transcript. That trade is worth it — and only worth it — when a single
 context would go lazy, biased, or off-goal (the three failure modes it counters are
-tabulated in [`references/pattern-catalog.md`](references/pattern-catalog.md)).
+tabulated in [`references/pattern-catalog.md`](references/pattern-catalog.md)). On the
+current generation a single context sustains a long story; duration alone is not a reason
+to split — adversarial verification and fan-out are.
 
 **Reach for a workflow when the task:**
 
@@ -44,8 +46,8 @@ tabulated in [`references/pattern-catalog.md`](references/pattern-catalog.md)).
 
 Otherwise **stay single-context**: an ordinary coding task that fits one window, or
 a verification need a single `/aep-gen-eval` loop already covers, does not need a
-panel of agents. Use workflows "creatively to push Claude Code in ways you haven't
-previously" — not as a default wrapper around routine work.
+panel of agents. A workflow is a deliberate choice for one task, not a default
+wrapper around routine work.
 
 ---
 

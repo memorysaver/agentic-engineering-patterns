@@ -7,9 +7,7 @@ description: >-
 
 # Git + Worktree Reference (AEP)
 
-`/aep-launch`, `/aep-build`, and `/aep-wrap` operate on a plain git repository plus `git worktree` for parallel agent isolation. There is no separate VCS, no colocated mode, no special wrapper — when these skills say "commit", they mean `git commit`. This skill is the **canonical home** for AEP's git conventions: every other skill resolves `$BASE`, creates/removes worktrees, and opens PRs by pointing here, never by re-inlining these blocks.
-
-AEP migrated from Jujutsu to pure git in 2026-04 (agent training data, universal tooling); rationale in [docs/decisions/migrate-from-jj-to-git.md](https://github.com/memorysaver/agentic-engineering-patterns/blob/main/docs/decisions/migrate-from-jj-to-git.md).
+`/aep-launch`, `/aep-build`, and `/aep-wrap` operate on a plain git repository plus `git worktree` for parallel agent isolation — when these skills say "commit", they mean `git commit`. This skill is the **canonical home** for AEP's git conventions: every other skill resolves `$BASE`, creates/removes worktrees, and opens PRs by pointing here, never by re-inlining these blocks. Rationale for plain git (agent training data, universal tooling): [docs/decisions/migrate-from-jj-to-git.md](https://github.com/memorysaver/agentic-engineering-patterns/blob/main/docs/decisions/migrate-from-jj-to-git.md).
 
 ---
 
@@ -139,8 +137,6 @@ git worktree repair .feature-workspaces/<name>
 
 ## The One-Commit-per-Task Pattern (Phase 4 of `/aep-build`)
 
-This is the largest AEP-specific convention.
-
 ### What
 
 `tasks.md` lists N tasks. The feature branch ends up with N commits — one per task — in the same order. Conventional-commit format. Workspace agents implement linearly, committing after each task, so the commit count matches the task count:
@@ -178,7 +174,7 @@ After each commit, record the short SHA in `.dev-workflow/feature-verification.j
 | Need to update against new origin/`$BASE`                 | `git fetch origin && git rebase origin/"$BASE" && git push --force-with-lease origin feat/<name>`                                                                 |
 | Conflicts during rebase                                   | Resolve in working tree, `git add <files> && git rebase --continue`. If hopelessly tangled, `git rebase --abort` and surface to the orchestrator via signal file. |
 
-**Never** use `git push --force` (without `--force-with-lease`). The lease variant fails safely when someone else has pushed since your last fetch.
+Push a rewritten branch with `--force-with-lease` rather than a bare `--force`: the lease variant fails safely when someone else has pushed since your last fetch.
 
 ---
 
@@ -203,7 +199,7 @@ git push --force-with-lease origin feat/<name>
 gh pr create --base "$BASE" --title "<title>" --body "<body>"
 ```
 
-The `--base "$BASE"` flag is **mandatory**. Without it, `gh` infers the base from local branch state and can target the wrong branch (especially when a dispatch commit looked like a recent base). PRs targeting the wrong base merge into a non-integration branch, and the code never lands on the integration branch even after a successful merge. In two-branch mode this is doubly important — an inferred base could be production `main`, which AEP must never merge feature work into directly.
+The `--base "$BASE"` flag is **mandatory**: without it `gh` infers the base from local branch state (a dispatch commit can look like a recent base), the PR merges into a non-integration branch, and the code never lands on `$BASE`. In two-branch mode an inferred base could be production `main`, which AEP never merges feature work into.
 
 ### Merge the PR
 

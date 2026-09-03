@@ -36,7 +36,7 @@ finding — the thing that makes the loop _continuous_. It feeds the **same
 
 ---
 
-## STOP — Orchestrator Boundary
+## Orchestrator Boundary
 
 `/aep-watch` runs from the **main workspace only** and is an **orchestrator**, not
 an executor: the orchestrator boundary stated in `/aep-autopilot` applies here
@@ -57,9 +57,8 @@ pwd | grep -q '.feature-workspaces' && echo "ABORT: Run /aep-watch from main wor
 Any worker `/aep-watch` spawns (e.g. a cheap CHECK delegate to fetch + classify a
 batch) is a **`native-bg-subagent`** on Claude Code, gated by the standard
 **Post-Spawn Liveness Probe** per `/aep-executor`
-(`scripts/spawn-liveness-probe.sh <name> <agent_id>`): confirm the agent exists
-AND shows activity before counting it. If the probe fails, tear the spawn down
-and retry once; if the retry also fails, run the fetch + classify inline in the
+(`scripts/spawn-liveness-probe.sh <name> <agent_id>`). If the probe fails, tear
+the spawn down and retry once; if the retry also fails, run the fetch + classify inline in the
 watch session for this tick (degraded but still signals-only). The watch session
 itself does **not** read workspace code.
 
@@ -74,7 +73,7 @@ in `references/telemetry-ingestion.md`, which is where the types are defined):
 ```yaml
 topology:
   routing:
-    full_auto: false # A1 master switch (see below)
+    full_auto: false # master switch (see below)
     watch:
       sources: # source types + adapters: references/telemetry-ingestion.md
         - type: bug_tracker # github_issues | linear | jira | sentry | datadog | log_stream
@@ -94,13 +93,12 @@ topology:
 ```
 
 **Confirmation policy (conservative by default):** auto-create a story only when
-`full_auto: true` (A1 master switch) **OR** `watch.auto_create: true` (per-watch
+`full_auto: true` (master switch) **OR** `watch.auto_create: true` (per-watch
 opt-in, narrower than the master switch). Otherwise **surface a proposal**: write
 the story object to a `watch_proposals` block under `topology.routing.watch` and
 print it; nothing enters the `stories` section until a human approves (via
 `/aep-reflect` or inline). Under `full_auto: true`, watch writes straight into
 `stories` and `/aep-dispatch` / `/aep-autopilot` pick them up on the next tick.
-**When in doubt, surface** — recreating noise as stories is worse than a prompt.
 
 ---
 
@@ -244,22 +242,17 @@ classified, deduped, and created vs. proposed. **Postcondition:**
 
 ## Driver
 
-`/aep-watch` is a continuous/scheduled monitor — the same driver matrix as
-`/aep-autopilot` (executor `detect()` + the driver × backend matrix in the
-`/aep-executor` backends reference):
+`/aep-watch` is a continuous/scheduled monitor on the same driver matrix as
+`/aep-autopilot`: resolve the host's driver with executor `detect()` and the
+driver × backend matrix in `/aep-executor` `references/backends.md`, using
+`watch.interval` as the interval.
 
-- **Claude Code — `/loop <interval>`** (long-lived, in-session):
-
-  ```
-  /loop 30m /aep-watch tick
-  ```
-
-  Use `watch.interval` for `<interval>`. The session stays alive, so any spawned
-  CHECK delegate is a session-bound **native-bg-subagent**.
-
+- **Claude Code — `/loop <interval>`** (long-lived, in-session): `/loop 30m /aep-watch tick`.
+  The session stays alive, so any spawned CHECK delegate is a session-bound
+  **native-bg-subagent**.
 - **Codex — `codex exec` cron/launchd** (ephemeral, OS-scheduled): schedule
-  `/aep-watch tick` externally (e.g. `launchd` `StartInterval`, cron, or a
-  `while … sleep` loop), one cheap one-shot per tick. Workers must be OS-bound
+  `/aep-watch tick` externally (`launchd` `StartInterval`, cron, or a
+  `while … sleep` loop), one cheap one-shot per tick, with OS-bound workers
   (codex-exec). AEP prints the snippet; it does not install the scheduler.
 
 `/aep-watch tick` runs one pass of the four-step loop and exits. `/aep-watch stop`

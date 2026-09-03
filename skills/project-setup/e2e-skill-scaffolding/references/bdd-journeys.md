@@ -37,12 +37,10 @@ an LLM agent, not Cucumber), front-matter `target:` + `layer:` + `covers:`.
   `layer_gates[layer=N]` in `product-context.yaml` (see [`layer-gate-loop.md`](layer-gate-loop.md)).
 - **Traceability is the coverage hook.** Each scenario's **Verify** is what proves an acceptance
   criterion; the journey's `covers:` front-matter (and the `**Covers:**` body line) name which criteria.
-  `/aep-build` Phase 6 Step A **authors the journey from these criteria pre-merge** (a scenario per
-  criterion, before any dogfood) and builds the layer's **coverage matrix** — every layer acceptance
-  criterion must map to ≥1 scenario `Verify` (or a Tier-1 scripted case / Tier-3 API check), or the gate
-  can't reach `passed`. An uncovered criterion gets a scenario authored, never ignored; a deliberate
-  deferral carries a `WAIVER:` line. Authoring is always pre-merge; `journey_timing` only governs when the
-  journey is _executed_.
+  Journeys are authored pre-merge, a scenario per criterion, before any dogfood; `journey_timing` governs
+  only when they are _executed_. The coverage loop that consumes them — every criterion mapped to ≥1
+  `Verify` (or a Tier-1 case / Tier-3 API check) or carrying a `WAIVER:` line, else the gate stays below
+  `passed` — is in `layer-gate-loop.md`.
 
 ## Front-matter fields
 

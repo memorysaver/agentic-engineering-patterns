@@ -10,7 +10,7 @@ description: >-
 
 Run a generator/evaluator pattern against any artifact produced by the AEP workflow. The generator attempts to use the artifact (dry-run), the evaluator checks it against reality (codebase, constraints, downstream protocols), and the results are consolidated into fixes applied to the artifact itself.
 
-**Core principle:** the agent that produced an artifact cannot honestly evaluate it — agents praise their own work. The generator/evaluator separation fixes this and is the single most impactful quality lever in agentic workflows. The role-separation contract, scoring framework, agent prompt templates, eval protocol, and findings format are canonical in `/aep-gen-eval` references — read them for the underlying mechanics; this skill applies the pattern to product artifacts.
+**Core principle:** the agent that produced an artifact cannot honestly evaluate it — agents praise their own work, which is what the generator/evaluator separation fixes. The role-separation contract, scoring framework, agent prompt templates, eval protocol, and findings format are canonical in `/aep-gen-eval` references — read them for the underlying mechanics; this skill applies the pattern to product artifacts.
 
 **Where this fits:**
 
@@ -67,9 +67,8 @@ It exits non-zero on a **blocking** finding and prints a fix for each:
 | a module used by stories but never declared  | that work is invisible to every architecture consumer                           |
 | fields the schema does not define            | they carry real meaning no framework consumer can read                          |
 
-**Fix blocking findings before continuing.** Agents cannot evaluate an artifact
-that contradicts itself, and a finding reported without being fixed is a
-subscription to the problem rather than a fix for it.
+**Fix blocking findings before continuing** — agents cannot evaluate an artifact
+that contradicts itself.
 
 The derivations are specified in
 [references/drift-facts.md](references/drift-facts.md); `scripts/coherence.mjs`
@@ -144,7 +143,7 @@ Use the Product Design Evaluator prompt from `/aep-gen-eval` `agent-contracts.md
 | Evaluator        | Compare design vs codebase      | Package versions, import paths, existing patterns, file existence, API compatibility   |
 | Protocol Checker | Verify downstream compatibility | Dispatch-required fields, DAG validity, scoring compatibility, file conflict detection |
 
-**Why two passes:** Pass 1 catches product design problems (wrong stories, bad layering, vision drift); Pass 2 catches technical problems (missing fields, broken references, codebase mismatches). Both are required before dispatching to autonomous agents — the agents will faithfully build whatever you give them, right or wrong.
+**Why two passes:** Pass 1 catches product design problems (wrong stories, bad layering, vision drift); Pass 2 catches technical problems (missing fields, broken references, codebase mismatches). Both run before dispatching to autonomous agents, which build whatever they are given.
 
 ---
 
@@ -164,7 +163,7 @@ Launch all agents in parallel. Each works independently — they do not see each
 
 ## Step 4: Consolidate Findings
 
-After all agents return, consolidate their findings into a single action list.
+After all agents return, consolidate their findings into a single action list, merging the same issue found by several agents from different angles into one finding with the combined evidence.
 
 ### Categorize by severity
 
@@ -173,10 +172,6 @@ After all agents return, consolidate their findings into a single action list.
 | **Blocking**  | Would stop downstream consumers from working          | Fix immediately        |
 | **Important** | Would cause friction, confusion, or rework            | Fix before proceeding  |
 | **Minor**     | Cosmetic, missing optional fields, documentation gaps | Record; fix if trivial |
-
-### Deduplicate
-
-Multiple agents may find the same issue from different angles. Merge these into a single finding with the combined evidence.
 
 ### Present to user
 
@@ -204,7 +199,7 @@ Read the current on-disk state of the artifact (not a cached copy), then fix eve
 
 **Rules for fixes:**
 
-- Modify only the artifact being validated — never create new files, edit other artifacts, or implement code. (This is the one hard guardrail: fixes land in the validated artifact and nowhere else.)
+- Modify only the artifact being validated — never create new files, edit other artifacts, or implement code.
 - Preserve the artifact's existing structure and conventions.
 - If a fix requires a decision the agent can't make (architectural choice, business priority), mark it as an `open_question` with a default assumption rather than guessing silently.
 - Append a changelog entry (`date`, `author: aep-validate`, `summary`) per the product-context schema, recording what was validated and the blocking/important/minor counts fixed.

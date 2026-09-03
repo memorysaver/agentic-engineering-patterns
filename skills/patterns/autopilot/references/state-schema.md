@@ -58,8 +58,7 @@ ROOT=$(git rev-parse --show-toplevel); AP="$ROOT/.agents/skills/aep-autopilot"; 
 node "$AP/scripts/validate-state.mjs" .dev-workflow/autopilot-state.json
 ```
 
-Run it after a hand-edit or a crash recovery — it is an on-demand check;
-mandatory producer-side validation is deliberately outside v4.0.0's scope.
-It reports every violation with its path, so an
+Run it after a hand-edit or a crash recovery — it is an on-demand check, not
+mandatory producer-side validation. It reports every violation with its path, so an
 unknown field or a value outside an enum names itself instead of surfacing three ticks later as
 behavior nobody can explain.

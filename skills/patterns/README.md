@@ -9,6 +9,7 @@ Reusable design patterns extracted from the AEP workflow. These are utility skil
 | [autopilot](autopilot/SKILL.md)                 | Tick-based autonomous orchestration of dispatch-launch-monitor-review-wrap cycle                                                                                                                                              | `/loop`, orchestrates `/aep-dispatch`, `/aep-launch`, `/aep-wrap`                   |
 | [workflow](workflow/SKILL.md)                   | Dynamic workflows — when to write a custom multi-agent harness for a task, and the sub-pattern catalog (fan-out, adversarial verify, tournament, loop-until-done, classify-route, generate-filter)                            | `/aep-executor` workflow mode, `/aep-gen-eval`, `/aep-validate`, `/aep-dispatch`    |
 | [workflow-feedback](workflow-feedback/SKILL.md) | Capture process learnings about the AEP workflow itself (distinct from product feedback)                                                                                                                                      | `/aep-workflow-feedback capture` / `review`                                         |
+| [easy-explain](easy-explain/SKILL.md)           | Re-pitch the last message for a human reader — user-invoked only, never model-selected |
 | [design-lens](design-lens/SKILL.md)             | Theory-grounded design guidance + heuristic health-check — an extensible HCI/design-theory catalog (Nielsen, Norman, Shneiderman, Munzner, Human-AI guidelines…) + a task/data method that selects the lenses for any product | `/aep-model`, `/aep-calibrate` ux-flow, `/aep-validate` (design-quality complement) |
 
 ## Why Patterns Exist
@@ -27,9 +28,9 @@ Duplicating this logic across skills creates drift. Extracting it into a shared 
 
 ## How Skills Reference Patterns
 
-After sync with the `aep-` prefix, pattern files are below `<skills-root>`, where
-the canonical cross-tool root is `.agents/skills` and a Claude-only install may
-use `.claude/skills`:
+After sync with the `aep-` prefix, pattern files are below `<skills-root>` — the
+per-agent install root, `.claude/skills` for Claude Code and `.agents/skills` for
+codex; either alone is a complete install:
 
 ```
 <skills-root>/aep-gen-eval/references/scoring-framework.md

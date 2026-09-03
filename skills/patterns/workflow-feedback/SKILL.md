@@ -8,7 +8,7 @@ description: >-
 
 # Workflow Feedback
 
-A reusable pattern for capturing workflow observations in downstream projects and routing them upstream to improve AEP skills and documentation. Ensures lessons learned during builds don't stay buried in individual project repos.
+A reusable pattern for capturing workflow observations in downstream projects and routing them upstream to improve AEP skills and documentation.
 
 **Two modes:**
 
@@ -135,8 +135,8 @@ Show the human a table of every upstream candidate — including minor ones — 
 ```
 | # | Source | Classification | Title | Proposed destination |
 |---|--------|---------------|-------|---------------------|
-| 1 | looplia | process | /aep-calibrate should modify real components | docs/lessons/... |
-| 2 | looplia | tech-stack | Rust keyring needs platform features | docs/tech-stack/... |
+| 1 | <project> | process | /aep-calibrate should modify real components | docs/lessons/... |
+| 2 | <project> | tech-stack | Rust keyring needs platform features | docs/tech-stack/... |
 ```
 
 The human approves, modifies, or rejects each item.

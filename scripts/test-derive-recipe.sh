@@ -63,6 +63,8 @@ fresh_branch case-sensitive
 echo x > src/auth/login.ts
 derive story-sensitive light
 check "sensitive diff ⇒ deep"          '"tier": "deep"'
+check "deep caps at two rounds (v4.1.0)" '"max_rounds": 2'
+check "deep pins high effort (v4.1.0)"   '"evaluator_effort": "high"'
 check "matched glob recorded"          '"**/auth/**"'
 check "security preset + floors"       '"dimension_preset": "security-sensitive"'
 
@@ -71,12 +73,15 @@ fresh_branch case-docs
 echo more >> docs/readme.md
 derive story-docs light
 check "docs-only diff ⇒ light"         '"tier": "light"'
+check "light spawns no evaluator"       '"evaluator_effort": "none"'
 
 # 3. A plain source diff derives standard with the mixed preset (no dominant signal).
 fresh_branch case-standard
 echo x >> src/app.ts
 derive story-standard light
 check "plain diff ⇒ standard"          '"tier": "standard"'
+check "standard caps at two rounds"     '"max_rounds": 2'
+check "standard pins high effort"       '"evaluator_effort": "high"'
 check "no dominant signal ⇒ mixed"     '"dimension_preset": "mixed"'
 
 # 4. A missing provisional tier fails OPEN to deep — even on a docs-only diff.

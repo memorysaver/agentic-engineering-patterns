@@ -2,8 +2,7 @@
 
 Per-operation recipes for the **legacy** mode: a long-lived interactive
 executor session hosted in tmux, optionally presented through a cmux review
-tab. This was the v1.x default for Claude Code (backends B1/B2); it is now
-selected only when the user **pins it explicitly** (`git config
+tab. It is selected when the user **pins it explicitly** (`git config
 aep.executor-backend tmux` or "…with tmux") or on a **generic host** where
 tmux is the only session mechanism available. Detection and selection live in
 `backends.md`.

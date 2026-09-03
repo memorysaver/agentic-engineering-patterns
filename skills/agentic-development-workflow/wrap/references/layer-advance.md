@@ -67,9 +67,8 @@ against the `deployed:<url>` target _here_, after merge/deploy, which is what fl
    outside the stories' diff scope), a wrap-executed journey, read-only golden
    fixtures with a ledger-equality oracle, or `/aep-watch` telemetry. A gate with
    no named evidence class **refuses the flip** — `REFUSING [evidence-class-missing:<layer>]`,
-   the gate stays `scripted_passed` (the v3.1 one-release migration warning is
-   retired). Set `completed_at`. If only Tier-1 passed, leave it
-   `scripted_passed`.
+   and the gate stays `scripted_passed`. Set `completed_at`. If only Tier-1
+   passed, leave it `scripted_passed`.
 5. **Record the layer budget box.** In `docs/layer-gates/<layer>.md`, record the
    layer's **actual** verification spend — eval rounds across stories, suite runs
    and `suite_seconds`, journey scenarios, `cost_usd` where known — next to the
