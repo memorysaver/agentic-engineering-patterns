@@ -1,6 +1,6 @@
 # AEP 5.0: Rust CLI, project context, and verification
 
-AEP 5.0 gives people and coding agents one `aep` command surface for project context and delivery. Rust owns record integrity and checks; skills guide design and judgment; the host runs agents. OpenSpec remains an integrated specification format and optional interoperability tool.
+AEP 5.0 installs as a Rust `aep` binary and a short AGENTS.md entrypoint. The binary serves skill instructions on demand and owns project records and checks; the host agent uses those instructions for design and judgment. OpenSpec remains an integrated specification format and optional interoperability tool.
 
 **Status:** Proposed architecture. **Target:** AEP 5.0.0, selected by the user. **Date:** 2026-09-09. No CLI or migration is implemented by this document, and the current release remains v4.1.0.
 
@@ -21,7 +21,7 @@ A developer or agent should be able to answer and maintain these questions throu
 3. Which worktree/attempt owns this story, and what implementation/evidence did it produce?
 4. Which behavior is only proposed, implemented locally, integrated, or released?
 5. What did previous work teach us, and which rule or skill changes were actually adopted?
-6. Can an old project migrate without losing IDs, history, custom rules, or operational limits?
+6. Can an old project adopt the current workflow, retain applicable rules and operational limits, and find older context in Git?
 
 Normal lifecycle commands work without Node, OpenSpec, an LLM API key, or a memory service. Git is the required external tool for repository/worktree operations. Project tests still require their project toolchain. Optional provider/host/OpenSpec integrations declare their additional requirements; `aep doctor` reports capabilities per operation.
 
@@ -31,9 +31,10 @@ The command does not invent product judgment. A deterministic `aep change new` c
 
 ```mermaid
 flowchart TB
-    U[People and host agents] --> S[AEP skills: design and judgment]
-    U --> C[aep Rust CLI]
-    S --> C
+    U[People and host agents] --> G[AGENTS.md: project rules and aep skills]
+    G --> C[aep Rust CLI]
+    C --> S[Selected bundled or project skill instructions]
+    S --> U
     C --> D[Domain operations and checks]
     D --> T[Versioned file store and transactions]
     T --> L[Ledger: work, containers, evidence]
@@ -51,20 +52,20 @@ flowchart TB
 | Rust domain core | IDs, references, readiness, transitions, proof requirements, risk derivation, diagnostics | No model/network/tool side effects |
 | File store | Parsing, source preservation, revisions, transaction plans, recovery, derived indexes | No automatic approval or semantic rewriting |
 | `aep` CLI | Public command/JSON contract and explicit operation execution | No mandatory hosted service |
-| Skills | Product exploration, design, implementation reasoning, review, reflection | Call CLI for state transitions instead of retyping YAML protocols |
+| Bundled skill instructions | Product exploration, design, implementation reasoning, review, reflection | Served by `aep skills`; call CLI for state transitions instead of retyping YAML protocols |
 | Host/harness | Agent lifecycle, permissions, communication, model settings | AEP binds attempts to verified worktrees and captures results |
 | Project | Code, runnable checks, local rules, authority and delivery policy | AEP preserves existing project policy during adoption |
 | Optional adapters | External tool/provider/OpenSpec interoperability | Capability-checked; cannot redefine canonical state |
 
 Start with a Cargo workspace containing `crates/aep-core`, `crates/aep-store`, and `crates/aep-cli`. Keep adapters as modules until independent dependency/testing needs justify another crate. Existing `apps/`, TypeScript packages, and the skill corpus remain in this repository. The inspected baseline has no Cargo workspace; this is new implementation work.
 
-Use typed Rust domain structures, Serde for serialization, and clap for the command surface. Clap's derived subcommands and Serde JSON's typed/value interfaces fit these boundaries. Pin exact dependency versions and a supported stable toolchain during the implementation bootstrap. YAML parser selection must pass duplicate-key, unknown-field, scalar/date, and legacy fixture tests before adoption; a serializer alone is not a lossless migration strategy. [clap documentation](https://docs.rs/clap/latest/clap/_derive/_tutorial/index.html), [serde_json documentation](https://docs.rs/serde_json/latest/serde_json/).
+Use typed Rust domain structures, Serde for serialization, and clap for the command surface. Clap's derived subcommands and Serde JSON's typed/value interfaces fit these boundaries. Pin exact dependency versions and a supported stable toolchain during the implementation bootstrap. YAML parser selection must pass duplicate-key, unknown-field diagnostics, scalar/date, and representative legacy fixture tests before adoption. [clap documentation](https://docs.rs/clap/latest/clap/_derive/_tutorial/index.html), [serde_json documentation](https://docs.rs/serde_json/latest/serde_json/).
 
 ## 3. Storage and versioning
 
 Use the [proposed context stores](project-ledger-roadmap-and-memory.md#4-proposed-file-structure). Add a small tracked `.aep/config.toml` for format version, store locations, compatibility mode, project check definitions, and adapter configuration. `project-rules/aep.md` explains the project's workflow and points to executable configuration; it does not duplicate every setting.
 
-Separate four versions: CLI version (`5.0.x`), record schema version, installed skill bundle pin, and OpenSpec compatibility profile. Record them in `aep doctor --json` and migration receipts. An older binary refuses writes to an unsupported schema; it may provide a clearly limited inspection mode. A newer binary never silently migrates on a read command.
+Use one release pin for the CLI and its bundled instructions. Track record schema version and OpenSpec compatibility profile separately because they describe data compatibility. Record these versions and the bundled instruction digest in `aep doctor --json` and attempt receipts. A project's `.aep/config.toml` records its selected CLI release; an incompatible binary reports the mismatch before workflow mutations. An older binary refuses writes to an unsupported schema; it may provide a clearly limited inspection mode. A newer binary never silently migrates on a read command.
 
 Canonical durable records remain reviewable Markdown/YAML/TOML in Git. Generated indexes, context packets, search caches, host handles, locks, and transaction staging are derived or runtime state. They must have an explicit home and ignore policy. No embedded database is required for 5.0; an optional later index remains rebuildable from canonical files.
 
@@ -78,6 +79,7 @@ All syntax below is proposed, not a claim that a binary exists. Keep command nam
 
 | Family | Principal commands | Result |
 | --- | --- | --- |
+| Guidance | `aep skills`, `aep skills route`, `aep skills show <name>` | Small index, evidence-based step routing, and selected instructions/references |
 | Project | `aep init`, `aep doctor`, `aep status` | Adopt/create minimal structure; report versions, capabilities, and project state |
 | Context | `aep context <story-or-change>`, `aep query`, `aep timeline` | Cited, revision-aware context and filtered views |
 | Roadmap | `aep roadmap show/update`, `aep decision new/accept/supersede` | Maintain intent, journeys, and decision provenance |
@@ -87,13 +89,38 @@ All syntax below is proposed, not a claim that a binary exists. Keep command nam
 | Validation | `aep check`, `aep verify plan/run`, `aep review request/record`, `aep gate evaluate` | Static checks, actual check execution, review evidence, and gate verdicts |
 | Delivery | `aep deliver plan/pr/merge/status` | Prepare or perform authorized integration/provider operations with receipts |
 | Learning/rules | `aep lesson record/find`, `aep reflect propose`, `aep rule check/adopt/retire` | Capture evidence, prepare amendments, validate/adopt under project policy |
-| Maintenance | `aep migrate plan/apply/verify/rollback`, `aep recover`, `aep openspec import/export/check` | Versioned migration, interrupted-operation recovery, and OpenSpec interoperability |
+| Maintenance | `aep migrate plan/apply/verify`, `aep recover`, `aep openspec import/export/check` | Convert current context, recover interrupted writes, and exchange OpenSpec bundles; Git handles migration reverts |
 
 Object updates accept structured input (`--file` or `--stdin`) and expected revision, avoiding long shell-escaped descriptions. Listing/show/query/doctor/check are read-only. Commands that produce mutations first compute a change plan internally and apply it within existing task authority; they do not introduce a human confirmation at every routine step. `--dry-run` exposes the same plan without mutation. An explicitly saved plan carries input hashes and expires on relevant drift.
 
 Native subagents are not assumed callable from an OS process. If the active harness exposes delegation only to its parent agent, `aep dispatch start` creates the claim/worktree/bootstrap packet and returns a launch request for the skill to fulfill. A process-capable adapter may launch directly. Record which path was used; a prepared launch request is not a running worker. Both use the same attempt ID and readiness checks.
 
 PR-only and merge-authorized requests have different terminal actions. `aep deliver plan` records the intended operation and required evidence. Execution checks relevant state again; a cached plan is not permission to exceed the current request. Provider timeouts trigger status reconciliation before retry so PRs/merges are not duplicated.
+
+### Installation and progressive disclosure
+
+Herdr provides the distribution precedent: its documented `herdr --skill` prints the instruction file bundled with the installed binary. Local inspection of Herdr 0.8.2 help confirms that option. AEP adopts that release coupling and adds task routing and selective references; those additions are AEP design choices. [Herdr agent skill documentation](https://herdr.dev/docs/agent-skill/).
+
+The default AEP install consists of the native binary and a short project AGENTS.md route to `aep skills`. A host that reads a different entrypoint gets only a pointer to AGENTS.md. No per-runtime AEP skill copies, `npx skills` step, separate skill lockfile, or plugin registration is required. Project rules, configuration, ledger, roadmap, and lessons remain project-authored data: `aep init` and later work create only the files needed. They are not another installed instruction bundle.
+
+Keep skill Markdown, templates, and references reviewable under AEP's source `skills/` tree. The release build embeds the selected content and a small name/trigger/reference index in the binary. Instructions ship with the command behavior they describe; normal reads need no network or model. Existing shared-source checks remain authoring tools, while release checks validate the embedded output. Optional host wrappers can call `aep skills show`; new installs do not need them.
+
+| Disclosure level | Proposed command | Response |
+| --- | --- | --- |
+| Orientation | `aep skills` | Brief usage, task categories, and the route command; no complete skill corpus |
+| Task routing | `aep skills route --task "implement" --story S-42` | Observed state, unmet prerequisites, applicable skill names, project-rule/context references, and suggested next commands |
+| Selected procedure | `aep skills show design` | Only the design instructions, inputs, completion evidence, and named references |
+| Needed detail | `aep skills show design --ref bdd` | One bundled reference, addressed through the CLI instead of an installed filesystem path |
+
+`--task` selects a documented intent category, such as inspect, design, implement, validate, deliver, or reflect. The host agent interprets the user's request into that category; the Rust router does not pretend to understand arbitrary prose. Story/change selectors are optional for analysis and new work. When several subjects or routes fit, return candidates and the facts that distinguish them. Do not create a story, invent a current step, or launch work during a guidance read.
+
+Routing uses the same readiness, evidence, and policy functions as operational commands. Its result separates observed state, missing/unknown facts, and recommended action, with source revisions and the next relevant references. Mandatory applicable rules and gates appear even in the compact response. The agent uses the current request and host authority to select an action; a route is not permission to merge or deploy. Refresh routing after a material state/scope change or stale-input diagnostic, rather than before every shell command. Operations revalidate prerequisites when they execute.
+
+All guidance commands are read-only and support Markdown and `--json`. Give each response a release/digest, skill/reference identity, and completeness indicator. Keep responses scoped; list further references or pagination explicitly instead of silently truncating required instructions. Orientation and bundled skill reads work outside an initialized project; project routing reports missing setup and still returns applicable inspection/onboarding guidance. A missing binary must be reported without inventing commands; independent repository analysis can continue.
+
+Project-owned procedures, such as `monet-*`, remain editable repository files. An optional `project-rules/skills/<name>/SKILL.md` location is indexed from `project-rules/README.md`; existing local skill paths can instead be registered in project configuration. `aep skills` exposes these through the same route/show interface with project provenance and revision. Duplicate names produce a diagnostic, and a local skill cannot silently replace a built-in procedure or check policy. Built-in changes require an AEP release; validated local learning can update project rules or procedures through normal project commits.
+
+**Acceptance:** start from a project with an AGENTS.md entrypoint and the binary, with no installed AEP skill directories or external OpenSpec CLI. Resolve an analysis task without creating work, route a ready story through design/implementation/validation/learning, load one reference, and retrieve a project procedure. Verify offline reads, embedded reference resolution, version mismatch diagnostics, unknown/ambiguous targets, required-rule routing, and refresh after a changed gate. Compare context load and missed instructions with v4.1; reduced installation size alone does not establish better agent behavior.
 
 ### Machine contract
 
@@ -115,7 +142,7 @@ The CLI's check registry owns deterministic validation. A check descriptor names
 | Verification evidence | Test/probe identity, input digest, exit/result, head/environment, stale evidence | That a test suite detects every defect |
 | Review | Required independent review present, findings and closure evidence | That a model grader is always correct |
 | Gate/promotion | Correct scope, prerequisites, current evidence, required decision | Deployed behavior from a merge receipt |
-| Migration/history | Source disposition, preserved graph, no invented dates/statuses, rerun parity | Historical proof that never existed |
+| Migration/history | Git source references, current dependency/gate graph, no invented dates/statuses, no-op rerun | Complete reconstruction of historical context or proof that never existed |
 | Learning | Provenance, applicability, duplicate/conflicting candidates, validation record | General transfer from one successful example |
 
 `aep check` does not silently execute the repository's tests or call a model. `aep verify plan` selects relevant configured checks from the actual diff and policy. `aep verify run` executes them under the existing host permissions, records evidence, and returns results. Launch subprocesses with structured argv, explicit cwd, bounded output, timeouts, cancellation, and declared environment needs; do not interpolate arbitrary Markdown into a shell command. Project scripts remain external code whose trust is governed by the project/host.
@@ -156,7 +183,7 @@ A file-based store needs more than atomic JSON writes. Use one transaction API f
 
 Rust exposes file locking and sync operations; rename has filesystem/platform constraints. A sequence of renames is not an atomic multi-file transaction. Crash recovery, durability boundaries, and platform behavior therefore need fixtures. File locks are cooperative and do not protect against every manual editor or a second clone. Use content-hash conflicts and Git/CI validation at integration as well. [Rust File](https://doc.rust-lang.org/std/fs/struct.File.html), [Rust rename](https://doc.rust-lang.org/std/fs/fn.rename.html).
 
-A small recovery journal is runtime metadata, not another source of project intent. `aep recover` can finish or restore a prepared transaction only when current hashes match the expected intermediate state. Unexpected edits require a conflict report; never overwrite later user work. Read-only commands report recovery requirements without silently changing files.
+A small recovery journal protects in-progress CLI writes. It is temporary runtime metadata; Git retains committed history and handles migration recovery. `aep recover` can finish or restore a prepared transaction only when current hashes match the expected intermediate state. Unexpected edits require a conflict report; never overwrite later user work. Read-only commands report recovery requirements without silently changing files.
 
 External effects use a different protocol: persist intent/operation ID, perform the effect, query/record its outcome, and reconcile ambiguous results. Local rollback cannot undo a published PR, remote merge, or deployment automatically. Store the external identity and recovery action. Preserve this distinction in cancellation and migration.
 
@@ -173,11 +200,11 @@ frame product intent / identify maintenance need
   -> record lesson -> propose rule/skill change -> validate -> adopt -> observe
 ```
 
-Map skill responsibility to commands rather than maintaining two implementations:
+Map existing skill responsibilities into bundled procedures and commands. Old names describe the source mapping below; installing their slash-command files is optional compatibility work:
 
 - `aep-onboard` / scaffold inspect the project and call CLI adoption/migration/check operations; keep project configuration and short instruction routing intact.
 - Envision/map/model/design guide product decisions and author content, using CLI checks and typed records. A maintenance item can bypass product remapping while still supplying a sufficient change contract.
-- Dispatch/launch/executor become orchestration guidance and host adapters around the CLI's single readiness/claim/worktree contract. Preserve old skill invocations as compatibility wrappers during migration.
+- Dispatch/launch/executor become orchestration guidance and host adapters around the CLI's single readiness/claim/worktree contract. Existing integrations can use thin compatibility wrappers where needed.
 - Build runs in its assigned worktree, executes verification, and returns evidence. Wrap/integration publishes results through CLI transactions and existing authority.
 - Reflect proposes a concrete rule/local-skill/upstream change from cited lessons. A learned preference never becomes a permission grant. Adoption uses the project policy and held-out/counterexample validation; rejected and retired proposals remain searchable history.
 
@@ -185,30 +212,30 @@ The CLI manages records and checks for skill amendments; it does not edit its ow
 
 ## 9. v4.1 to v5.0 migration and release
 
-Use `aep migrate plan` to inventory the exact base, dirty/untracked files, installed runtimes, old context/spec/lesson stores, custom checks, and active workers. The saved plan contains the full source-to-target mapping and required consumer switches from the [migration design](project-ledger-roadmap-and-memory.md#8-migration-plan). `apply` uses the same transaction/recovery mechanism as ordinary operations; `verify` compares semantics, not just file existence.
+Git is the historical and recovery source for old projects. `aep migrate plan` records the base commit, relevant source paths, current context to carry forward, required consumer changes, and active work. Keep unrelated dirty/untracked work outside the migration diff. Convert active work and the completed records it depends on, current contracts, useful roadmap/ADRs/lessons, and applicable rules. Older records can stay in Git and be retrieved by commit/path when needed. The [migration design](project-ledger-roadmap-and-memory.md#8-migration-plan) defines this bounded conversion.
 
-Schema adapters read legacy single YAML, split product context, and OpenSpec bundles. They retain unknown/custom fields and source bytes in imports, preserve ID aliases, distinguish gate occurrences, and keep unknown chronology. Do not infer implemented/released from archived/completed metadata. Persist the migration receipt and update markers only on full success.
+Adapters support legacy single YAML, split product context, and selected OpenSpec bundles. Preserve IDs/aliases, dependencies, active gate scope, and applicable custom checks for migrated work. Unknown current constraints need resolution; historical fields do not require exhaustive translation, copied snapshots, or a reverse converter. Preserve unknown chronology and do not infer implemented/released from archived/completed metadata. `apply` reuses ordinary transaction handling; `verify` checks the new structure, current links/readiness, consumer routing, and no-op rerun. Save a small receipt with the Git source and unresolved current mappings. Recovery uses a normal Git revert or selective restore in a reviewed branch.
 
-Ship CLI, schemas, generated skill bundle, checks, compatibility profile, and migration instructions as a coordinated 5.0 release. Each installed runtime's skill bytes and lockfile remain a durable pin. Publish native binaries for tested Linux/macOS architectures and checksums; state Windows support only after its filesystem/process tests pass. Rust is required to build from source, not to use a supported prebuilt binary. Do not add a Node/OpenSpec bootstrap step to the default native install.
+Ship the CLI with embedded skills, templates, schemas, checks, and compatibility profile as one 5.0 release. Publish native binaries for tested Linux/macOS architectures and checksums; state Windows support only after its filesystem/process tests pass. Rust is required to build from source, not to use a supported prebuilt binary. `aep init` wires the AGENTS.md entrypoint and project configuration; default adoption adds no runtime-specific skill bundle or Node/OpenSpec bootstrap step.
 
-Before release, confirm the public binary/package name and distribution channel are available; do not assume that the `aep` registry name can be published. Document supported OS/architecture and minimum Git/toolchain versions from actual CI. Keep binary and skills independently inspectable but check their compatible major/schema versions in doctor and every write path.
+Before release, confirm the public binary/package name and distribution channel are available; do not assume that the `aep` registry name can be published. Document supported OS/architecture and minimum Git/toolchain versions from actual CI. Keep the chosen binary release reproducible and inspectable through doctor and guidance output. An upgrade changes one release pin and checks schema compatibility; it does not reinstall skills once per host.
 
-A 4.x consumer can remain pinned while another migrates. Active old-contract stories finish or restart explicitly; changing the main branch's skill pin does not retroactively change their records. Keep read-only legacy views where needed, but disable old writers before cutover. The dashboard must use the new Rust-owned JSON/read model or a tested adapter; do not maintain a competing TypeScript readiness algorithm.
+A 4.x consumer can remain pinned while another migrates. Active old-contract stories finish or restart explicitly; changing the main branch's CLI/instruction release does not retroactively change their records. After switching affected entrypoints and consumers, remove unused vendored AEP skill copies and their AEP-only lock entries; preserve unrelated local skills and shared lock entries. Keep legacy views only where needed and disable old writers before cutover. The dashboard must use the new Rust-owned JSON/read model or a tested adapter; do not maintain a competing TypeScript readiness algorithm.
 
 ## 10. Implementation stages and release gates
 
 | Stage | Scope | Exit evidence |
 | --- | --- | --- |
-| 0 | Finalize schemas, operations, compatibility profile, and fixture corpus | Reviewed examples and source/authority mapping; no unresolved data-loss case hidden |
-| 1 | Rust core/store/CLI: doctor, inspect, query, static check, dry-run migration | Parsing/reference/graph fixtures; unknown-field retention; stable JSON/errors |
-| 2 | Transactions and migration apply/verify/rollback | Crash injection at every write boundary, stale edits, duplicate execution, no-op rerun, preserved source digests |
+| 0 | Finalize minimal bootstrap, guidance routing, schemas, operations, and compatibility profile | Reviewed task/context examples and source/authority mapping |
+| 1 | Rust core/store/CLI: embedded skills, doctor, inspect, query, static check | AGENTS-to-CLI discovery without installed skills; offline selective reads; parsing/reference/graph fixtures; stable JSON/errors |
+| 2 | Transactions, init, and practical migration plan/apply/verify | Current-context conversion and Git references; crash/stale-write handling; no-op rerun |
 | 3 | Change/BDD/spec/rules/lesson maintenance and OpenSpec integration | Supported-subset round trips, unsupported custom diagnostics, promotion evidence and concurrent-delta fixtures |
 | 4 | Worktree dispatch, verification runner, reviews, gates, delivery receipts | Dependency/capacity/isolation checks, timeout/cancel recovery, stale evidence, provider reconciliation |
-| 5 | Skill and dashboard cutover; representative downstream pilot | Full lifecycle and migration parity on real layouts, preserved custom preflights, rollback including post-cutover records |
-| 6 | Release 5.0.0 | Native install matrix, CLI/skills compatibility, changelog/tag/migration ledger, documented support and limitations |
+| 5 | Guidance and dashboard cutover; representative downstream pilot | Usable current context and full lifecycle, preserved custom preflights, next-task recall without separate AEP skill installs |
+| 6 | Release 5.0.0 | Native install matrix, embedded instruction/command consistency, changelog/tag/migration notes, documented support and limitations |
 
 Use Rust unit tests for pure invariants and integration fixtures for filesystem/process behavior. Extend the repository's existing shell fixture corpus to exercise the binary and preserve current routing/verification cases; do not port only success paths. Keep checks independent from the behavior they certify. Required cases include malformed data, incomplete tasks, empty lessons, duplicate layer gates, partial/unsynced specs, unsafe path resolution, lost worker handles, changed merge candidates, and interrupted external operations.
 
 For the initial pilot retain verification floors and compare v4.1 outcomes against 5.0's normalized state and context answers. Then measure time to dispatch/integration, repeated checks, missed rules, citation/temporal accuracy, escaped defects, and context load on fixed tasks/model settings. An engine rewrite does not itself establish Astra efficiency or memory quality. Treat any verification or learning-policy relaxation as a separate controlled experiment.
 
-The first implementation slice should make existing projects inspectable and checkable without modifying them. The second should prove a lossless migration in a fixture. Those results make the later workflow refactor reviewable and reversible; no downstream is declared upgraded until its own migration and lifecycle evidence pass.
+The first implementation slice should prove AGENTS.md → CLI routing → selected guidance and context inspection. Then establish native record maintenance and a practical conversion of current project context. Git provides access to old files; full historical reconstruction is not a release gate. No downstream is declared upgraded until its current workflow and required checks work under the new contract.

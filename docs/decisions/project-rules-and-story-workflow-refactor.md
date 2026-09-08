@@ -31,13 +31,13 @@ No retrieved source proves that Astra self-review replaces independent review ac
 
 | Surface | Owns | Does not own |
 | --- | --- | --- |
-| Root `AGENTS.md` | Generic task agreement and instruction discovery | Framework commands, deployment policy, copied skill procedures |
+| Root `AGENTS.md` | Generic task agreement, project-rule discovery, and the `aep skills` entrypoint | Complete command catalogs, deployment policy, copied skill procedures |
 | `project-rules/README.md` | Rule index, applicability, project maintenance categories | A second copy of each rule |
 | `project-rules/*.md` | Project-wide code, test, architecture, DevOps, release, and workflow rules | Runtime status or historical lesson logs |
 | `project-rules/packages/*.md` | Rules scoped to an existing app/package or shared module | New directory requirements for every project |
-| Project-owned skills | Repeatable procedures with a trigger, inputs, steps, and checks | Vendored AEP source patches |
+| Project-owned skills | Repeatable procedures exposed through `aep skills`, with a trigger, inputs, steps, and checks | Built-in AEP source patches |
 | Existing configs and scripts | Executable settings and checks | Duplicated prose values that drift |
-| `lessons-learned/` | Observations and evidence for proposed changes | Rules automatically made binding by their presence |
+| `lesson-learned/` | Observations and evidence for proposed changes | Rules automatically made binding by their presence |
 
 Example layout for a monorepo; scaffold creates only applicable files:
 
@@ -51,13 +51,14 @@ project-rules/
   testing.md
   devops.md
   release.md
-  aep.md                        # pin, workflow, project-specific AEP settings
+  aep.md                        # workflow; links to CLI pin/configuration
+  skills/                       # optional project-owned procedures, e.g. monet-*
   packages/
     web.md
     server.md
 apps/                           # retain this project's existing code layout
 packages/
-lessons-learned/
+lesson-learned/
 ```
 
 A single-package repository uses the same index without the monorepo directories. This migration does not rename application directories or relocate unrelated documentation.
@@ -70,12 +71,19 @@ The following is a candidate template, not an installed file. Substitute the act
 <!-- aep-agents-template: vNEXT -->
 # AGENTS.md
 
-Read README.md for project context. Then read project-rules/README.md.
+Read README.md for project context, then project-rules/README.md if present.
 That index identifies project-specific maintenance rules, including code,
 testing, package boundaries, DevOps, release, and AEP configuration.
 Load the rules for the task and all affected paths before making changes.
 Check scoped instruction files for affected directories; follow the host's
 instruction precedence. Recheck applicable rules if the scope changes.
+
+Run `aep skills` for the small workflow index. Use `aep skills route` with
+the task category and relevant story/change to inspect state and next steps.
+For a project without AEP setup, use its inspection/onboarding guidance.
+Read the selected procedure with `aep skills show <name>` and load named
+references only as needed. Refresh after material scope or state changes.
+Use these read-only routes to guide the work authorized by the user.
 
 Use the user's request and prior authorization to define the deliverable.
 Complete authorized work and verify it. Analysis requests produce findings.
@@ -85,11 +93,11 @@ continue independent work while that decision is pending.
 Use repository evidence and preserve unrelated user work. Make a coherent,
 scoped change. Run required checks; report actual results and remaining gaps.
 User instructions take precedence over skill guidelines within host controls.
-When a skill causes a stop, identify its file and operative instruction.
+When guidance causes a stop, cite its command or file and operative instruction.
 End with the outcome, relevant evidence, and unfinished work.
 ```
 
-This keeps the project-specific classification visible at the entrypoint. The AEP version prose, command list, test commands, release sequence, style register, and package-specific exceptions belong in indexed rules. The template marker remains for migrations; the detailed pin belongs in `project-rules/aep.md` and the committed install/lockfile.
+This keeps project-specific classification and CLI discovery visible at the entrypoint. Detailed command lists, test commands, release sequence, style register, and package-specific exceptions belong in indexed rules or selected CLI guidance. The template marker remains for migrations; `.aep/config.toml` records the selected binary release, and `project-rules/aep.md` explains project workflow settings. Built-in skill instructions ship inside that binary, so normal installation needs no per-runtime AEP skill copies or separate skill lockfile. See the [progressive disclosure contract](aep-v5-rust-cli-architecture.md#installation-and-progressive-disclosure).
 
 ### Rule selection and precedence
 
@@ -105,9 +113,9 @@ The index does not override the host's system/developer/organization controls. A
 
 Separate the operations under existing entrypoints:
 
-- **Onboard:** establish the installed AEP version, instruction discovery, and required host/tool capability.
+- **Onboard:** establish the CLI release, AGENTS-to-CLI discovery, and required host/tool capability.
 - **Scaffold:** build a missing project capability, or audit/converge an existing one within the request's scope. For an existing project, preserve its stack, code layout, and working commands.
-- **Migration:** a versioned transformation with a dry-run inventory, content mapping, checks, and rollback. A clean reinstall is not migration.
+- **Migration:** a scoped conversion of current rules and context, with a preview, usability checks, and Git history for recovery.
 
 The current [onboard contract](../../skills/project-setup/onboard/SKILL.md), [migration ledger](../../skills/project-setup/onboard/references/migrations.md), [scaffold audit](../../skills/project-setup/scaffold/scripts/audit.sh), and [structure reference](../../skills/project-setup/scaffold/references/resulting-structure.md) explicitly depend on `project-convention/` and the `AEP Workflow` heading. All need to change together with their fixtures. Merely renaming the directory would make the current audit report drift.
 
@@ -118,22 +126,20 @@ The current [onboard contract](../../skills/project-setup/onboard/SKILL.md), [mi
 | New project | Generate the short entrypoint and minimal applicable rule index. |
 | Only `project-convention/` | Preserve and move its rule content into `project-rules/`; repair relative links and live references. |
 | Only `project-rules/` | Adopt and audit the existing index; preserve custom rules and structure. |
-| Both directories | Inventory both, identify duplicates and conflicts, and build a source-to-target map. Do not overwrite by directory precedence. |
-| Large hand-written AGENTS/CLAUDE | Classify each section as generic agreement, project rule, procedure, or historical material; retain its meaning and destination. |
+| Both directories | Identify current rules, duplicates, and conflicts; map the active rules without overwriting by directory precedence. |
+| Large hand-written AGENTS/CLAUDE | Route applicable rules and procedures to the new structure; leave historical material accessible through its Git source. |
 | Nested instructions, override files, or symlinks | Inspect their actual discovery and targets; preserve them until a tested mapping exists. |
 | Active v4.1 story/worktree | Finish on its recorded pin and rules, or explicitly restart on the new contract; do not change rules underneath the run. |
 
 ### Procedure
 
-1. Record the base commit, clean/dirty paths, installed runtimes and versions, instruction markers, rule files, nested overrides, rendered recipes, and active stories. Work in an isolated migration branch when the main checkout has unrelated edits. Never auto-stash or discard user work.
-2. Produce a content map: old file/section, destination, reason, and unresolved conflict. Preserve unknown sections verbatim for review. The old ledger's broad instruction to replace a heading and everything after it must not be copied into the new migration.
-3. Add support for the new directory before removing the old one. During compatibility, readers prefer a valid `project-rules/` index, accept the legacy layout, and diagnose conflicting active definitions. An old-path README pointer can preserve human navigation; it does not make old scripts compatible. Update live scripts/configuration links and avoid rewriting historical archived evidence or vendored skill bytes with a global replacement.
-4. Move project rules and repair links. Move AEP-specific prose into `project-rules/aep.md`. Generate the small generic entrypoint while preserving unresolved host-specific content. Keep the compatibility pointer through the transition window; name its retirement release later.
-5. Re-pin only the runtimes the project uses. Patch or migrate already-rendered artifacts separately; install updates do not regenerate them. Regenerate host recipes only after comparing project customizations. Commit instruction files, rule changes, install bytes, and lockfile coherently.
-6. Validate instruction discovery, rule applicability, content-map coverage, links, scaffold audit, recipe/schema compatibility, and a no-op second migration. Update the marker only after all required steps succeed. A partial migration has an explicit remaining-work record and retains the old marker.
-7. Publish the migration PR and its rollback procedure. Roll back with a reviewed revert or restored prior files/pin in an isolated branch, preserving later user edits. Do not reset the downstream repository indiscriminately.
+1. Record the Git base, affected paths, instruction discovery, current rules, consumers, and active work. Use a migration branch and preserve unrelated edits.
+2. Map applicable rules and procedures to their destinations and record unresolved current conflicts. Cite the old commit/path for historical sections; complete per-section archival conversion is unnecessary. Do not carry forward broad destructive heading-replacement procedures.
+3. Move rules, repair active links, and wire the small AGENTS.md entrypoint to `aep skills`. Update affected scripts and rendered recipes against project customizations. Keep a legacy reader or old-path pointer only where it serves a current consumer.
+4. Select one CLI release with embedded instructions and commit its project pin. Remove obsolete AEP skill copies and AEP-only lock entries after their consumers switch; retain unrelated local skills and host settings. A host needing another instruction filename gets a pointer to AGENTS.md.
+5. Validate CLI discovery, required-rule applicability, links, affected scaffold/recipe checks, and a no-op second migration. Update the marker after success and report remaining current-work issues. Publish the migration PR with its Git base; recovery uses a reviewed Git revert or selected file restore that preserves later work.
 
-**Required fixtures:** every row above, conflicting same-name files, non-English custom sections, two installed runtimes, Codex-only, a rendered old recipe, interrupted migration, and a second run with zero diff. Audit must verify that AGENTS points to the active index, not merely that a directory exists. Keep existing historical migration steps documented; add a direct legacy-to-current path that avoids transient destructive rewrites while preserving required artifact transformations.
+**Required fixtures:** the minimal binary-plus-entrypoint install, legacy and already-adopted rule directories, conflicting current rules, host entrypoint pointers, a customized old recipe, and a second run with zero diff. Audit must verify that AGENTS routes to the active rule index and CLI guidance. Include unknown/non-English current sections to catch accidental rule removal. Extend fixtures when an actual project's input needs it; converting every historical layout is not a prerequisite for the native workflow.
 
 ## 3. Generation and evaluation: keep evidence, reduce ceremony
 
@@ -151,7 +157,7 @@ The existing [verification economics](../../skills/patterns/gen-eval/references/
 
 Self-validation means inspecting results and exercising relevant failure cases. It is not a prose claim of confidence. The reviewer receives the acceptance contract, base/head identity, applicable rules, diff, and check artifacts. It should form its judgment without inheriting the builder's persuasive narrative. A different context of the same model is useful separation, but does not establish independent error distributions; another model family is also not a correctness guarantee.
 
-Move risk derivation to one canonical validation policy/recipe used by design, build, and integration. Keep `aep-gen-eval` as a compatibility entrypoint and reference library initially. Avoid competing optional-evaluator flags in launch and build. Re-derive risk from the actual diff and recheck stale evidence before integration. The builder cannot lower its own verification floor or waive a failed check.
+Move risk derivation to one canonical validation policy/recipe used by design, build, and integration. Serve gen-eval guidance through the CLI; retain an `aep-gen-eval` wrapper only for consumers that need it. Avoid competing optional-evaluator flags in launch and build. Re-derive risk from the actual diff and recheck stale evidence before integration. The builder cannot lower its own verification floor or waive a failed check.
 
 **Research decision:** simplify the pattern now without expanding the self-review-only class. To test that expansion later, compare unchanged v4.1, compact risk-based review with the same floors, and self-review-only on a defined eligible subset. Hold model, effort, tasks, and environment fixed. Use seeded defects, external tests, and blinded human-calibrated review to measure escapes, false positives, cost, and elapsed time. Production canaries retain current floors until the experiment supports a separate decision. Never include high-risk changes in an unapproved relaxed production policy.
 
@@ -178,18 +184,20 @@ A dependency becomes available from accepted integration evidence, not from an a
 
 ### Responsibility changes
 
+The old skill names below map existing responsibilities to bundled CLI guidance. They are not a requirement to install each slash command in 5.0.
+
 | Skill | Proposed responsibility |
 | --- | --- |
 | `aep-design` | Resolve intent, define contracts and failure cases, establish dependency readiness and verification obligations. |
 | `aep-dispatch` | One scheduling pass: reconcile, select eligible stories, claim capacity/ownership, hand off, and return state. An authorized batch fills available slots. |
-| `aep-launch` | Internal worktree/bootstrap operation; retain the public command as a compatibility wrapper. |
+| `aep-launch` | Internal worktree/bootstrap operation; optional compatibility wrapper for an existing caller. |
 | `aep-executor` | Thin host adapter: capability probe, start, status/steer, stop/recover. Host-specific recipes live in references. |
 | `aep-build` | Implement one story, self-validate, request review by recipe, and publish a checkable completion artifact. |
 | `aep-wrap` | Serialize integration writes, check the combined result and existing layer gates, archive evidence, collect lessons. |
 | `aep-autopilot` | Optional continuous driver that repeats scheduling/reconciliation; no duplicate policy or mandatory background loop. |
 | `aep-reflect` | Route product feedback and turn process evidence into evaluated rule/skill proposals. |
 
-Design outputs should have explicit readiness: objective/non-goals, acceptance/failure cases, interface inputs/outputs, dependencies, affected paths/ownership, applicable rules, verification, and migration/rollback when relevant. Put these in existing OpenSpec artifacts and the assembled brief; avoid a second specification format. A tiny change can have a short design. An already sufficient design does not need another design round.
+Design outputs should have explicit readiness: objective/non-goals, acceptance/failure cases, interface inputs/outputs, dependencies, affected paths/ownership, applicable rules, verification, and migration/recovery when relevant. Put these in the canonical change/BDD contract and referenced design; OpenSpec supplies the compatible format. A tiny change can have a short design. An already sufficient design does not need another design round.
 
 ### Minimal execution contract
 
@@ -227,7 +235,7 @@ A candidate records the observed failure, evidence/attempt, proposed scope, why 
 
 Workers may record lessons and prepare candidate diffs within task authorization. Adoption follows existing project authority: normal reviewed PRs by default, or an explicit standing policy for automatic changes within a narrow scope. This is not a new confirmation question for every lesson. Changes to permissions, verification floors, merge/deployment authority, or global agent policy need the corresponding authorization and independent validation. The same run cannot rewrite its acceptance criteria to make itself pass.
 
-Do not edit committed vendor `aep-*` skills downstream as the learning mechanism: re-pin would erase the change and invalidate installation integrity. Put project-specific behavior in project rules/local skills; send reusable changes upstream. Record which design/rule revision each story used. Apply an adopted rule to new attempts; explicitly restart affected work when a correction must apply immediately.
+Built-in AEP guidance changes in AEP source and ships with a CLI release. Put project-specific behavior in project rules or local procedures such as `monet-*`, exposed through `aep skills`; send reusable changes upstream. Existing vendored AEP copies are not the learning surface. Record the CLI/instruction release and design/rule revision used by each attempt. Apply an adopted rule to new attempts; explicitly restart affected work when a correction must apply immediately.
 
 **Acceptance:** a repeated deploy configuration error becomes a scoped config fix or DevOps rule with a reproduction check, not a generic AGENTS warning. Duplicate lessons propose one amendment. A failed candidate is not activated. A rollout regression can revert the rule without deleting the evidence. Rule removal is evaluated as carefully as rule addition.
 
@@ -235,7 +243,7 @@ Do not edit committed vendor `aep-*` skills downstream as the learning mechanism
 
 | Stage | Deliverable | Required evidence |
 | --- | --- | --- |
-| 1 | `project-rules` readers, short template, scaffold/migration support | Migration matrix, content preservation, instruction discovery, idempotency, old-layout compatibility |
+| 1 | Short entrypoint, bundled guidance routing, `project-rules`, scoped migration | Install without runtime-specific AEP skills, required-rule discovery, current-context conversion, Git provenance, idempotency |
 | 2 | Design readiness and consolidated dispatch/launch/executor contract | Existing routing parity; dependency, isolation, capacity, recovery, and integration fixtures |
 | 3 | Compact self-validation/review contract with unchanged floors | Existing derive-recipe checks, seeded defects, stale-evidence checks, live Astra comparisons |
 | 4 | Lesson promotion to project rules/local skills/upstream PRs | Provenance, duplicate/conflict checks, scoped adoption, rollback, and measured follow-up |
@@ -245,6 +253,6 @@ Use existing `scripts/test-scaffold-audit.sh`, `scripts/test-scaffold-converge.s
 
 Trial each stage separately so a directory move, scheduler change, and weaker review policy cannot hide one another's effects. Measure time from ready to started, time to accepted integration, dispatch overhead, merge conflicts, duplicate actions, missed rules, unnecessary pauses, escaped defects, and useful rule adoption. Capture per-case results and unknown costs. Use the first guide's controlled Astra trial design; establish explicit acceptance bounds before a policy experiment. Lower loaded instruction size and more spawned agents are not success metrics on their own.
 
-Roll out first in a downstream fixture, then one representative existing monorepo, then additional old-project layouts. Name the pilot from current inventory when implementation starts. Keep active stories on their original contract. Preserve aliases and old record readers during transition; removing public skills, layouts, or state contracts requires the appropriate breaking release and migration. A compatible directory-reader addition can ship earlier. Follow the [release convention](../../project-convention/release.md); the overarching Rust CLI design selects AEP 5.0.0 for the full contract change.
+Roll out first in a downstream fixture, then one representative existing monorepo, then additional old-project layouts. Name the pilot from current inventory when implementation starts. Keep active stories on their original contract. Retain aliases/readers where active consumers need them, with Git available for older records. The default 5.0 install uses CLI guidance instead of per-runtime skill bundles. Follow the [release convention](../../project-convention/release.md); the overarching Rust CLI design selects AEP 5.0.0 for the full contract change.
 
 This design defines target responsibilities and staged implementation. Live comparisons and concrete downstream migration PRs remain implementation work; no downstream migration or measured Astra performance is claimed here.

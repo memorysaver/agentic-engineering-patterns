@@ -70,7 +70,8 @@ AGENTS.md
 project-rules/
   README.md                      # task/path -> applicable maintenance rules
   context.md                     # this project's source/authority routing
-  aep.md                         # installed version and workflow configuration
+  aep.md                         # project workflow; links to CLI configuration
+  skills/                        # optional project-owned procedures, e.g. monet-*
 project-ledger/
   index.yaml                     # schema version and store locations
   stories/<story-id>.yaml         # one work item; retains existing ID
@@ -83,7 +84,7 @@ project-ledger/
     tasks.md                     # when useful; preserves imported checklists
   events/<record-id>/<event-id>.yaml
   evidence/<change-id>/           # small durable receipts and manifests
-  imports/<migration-id>/         # source map, digests, exceptions, prior snapshot
+  imports/<migration-id>.yaml     # Git base/path references and current ID mappings
 project-roadmap/
   README.md                      # purpose and task-relevant navigation
   backbone.yaml                  # product activities, not architecture modules
@@ -95,7 +96,7 @@ project-roadmap/
   models/                        # existing object models/calibration when needed
   state/                         # project-owned operational claims, if present
   views/                         # optional generated map/progress views
-  archive/                       # prior product plans retained with provenance
+  archive/                       # selected prior plans useful for current work
   index.yaml                     # stable IDs and paths, not copied contents
   # Keep indexes small; omit machine index until a consumer requires it.
 docs/
@@ -109,6 +110,8 @@ lesson-learned/
 ```
 
 The new preferred spelling is the user's `lesson-learned/`. Existing `lessons-learned/` is a legacy input, not a second writable store. Move it only after its readers/writers have migrated. Large logs, screenshots, and sensitive traces can stay in a project-controlled artifact store; keep their location, digest, retention/access status, and meaningful evidence locally. Do not make an unavailable artifact look verified.
+
+These directories hold project content and are created as needed. The default tooling install is the Rust binary plus the AGENTS.md entrypoint to `aep skills`; built-in skill content is bundled in that binary. `.aep/config.toml` records the CLI release and project settings as defined by the [5.0 architecture](aep-v5-rust-cli-architecture.md#3-storage-and-versioning).
 
 `docs/` remains a general documentation area, with design drafts as one category. This does not force setup guides, public documentation, or research into the ledger. Accepted design reasoning is linked from an ADR/contract; the original draft remains auditable rather than being copied into several active files.
 
@@ -185,7 +188,7 @@ Promotion procedure:
 4. Record release/deployment separately. A merge receipt cannot certify an environment it did not exercise.
 5. On rollback, changed assumptions, or later failure, append contrary/superseding evidence. Do not erase earlier results or automatically rewrite the contract to match a defect.
 
-Import existing main specs as the baseline snapshot. Preserve all active and archived deltas, including already-synced active changes and archived changes that skipped sync. Do not replay every historical delta to reconstruct current truth or batch-run archive as a migration step.
+Import existing main specs as the current baseline and carry forward active changes needed for ongoing work. Check whether those changes were already synced before applying their deltas. Archived bundles remain available through their Git commit/path; import a selected bundle when its reasoning or evidence is useful. Do not replay historical deltas to reconstruct current truth or batch-run archive as a migration step.
 
 ## 7. Memory and self-learning
 
@@ -218,39 +221,37 @@ Keep the production rule revision fixed during a story attempt. A newly adopted 
 
 ## 8. Migration plan
 
-This is a content and consumer migration, not a directory rename. Reuse the instruction migration from the [earlier proposal](project-rules-and-story-workflow-refactor.md) and extend its inventory.
+Git owns the old project's history and recovery. Migration carries useful current context into the new workflow and updates the consumers that use it. Full historical conversion, duplicate source snapshots, and a dedicated reverse-migration engine are outside the 5.0 requirement. Reuse the scoped instruction migration from the [earlier proposal](project-rules-and-story-workflow-refactor.md).
 
 ### Source-to-target mapping
 
-| Existing source | Target and preservation rule |
+| Existing source | Current context to carry forward |
 | --- | --- |
-| `product-context.yaml` stories | Per-story ledger records; preserve IDs, descriptions, criteria, dependencies, ownership, attempts, costs, raw statuses, and unknown fields |
-| Layers, waves, gates, execution slices | Explicit container/gate records and edges; preserve fractional labels, grouped-change membership, missing-wave state, and legacy ordering |
-| `product/index.yaml`, maps, old inline product | Roadmap backbone/journeys/goals plus archived prior plans; preserve duplicate/range references for reconciliation |
-| Architecture and ADR arrays | Roadmap architecture/decisions, with source provenance; link to actual code |
-| Operational-truth/governance registries | Roadmap state or preserved existing canonical paths initially; update executable checks and project-rules before moving |
-| Topology, routing, model baseline | Project AEP configuration/rules where normative; runtime handles stay with attempts; retain unknown/custom sections |
-| Changelog, cost, historical events | Typed ledger events/accounting references, preserving original order and unknown dates; retain source snapshot |
-| OpenSpec active/archive bundles | Changes plus linked design drafts, delta specs, checklists, and legacy metadata; preserve slug/path aliases |
-| OpenSpec main specs | Roadmap specs baseline plus unverified/import provenance where evidence is absent |
-| Lessons, convergence records, eval addenda | Singular lesson store and ledger evidence; keep round history, closure evidence, and raw-source links |
-| Existing memory/plugin stores | Deduplicate only proven copies; preserve unique records and a single capture route |
+| `product-context.yaml` stories | Active work and completed dependencies/relevant history, with IDs, criteria, dependencies, ownership, and evidence-backed status; older tickets can remain in Git |
+| Layers, waves, gates, execution slices | Containers and prerequisites relevant to migrated work; preserve label aliases, grouped changes, and active gate scope |
+| `product/index.yaml`, maps, old inline product | Useful current backbone/journeys/goals; omit invented story-map links and retrieve older plans from Git |
+| Architecture and ADR arrays | Current architecture and durable decisions, with Git provenance and code references; keep superseded reasoning linked where it explains current decisions |
+| Operational-truth/governance registries | Applicable claims, limits, and checks; keep existing canonical paths if moving them adds no value |
+| Topology, routing, model baseline | Applicable project configuration/rules; runtime handles stay with active attempts |
+| Changelog, cost, historical events | Selected events/accounting facts needed now; older logs remain accessible by Git base/path |
+| OpenSpec active/archive bundles | Current changes and their drafts, BDD deltas, checklists, and aliases; archived bundles are retrieved on demand |
+| OpenSpec main specs | Current roadmap specs baseline, with unknown implementation evidence kept explicit |
+| Lessons, convergence records, eval addenda | Useful lessons and supporting evidence links; do not require reformatting every old evaluation |
+| Existing memory/plugin stores | Keep unique useful context and an explicit capture route; register existing paths where appropriate |
 
-Preserve historical evaluator rounds and historical policy violations as recorded; never truncate them to the current round cap. Empty lesson templates stay historical artifacts and do not count as established learning. Slug mismatches require evidence-backed aliases or an unresolved reference, not silent fuzzy matching.
+When importing or retrieving history, retain what it actually establishes. Historical evaluator rounds do not become compliant by truncating them to the current cap. Empty templates do not establish learning. Slug mismatches need supported aliases or an unresolved reference. These are interpretation rules for selected records, not a requirement to convert all history.
 
-A mapping manifest records source repo/full commit/path/section or record ID, source digest, target ID/path, transformation, and disposition. Every source field/content block must be mapped or explicitly retained in the import snapshot with an unresolved exception. Unknown data must not disappear through a narrow schema or a lossy merge function.
+A small migration receipt records the source repository/base commit and relevant paths, selected scope, ID aliases where needed, and unresolved current mappings. A historical lookup can use `git show <base>:<path>` and retain that citation. No per-field disposition ledger or copied source blobs are required. An unknown field that governs current work must be resolved or explicitly block that work; an unused historical field can remain in Git without delaying adoption.
 
 ### Stages
 
-1. **Freeze an auditable input.** Identify the exact commit and separately inventory dirty/untracked files and active worktrees. Use a detached snapshot or `git show` for analysis if the live repository moves. Never silently mix commits or absorb another agent's unfinished change.
-2. **Add readers and migration validation.** Implement new-layout detection, reference checks, and read-only legacy adapters before changing consumers. The legacy snapshot remains authoritative during shadow comparison; generated new output has no active writer.
-3. **Dry-run semantic conversion.** Generate the manifest and candidate tree in a disposable checkout. Preserve YAML extensions/comments in the source snapshot; parse with duplicate-key diagnostics. Report missing links, cycles, ambiguous map ranges, conflicting contracts, untracked changes, and undocumented status values. Do not repair unrelated product facts during conversion.
-4. **Compare normalized views.** Match story/ID sets, dependency edges, container memberships, gate semantics, costs, change/spec content, decisions, and lesson provenance. Compare scheduler eligibility under the unchanged policy. Differences must be explained and approved as explicit design changes, not hidden in migration.
-5. **Cut over one writer set.** Checkpoint/finish active old-contract work, or explicitly restart it on the new revision. Switch all active skill/script/app writers for the migrated scope together. Retain read-only compatibility views only where old readers need them; no bidirectional YAML synchronization. A scope that cannot stop legacy writers stays on the legacy store.
-6. **Verify a real lifecycle.** In a fixture first, then a selected downstream pilot, run design → dispatch → isolated implementation → BDD evidence → integration → contract promotion → lesson → next-task recall. Exercise cancellation, partial implementation, simultaneous changes, stale evidence, and rollback. Re-run migration and require zero new changes for unchanged input.
-7. **Retire compatibility deliberately.** Update the install pin, instruction marker, rendered recipes, migration ledger, CI/scripts, and command wrappers. Remove old writable paths only after consumer scans and lifecycle checks pass. Retain source snapshots and ID aliases for historical references.
+1. **Record the Git base.** Use a migration branch and record the source commit. Identify relevant uncommitted work and active attempts; preserve unrelated edits. Required current content must be included deliberately, not mixed into the input by accident.
+2. **Plan current context.** `aep migrate plan` selects useful records, maps current rules and consumers, and reports unresolved active references or constraints. Include completed dependencies and cited decisions needed to understand ongoing work. Leave bulk history at its Git source.
+3. **Apply and switch consumers.** `aep migrate apply` writes the candidate structure through normal CLI transactions. Switch the affected entrypoints, scripts, and app consumers together. Finish old-contract attempts or restart them explicitly; a scope with continuing old writers stays on its old store. Keep read-only compatibility only where a consumer needs it.
+4. **Verify usability.** `aep migrate verify` checks parsing, current IDs/dependencies/container links, gate meaning, applicable rules, and AGENTS-to-CLI routing. Retrieve a current story's design, ADRs, and evidence through the new context path and retrieve an old file from its Git reference. Require no new diff on rerun. Check dispatch eligibility under unchanged policy for migrated work; historical coverage is not an acceptance gate.
+5. **Commit the cutover.** Commit the coherent CLI pin, entrypoint, data/rule changes, and consumer updates. Remove obsolete writable paths and unused AEP skill copies once their consumers switch. Record any remaining current-work issue in the PR; do not claim adoption complete while the active workflow is broken.
 
-Rollback uses the preserved base/import snapshot and a reviewed revert of migration commits. If new work occurred after cutover, first translate or preserve those new records; reverting the directory move alone would lose them. Unsupported reverse mappings stop rollback with an explicit recovery plan. Preserve user changes and never hard-reset a shared checkout.
+Recover old files with Git, or revert the migration commits in a reviewed branch. Resolve later edits with normal Git conflict handling and preserve unrelated work. AEP does not need a reverse schema translator or a second backup store for this operation.
 
 ### Consumer changes that must ship together
 
@@ -260,11 +261,11 @@ Update envision/map/model to own roadmap intent; design to own change/draft/BDD 
 
 ## 9. Acceptance and rollout decision
 
-Required fixture cases include both inspected split layouts, a legacy single YAML, missing map links, range aliases, fractional/out-of-order layers, unassigned waves, grouped changes, custom governance fields, active and archived-but-unsynced changes, active-but-synced changes, complete checkboxes with no implementation evidence, duplicate IDs, and concurrent writers. Preserve known input anomalies as diagnosed facts; do not create new ones.
+Use representative legacy single-YAML and split-layout fixtures. Cover current dependency/container relationships, active custom governance, grouped changes, already-synced changes, complete checkboxes without implementation evidence, duplicate IDs, and writer conflicts. Missing journey links or old fractional labels must not force invented structure. Historical variants need dedicated conversion only when a project actually imports them.
 
-Migration acceptance requires complete source disposition, preserved IDs/dependency edges, equivalent scheduler eligibility under legacy policy, no stronger gate/completion claim without new evidence, restored relative links, no-op rerun, and a tested rollback. A static schema check cannot certify deployed behavior.
+Migration acceptance requires usable current context, preserved IDs/dependency edges for that scope, equivalent readiness under the existing policy, no stronger gate/completion claim without new evidence, working rule/instruction links, Git source references, and a no-op rerun. A static schema check cannot certify deployed behavior. Validate the native design → implementation → evidence → integration → lesson → next-task recall lifecycle in the 5.0 pilot; exhaustive old-history parity is not its purpose.
 
-Context quality needs its own test. Build a small real-history-derived private question set with expected source references, then compare the current full-context workflow with the indexed proposal at a fixed repository snapshot and model/effort. Questions must cover:
+Future context capture and retrieval need their own quality test, separate from migration completeness. Build a small real-history-derived private question set with expected source references, then compare the current full-context workflow with the indexed proposal at a fixed repository snapshot and model/effort. Permit Git-backed historical lookup and measure its cost. Questions must cover:
 
 - Current product journey versus a maintenance ticket with no journey link.
 - Which dependencies and gate prevent a story from starting.
@@ -276,6 +277,6 @@ Context quality needs its own test. Build a small real-history-derived private q
 
 Measure answer correctness, citation accuracy, missed/conflicting evidence, temporal/scope mistakes, unsupported completion/authority claims, retrieval time, and loaded context. Keep reference answers and held-out cases out of candidate optimization. Publish only sanitized fixtures if the underlying history is private. Do not claim a memory improvement merely because files are smaller.
 
-**Recommended order:** agree on source ownership and record IDs; implement the resolver/import validator; migrate instruction/rule routing; pilot ledger/roadmap/spec/lesson stores with unchanged gates; simplify the workflow; then validate independent operation without the external OpenSpec CLI and evaluate learning-policy changes. OpenSpec format/interoperability support remains part of AEP 5.0. Preserve public command aliases and legacy readers during transition. Breaking required store/skill contracts needs the release and migration discipline in [release conventions](../../project-convention/release.md).
+**Recommended order:** prove the short AGENTS-to-CLI route and selected guidance; establish native context ownership, schemas, and checks; add practical current-context conversion; pilot the lifecycle with unchanged gates and no external OpenSpec CLI; then evaluate learning-policy changes. OpenSpec format/interoperability support remains part of AEP 5.0. Keep aliases or legacy readers only where an active consumer needs them. Breaking required store/skill contracts needs the release and migration discipline in [release conventions](../../project-convention/release.md).
 
 Research stopped after the material questions had pinned source evidence or explicit uncertainty: downstream structure, OpenSpec completion/path semantics, memory scope/promotion, and AEP consumer coupling. The folder contract, importer, downstream migration, and quality experiments remain proposed implementation work.
