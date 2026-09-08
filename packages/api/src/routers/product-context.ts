@@ -1,4 +1,5 @@
 import { publicProcedure } from "../index";
+import { ledgerRoot, loadProjectLedger } from "../lib/project-ledger-loader";
 import {
   loadProductContext,
   buildStoryMap,
@@ -7,6 +8,10 @@ import {
 } from "../lib/product-context-loader";
 
 export const productContextRouter = {
+  getMode: publicProcedure.handler(() => ({
+    mode: ledgerRoot() ? ("native" as const) : ("legacy" as const),
+  })),
+  getLedger: publicProcedure.handler(() => loadProjectLedger()),
   getAll: publicProcedure.handler(() => {
     return loadProductContext();
   }),

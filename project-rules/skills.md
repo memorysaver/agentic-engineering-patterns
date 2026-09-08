@@ -23,3 +23,11 @@ A skill's frontmatter `description` loads into every downstream session. Changin
 ## Verification
 
 For skills: `bun run skills:check`, `skills:check-vocab`, `skills:check-steering`, `skills:package-check`; the fixture suites are the `bun run skills:test-*` scripts. For TypeScript: `bun run check` and `bun run check-types`. CI runs the same set from `.github/workflows/skills-check.yml`. New fixtures go beside the existing `scripts/test-*.sh` suites, not into a new harness.
+
+## Native 5.0 guidance
+
+Native procedures under `skills/native/` are embedded by the CLI build and share its version. Their catalog is selected by the working agent, not a deterministic task router. Catalog/show/reference fixtures validate the installed output; agent selection observations are recorded separately in `docs/audits/2026-09-09-aep-v5-implementation.md`.
+
+The legacy package check validates the marketplace-declared v4.1 catalog and installs that exact name list. Native procedures are not added to legacy routing observations or runtime packages. Both corpora remain subject to line budgets and per-file steering ceilings. New native ceilings document the limited rules for request scope, stale evidence, and review independence; Rust fixtures enforce mechanical constraints.
+
+Native regression fixtures belong with their Rust crates. Run `python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/native/<name>` for changed native skill frontmatter when that local authoring tool is available; CLI package tests verify the portable artifact.

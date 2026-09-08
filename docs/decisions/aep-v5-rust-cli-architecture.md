@@ -2,7 +2,7 @@
 
 AEP 5.0 installs as a Rust `aep` binary and a short AGENTS.md entrypoint. The working agent interprets the request, selects skills, and decides the work sequence. The binary serves the requested instructions, maintains project records, and runs explicit operations and checks. OpenSpec remains an integrated specification format and optional interoperability tool.
 
-**Status:** Proposed architecture. **Target:** AEP 5.0.0, selected by the user. **Date:** 2026-09-09. No CLI or migration is implemented by this document, and the current release remains v4.1.0.
+**Status:** Accepted architecture; implemented on the 5.0 development branch. **Target:** AEP 5.0.0, selected by the user. **Date:** 2026-09-09. The native command contract is documented in [the implementation guide](../workflow/aep-v5-cli.md); the published legacy release remains v4.1.0 until release publication.
 
 This is the entrypoint for the 5.0 design. It governs the implementation boundary and delivery order of the supporting proposals:
 
@@ -76,7 +76,7 @@ Use one detailed change/BDD contract, referenced by story records. Preserve acce
 
 ## 4. Command surface
 
-All syntax below is proposed, not a claim that a binary exists. Keep command names task-oriented and make help/examples part of compatibility tests.
+These command families define the design contract. See the [native CLI guide](../workflow/aep-v5-cli.md) and built-in help for implemented syntax. Keep help/examples part of compatibility tests.
 
 | Family | Principal commands | Result |
 | --- | --- | --- |

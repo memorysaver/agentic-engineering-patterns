@@ -1,21 +1,27 @@
 # Changelog
 
-All notable changes to this skills plugin are recorded here. The format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres
-to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) on the
-`metadata.version` field in [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json).
+All notable changes to AEP are recorded here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases use
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-**Maintenance convention:** every change that bumps the `marketplace.json`
-version ships with a matching entry here, in the same PR. Add work in progress
-under `[Unreleased]` as you go; when cutting a release, rename `[Unreleased]` to
-`[X.Y.Z] - YYYY-MM-DD` and tag `vX.Y.Z` on merge to `main`. SemVer guide for this
-repo: new skills / new backends / additive capability → **minor**; recipe and
-bug fixes → **patch**; removing or breaking a skill contract → **major**.
+Native CLI releases use the Cargo workspace version and include their embedded
+instructions. The optional legacy plugin uses `metadata.version` in
+[`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json). Each version
+change ships with a matching entry here. Add development work under
+`[Unreleased]`; move it to a dated version entry when publishing the matching tag.
+See [project release rules](project-rules/release.md).
 
-> This is **release history for the plugin**. It is unrelated to the per-project
-> `changelog:` array inside a downstream `product-context.yaml` (written by
-> `/envision`, `/dispatch`, `/reflect`, …), which records product-state history
-> for that project. See [`docs/glossary.md`](docs/glossary.md).
+This file records AEP releases. A downstream project's ledger records its own
+product work, integration evidence, and release history.
+
+## [Unreleased] — 5.0.0
+
+- Add the native Rust CLI, embedded skill catalog/references, local procedure discovery, short AGENTS.md entrypoint, and tracked project configuration.
+- Introduce project-ledger, project-roadmap/decisions, project-rules, and lesson-learned stores with versioned records, graph checks, revision conflicts, and transaction recovery.
+- Implement isolated attempts, actual command verification, independent review, gate evaluation, Git/GitHub delivery receipts and reconciliation, specification publication, and evidence-based rule adoption.
+- Integrate common OpenSpec 1.12.0 delta/BDD semantics without requiring its CLI. Retain custom context with explicit mapping, and support Git-backed current-context migration.
+- Add a dashboard ledger view that consumes Rust readiness, native CI/release archives, lifecycle/failure fixtures, and independent review observations.
+- Keep the optional v4.1 plugin distribution at its existing version. Native migration does not relabel old plugin files or update downstream projects automatically.
 
 ## [4.1.0] - 2026-09-03
 

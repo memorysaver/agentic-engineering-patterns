@@ -1,0 +1,85 @@
+name: Native CLI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ['v5.*']
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+          - runner: macos-15
+            target: aarch64-apple-darwin
+          - runner: macos-15-intel
+            target: x86_64-apple-darwin
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install the repository toolchain
+        run: rustup show
+      - run: cargo fmt --all --check
+      - run: cargo clippy --locked --workspace --all-targets -- -D warnings
+      - run: cargo test --locked --workspace
+      - run: cargo build --locked --release -p aep-cli --target ${{ matrix.target }}
+      - name: Verify the embedded binary outside a project
+        shell: bash
+        run: |
+          binary="$PWD/target/${{ matrix.target }}/release/aep"
+          cd "$(mktemp -d)"
+          "$binary" --json skills > catalog.json
+          "$binary" --json skills show design --ref bdd > reference.json
+          python3 -c 'import json; assert json.load(open("catalog.json"))["ok"]; assert json.load(open("reference.json"))["data"]["metadata"]["complete"]'
+      - name: Package native artifact
+        shell: bash
+        run: |
+          mkdir -p native-artifact
+          cp target/${{ matrix.target }}/release/aep LICENSE native-artifact/
+          tar -czf aep-${{ matrix.target }}.tar.gz -C native-artifact aep LICENSE
+          python3 -c 'import hashlib,pathlib; p=pathlib.Path("aep-${{ matrix.target }}.tar.gz"); pathlib.Path(str(p)+".sha256").write_text(hashlib.sha256(p.read_bytes()).hexdigest()+"  "+p.name+"\n")'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aep-${{ matrix.target }}
+          path: |
+            aep-${{ matrix.target }}.tar.gz
+            aep-${{ matrix.target }}.tar.gz.sha256
+  dashboard:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - run: bun install --frozen-lockfile
+      - run: bun test packages/api/src/lib/project-ledger-loader.test.ts
+      - run: bun run --cwd apps/web build
+  release:
+    if: startsWith(github.ref, 'refs/tags/v5.')
+    needs: [native, dashboard]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the release version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python3 -c 'import os,tomllib; assert os.environ["RELEASE_TAG"] == "v" + tomllib.load(open("Cargo.toml","rb"))["workspace"]["package"]["version"]'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: aep-*
+          path: artifacts
+          merge-multiple: true
+      - name: Publish tagged artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: gh release create "$RELEASE_TAG" artifacts/* --verify-tag --generate-notes

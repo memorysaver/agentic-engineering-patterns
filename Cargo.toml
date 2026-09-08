@@ -1,0 +1,26 @@
+[workspace]
+members = ["crates/aep-core", "crates/aep-store", "crates/aep-cli"]
+resolver = "2"
+
+[workspace.package]
+version = "5.0.0"
+edition = "2024"
+rust-version = "1.98"
+license = "MIT"
+repository = "https://github.com/memorysaver/agentic-engineering-patterns"
+
+[workspace.dependencies]
+serde = { version = "=1.0.228", features = ["derive"] }
+serde_json = "=1.0.149"
+serde_yaml_ng = "=0.10.0"
+toml = "=1.1.5"
+sha2 = "=0.10.9"
+chrono = { version = "=0.4.42", default-features = false, features = ["clock", "serde"] }
+clap = { version = "=4.6.6", features = ["derive"] }
+tempfile = "=3.20.0"
+ctrlc = { version = "=3.4.7", features = ["termination"] }
+libc = "=0.2.172"
+
+[profile.release]
+lto = "thin"
+strip = true

@@ -4,6 +4,7 @@ node_modules/
 # Build outputs (root + per-workspace; NOT the skills/.../build source dir)
 dist/
 /build/
+/target/
 apps/*/build/
 packages/*/build/
 *.tsbuildinfo
@@ -51,7 +52,8 @@ tmp
 .pnp.js
 
 # Project
-.aep/
+.aep/*
+!.aep/config.toml
 .alchemy
 .claude/worktrees/
 .dev-workflow/
