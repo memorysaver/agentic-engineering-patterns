@@ -76,4 +76,6 @@ The OpenSpec common profile checks explicit requirement obligations and scenario
 
 Local checks cover Linux. CI defines Linux x86_64, macOS arm64, and macOS x86_64 build/test/archive jobs; their remote results belong to the implementation PR checks. Windows is not a supported native target in this release. The CLI is not an OS sandbox or a reviewer identity service. Provider authentication and real downstream deployment checks were not exercised by local mocks.
 
+The first remote macOS run found that export destination validation rejected the system `/var` temporary-directory alias. Destination resolution now accepts only macOS's fixed `/var` and `/tmp` aliases to `/private/var` and `/private/tmp`; project-controlled symlinks remain rejected. The existing export lifecycle fixture covers this platform regression, and the store fixture checks that other symlink parents stay blocked.
+
 No v5 tag, package registry publication, production downstream cutover, or implementation PR merge was performed for this audit. The optional legacy marketplace stays at v4.1.0. The source repository keeps its own AEP design decisions under `docs/decisions/`; downstream ADRs use `project-roadmap/decisions/`.

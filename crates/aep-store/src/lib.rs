@@ -72,6 +72,16 @@ pub fn destination(path: &Path) -> Result<PathBuf> {
             _ => out.push(part.as_os_str()),
         }
         if fs::symlink_metadata(&out).is_ok_and(|m| m.file_type().is_symlink()) {
+            // macOS exposes system temporary directories through these fixed aliases.
+            // Resolve only the OS prefix; project-controlled symlinks still fail below.
+            #[cfg(target_os = "macos")]
+            if matches!(out.to_str(), Some("/var" | "/tmp")) {
+                let expected = Path::new("/private").join(out.strip_prefix("/").unwrap());
+                if fs::canonicalize(&out)? == expected {
+                    out = expected;
+                    continue;
+                }
+            }
             return Err(Error::input(format!(
                 "Symlink in destination: {}",
                 out.display()
@@ -687,6 +697,7 @@ mod tests {
         std::os::unix::fs::symlink(d.path(), s.root.join("escape")).unwrap();
         assert!(contained(&s.root, "escape/test").is_err());
         assert!(contained(&s.root, "../test").is_err());
+        assert!(destination(&s.root.join("escape/test")).is_err());
     }
     #[test]
     fn reserved_aliases_and_duplicate_targets_are_rejected() {
