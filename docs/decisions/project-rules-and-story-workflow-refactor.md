@@ -78,12 +78,11 @@ Load the rules for the task and all affected paths before making changes.
 Check scoped instruction files for affected directories; follow the host's
 instruction precedence. Recheck applicable rules if the scope changes.
 
-Run `aep skills` for the small workflow index. Use `aep skills route` with
-the task category and relevant story/change to inspect state and next steps.
-For a project without AEP setup, use its inspection/onboarding guidance.
-Read the selected procedure with `aep skills show <name>` and load named
-references only as needed. Refresh after material scope or state changes.
-Use these read-only routes to guide the work authorized by the user.
+Run `aep skills` for skill names, purposes, and when to use them. Select
+skills based on the user's request and project context, then read them with
+`aep skills show <name>`. Load named references only as needed. Use `aep status`,
+`aep context`, and `aep check` for facts and declared constraints. Decide the
+work sequence yourself and reassess it after material scope or state changes.
 
 Use the user's request and prior authorization to define the deliverable.
 Complete authorized work and verify it. Analysis requests produce findings.
@@ -97,7 +96,7 @@ When guidance causes a stop, cite its command or file and operative instruction.
 End with the outcome, relevant evidence, and unfinished work.
 ```
 
-This keeps project-specific classification and CLI discovery visible at the entrypoint. Detailed command lists, test commands, release sequence, style register, and package-specific exceptions belong in indexed rules or selected CLI guidance. The template marker remains for migrations; `.aep/config.toml` records the selected binary release, and `project-rules/aep.md` explains project workflow settings. Built-in skill instructions ship inside that binary, so normal installation needs no per-runtime AEP skill copies or separate skill lockfile. See the [progressive disclosure contract](aep-v5-rust-cli-architecture.md#installation-and-progressive-disclosure).
+This keeps project-specific classification and CLI discovery visible at the entrypoint. The agent selects skills and work order; the CLI serves requested content and reports state and checks. Detailed command lists, test commands, release sequence, style register, and package-specific exceptions belong in indexed rules or selected CLI guidance. The template marker remains for migrations; `.aep/config.toml` records the selected binary release, and `project-rules/aep.md` explains project workflow settings. Built-in skill instructions ship inside that binary, so normal installation needs no per-runtime AEP skill copies or separate skill lockfile. See the [progressive disclosure contract](aep-v5-rust-cli-architecture.md#installation-and-progressive-disclosure).
 
 ### Rule selection and precedence
 
@@ -243,13 +242,13 @@ Built-in AEP guidance changes in AEP source and ships with a CLI release. Put pr
 
 | Stage | Deliverable | Required evidence |
 | --- | --- | --- |
-| 1 | Short entrypoint, bundled guidance routing, `project-rules`, scoped migration | Install without runtime-specific AEP skills, required-rule discovery, current-context conversion, Git provenance, idempotency |
+| 1 | Short entrypoint, bundled skill catalog/show, `project-rules`, scoped migration | Install without runtime-specific AEP skills, required-rule discovery, current-context conversion, Git provenance, idempotency |
 | 2 | Design readiness and consolidated dispatch/launch/executor contract | Existing routing parity; dependency, isolation, capacity, recovery, and integration fixtures |
 | 3 | Compact self-validation/review contract with unchanged floors | Existing derive-recipe checks, seeded defects, stale-evidence checks, live Astra comparisons |
 | 4 | Lesson promotion to project rules/local skills/upstream PRs | Provenance, duplicate/conflict checks, scoped adoption, rollback, and measured follow-up |
 | 5 | Optional policy reductions and retirement of compatibility paths | Separate evidence-backed decision and consumer migration |
 
-Use existing `scripts/test-scaffold-audit.sh`, `scripts/test-scaffold-converge.sh`, `scripts/test-detect-backend.sh`, recipe fixtures, and routing observations as the extension points. Do not create a second test framework. Skill descriptions/triggers that change need new routing observations. Run package, generated-source, vocabulary, and steering checks when implementing skill changes.
+Use existing `scripts/test-scaffold-audit.sh`, `scripts/test-scaffold-converge.sh`, `scripts/test-detect-backend.sh`, recipe fixtures, and routing observations as the extension points. Do not create a second test framework. Skill descriptions/triggers that change need new observations of agent selection from the catalog; CLI fixtures validate content delivery and declared checks. Run package, generated-source, vocabulary, and steering checks when implementing skill changes.
 
 Trial each stage separately so a directory move, scheduler change, and weaker review policy cannot hide one another's effects. Measure time from ready to started, time to accepted integration, dispatch overhead, merge conflicts, duplicate actions, missed rules, unnecessary pauses, escaped defects, and useful rule adoption. Capture per-case results and unknown costs. Use the first guide's controlled Astra trial design; establish explicit acceptance bounds before a policy experiment. Lower loaded instruction size and more spawned agents are not success metrics on their own.
 

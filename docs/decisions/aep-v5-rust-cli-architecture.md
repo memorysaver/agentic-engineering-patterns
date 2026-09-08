@@ -1,6 +1,6 @@
 # AEP 5.0: Rust CLI, project context, and verification
 
-AEP 5.0 installs as a Rust `aep` binary and a short AGENTS.md entrypoint. The binary serves skill instructions on demand and owns project records and checks; the host agent uses those instructions for design and judgment. OpenSpec remains an integrated specification format and optional interoperability tool.
+AEP 5.0 installs as a Rust `aep` binary and a short AGENTS.md entrypoint. The working agent interprets the request, selects skills, and decides the work sequence. The binary serves the requested instructions, maintains project records, and runs explicit operations and checks. OpenSpec remains an integrated specification format and optional interoperability tool.
 
 **Status:** Proposed architecture. **Target:** AEP 5.0.0, selected by the user. **Date:** 2026-09-09. No CLI or migration is implemented by this document, and the current release remains v4.1.0.
 
@@ -33,7 +33,7 @@ The command does not invent product judgment. A deterministic `aep change new` c
 flowchart TB
     U[People and host agents] --> G[AGENTS.md: project rules and aep skills]
     G --> C[aep Rust CLI]
-    C --> S[Selected bundled or project skill instructions]
+    C --> S[Agent-requested bundled or project skill instructions]
     S --> U
     C --> D[Domain operations and checks]
     D --> T[Versioned file store and transactions]
@@ -49,6 +49,7 @@ flowchart TB
 
 | Component | Owns | Boundary |
 | --- | --- | --- |
+| Working agent | Intent interpretation, skill selection, task sequence, design and review judgment | Uses project evidence and the user's request within host authority |
 | Rust domain core | IDs, references, readiness, transitions, proof requirements, risk derivation, diagnostics | No model/network/tool side effects |
 | File store | Parsing, source preservation, revisions, transaction plans, recovery, derived indexes | No automatic approval or semantic rewriting |
 | `aep` CLI | Public command/JSON contract and explicit operation execution | No mandatory hosted service |
@@ -79,7 +80,7 @@ All syntax below is proposed, not a claim that a binary exists. Keep command nam
 
 | Family | Principal commands | Result |
 | --- | --- | --- |
-| Guidance | `aep skills`, `aep skills route`, `aep skills show <name>` | Small index, evidence-based step routing, and selected instructions/references |
+| Guidance | `aep skills`, `aep skills show <name>` | Small skill catalog and the instructions/references explicitly requested by the agent |
 | Project | `aep init`, `aep doctor`, `aep status` | Adopt/create minimal structure; report versions, capabilities, and project state |
 | Context | `aep context <story-or-change>`, `aep query`, `aep timeline` | Cited, revision-aware context and filtered views |
 | Roadmap | `aep roadmap show/update`, `aep decision new/accept/supersede` | Maintain intent, journeys, and decision provenance |
@@ -99,32 +100,31 @@ PR-only and merge-authorized requests have different terminal actions. `aep deli
 
 ### Installation and progressive disclosure
 
-Herdr provides the distribution precedent: its documented `herdr --skill` prints the instruction file bundled with the installed binary. Local inspection of Herdr 0.8.2 help confirms that option. AEP adopts that release coupling and adds task routing and selective references; those additions are AEP design choices. [Herdr agent skill documentation](https://herdr.dev/docs/agent-skill/).
+Herdr provides the distribution precedent: its documented `herdr --skill` prints the instruction file bundled with the installed binary. Local inspection of Herdr 0.8.2 help confirms that option. AEP adopts that release coupling and adds a skill catalog and selective references for the agent to read. [Herdr agent skill documentation](https://herdr.dev/docs/agent-skill/).
 
 The default AEP install consists of the native binary and a short project AGENTS.md route to `aep skills`. A host that reads a different entrypoint gets only a pointer to AGENTS.md. No per-runtime AEP skill copies, `npx skills` step, separate skill lockfile, or plugin registration is required. Project rules, configuration, ledger, roadmap, and lessons remain project-authored data: `aep init` and later work create only the files needed. They are not another installed instruction bundle.
 
-Keep skill Markdown, templates, and references reviewable under AEP's source `skills/` tree. The release build embeds the selected content and a small name/trigger/reference index in the binary. Instructions ship with the command behavior they describe; normal reads need no network or model. Existing shared-source checks remain authoring tools, while release checks validate the embedded output. Optional host wrappers can call `aep skills show`; new installs do not need them.
+Keep skill Markdown, templates, and references reviewable under AEP's source `skills/` tree. The release build embeds the selected content and a small catalog in the binary. Each catalog entry states its name, purpose, when to use it, and the command to read it. Applicability descriptions are instructions for the agent to interpret. Instructions ship with the command behavior they describe; normal reads need no network or model. Existing shared-source checks remain authoring tools, while release checks validate the embedded output. Optional host wrappers can call `aep skills show`; new installs do not need them.
 
 | Disclosure level | Proposed command | Response |
 | --- | --- | --- |
-| Orientation | `aep skills` | Brief usage, task categories, and the route command; no complete skill corpus |
-| Task routing | `aep skills route --task "implement" --story S-42` | Observed state, unmet prerequisites, applicable skill names, project-rule/context references, and suggested next commands |
+| Orientation | `aep skills` | Brief usage and skill names, purposes, applicability descriptions, and read commands |
 | Selected procedure | `aep skills show design` | Only the design instructions, inputs, completion evidence, and named references |
 | Needed detail | `aep skills show design --ref bdd` | One bundled reference, addressed through the CLI instead of an installed filesystem path |
 
-`--task` selects a documented intent category, such as inspect, design, implement, validate, deliver, or reflect. The host agent interprets the user's request into that category; the Rust router does not pretend to understand arbitrary prose. Story/change selectors are optional for analysis and new work. When several subjects or routes fit, return candidates and the facts that distinguish them. Do not create a story, invent a current step, or launch work during a guidance read.
+Skill selection belongs to the working agent. It reads the catalog, considers the user's request and project context, and requests the relevant procedure and references. No CLI task-category enum or state-to-skill table decides which skill to use or which workflow step comes next. The catalog/show commands do not create work or require a story for analysis. AGENTS.md teaches this discovery process without copying the full catalog or procedures.
 
-Routing uses the same readiness, evidence, and policy functions as operational commands. Its result separates observed state, missing/unknown facts, and recommended action, with source revisions and the next relevant references. Mandatory applicable rules and gates appear even in the compact response. The agent uses the current request and host authority to select an action; a route is not permission to merge or deploy. Refresh routing after a material state/scope change or stale-input diagnostic, rather than before every shell command. Operations revalidate prerequisites when they execute.
+`aep status` reports recorded state and dependencies; `aep context <story-or-change>` retrieves explicitly linked records and requested sources; `aep check` validates declared constraints. These commands expose source revisions, missing references, unmet prerequisites, and unknowns. The agent decides which additional context to inspect and what work to do. Deterministic checks and scheduling of explicitly requested work remain in the CLI. They use declared dependencies, capacity, and configured policy; a missing design file does not decide that the user needs a new design, and passing checks do not decide that the user wants a merge. Operations revalidate their prerequisites when they execute.
 
-All guidance commands are read-only and support Markdown and `--json`. Give each response a release/digest, skill/reference identity, and completeness indicator. Keep responses scoped; list further references or pagination explicitly instead of silently truncating required instructions. Orientation and bundled skill reads work outside an initialized project; project routing reports missing setup and still returns applicable inspection/onboarding guidance. A missing binary must be reported without inventing commands; independent repository analysis can continue.
+All guidance commands are read-only and support Markdown and `--json`. Give each response a release/digest, skill/reference identity, and completeness indicator. Keep responses scoped; list further references or pagination explicitly instead of silently truncating required instructions. Orientation and bundled skill reads work outside an initialized project. If project status reports missing setup, the agent can read onboarding guidance from the catalog when the task calls for it. A missing binary must be reported without inventing commands; independent repository analysis can continue.
 
-Project-owned procedures, such as `monet-*`, remain editable repository files. An optional `project-rules/skills/<name>/SKILL.md` location is indexed from `project-rules/README.md`; existing local skill paths can instead be registered in project configuration. `aep skills` exposes these through the same route/show interface with project provenance and revision. Duplicate names produce a diagnostic, and a local skill cannot silently replace a built-in procedure or check policy. Built-in changes require an AEP release; validated local learning can update project rules or procedures through normal project commits.
+Project-owned procedures, such as `monet-*`, remain editable repository files. An optional `project-rules/skills/<name>/SKILL.md` location is indexed from `project-rules/README.md`; existing local skill paths can instead be registered in project configuration. `aep skills` exposes these through the same catalog/show interface with project provenance and revision. Duplicate names produce a diagnostic, and a local skill cannot silently replace a built-in procedure or check policy. Built-in changes require an AEP release; validated local learning can update project rules or procedures through normal project commits.
 
-**Acceptance:** start from a project with an AGENTS.md entrypoint and the binary, with no installed AEP skill directories or external OpenSpec CLI. Resolve an analysis task without creating work, route a ready story through design/implementation/validation/learning, load one reference, and retrieve a project procedure. Verify offline reads, embedded reference resolution, version mismatch diagnostics, unknown/ambiguous targets, required-rule routing, and refresh after a changed gate. Compare context load and missed instructions with v4.1; reduced installation size alone does not establish better agent behavior.
+**Acceptance:** start from a project with an AGENTS.md entrypoint and the binary, with no installed AEP skill directories or external OpenSpec CLI. Deterministic fixtures verify catalog metadata, exact skill/reference lookup, offline reads, unknown names, version mismatches, and accurate status/check results after a changed gate. Agent trials separately evaluate skill selection, project-rule discovery, and task sequencing: answer an analysis request without creating work, carry an implementation request through its required checks, and retrieve a project procedure. Include requests with identical repository state but different intent, such as inspect versus implement or review versus merge. Compare missed instructions and context load with v4.1; a CLI fixture cannot prove semantic routing quality.
 
 ### Machine contract
 
-Every command supports `--json` with one versioned JSON result on stdout; progress goes to stderr. Long-running verification may use an explicit event-stream mode with a documented terminal event. JSON includes operation identity, source revisions, data, diagnostics, and whether side effects occurred. Diagnostics carry a stable code, severity, affected record/path, evidence, and next action.
+Every command supports `--json` with one versioned JSON result on stdout; progress goes to stderr. Long-running verification may use an explicit event-stream mode with a documented terminal event. JSON includes operation identity, source revisions, data, diagnostics, and whether side effects occurred. Diagnostics carry a stable code, severity, affected record/path, evidence, and a mechanical remediation when known. The agent decides the broader next task.
 
 Proposed exit classes: `0` successful requested operation; `1` validation/test failure; `2` invalid usage/input; `3` blocked by unmet prerequisites or required authority; `4` unsupported capability/version; `5` conflict or recovery required; `6` external execution/I/O error. A successful status query can report blocked records; a requested failing check returns nonzero. The JSON verdict and operation status remain separate, and no command prints success before its required effects are confirmed.
 
@@ -226,7 +226,7 @@ A 4.x consumer can remain pinned while another migrates. Active old-contract sto
 
 | Stage | Scope | Exit evidence |
 | --- | --- | --- |
-| 0 | Finalize minimal bootstrap, guidance routing, schemas, operations, and compatibility profile | Reviewed task/context examples and source/authority mapping |
+| 0 | Finalize minimal bootstrap, skill catalog, schemas, operations, and compatibility profile | Reviewed agent/CLI responsibility boundaries and task/context examples |
 | 1 | Rust core/store/CLI: embedded skills, doctor, inspect, query, static check | AGENTS-to-CLI discovery without installed skills; offline selective reads; parsing/reference/graph fixtures; stable JSON/errors |
 | 2 | Transactions, init, and practical migration plan/apply/verify | Current-context conversion and Git references; crash/stale-write handling; no-op rerun |
 | 3 | Change/BDD/spec/rules/lesson maintenance and OpenSpec integration | Supported-subset round trips, unsupported custom diagnostics, promotion evidence and concurrent-delta fixtures |
@@ -238,4 +238,4 @@ Use Rust unit tests for pure invariants and integration fixtures for filesystem/
 
 For the initial pilot retain verification floors and compare v4.1 outcomes against 5.0's normalized state and context answers. Then measure time to dispatch/integration, repeated checks, missed rules, citation/temporal accuracy, escaped defects, and context load on fixed tasks/model settings. An engine rewrite does not itself establish Astra efficiency or memory quality. Treat any verification or learning-policy relaxation as a separate controlled experiment.
 
-The first implementation slice should prove AGENTS.md → CLI routing → selected guidance and context inspection. Then establish native record maintenance and a practical conversion of current project context. Git provides access to old files; full historical reconstruction is not a release gate. No downstream is declared upgraded until its current workflow and required checks work under the new contract.
+The first implementation slice should prove AGENTS.md → skill catalog → agent selection → requested guidance and context inspection. Then establish native record maintenance and a practical conversion of current project context. Git provides access to old files; full historical reconstruction is not a release gate. No downstream is declared upgraded until its current workflow and required checks work under the new contract.
