@@ -6,6 +6,8 @@ AEP v4.1 already defines autonomous work and bounded verification. Its next revi
 
 This is a new review of the released source. OpenAI's Astra guidance is the primary model reference. [PR #33](https://github.com/memorysaver/agentic-engineering-patterns/pull/33), at `4914f68`, supplies secondary findings that were checked against the baseline. This proposal does not require its paired Fable review to proceed. No skill, model default, release version, or downstream installation changes in this PR.
 
+**Architecture follow-up:** [Project rules and a simpler story workflow](project-rules-and-story-workflow-refactor.md) develops the requested scaffold/migration, verification, orchestration, and learning redesign. Its staged delivery order takes precedence for those areas; this review supplies the source findings and measurement constraints.
+
 ## Evidence and design boundary
 
 The official guidance retrieved on the review date recommends tuning initiative, instruction conflicts, response style, delegation, and verification. It warns that skill instructions can cause avoidable pauses. It recommends preserving existing authorization, explaining skill-induced stops, and completing required checks without unnecessary repetition. These are model guidance, not evidence of AEP runtime failures. [Astra prompting guidance](https://developers.openai.com/api/docs/guides/latest-model?model=gpt-6-astra).
