@@ -1,5 +1,7 @@
 # AEP v4.1 design review and modification guide for Astra 6
 
+**AEP 5.0 entrypoint:** [Rust CLI, project context, and verification](aep-v5-rust-cli-architecture.md) defines the release target, native command/check system, and OpenSpec integration. It takes precedence where this supporting review describes an earlier implementation boundary.
+
 AEP v4.1 already defines autonomous work and bounded verification. Its next revision should make those rules consistent across skills and observable in executor behavior.
 
 **Status:** Proposed; design only. **Reviewed:** 2026-09-08. **Baseline:** v4.1.0, commit `acf03fc41fe25faf67905c9004451702b7986dd8`.
@@ -7,6 +9,8 @@ AEP v4.1 already defines autonomous work and bounded verification. Its next revi
 This is a new review of the released source. OpenAI's Astra guidance is the primary model reference. [PR #33](https://github.com/memorysaver/agentic-engineering-patterns/pull/33), at `4914f68`, supplies secondary findings that were checked against the baseline. This proposal does not require its paired Fable review to proceed. No skill, model default, release version, or downstream installation changes in this PR.
 
 **Architecture follow-up:** [Project rules and a simpler story workflow](project-rules-and-story-workflow-refactor.md) develops the requested scaffold/migration, verification, orchestration, and learning redesign. Its staged delivery order takes precedence for those areas; this review supplies the source findings and measurement constraints.
+
+**Project-context follow-up:** [Project ledger, roadmap, specifications, and memory](project-ledger-roadmap-and-memory.md) grounds the storage redesign in downstream run evidence and OpenSpec source semantics.
 
 ## Evidence and design boundary
 

@@ -1,10 +1,14 @@
 # Project rules and a simpler story workflow
 
+**AEP 5.0 entrypoint:** [Rust CLI, project context, and verification](aep-v5-rust-cli-architecture.md) defines the release target, native command/check system, and OpenSpec integration. It takes precedence where this supporting review describes an earlier implementation boundary.
+
 AEP should make design, isolated implementation, verification, and learning reliable while the host manages agents.
 
 **Status:** Proposed architecture; no runtime changes. **Date:** 2026-09-08. **Source baseline:** AEP v4.1.0, `acf03fc41fe25faf67905c9004451702b7986dd8`.
 
 This proposal extends the [Astra 6 review](astra6-v4.1-design-guidance.md) with four design decisions: a short generic AGENTS.md, project-owned rules, less orchestration in skills, and a complete path from lessons to tested rule changes. It replaces the earlier review's incremental-only delivery order for these areas. Its evidence and authorization fixes still apply. PR #33 remains secondary background.
+
+**Context-store follow-up:** [Project ledger, roadmap, specifications, and memory](project-ledger-roadmap-and-memory.md) defines the proposed replacement for product context, optional OpenSpec integration, and the singular lesson store. Its source ownership and migration order take precedence over the existing-store references below.
 
 ## Recommendation and evidence
 
@@ -241,6 +245,6 @@ Use existing `scripts/test-scaffold-audit.sh`, `scripts/test-scaffold-converge.s
 
 Trial each stage separately so a directory move, scheduler change, and weaker review policy cannot hide one another's effects. Measure time from ready to started, time to accepted integration, dispatch overhead, merge conflicts, duplicate actions, missed rules, unnecessary pauses, escaped defects, and useful rule adoption. Capture per-case results and unknown costs. Use the first guide's controlled Astra trial design; establish explicit acceptance bounds before a policy experiment. Lower loaded instruction size and more spawned agents are not success metrics on their own.
 
-Roll out first in a downstream fixture, then one representative existing monorepo, then additional old-project layouts. Name the pilot from current inventory when implementation starts. Keep active stories on their original contract. Preserve aliases and old record readers during transition; removing public skills, layouts, or state contracts requires the appropriate breaking release and migration. A compatible directory-reader addition can ship earlier. Follow the [release convention](../../project-convention/release.md); this proposal does not assign a release number.
+Roll out first in a downstream fixture, then one representative existing monorepo, then additional old-project layouts. Name the pilot from current inventory when implementation starts. Keep active stories on their original contract. Preserve aliases and old record readers during transition; removing public skills, layouts, or state contracts requires the appropriate breaking release and migration. A compatible directory-reader addition can ship earlier. Follow the [release convention](../../project-convention/release.md); the overarching Rust CLI design selects AEP 5.0.0 for the full contract change.
 
 This design defines target responsibilities and staged implementation. Live comparisons and concrete downstream migration PRs remain implementation work; no downstream migration or measured Astra performance is claimed here.
