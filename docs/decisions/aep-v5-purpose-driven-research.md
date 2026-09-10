@@ -1,7 +1,7 @@
 # AEP v5：以產品目的驅動的自主研究
 
 日期：2026-09-11
-狀態：已接受；依使用者要求實作原生指引，驗證與安裝結果另見 audit
+狀態：已接受；依使用者要求實作原生指引，驗證與安裝結果見[實作 audit](../audits/2026-09-11-aep-v5-purpose-research.md)
 來源：[MITS 產品聚焦觀察](../lessons/2026-09-11-mits-product-focus-observation.md)
 
 ## 要補足的能力

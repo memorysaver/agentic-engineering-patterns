@@ -218,4 +218,4 @@ Project-owned Feature Map 可先採單層 `references/feature-map.md` 與拆分�
 
 ## 後續概念：以產品目的驅動自主研究
 
-MITS 的產品聚焦觀察促成使用者提出「auto deep research for purpose」，並補充建議後應徵詢意見、自主完成 product context。具體設計與 roadmap → design 的文件責任見 [目的驅動研究提案](aep-v5-purpose-driven-research.md)。此處記錄新方向，不代表已修改八入口 catalog 或安裝新的指引。
+MITS 的產品聚焦觀察促成使用者提出「auto deep research for purpose」，並補充建議後應徵詢意見、自主完成 product context。具體設計與 roadmap → design 的文件責任見 [目的驅動研究提案](aep-v5-purpose-driven-research.md)。已依使用者要求融入 roadmap／design，保留八入口 catalog；實作與驗證見[目的驅動研究 audit](../audits/2026-09-11-aep-v5-purpose-research.md)。
