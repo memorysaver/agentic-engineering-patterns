@@ -125,6 +125,101 @@ fn review(root: &Path, findings: Value, code: i32) -> Value {
     )
 }
 #[test]
+#[cfg(unix)]
+fn standalone_binary_reads_native_state_with_only_git_on_path() {
+    let d = tempfile::tempdir().unwrap();
+    let tools = d.path().join("tools");
+    let root = d.path().join("project");
+    fs::create_dir_all(&tools).unwrap();
+    fs::create_dir_all(&root).unwrap();
+    let binary = tools.join("aep");
+    fs::copy(env!("CARGO_BIN_EXE_aep"), &binary).unwrap();
+    let git_path = std::env::split_paths(&std::env::var_os("PATH").unwrap())
+        .map(|dir| dir.join("git"))
+        .find(|path| path.is_file())
+        .unwrap();
+    std::os::unix::fs::symlink(fs::canonicalize(git_path).unwrap(), tools.join("git")).unwrap();
+    git(&root, &["init", "-q", "-b", "main"]);
+    git(&root, &["config", "user.email", "fixture@example.invalid"]);
+    git(&root, &["config", "user.name", "Fixture"]);
+    write(&root, "README.md", "Standalone fixture\n");
+    git(&root, &["add", "."]);
+    git(&root, &["commit", "-qm", "base"]);
+
+    let run = |args: &[&str]| -> Value {
+        let output = Command::new(&binary)
+            .args(["--json", "--root"])
+            .arg(&root)
+            .args(args)
+            .current_dir(d.path())
+            .env("PATH", &tools)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{args:?}: {} {}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+        serde_json::from_slice(&output.stdout).unwrap()
+    };
+    assert_eq!(run(&["skills"])["side_effects"], false);
+    let reference = run(&["skills", "show", "design", "--ref", "bdd"]);
+    assert!(
+        reference["data"]["content"]
+            .as_str()
+            .unwrap()
+            .contains("# BDD contracts")
+    );
+    run(&["init"]);
+    let story = write(
+        d.path(),
+        "story.json",
+        r#"{"kind":"story","id":"native-1","title":"Native state"}"#,
+    );
+    run(&["story", "new", "--file", story.to_str().unwrap()]);
+    // Old files may remain after migration; normal reads use native records only.
+    write(
+        &root,
+        "product-context.yaml",
+        "stories: [{id: old-only, status: done}]\n",
+    );
+    let before = aep_store::Store::open(&root)
+        .unwrap()
+        .snapshot()
+        .unwrap()
+        .revision;
+    let view = run(&["status"]);
+    assert_eq!(view["operation"], "status");
+    assert_eq!(view["side_effects"], false);
+    let stories = view["data"]["stories"].as_array().unwrap();
+    assert_eq!(stories.len(), 1);
+    assert_eq!(stories[0]["id"], "native-1");
+    assert_eq!(stories[0]["readiness"]["ready"], false);
+    assert!(
+        stories[0]["readiness"]["reasons"]
+            .as_array()
+            .unwrap()
+            .contains(&json!("An accepted change contract is required"))
+    );
+    assert_eq!(view["data"]["revision"], before);
+    let query = run(&["query", "--kind", "story"]);
+    assert_eq!(query["side_effects"], false);
+    let records = query["data"]["records"].as_array().unwrap();
+    assert_eq!(records.len(), 1);
+    assert_eq!(records[0]["record"]["id"], "native-1");
+    assert_eq!(query["data"]["revision"], before);
+    assert_eq!(
+        aep_store::Store::open(&root)
+            .unwrap()
+            .snapshot()
+            .unwrap()
+            .revision,
+        before
+    );
+}
+
+#[test]
 fn offline_guidance_and_idempotent_setup() {
     let d = tempfile::tempdir().unwrap();
     let offline = Command::new(env!("CARGO_BIN_EXE_aep"))
@@ -373,7 +468,10 @@ fn migration_preserves_gates_rules_adrs_paths_and_git_sources() {
     );
     call(root, &["decision", "show", "ADR-001"], 0);
     call(root, &["migrate", "verify"], 0);
-    assert!(!root.join("project-convention/security.md").exists());
+    assert_eq!(
+        fs::read_to_string(root.join("project-convention/security.md")).unwrap(),
+        "Protect retained results.\n"
+    );
     assert!(root.join("project-rules/security.md").exists());
     call(
         root,
@@ -676,7 +774,6 @@ fn rule_adoption_needs_explicit_evaluation_of_the_committed_proposal() {
     );
     prepared(root);
     call(root, &["verify", "run", "--story", "S"], 0);
-    review(root, json!([]), 0);
     call(root, &["deliver", "merge", "--story", "S", "--local"], 0);
     let result = call(root, &["query", "--kind", "evidence"], 0);
     let evidence = result["records"][0]["record"]["id"].as_str().unwrap();

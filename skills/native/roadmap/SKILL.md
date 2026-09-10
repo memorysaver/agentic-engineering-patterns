@@ -1,14 +1,14 @@
 ---
 name: roadmap
-description: Maintain product direction, journeys, collaboration containers, and decision records without requiring every maintenance ticket to map to a journey.
+description: Maintain product direction, journeys, collaboration containers, and decision records, or explain current progress from recorded evidence.
 ---
 
 # Roadmap and ledger
 
-Distinguish desired product direction from current implementation and delivery history. Keep backbone and journeys in `project-roadmap/`, ADRs in `project-roadmap/decisions/`, and work in `project-ledger/`. Link code and evidence when asserting implemented behavior.
+Distinguish desired product direction from actual implementation and delivery history. Keep backbone and journeys in `project-roadmap/`, ADRs in `project-roadmap/decisions/`, and work in `project-ledger/`, honoring configured store paths.
 
-Use `aep roadmap`, `aep decision`, `aep story`, `aep layer`, `aep wave`, and `aep release` to create or inspect records. Read each command's help for its input contract. Layers organize a theme or owner; waves and releases organize coordination and delivery scope. Use explicit dependencies and gates instead of inferring readiness from numeric labels.
+For a new opportunity or work breakdown, read [Product context](references/product-context.md). Use `aep roadmap`, `aep decision`, `aep story`, `aep layer`, `aep wave`, and `aep release` for records; inspect each command's help for its input. Layers organize a theme or owner; waves/releases organize coordination and delivery. Explicit dependencies and gates establish readiness.
 
-Capture tradeoffs and rejected alternatives in a decision record. Accept or supersede it through the decision commands with attribution. Use a linked change contract for detailed BDD acceptance. Maintenance and research work can have no product-journey reference.
+Capture tradeoffs and rejected alternatives in decisions. Accept or supersede them with attribution under task authority. Detailed acceptance belongs in a linked change; read `aep skills show design` when that contract needs resolution. Maintenance or research can exist independently of a product journey.
 
-Check references with `aep check` and inspect chronology with `aep timeline`. Unknown historical dates remain unknown; event recording time does not establish merge or release time.
+For a progress summary, read [Status from evidence](references/status.md). Check references with `aep check` and chronology with `aep timeline`. Keep unknown historical dates unknown; recording time establishes when AEP recorded an event.

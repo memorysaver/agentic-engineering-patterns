@@ -28,6 +28,10 @@ For skills: `bun run skills:check`, `skills:check-vocab`, `skills:check-steering
 
 Native procedures under `skills/native/` are embedded by the CLI build and share its version. Their catalog is selected by the working agent, not a deterministic task router. Catalog/show/reference fixtures validate the installed output; agent selection observations are recorded separately in `docs/audits/2026-09-09-aep-v5-implementation.md`.
 
+For native preview, the accepted `docs/decisions/aep-v5-context-and-self-verification.md` and `aep-v5-preview-adoption.md` supersede legacy F1–F3 fixed evaluator topology and R3 slash-command routing. Use `aep skills show <name>` for native cross-skill discovery. Preserve legacy F1–F3/R3 in the v4 corpus. Shared principles still apply: concise progressive disclosure, canonical resources, observable results, source attribution, and honest capability limits. Native guidance may select same-agent execution or independent review according to the task and explicit project policy.
+
+Project-owned verification for this source repository is documented in [verify-aep](skills/verify-aep/SKILL.md). It exercises an actual candidate executable against a disposable legacy project and retains evidence outside the cleaned fixture.
+
 The legacy package check validates the marketplace-declared v4.1 catalog and installs that exact name list. Native procedures are not added to legacy routing observations or runtime packages. Both corpora remain subject to line budgets and per-file steering ceilings. New native ceilings document the limited rules for request scope, stale evidence, and review independence; Rust fixtures enforce mechanical constraints.
 
 Native regression fixtures belong with their Rust crates. Run `python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/native/<name>` for changed native skill frontmatter when that local authoring tool is available; CLI package tests verify the portable artifact.

@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "aep-cli"
-version = "5.0.0"
+version = "5.0.0-preview.1"
 dependencies = [
  "aep-core",
  "aep-store",
@@ -20,7 +20,7 @@ dependencies = [
 
 [[package]]
 name = "aep-core"
-version = "5.0.0"
+version = "5.0.0-preview.1"
 dependencies = [
  "chrono",
  "serde",
@@ -30,7 +30,7 @@ dependencies = [
 
 [[package]]
 name = "aep-store"
-version = "5.0.0"
+version = "5.0.0-preview.1"
 dependencies = [
  "aep-core",
  "serde",

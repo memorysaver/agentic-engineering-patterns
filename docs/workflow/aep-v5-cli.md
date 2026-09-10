@@ -1,4 +1,4 @@
-# AEP 5.0 native CLI
+# AEP 5.0 native CLI preview
 
 AEP serves instructions and maintains evidence-bearing project records. The working agent interprets intent, chooses skills, writes designs, and decides the requested terminal action. The CLI has no semantic routing engine or model dependency.
 
@@ -6,9 +6,15 @@ AEP serves instructions and maintains evidence-bearing project records. The work
 
 From this source checkout, run `cargo install --locked --path crates/aep-cli`. The pinned Rust toolchain and Cargo.lock build one `aep` binary containing the native skill Markdown and templates. A tagged native release also provides platform archives and SHA-256 checksums; an implementation branch does not publish those artifacts.
 
+The installed executable runs without this checkout, Node, Bun, or a web server.
+The native archive contains only `aep` and `LICENSE`, with a
+separate checksum. Native release jobs depend only on native validation. Git and
+tools explicitly required by the requested operation remain external dependencies.
+Dashboard implementation is deferred; native inspection uses the commands below.
+
 `aep skills` lists the catalog. `aep skills show design` reads one procedure; `aep skills show design --ref bdd` reads one reference. Catalog/show work outside Git and without project setup. Responses identify release, source, digest, and completeness. Project procedures in `project-rules/skills/<name>/SKILL.md`, or configured `skill_paths`, use the same interface. Duplicate names are errors.
 
-Run `aep init` in an existing Git repository. It creates `.aep/config.toml`, a rules index if needed, and the AGENTS entrypoint. Existing instructions are preserved; `--claude` adds `@AGENTS.md`. `--dry-run` exposes planned files. Repeated initialization does not duplicate the entrypoint. Existing projects use the migration workflow to replace legacy writer instructions and move their rules.
+Run `aep init` in an existing Git repository. It creates `.aep/config.toml`, a rules index if needed, and an explicit AGENTS workflow route. A detected legacy project defaults to v4; a fresh project defaults to v5. An explicit user choice takes precedence. Existing project instructions and legacy skill files are preserved; `--claude` adds `@AGENTS.md`. `--dry-run` exposes planned files. Repeated initialization preserves the route. Migration explicitly switches ownership to v5 while retaining legacy source files. See the [preview trial](aep-v5-preview-trial.md).
 
 ## Configuration
 
@@ -18,7 +24,7 @@ This complete example defines a project check. Replace its argv with the project
 
 ```toml
 schema_version = 1
-cli_version = "5.0.0"
+cli_version = "5.0.0-preview.1"
 openspec_profile = "1.12.0-common"
 skill_paths = []
 
@@ -31,7 +37,7 @@ designs = "docs/design"
 
 [policy]
 max_parallel = 2
-independent_review = true
+independent_review = false
 required_checks = ["test"]
 protected_paths = [".aep", "project-rules", ".github"]
 
@@ -48,7 +54,7 @@ env = []
 
 `env` names required environment variables; values are not written to receipts. `paths` selects required checks by actual changed paths. `required = false` makes a check explicitly selectable with `verify run --check <id>`; a gate can still require it. `environment` identifies the configured check target. A label alone cannot prove that a command tested the intended environment; that command is reviewed project policy.
 
-The check registry retains a standard/deep independent review floor. `independent_review = true` also requires review for light work. Setting it false does not remove the standard/deep floor. A requested light tier is eligible only for documentation changes without contract obligations; protected paths derive deep verification.
+Self verification through current checks is the default. Explicit `independent_review = true` requires current independent review for every risk level. Setting it false permits checks-only completion when no unresolved review findings remain. Risk still derives from the actual diff: light is eligible only for documentation changes without contract obligations; protected paths derive deep. Review has no fixed model topology or round cap.
 
 ## Records and context
 
@@ -104,9 +110,9 @@ After every linked story is integrated with current check/review evidence, `aep 
 
 1. Commit the design, rules, configuration, and delta files. `aep dispatch plan --story FIX-retry` reports declared readiness.
 2. Run `aep dispatch start --story FIX-retry --base main --owner builder`. The base must contain the current contract and every completed dependency's integration commit. The command claims capacity/scope and creates a Git worktree.
-3. The host fulfills the returned launch request. A prepared worktree is not a running worker. Record actual start with `aep attempt record <id> --status running`; record handoff with `--status review`.
+3. Continue in the returned worktree as the current agent, or use an authorized host worker. A prepared worktree is not a running worker. Record actual start with `aep attempt record <id> --status running`; record handoff with `--status review`.
 4. Implement and commit in that worktree. `aep verify plan --story FIX-retry` shows actual scope, derived risk, and required checks. `aep verify run --story FIX-retry` runs them there with a timeout and bounded output capture.
-5. `aep review request --story FIX-retry` returns a revision-bound review packet and response shape. The host supplies an independent reviewer; `aep review record --file response.json` validates the response. Round two retains earlier blocking findings and requires explicit closure evidence. Material fixes use an attestation with current check receipts.
+5. When project policy requires independent review, or an additional review is chosen, `aep review request --story FIX-retry` returns a revision-bound packet and response shape. `aep review record --file response.json` validates attribution and freshness. Subsequent reviews retain unresolved blocking/material findings and require current closure evidence. Optional review findings remain obligations even when independent review is not mandatory. In that mode the builder can attest a fix with current passing check evidence; explicitly required independent blocking review still needs the independent response. A pending chosen review remains unresolved until recorded or replaced after it becomes stale.
 6. Run `aep deliver plan --story FIX-retry`. The skill proceeds to PR creation or authorized merge according to the request.
 
 Workers use `aep --root <control-checkout>` for shared records. Inspections verify the recorded root, Git repository, branch, base, and worktree. Duplicate attempts, overlapping scopes, unavailable dependencies, stale gates, and exhausted capacity block dispatch. A host must reconcile worker liveness before relaunching a claim.

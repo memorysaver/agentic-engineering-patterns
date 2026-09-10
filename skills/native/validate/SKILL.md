@@ -1,16 +1,16 @@
 ---
 name: validate
-description: Verify an implementation against its change contract and collect test, independent review, and gate evidence.
+description: Verify implementation or other artifacts against intent using observable results, current evidence, and project-required checks or reviews.
 ---
 
 # Validate
 
-For a review-only request, inspect the supplied candidate and report findings to the caller. Use read-only `aep context`, `aep verify plan`, and `aep query` as needed. Do not start another review, repair code, or merge unless the request includes that work. When responding to an existing review request, use its supplied response shape and preserve carried blocking findings.
+For a review-only request, inspect the supplied candidate and report findings. Use read-only `aep context`, `aep verify plan`, and `aep query` as needed. Do not start another review, repair code, or merge unless requested. Respond to an existing review using its supplied shape and carried findings.
 
-For implementation validation, inspect the diff and observable behavior against accepted scenarios. Run `aep verify plan --story <id>` to inspect configured checks and the derived verification floor, then `aep verify run --story <id>` to execute them. Record failures and revise the implementation rather than changing acceptance to certify a defect.
+For completion validation, read [Self verification](references/self-verification.md). Inspect the actual candidate against acceptance, use the project's operation procedure, and identify untested claims. Run `aep verify plan --story <id>` to inspect required checks and policy, then `aep verify run --story <id>` to execute them. Record failures and repair defects against the accepted behavior.
 
-For an independent review, run `aep review request --story <id>` and give the returned contract, revisions, and evidence to a fresh reviewer under the host's capabilities. Record its structured response using `aep review record --file <file>`. The request defines the response shape, attribution, and revision. CLI validation checks evidence structure and freshness; it does not establish a reviewer's real identity.
+Independent review is required when project policy says so and available as an additional chosen method. Use `aep review request --story <id>` and pass the contract, revisions, and evidence to an independent reviewer under host authority. Record the structured response with `aep review record --file <file>`. CLI validation checks attribution structure and freshness; reviewer independence also depends on actual host execution.
 
-Keep the existing two-round review limit for standard and deep work. A second round confirms a blocking correction; material findings are fixed with evidence and polish remains within scope. An unresolved blocking finding after the limit requires a revised plan or the project's escalation policy. Light review applies only to eligible documentation changes without contract obligations.
+Resolve concrete blocking/material findings with current evidence, including findings from optional reviews. A follow-up review is useful when an unresolved issue or changed candidate warrants it. Let evidence and remaining problems determine further investigation. Report limits or needed decisions when progress depends on missing access, intent or authority.
 
-Run `aep gate evaluate <id>` when its declared scope is ready. Report pass, fail, blocked, and skipped checks accurately. A passing local test does not establish deployment, and edits after a check require fresh evidence for the affected inputs.
+Evaluate declared gates with `aep gate evaluate <id>` when their scope is ready. Distinguish pass, fail, blocked and skipped results; local evidence supports local claims. Changes to relevant inputs require current evidence before delivery.

@@ -1,16 +1,16 @@
 ---
 name: reflect
-description: Capture execution lessons and propose a tested correction to project rules, local procedures, or AEP behavior.
+description: Turn observed product or execution feedback into context updates, lessons, project rules, local procedures, or grounded upstream proposals.
 ---
 
 # Reflect
 
-Read relevant prior lessons, rules, and rejected proposals before proposing a correction. Distinguish the observation, its evidence, and an uncertain diagnosis. Use `aep lesson record --file <file>` for durable observations; `aep lesson find <text>` performs literal text search.
+Read prior lessons, rules, and rejected proposals relevant to the observation. Separate the evidence from an uncertain diagnosis. Read [Feedback destinations](references/feedback.md) when deciding whether the result changes product intent, implementation, verification or process.
 
-Choose the smallest useful destination: code/configuration, a scoped project rule, a repeatable local procedure, or an upstream AEP change. Use `aep reflect propose --file <file>` to record a rule candidate with its scope, evidence references, hypothesis, counterexample, and validation plan.
+Use `aep lesson record --file <file>` for durable observations; `aep lesson find <text>` provides literal text search. Choose the smallest useful destination: a product story/decision, code/configuration, a scoped rule, a project-owned procedure, or an upstream AEP proposal.
 
-Validate the correction on relevant and held-out cases. Adopt through `aep rule adopt <id> --by <actor> --evidence <check-id>` under project authority, and update the indexed rule or project-owned `monet-*` procedure through the same reviewed project change. A candidate record alone does not change an executable policy or built-in skill.
+For rule changes, `aep reflect propose --file <file>` records scope, evidence references, hypothesis, counterexample and validation plan. Evaluate the correction on relevant and contrasting cases. Implement the exact committed proposal under a story, then adopt with `aep rule adopt <id> --by <actor> --evidence <check-id>` under project authority. Adoption checks integrated evidence and the project's review requirements.
 
-Keep rejected proposals and superseded lessons discoverable. Apply a new rule to new attempts, or explicitly restart affected work when immediate correction is required. Built-in guidance changes ship through AEP source and a CLI release.
+Update the indexed rule or local procedure in that same project change. A candidate record alone leaves executable policy and bundled skills unchanged. Keep rejected proposals and superseded lessons discoverable; apply a new rule to new attempts or explicitly restart affected work when immediate correction is required.
 
-Adoption requires a checked and independently reviewed integration containing the exact committed proposal. Pass the resulting check receipt with `--evidence`; an unrelated passing test does not validate a rule.
+Built-in guidance changes ship through AEP source and release. Save an upstream candidate with reproducible evidence; external submission follows the task's authorization.

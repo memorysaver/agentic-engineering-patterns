@@ -14,13 +14,16 @@ See [project release rules](project-rules/release.md).
 This file records AEP releases. A downstream project's ledger records its own
 product work, integration evidence, and release history.
 
-## [Unreleased] — 5.0.0
+## [Unreleased] — 5.0.0-preview.1
 
 - Add the native Rust CLI, embedded skill catalog/references, local procedure discovery, short AGENTS.md entrypoint, and tracked project configuration.
 - Introduce project-ledger, project-roadmap/decisions, project-rules, and lesson-learned stores with versioned records, graph checks, revision conflicts, and transaction recovery.
 - Implement isolated attempts, actual command verification, independent review, gate evaluation, Git/GitHub delivery receipts and reconciliation, specification publication, and evidence-based rule adoption.
 - Integrate common OpenSpec 1.12.0 delta/BDD semantics without requiring its CLI. Retain custom context with explicit mapping, and support Git-backed current-context migration.
-- Add a dashboard ledger view that consumes Rust readiness, native CI/release archives, lifecycle/failure fixtures, and independent review observations.
+- Add native CI/release archives, lifecycle/failure fixtures, and independent review observations. Verify the copied executable with only Git on PATH; native archives contain the binary and license, with a separate checksum.
+- Focus the 5.0 deliverable on the standalone CLI and embedded guidance. Defer dashboard integration and runtime bundling; inspect native state through status/query/context/timeline JSON. Migration converts old context into native stores.
+- Prepare opt-in v5 preview alongside stable v4.1, preserving legacy migration sources and making the selected workflow explicit.
+- Center native guidance on context construction, project-owned self verification, and evidence from prototypes; retain independent review when project policy requires it.
 - Keep the optional v4.1 plugin distribution at its existing version. Native migration does not relabel old plugin files or update downstream projects automatically.
 
 ## [4.1.0] - 2026-09-03

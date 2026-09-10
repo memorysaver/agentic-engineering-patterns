@@ -107,8 +107,6 @@ pub enum Command {
         #[arg(long)]
         rollback: bool,
     },
-    /// JSON views for consumers; readiness stays in Rust.
-    Dashboard,
 }
 #[derive(Debug, Subcommand)]
 pub enum Skills {
@@ -335,6 +333,9 @@ pub enum Migrate {
         story: Vec<String>,
         #[arg(long)]
         output: Option<PathBuf>,
+        /// Tracked review of legacy host hooks, instructions, and scheduled writers.
+        #[arg(long)]
+        consumer_review: Option<PathBuf>,
     },
     Apply {
         #[arg(long)]

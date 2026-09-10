@@ -1,0 +1,24 @@
+{
+  "binary": "/tmp/aep-preview-release-uqtkfv0t/extracted/aep",
+  "binary_sha256": "d0b8a6ff43014e5e12cda86ec3ea6dad71f55dd78c0a4c2db4a782d0a6a948ef",
+  "surfaces": [
+    "embedded guidance outside source checkout",
+    "v4 initialization and source preservation",
+    "migration, verification, and repeated apply",
+    "read-only inspection and independent native writes"
+  ],
+  "passed": true,
+  "version": "aep 5.0.0-preview.1",
+  "legacy_hashes": {
+    "product-context.yaml": "76037f265c3bb371dcb6aec74a68834db54dd0c10a2e4948771adfea193b6219",
+    "project-convention/README.md": "cfab584c9defcc6d0666f0bd92e8efe3220de7958f965ab02899c21cfba0a28a",
+    "lessons-learned/runtime.md": "285b56790107b4e8bdccd6866e084fa5118a4a577a0262dbb91b8afcae608cb5",
+    ".agents/skills/aep-build/SKILL.md": "494c5a58bd8b7929559918b319b4d8c400b63784790d4159ff454ec7fb06f8f1"
+  },
+  "guidance": {
+    "bundle_digest": "52d89d282578dad3ddf6915c3f835de33b27e4141a040613b801a4681cd5f92b",
+    "complete": true,
+    "release": "5.0.0-preview.1"
+  },
+  "fixture_removed": true
+}

@@ -1,6 +1,13 @@
+<!-- aep-version-route: start -->
 <!-- aep-cli-entrypoint: 5.0 -->
-## AEP
+## AEP workflow selection
 
-Read `aep skills` for skill names and applicability. Select skills using the user's request and project context, then read `aep skills show <name>`. Load named references when needed. Use `aep status`, `aep context`, and `aep check` for recorded facts and declared constraints. The working agent decides the work sequence.
+AEP default: v5
+AEP v5: opt-in preview
 
-Project-specific code, testing, package, DevOps, and release rules are indexed in `project-rules/README.md`. Read applicable rules before changing their scope. Follow the host's instruction precedence and the user's authorization.
+Use the workflow explicitly selected by the user; otherwise use the project default above. Keep that selection for the task and carry its version, guidance source, stores, and worktree into handoffs.
+
+For v4, use the installed `aep-*` skills and legacy stores. For v5, run `aep skills`, select `aep skills show <name>` and needed references, and use the native stores listed in `.aep/config.toml`. Missing capabilities are reported in the selected workflow. Installing the binary or reading guidance leaves the data owner unchanged; applying a reviewed migration selects v5. Only the selected workflow writes its state.
+
+Existing AEP v4 workflow instructions elsewhere in this project apply only when v4 is selected. General project constraints remain applicable in either workflow. Review `project-rules/README.md` for native project rules when using v5. Read the catalog release and digest for the actual embedded guidance version.
+<!-- aep-version-route: end -->

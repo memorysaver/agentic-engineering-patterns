@@ -1,10 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { Map, LayoutDashboard, GitBranch, BarChart3 } from "lucide-react";
-import { orpc } from "@/utils/orpc";
 
 const navItems = [
-  { to: "/ledger", label: "Project Ledger", icon: LayoutDashboard },
   { to: "/story-map", label: "Story Map", icon: Map },
   { to: "/overview", label: "Overview", icon: LayoutDashboard },
   { to: "/progress", label: "Progress", icon: BarChart3 },
@@ -14,22 +11,15 @@ const navItems = [
 export function AppSidebar() {
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
-  const { data } = useQuery(orpc.productContext.getMode.queryOptions());
-  const native = data?.mode === "native";
-  const visibleItems = navItems.filter((item) =>
-    native ? item.to === "/ledger" : item.to !== "/ledger",
-  );
 
   return (
     <aside className="flex w-56 flex-col border-r bg-card">
       <div className="border-b p-4">
         <h1 className="text-sm font-bold tracking-tight">AEP Dashboard</h1>
-        <p className="text-muted-foreground text-xs">
-          {native ? "Project Context" : "Product Context Viewer"}
-        </p>
+        <p className="text-muted-foreground text-xs">Product Context Viewer</p>
       </div>
       <nav className="flex-1 p-2">
-        {visibleItems.map((item) => {
+        {navItems.map((item) => {
           const isActive = currentPath === item.to;
           return (
             <Link

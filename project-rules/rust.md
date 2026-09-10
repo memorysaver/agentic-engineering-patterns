@@ -4,8 +4,8 @@
 
 Use the pinned toolchain and Cargo.lock. Run `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`, and `cargo test --workspace`. CLI fixtures use disposable Git repositories and actual subprocesses. Provider tests use isolated mocks; label them as mocks. Optional OpenSpec reference checks use 1.12.0.
 
-Keep read commands free of project mutations. Tie verification to exact candidate inputs, retain failed/stale evidence, and reconcile external outcomes from recorded intent. A completion label is not verification evidence. Preserve standard/deep independent review and the two-round limit.
+Keep read commands free of project mutations. Tie verification to exact candidate inputs, retain failed/stale evidence, and reconcile external outcomes from recorded intent. A completion label is not verification evidence. Self verification is the native default. Enforce explicit project independent-review policy and unresolved findings without imposing a fixed model topology or review-round count. See `docs/decisions/aep-v5-preview-adoption.md` and `docs/decisions/aep-v5-context-and-self-verification.md` for the accepted preview change.
 
 Native CI targets Linux and macOS. Keep large/binary evidence outside managed text stores and link it with digest and provenance. The CLI is not an OS sandbox or an identity/authorization service. Project check configuration is executable project policy.
 
-The dashboard consumes the CLI JSON contract. It does not implement readiness or promotion rules in TypeScript.
+The current deliverable is the native CLI; dashboard implementation and packaging are deferred. Readiness and promotion rules stay in Rust. Migration is explicit conversion into native stores; older files do not provide live state. Verify standalone operation and native inspection with the copied-binary lifecycle fixture and existing status/query checks.

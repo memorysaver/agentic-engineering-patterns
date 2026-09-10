@@ -1,16 +1,16 @@
 ---
 name: implement
-description: Implement an accepted story in an isolated worktree, using its dependencies, project rules, and required validation.
+description: Select ready work and implement an accepted story in its worktree, preserving task context, verification, and recovery information.
 ---
 
 # Implement
 
-Read the story and linked change with `aep context <story>`. Check actual readiness with `aep dispatch plan --story <story>`. Resolve missing design through the design skill when the task requires it. Commit the accepted design and dependencies so the base is reproducible.
+Read the story and linked change with `aep context <story>`. Check readiness with `aep dispatch plan --story <story>`. Select work using requested priority, value, dependency unlocks, and uncertainty; CLI readiness establishes mechanical prerequisites. Resolve missing intent through `aep skills show design` when needed.
 
-Create the claim and worktree with `aep dispatch start --story <id> --base <commit> --owner <actor>`. Read the returned worktree, branch, bootstrap, and shared store path. Use the host's agent mechanism when delegation is authorized, binding the worker to that worktree. A prepared claim is not a running agent.
+Read [Task handoff](references/handoff.md) when assembling context, starting work or resuming it; read [Git and worktree operations](references/git.md) for base selection, conflicts or recovery. Commit accepted design and dependencies so the chosen base is reproducible.
 
-Implement within the declared scope, preserve unrelated work, and inspect results against the change. Use `aep worktree inspect --attempt <id>` before handing off or recovering a worker. The coordinator uses `aep --root <shared-store>` for attempt and verification records; the worker's code stays in its assigned worktree.
+Create the claim/worktree with `aep dispatch start --story <id> --base <commit> --owner <actor>`. Inspect its returned branch, bootstrap, and shared store path. Work there yourself or use the host's agent mechanism when delegation is authorized. A prepared claim reports preparation only.
 
-Read the validation skill when the implementation is ready for checks and review. Return the actual commit, performed checks, findings, and remaining gaps. Integration follows the user's requested terminal action and the delivery skill.
+Keep code in the assigned worktree and use `aep --root <shared-store>` for coordinated attempt/verification records. Record `aep attempt record <id> --status running` once work actually starts; record `--status review` when the candidate is ready for validation. On resume, inspect `aep attempt status <id>` and `aep worktree inspect --attempt <id>` before reconciling an existing claim with the host.
 
-After the host starts the worker in the recorded worktree, record `aep attempt record <id> --status running`. Record `--status review` when the candidate is ready for review. On resume, inspect `aep attempt status <id>` and `aep worktree inspect --attempt <id>`; reconcile the existing claim with the host before launching another worker.
+Exercise changed behavior during implementation using the project's verification procedure. Read `aep skills show validate` to establish completion evidence. Handoff the actual commit, performed checks, findings and remaining gaps; use `aep skills show deliver` for the requested integration action.

@@ -3,7 +3,7 @@ members = ["crates/aep-core", "crates/aep-store", "crates/aep-cli"]
 resolver = "2"
 
 [workspace.package]
-version = "5.0.0"
+version = "5.0.0-preview.1"
 edition = "2024"
 rust-version = "1.98"
 license = "MIT"

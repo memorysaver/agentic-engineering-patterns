@@ -1,6 +1,6 @@
 use crate::{
     cli::{Cli, Migrate},
-    commands::{Outcome, initial_files, input, save},
+    commands::{Outcome, initial_files, input, save, version_route},
     spec,
 };
 use aep_core::{Error, Kind, Record, Result, digest, valid_id};
@@ -83,6 +83,38 @@ fn bind_tree(
     }
     Ok(files)
 }
+const HOST_SETTINGS: [&str; 3] = [
+    ".claude/settings.json",
+    ".claude/settings.local.json",
+    ".agents/settings.json",
+];
+fn hook_commands(value: &Value) -> Vec<&str> {
+    match value {
+        Value::Object(map) => map
+            .iter()
+            .flat_map(|(key, value)| {
+                if key == "command" {
+                    value.as_str().into_iter().collect()
+                } else if key == "type" && value.as_str() != Some("command") {
+                    vec!["<non-command hook>"]
+                } else {
+                    hook_commands(value)
+                }
+            })
+            .collect(),
+        Value::Array(values) => values.iter().flat_map(hook_commands).collect(),
+        _ => vec![],
+    }
+}
+fn legacy_read_only_guard(command: &str) -> bool {
+    // Digests of the two published v4.1 concurrency guards. Unknown commands
+    // stay visible for review; similarity is not evidence of read-only behavior.
+    matches!(
+        digest(command).as_str(),
+        "033f60ca5fe327c96f5a870e3c4c8d085871b8b1d80bbf9e4d36bbc45cc21915"
+            | "48c3b28eeb465eb3fe9f0f588339b1a8f0e6b4adc76f303c732d39263a679615"
+    )
+}
 pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
     let s = match Store::open(&args.root) {
         Ok(s) => s,
@@ -95,11 +127,70 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
             source: input_source,
             story,
             output,
+            consumer_review,
         } => {
             let source_path = input_source
                 .as_ref()
                 .map(|p| p.to_string_lossy().into_owned())
                 .unwrap_or_else(|| "product-context.yaml".into());
+            // Conversion targets must be disjoint from preserved legacy inputs.
+            for target in s.roots() {
+                for legacy in [
+                    "product",
+                    "project-convention",
+                    "lessons-learned",
+                    "openspec",
+                    ".claude",
+                    ".agents",
+                    source_path.as_str(),
+                ] {
+                    if aep_core::path_overlap(&target, legacy) {
+                        return Err(Error::conflict(format!(
+                            "Native store {target} overlaps legacy source {legacy}"
+                        )));
+                    }
+                }
+            }
+            let receipts: Vec<_> = snap
+                .records
+                .iter()
+                .filter(|r| r.kind == Kind::Import && r.text("migration") == Some("v4-context"))
+                .collect();
+            // A later scope can add records, but cannot silently refresh migrated context.
+            let mut imported_targets = BTreeSet::new();
+            for receipt in &receipts {
+                for hashes in ["source_hashes", "consumer_source_hashes"]
+                    .iter()
+                    .filter_map(|key| receipt.data.get(*key).and_then(Value::as_object))
+                {
+                    for (path, hash) in hashes {
+                        if path == "AGENTS.md" {
+                            continue;
+                        }
+                        if std::fs::read(contained(&s.root, path)?)
+                            .map(digest)
+                            .ok()
+                            .as_deref()
+                            != hash.as_str()
+                        {
+                            return Err(Error::conflict(format!(
+                                "Previously migrated source changed: {path}; review the change separately; native data was not synchronized"
+                            )));
+                        }
+                    }
+                }
+                imported_targets.extend(
+                    list(
+                        &receipt
+                            .data
+                            .get("imported_targets")
+                            .cloned()
+                            .unwrap_or(Value::Null),
+                    )
+                    .iter()
+                    .map(text),
+                );
+            }
             let mut sources = BTreeMap::new();
             let mut legacy = source(&s, &source_path, &mut sources)?
                 .ok_or_else(|| Error::input(format!("No legacy source {source_path}")))?;
@@ -107,7 +198,49 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                 source(&s, "product/index.yaml", &mut sources)?.unwrap_or_else(|| legacy.clone());
             let mut records = BTreeMap::new();
             let mut diagnostics = vec![];
-            let mut writes = initial_files(&s, &snap, s.root.join("CLAUDE.md").exists())?;
+            let mut writes = initial_files(&s, &snap, false)?;
+            let mut consumers = vec![];
+            for path in [
+                "CLAUDE.md",
+                ".claude/settings.json",
+                ".claude/settings.local.json",
+                ".agents/settings.json",
+            ] {
+                if let Some(content) = aep_store::read_optional(&contained(&s.root, path)?)? {
+                    sources.insert(path.into(), digest(&content));
+                    // Standard legacy concurrency guards are read-only. Other hook commands
+                    // and inline legacy workflows require a concrete disposition.
+                    let requires_review = if path.ends_with(".json") {
+                        let settings: Value = serde_json::from_str(&content)
+                            .map_err(|e| Error::input(format!("{path}: {e}")))?;
+                        settings.get("hooks").is_some_and(|hooks| {
+                            let commands = hook_commands(hooks);
+                            commands
+                                .iter()
+                                .any(|command| !legacy_read_only_guard(command))
+                        })
+                    } else {
+                        content.contains("/aep-")
+                            || content.contains(".dev-workflow")
+                            || !content.lines().any(|line| line.trim() == "@AGENTS.md")
+                    };
+                    if requires_review {
+                        consumers.push(path.to_string());
+                    }
+                }
+            }
+            let review_path = consumer_review
+                .as_ref()
+                .map(|p| p.to_string_lossy().into_owned());
+            if let Some(path) = &review_path {
+                let review = std::fs::read_to_string(contained(&s.root, path)?)?;
+                if review.trim().is_empty() {
+                    return Err(Error::input("Consumer review is empty"));
+                }
+                sources.insert(path.clone(), digest(&review));
+            } else if !consumers.is_empty() {
+                diagnostics.push(format!("Review legacy executable consumers/host instruction discovery {} and record their disposition in a tracked file; pass --consumer-review <path>", consumers.join(", ")));
+            }
             let mut all = BTreeMap::new();
             for key in ["stories", "waves", "layer_gates"] {
                 if legacy.get(key).is_some_and(|v| !v.is_array()) {
@@ -393,6 +526,13 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                     &format!("{}/product/", s.config.stores.roadmap),
                     1,
                 );
+                // This relocation adds one directory level. Internal product-tree
+                // links remain valid; references escaping that tree need a reviewed mapping.
+                let product_depth = Path::new(&path).components().count().saturating_sub(2);
+                let escape = "../".repeat(product_depth + 1);
+                if content.contains(&escape) {
+                    diagnostics.push(format!("{path}: map relative references escaping product/ in copied target {target}; its directory depth changes"));
+                }
                 mapped_sources.push(target.clone());
                 writes.insert(target, Some(content));
             }
@@ -432,17 +572,17 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                     &format!("{}/", s.config.stores.rules),
                     1,
                 );
-                if snap.files.get(&target).is_some_and(|old| old != &content) {
-                    diagnostics.push(format!("Rule target already differs: {target}"));
+                if s.config.stores.rules.contains('/') {
+                    let depth = Path::new(&path).components().count().saturating_sub(2);
+                    if content.contains(&"../".repeat(depth + 1)) {
+                        diagnostics.push(format!("{path}: map relative references escaping project-convention/ in copied target {target}; its directory depth changes"));
+                    }
                 }
-                writes.insert(
-                    target,
-                    Some(content.replace(
-                        "project-convention/",
-                        &format!("{}/", s.config.stores.rules),
-                    )),
+                let content = content.replace(
+                    "project-convention/",
+                    &format!("{}/", s.config.stores.rules),
                 );
-                writes.insert(path, None);
+                writes.insert(target, Some(content));
             }
             // Keep relative note/evidence links intact. Legacy prose is searchable
             // through lesson find; new observations use typed lesson records.
@@ -452,9 +592,6 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                     &format!("{}/", s.config.stores.lessons),
                     1,
                 );
-                if snap.files.get(&target).is_some_and(|old| old != &content) {
-                    return Err(Error::conflict("Imported lesson path already differs"));
-                }
                 if s.config.stores.lessons.contains('/')
                     || target
                         .strip_prefix(&format!("{}/observations/", s.config.stores.lessons))
@@ -463,29 +600,37 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                     diagnostics.push(format!("{path}: map legacy lesson links and reserved observation paths explicitly for this store layout"));
                 }
                 writes.insert(target, Some(content));
-                writes.insert(path, None);
             }
-            // The new entrypoint becomes the writer route. Preserve project-specific old instructions as an explicitly indexed source for review.
-            if let Some(old) = snap
-                .files
-                .get("AGENTS.md")
-                .filter(|text| !text.contains("<!-- aep-cli-entrypoint: 5.0 -->"))
+            // Keep the original root instructions as source evidence. Existing project
+            // prose stays readable; the explicit route scopes legacy AEP workflows.
+            if receipts.is_empty()
+                && let Some(old) = snap.files.get("AGENTS.md")
             {
                 sources.insert("AGENTS.md".into(), digest(old));
-                let path = format!("{}/legacy-entrypoint.md", s.config.stores.rules);
-                writes.insert(path, Some(format!("# Imported project instructions\n\nHistorical AEP commands are superseded by `aep skills`. Review project-specific constraints below before implementation.\n\n{}", old.replace("project-convention/", &format!("{}/", s.config.stores.rules)))));
                 writes.insert(
-                    "AGENTS.md".into(),
-                    Some(crate::guidance::asset("templates/AGENTS.md")?),
+                    format!("{}/legacy-entrypoint.md", s.config.stores.rules),
+                    Some(old.clone()),
                 );
-                let index = format!("{}/README.md", s.config.stores.rules);
+            }
+            let previous = snap
+                .files
+                .get("AGENTS.md")
+                .cloned()
+                .or_else(|| writes.get("AGENTS.md").and_then(Clone::clone))
+                .unwrap_or_default();
+            writes.insert(
+                "AGENTS.md".into(),
+                Some(version_route(&s, &previous, "v5")?),
+            );
+            let index = format!("{}/README.md", s.config.stores.rules);
+            if receipts.is_empty() && snap.files.contains_key("AGENTS.md") {
                 let mut body = writes
                     .get(&index)
                     .and_then(Option::as_ref)
                     .or_else(|| snap.files.get(&index))
                     .cloned()
                     .unwrap_or_default();
-                body.push_str("\nRead [legacy-entrypoint.md](legacy-entrypoint.md) for imported project-specific constraints. AEP 5.0 owns workflow state.\n");
+                body.push_str("\n[legacy-entrypoint.md](legacy-entrypoint.md) preserves the original root instructions as historical source evidence. The active AGENTS.md route selects workflow ownership; general project constraints remain applicable.\n");
                 writes.insert(index, Some(body));
             }
             for key in [
@@ -557,6 +702,29 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                     }
                 }
             }
+            // A deleted native copy is also a native edit; later scopes do not restore it.
+            writes.retain(|path, _| {
+                !imported_targets.contains(path) || snap.files.contains_key(path)
+            });
+            // Preserve native edits after first import and reject every unexpected target collision.
+            for (path, content) in &mut writes {
+                if ["AGENTS.md", ".aep/config.toml", ".gitignore"].contains(&path.as_str()) {
+                    continue;
+                }
+                if let Some(existing) = snap.files.get(path) {
+                    if imported_targets.contains(path) {
+                        *content = Some(existing.clone());
+                    } else if content.as_ref() != Some(existing) {
+                        let empty_index = path == &format!("{}/README.md", s.config.stores.rules)
+                            && existing == crate::commands::EMPTY_RULES_INDEX;
+                        if !empty_index {
+                            return Err(Error::conflict(format!(
+                                "Migration target already differs: {path}"
+                            )));
+                        }
+                    }
+                }
+            }
             let base_commit = git(&s.root, &["rev-parse", "HEAD"])?;
             let mut receipt = Record::new(
                 Kind::Import,
@@ -567,10 +735,38 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                 "Current context migration",
             );
             receipt.set("migration", "v4-context");
+            receipt.set(
+                "imported_targets",
+                json!(
+                    writes
+                        .keys()
+                        .filter(|p| !["AGENTS.md", ".aep/config.toml", ".gitignore"]
+                            .contains(&p.as_str()))
+                        .collect::<Vec<_>>()
+                ),
+            );
+            receipt.set(
+                "consumer_review",
+                json!({"path":review_path,"consumers":consumers}),
+            );
             receipt.set("source_commit", base_commit.clone());
-            receipt.set("source_paths", json!(sources.keys().collect::<Vec<_>>()));
-            receipt.set("source_hashes", json!(sources));
-            for (path, hash) in &sources {
+            let context_sources: BTreeMap<_, _> = sources
+                .iter()
+                .filter(|(path, _)| !HOST_SETTINGS.contains(&path.as_str()))
+                .collect();
+            let consumer_sources: BTreeMap<_, _> = sources
+                .iter()
+                .filter(|(path, _)| HOST_SETTINGS.contains(&path.as_str()))
+                .collect();
+            receipt.set(
+                "source_paths",
+                json!(context_sources.keys().collect::<Vec<_>>()),
+            );
+            receipt.set("source_hashes", json!(context_sources));
+            // Host-local settings remain in place and digest-bound, without requiring
+            // ignored runtime configuration to become committed product context.
+            receipt.set("consumer_source_hashes", json!(consumer_sources));
+            for (path, hash) in context_sources {
                 if aep_store::git_bytes(&s.root, &["show", &format!("{base_commit}:{path}")])
                     .map(digest)
                     .as_ref()
@@ -695,6 +891,17 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                         .ok_or_else(|| Error::input("Migration receipt lacks source hashes"))?,
                 )?;
                 for (path, hash) in hashes {
+                    if path != "AGENTS.md"
+                        && std::fs::read(contained(&s.root, &path)?)
+                            .map(digest)
+                            .ok()
+                            .as_ref()
+                            != Some(&hash)
+                    {
+                        return Err(Error::conflict(format!(
+                            "Preserved migration source changed or is absent: {path}"
+                        )));
+                    }
                     if digest(aep_store::git_bytes(
                         &s.root,
                         &["show", &format!("{base}:{path}")],
@@ -703,18 +910,34 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                         return Err(Error::conflict("Migration Git source digest differs"));
                     }
                 }
+                if let Some(hashes) = receipt
+                    .data
+                    .get("consumer_source_hashes")
+                    .and_then(Value::as_object)
+                {
+                    for (path, hash) in hashes {
+                        if std::fs::read(contained(&s.root, path)?)
+                            .map(digest)
+                            .ok()
+                            .as_deref()
+                            != hash.as_str()
+                        {
+                            return Err(Error::conflict(format!(
+                                "Preserved host settings changed or are absent: {path}"
+                            )));
+                        }
+                    }
+                }
                 for id in list(&receipt.data["selected_stories"]).iter().map(text) {
                     if snap.get(&id)?.kind != Kind::Story {
                         return Err(Error::input("Migrated story was lost"));
                     }
                 }
-                if !snap
+                if !snap.files.get("AGENTS.md").is_some_and(|s| {
+                    s.contains("aep-version-route: start") && s.contains("AEP default: v5")
+                }) || !snap
                     .files
-                    .get("AGENTS.md")
-                    .is_some_and(|s| s.contains("aep-cli-entrypoint: 5.0"))
-                    || !snap
-                        .files
-                        .contains_key(&format!("{}/README.md", s.config.stores.rules))
+                    .contains_key(&format!("{}/README.md", s.config.stores.rules))
                 {
                     return Err(Error::blocked(
                         "Migration entrypoint or project rules index is absent",

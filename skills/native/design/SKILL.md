@@ -1,14 +1,16 @@
 ---
 name: design
-description: Define or revise a change contract, BDD scenarios, and decisions before implementing behavior whose intent or tradeoffs need resolution.
+description: Resolve change intent, product criteria, and technical uncertainty through contracts, BDD scenarios, decisions, and useful prototypes.
 ---
 
 # Design
 
-Read the relevant story, accepted contracts, project rules, and ADRs through `aep context <id>` and additional sources selected for the task. Establish the desired outcome, boundaries, failure cases, interfaces, and required verification. A maintenance task can have no journey mapping.
+Read the relevant story, accepted contracts, rules, and ADRs through `aep context <id>` and task-selected sources. Establish outcome, boundaries, interfaces, failure cases, and observable success. Use `aep skills show project --ref context-sources` when important context is missing.
 
-Author one change contract and link its story. Keep design drafts in `docs/design/`, accepted tradeoffs in `project-roadmap/decisions/`, and proposed scenario deltas under the change. Use `aep change new --file <file>` and `aep decision new --file <file>` to create records. Inspect `--help` for required fields and operation syntax.
+Read [Design criteria](references/design-criteria.md) when domain structure, usability, or the user's quality expectations need resolution. For a concrete uncertainty that an experiment can answer, read [Prototype decisions](references/prototype.md). Choose exploration depth from the actual unknowns.
 
-Read [BDD contracts](references/bdd.md) when writing or modifying specification scenarios. Read [Record inputs](references/records.md) when creating the initial records.
+Author one change contract and link its story. Keep drafts in `docs/design/`, accepted tradeoffs in `project-roadmap/decisions/`, and scenario deltas under the change, honoring configured stores. Use `aep change new --file <file>` and `aep decision new --file <file>`; inspect command help for operation syntax.
 
-Run `aep spec check --change <id>` and `aep check`. Resolve semantic ambiguity using project evidence and the user when needed; parser success establishes structure only. Accept the contract through `aep change accept <id> --by <actor>` when the current task authority supports that decision. Report unresolved intent without upgrading it to accepted behavior.
+Read [BDD contracts](references/bdd.md) when writing scenarios and [Record inputs](references/records.md) when creating initial records. Run `aep spec check --change <id>` and `aep check`; structural success still needs semantic validation against the task.
+
+Accept through `aep change accept <id> --by <actor>` when current authority supports the decision. Preserve unresolved intent as an explicit unknown. Handoff includes acceptance sources, observed design evidence, relevant constraints and verification path.

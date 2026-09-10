@@ -338,7 +338,7 @@ impl Default for Policy {
     fn default() -> Self {
         Self {
             max_parallel: 2,
-            independent_review: true,
+            independent_review: false,
             required_checks: vec![],
             protected_paths: vec![".aep/".into(), "project-rules/".into(), ".github/".into()],
         }
@@ -887,6 +887,20 @@ pub fn gate_current(gate: &Record, records: &[Record], config: &Config) -> bool 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn review_policy_defaults_to_self_verification_and_preserves_explicit_requirements() {
+        assert!(!Policy::default().independent_review);
+        assert!(
+            !serde_json::from_str::<Policy>("{}")
+                .unwrap()
+                .independent_review
+        );
+        assert!(
+            serde_json::from_str::<Policy>(r#"{"independent_review":true}"#)
+                .unwrap()
+                .independent_review
+        );
+    }
     #[test]
     fn dependency_containers_keep_gates_and_unverified_integrations_blocked() {
         let config = Config::default();

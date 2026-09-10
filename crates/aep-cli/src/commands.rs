@@ -207,7 +207,6 @@ pub fn run(args: &Cli) -> Result<Outcome> {
         Command::Deliver { command } => workflow::deliver(args, &s, &snap, command),
         Command::Spec { command } => spec::run(args, &s, &snap, command),
         Command::Openspec { command } => spec::openspec(args, &s, &snap, command),
-        Command::Dashboard => dashboard(&s, &snap),
         _ => Err(Error::input("Unsupported command combination")),
     }
 }
@@ -292,6 +291,7 @@ fn init(args: &Cli, claude: bool) -> Result<Outcome> {
     let files = initial_files(&s, &snap, claude)?;
     save(&s, &snap, vec![], files, args.dry_run)
 }
+pub const EMPTY_RULES_INDEX: &str = "# Project rules\n\nProject-specific maintenance rules belong here. Index each rule by task or path, purpose, and file. Add code, testing, package, DevOps, and release rules when the project needs them. Link executable settings instead of duplicating command flags.\n";
 pub fn initial_files(
     s: &Store,
     snap: &Snapshot,
@@ -306,20 +306,28 @@ pub fn initial_files(
     }
     let index = format!("{}/README.md", s.config.stores.rules);
     if !snap.files.contains_key(&index) {
-        files.insert(index,Some("# Project rules\n\nProject-specific maintenance rules belong here. Index each rule by task or path, purpose, and file. Add code, testing, package, DevOps, and release rules when the project needs them. Link executable settings instead of duplicating command flags.\n".into()));
+        files.insert(index, Some(EMPTY_RULES_INDEX.into()));
     }
     let entry = guidance::asset("templates/AGENTS.md")?
         .replace("project-rules/", &format!("{}/", s.config.stores.rules));
     let agents = read_optional(&contained(&s.root, "AGENTS.md")?)?;
+    let legacy = [
+        "product-context.yaml",
+        "product",
+        "project-convention",
+        "lessons-learned",
+        "openspec",
+    ]
+    .iter()
+    .any(|p| s.root.join(p).exists())
+        || agents
+            .as_ref()
+            .is_some_and(|old| old.contains("aep-agents-template: v4") || old.contains("/aep-"));
     let merged = match agents {
-        None => entry.clone(),
-        Some(old) if old.contains("<!-- aep-cli-entrypoint: 5.0 -->") => old,
-        Some(old) => format!(
-            "{}\n\n{}",
-            old.trim_end(),
-            guidance::asset("templates/entrypoint.md")?
-                .replace("project-rules/", &format!("{}/", s.config.stores.rules))
-        ),
+        None if !legacy => entry,
+        None => version_route(s, "", "v4")?,
+        Some(old) if old.contains("<!-- aep-version-route: start -->") => old,
+        Some(old) => version_route(s, &old, if legacy { "v4" } else { "v5" })?,
     };
     files.insert("AGENTS.md".into(), Some(merged));
     if claude {
@@ -351,6 +359,28 @@ pub fn initial_files(
     }
     files.insert(".gitignore".into(), Some(ignore));
     Ok(files)
+}
+/// The route is a small explicit workflow choice, independent of the binary pin.
+pub fn version_route(s: &Store, previous: &str, default: &str) -> Result<String> {
+    let start = "<!-- aep-version-route: start -->";
+    let end = "<!-- aep-version-route: end -->";
+    let route = guidance::asset("templates/entrypoint.md")?
+        .replace("AEP default: v5", &format!("AEP default: {default}"))
+        .replace("project-rules/", &format!("{}/", s.config.stores.rules));
+    if let Some(begin) = previous.find(start) {
+        let finish = previous[begin..]
+            .find(end)
+            .ok_or_else(|| Error::input("Incomplete AEP version route"))?
+            + begin
+            + end.len();
+        return Ok(format!(
+            "{}{}{}",
+            &previous[..begin],
+            route.trim_end(),
+            &previous[finish..]
+        ));
+    }
+    Ok(format!("{}\n{}", route, previous))
 }
 fn doctor(args: &Cli) -> Result<Outcome> {
     fn available(program: &str) -> bool {
@@ -719,9 +749,4 @@ pub fn subject(snap: &Snapshot, id: &str, kind: Kind) -> Result<Record> {
         return Err(Error::input(format!("{id} is not {}", kind.name())));
     }
     Ok(r.clone())
-}
-fn dashboard(s: &Store, snap: &Snapshot) -> Result<Outcome> {
-    Ok(Outcome::ok(
-        json!({"schema_version":1,"revision":snap.revision,"records":snap.records,"readiness":snap.records.iter().filter(|r|r.kind==Kind::Story).map(|r|aep_core::readiness(r,&snap.records,&s.config)).collect::<Vec<_>>(),"diagnostics":validate(&snap.records,&s.config)}),
-    ))
 }

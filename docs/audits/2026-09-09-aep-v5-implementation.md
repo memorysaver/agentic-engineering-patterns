@@ -2,6 +2,11 @@
 
 This audit covers the native implementation on `feat/aep-5-native-cli`, based on design PR [#34](https://github.com/memorysaver/agentic-engineering-patterns/pull/34), merged at `b47d1431832c5e28a7e5175416e2f44a271c1709`. It records local verification and independent agent review. The branch prepares 5.0.0; it does not publish a release or migrate downstream production projects.
 
+This is a historical report of the initial implementation. The subsequent
+[CLI-focused validation](2026-09-09-aep-v5-cli-focus.md) records the user's scope
+correction: dashboard integration is removed from v5, existing web source is
+restored to its prior baseline, and native inspection and release remain independent.
+
 ## Implemented boundaries
 
 The [accepted architecture](../decisions/aep-v5-rust-cli-architecture.md) is implemented in three Rust crates:

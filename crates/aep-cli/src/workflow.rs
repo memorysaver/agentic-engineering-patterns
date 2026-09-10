@@ -494,7 +494,7 @@ pub fn verification_plan(s: &Store, snap: &Snapshot, story: &Record) -> Result<V
         head,
         fingerprint,
         risk: risk.into(),
-        independent_review: risk != "light" || s.config.policy.independent_review,
+        independent_review: s.config.policy.independent_review,
         checks: checks.into_iter().collect(),
         paths,
     })
@@ -850,6 +850,30 @@ struct ReviewInput {
     #[serde(default)]
     attestation: bool,
 }
+fn latest_completed_review<'a>(snap: &'a Snapshot, story: &str) -> Option<&'a Record> {
+    snap.records
+        .iter()
+        .filter(|r| {
+            r.kind == Kind::Review
+                && r.refs.iter().any(|id| id == story)
+                && ["blocking", "material", "pass", "pass_with_notes"].contains(&r.status.as_str())
+        })
+        .max_by_key(|r| (&r.created_at, &r.id))
+}
+fn unresolved_findings(review: &Record) -> Vec<Value> {
+    review
+        .data
+        .get("findings")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter(|finding| {
+            matches!(finding["severity"].as_str(), Some("blocking" | "material"))
+                && finding["resolved"] != true
+        })
+        .cloned()
+        .collect()
+}
 pub fn review(args: &Cli, s: &Store, snap: &Snapshot, command: &cli::Review) -> Result<Outcome> {
     match command {
         cli::Review::Request { story } => {
@@ -861,19 +885,11 @@ pub fn review(args: &Cli, s: &Store, snap: &Snapshot, command: &cli::Review) -> 
                 .iter()
                 .filter(|r| r.kind == Kind::Review && r.refs.contains(&attempt.id))
                 .collect();
-            if prior.iter().any(|r| r.status == "requested") {
+            if prior.iter().any(|r| {
+                r.status == "requested" && r.text("fingerprint") == Some(plan.fingerprint.as_str())
+            }) {
                 return Err(Error::blocked(
-                    "A review is already requested for this attempt",
-                ));
-            }
-            if prior.len() >= 2 {
-                return Err(Error::blocked(
-                    "Two review rounds exhausted; resolve through the project's escalation policy",
-                ));
-            }
-            if !prior.is_empty() && !prior.iter().any(|r| r.status == "blocking") {
-                return Err(Error::blocked(
-                    "A second review round confirms blocking fixes only; record material fixes as an attestation",
+                    "A review is already requested for this candidate",
                 ));
             }
             let mut r = Record::new(
@@ -887,16 +903,22 @@ pub fn review(args: &Cli, s: &Store, snap: &Snapshot, command: &cli::Review) -> 
             r.set("fingerprint", plan.fingerprint.clone());
             r.set("builder", attempt.owner.clone().unwrap_or_default());
             r.set("round", json!(prior.len() + 1));
-            let carried: Vec<Value> = prior
-                .iter()
-                .filter_map(|r| r.data.get("findings").and_then(Value::as_array))
-                .flatten()
-                .filter(|f| f["severity"] == "blocking" && f["resolved"] != true)
-                .cloned()
-                .collect();
+            let carried = latest_completed_review(snap, &story.id)
+                .map(unresolved_findings)
+                .unwrap_or_default();
             r.set("required_findings", json!(carried));
-            r.set("effort", "high");
-            let mut out = save(s, snap, vec![r.clone()], BTreeMap::new(), args.dry_run)?;
+            let mut updates: Vec<Record> = prior
+                .into_iter()
+                .filter(|review| review.status == "requested")
+                .map(|review| {
+                    let mut review = review.clone();
+                    review.status = "superseded".into();
+                    review.set("superseded_by", r.id.clone());
+                    review
+                })
+                .collect();
+            updates.push(r.clone());
+            let mut out = save(s, snap, updates, BTreeMap::new(), args.dry_run)?;
             out.data["request"] = json!({"record":r,"contracts":story.change_ids(),"scope":story.paths,"checks":plan,"response":{"request":r.id,"reviewer":"independent-reviewer","head":r.text("head"),"fingerprint":r.text("fingerprint"),"findings":[]},"instructions":"Review accepted intent, actual diff, applicable rules, and check evidence. Classify concrete findings as blocking, material, or polish. Attribute the result to the reviewer; do not infer pass from the builder's summary."});
             Ok(out)
         }
@@ -921,12 +943,16 @@ pub fn review(args: &Cli, s: &Store, snap: &Snapshot, command: &cli::Review) -> 
             if response.attestation {
                 let old: Vec<Finding> =
                     serde_json::from_value(r.data.get("findings").cloned().unwrap_or(json!([])))?;
-                if r.status != "material"
+                if !["material", "blocking"].contains(&r.status.as_str())
+                    || (r.status == "blocking" && plan.independent_review)
+                    || !r.refs.contains(&plan.attempt)
+                    || latest_completed_review(snap, &story.id).map(|latest| &latest.id)
+                        != Some(&r.id)
                     || r.text("builder") != Some(response.reviewer.as_str())
                     || old.len() != response.findings.len()
                 {
                     return Err(Error::blocked(
-                        "Material fix attestation must come from the recorded builder and preserve the review findings",
+                        "Fix attestation must preserve the latest review findings and come from the builder; required independent blocking review cannot be self-attested",
                     ));
                 }
                 for (before, after) in old.iter().zip(&response.findings) {
@@ -939,6 +965,7 @@ pub fn review(args: &Cli, s: &Store, snap: &Snapshot, command: &cli::Review) -> 
                 r.set("fix_attestation_by", response.reviewer.clone());
             } else {
                 if r.status != "requested"
+                    || !r.refs.contains(&plan.attempt)
                     || r.text("builder") == Some(response.reviewer.as_str())
                     || r.text("head") != Some(response.head.as_str())
                     || r.text("fingerprint") != Some(response.fingerprint.as_str())
@@ -950,12 +977,19 @@ pub fn review(args: &Cli, s: &Store, snap: &Snapshot, command: &cli::Review) -> 
                 r.set("reviewer", response.reviewer.clone());
                 r.set("attribution_class", "host_reported");
             }
-            let required: Vec<Finding> = serde_json::from_value(
+            let mut required: Vec<Finding> = serde_json::from_value(
                 r.data
                     .get("required_findings")
                     .cloned()
                     .unwrap_or(json!([])),
             )?;
+            // A candidate can return to an earlier revision while another request
+            // is open. Findings recorded since this request are still obligations.
+            if let Some(latest) = latest_completed_review(snap, &story.id) {
+                required.extend(serde_json::from_value::<Vec<Finding>>(json!(
+                    unresolved_findings(latest)
+                ))?);
+            }
             for prior in required {
                 if !response
                     .findings
@@ -963,7 +997,7 @@ pub fn review(args: &Cli, s: &Store, snap: &Snapshot, command: &cli::Review) -> 
                     .any(|f| f.severity == prior.severity && f.description == prior.description)
                 {
                     return Err(Error::blocked(
-                        "Second review must explicitly retain and resolve each prior blocking finding",
+                        "Review must explicitly retain each unresolved prior blocking or material finding",
                     ));
                 }
             }
@@ -1041,21 +1075,41 @@ pub fn evidence_requirements(
             _ => missing.push(format!("Missing current passing check {check}")),
         }
     }
+    // Choosing review is optional by default; ignoring a concrete unresolved defect is not.
+    // Keep findings across revision changes until a review or permitted evidence-backed
+    // builder attestation records their resolution.
+    if let Some(review) = latest_completed_review(snap, &story.id)
+        && !unresolved_findings(review).is_empty()
+    {
+        missing.push(format!("Unresolved review findings in {}", review.id));
+    }
+    let latest_review = snap
+        .records
+        .iter()
+        .filter(|r| {
+            r.kind == Kind::Review
+                && r.refs.contains(&plan.attempt)
+                && r.text("fingerprint") == Some(plan.fingerprint.as_str())
+        })
+        .max_by_key(|r| {
+            (
+                r.data.get("round").and_then(Value::as_u64),
+                &r.created_at,
+                &r.id,
+            )
+        });
     if plan.independent_review {
-        let latest = snap
-            .records
-            .iter()
-            .filter(|r| {
-                r.kind == Kind::Review
-                    && r.refs.contains(&plan.attempt)
-                    && r.text("fingerprint") == Some(plan.fingerprint.as_str())
-            })
-            .max_by(|a, b| a.created_at.cmp(&b.created_at).then(a.id.cmp(&b.id)));
-        match latest {
+        match latest_review {
             Some(r) if ["pass", "pass_with_notes"].contains(&r.status.as_str()) => {
                 evidence.push(r.id.clone())
             }
             _ => missing.push("Missing current independent review".into()),
+        }
+    } else if let Some(review) = latest_review {
+        match review.status.as_str() {
+            "requested" => missing.push("Current requested review has no response".into()),
+            "pass" | "pass_with_notes" => evidence.push(review.id.clone()),
+            _ => {}
         }
     }
     Ok((plan, missing, evidence))

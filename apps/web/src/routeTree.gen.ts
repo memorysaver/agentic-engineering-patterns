@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from "./routes/__root";
 import { Route as StoryMapRouteImport } from "./routes/story-map";
 import { Route as ProgressRouteImport } from "./routes/progress";
 import { Route as OverviewRouteImport } from "./routes/overview";
-import { Route as LedgerRouteImport } from "./routes/ledger";
 import { Route as ArchitectureRouteImport } from "./routes/architecture";
 import { Route as IndexRouteImport } from "./routes/index";
 
@@ -31,11 +30,6 @@ const OverviewRoute = OverviewRouteImport.update({
   path: "/overview",
   getParentRoute: () => rootRouteImport,
 } as any);
-const LedgerRoute = LedgerRouteImport.update({
-  id: "/ledger",
-  path: "/ledger",
-  getParentRoute: () => rootRouteImport,
-} as any);
 const ArchitectureRoute = ArchitectureRouteImport.update({
   id: "/architecture",
   path: "/architecture",
@@ -50,7 +44,6 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
   "/architecture": typeof ArchitectureRoute;
-  "/ledger": typeof LedgerRoute;
   "/overview": typeof OverviewRoute;
   "/progress": typeof ProgressRoute;
   "/story-map": typeof StoryMapRoute;
@@ -58,7 +51,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
   "/architecture": typeof ArchitectureRoute;
-  "/ledger": typeof LedgerRoute;
   "/overview": typeof OverviewRoute;
   "/progress": typeof ProgressRoute;
   "/story-map": typeof StoryMapRoute;
@@ -67,23 +59,21 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   "/": typeof IndexRoute;
   "/architecture": typeof ArchitectureRoute;
-  "/ledger": typeof LedgerRoute;
   "/overview": typeof OverviewRoute;
   "/progress": typeof ProgressRoute;
   "/story-map": typeof StoryMapRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: "/" | "/architecture" | "/ledger" | "/overview" | "/progress" | "/story-map";
+  fullPaths: "/" | "/architecture" | "/overview" | "/progress" | "/story-map";
   fileRoutesByTo: FileRoutesByTo;
-  to: "/" | "/architecture" | "/ledger" | "/overview" | "/progress" | "/story-map";
-  id: "__root__" | "/" | "/architecture" | "/ledger" | "/overview" | "/progress" | "/story-map";
+  to: "/" | "/architecture" | "/overview" | "/progress" | "/story-map";
+  id: "__root__" | "/" | "/architecture" | "/overview" | "/progress" | "/story-map";
   fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   ArchitectureRoute: typeof ArchitectureRoute;
-  LedgerRoute: typeof LedgerRoute;
   OverviewRoute: typeof OverviewRoute;
   ProgressRoute: typeof ProgressRoute;
   StoryMapRoute: typeof StoryMapRoute;
@@ -112,13 +102,6 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof OverviewRouteImport;
       parentRoute: typeof rootRouteImport;
     };
-    "/ledger": {
-      id: "/ledger";
-      path: "/ledger";
-      fullPath: "/ledger";
-      preLoaderRoute: typeof LedgerRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
     "/architecture": {
       id: "/architecture";
       path: "/architecture";
@@ -139,7 +122,6 @@ declare module "@tanstack/react-router" {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ArchitectureRoute: ArchitectureRoute,
-  LedgerRoute: LedgerRoute,
   OverviewRoute: OverviewRoute,
   ProgressRoute: ProgressRoute,
   StoryMapRoute: StoryMapRoute,
