@@ -2,6 +2,8 @@
 
 Native records use `schema_version`, `kind`, `id`, `title`, `status`, `description`, explicit references, and optional `data` for kind-specific content. Inspect a current record with `aep <kind> show <id> --json`; its revision is required by `update --expect`.
 
+For an update, start from the returned `data.record` rather than the response envelope or a partial patch. Preserve its ID, kind, status, creation time and unrelated fields, edit the intended content, and pass `data.revision` to `--expect`. Lifecycle status changes use their dedicated commands.
+
 Create the change before its story so the story can reference an existing ID. A minimal change input is:
 
 ```yaml
