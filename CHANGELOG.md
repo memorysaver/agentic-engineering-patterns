@@ -16,6 +16,8 @@ product work, integration evidence, and release history.
 
 ## [Unreleased] — 5.0.0-preview.1
 
+- Add purpose-driven research to native roadmap/design guidance: investigate decision-changing evidence before recommending priorities or benchmarks, invite user feedback, then autonomously maintain canonical product context and carry authorized design/implementation forward. Keep unresolved exploration draft and preserve the eight-skill catalog.
+
 - Publish specifications after context-only changes using fresh checks/review for the same confirmed integration tree, retaining the original delivery receipt and recording both fingerprints. Avoid reopening and remerging unchanged code solely to refresh publication evidence.
 - Report integrated stories as awaiting closure rather than eligible for another delivery; apply local action prerequisites to dry runs. Record AEP executable digests on verification, review, delivery and publication evidence, and clarify shared-ledger conflict reconciliation.
 

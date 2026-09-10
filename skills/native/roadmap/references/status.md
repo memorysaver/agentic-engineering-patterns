@@ -6,4 +6,6 @@ A useful update states the current outcome, what changed, supporting evidence, r
 
 For blockers, name the unresolved dependency, finding, access gap or decision and its owner when known. Report “waiting since” only with a source for that time. Event recording timestamps cannot reconstruct unknown historical merge dates.
 
+When asked to recommend next work, establish product value and evidence separately from a candidate's readiness or position in the backlog. If that basis is uncertain, use `aep --skill roadmap --ref purpose-research` before presenting a priority as supported. A status-only request calls for the observed state, not an unrequested product decision.
+
 Keep the explanation in the user's terms; link canonical IDs/artifacts so another agent can resume. A text summary usually suffices; presentation work follows the requested deliverable.

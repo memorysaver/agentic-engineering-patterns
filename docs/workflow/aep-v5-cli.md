@@ -92,6 +92,8 @@ Read commands never decide that a new story, design, repair, or merge is wanted.
 
 ## Design and specifications
 
+For product refocusing or a benchmark/priority choice, `aep --skill roadmap --ref purpose-research` describes research driven by decision uncertainty. The agent investigates relevant sources and alternatives, discusses its recommendation, and uses settled feedback to maintain canonical context through `aep --skill roadmap --ref product-context`. Roadmap intent and decisions, design artifacts and concrete change/story contracts retain their separate homes and links. Direction-only work ends with its requested context/design deliverable; authorized implementation continues through implement, validate and deliver. These are embedded instructions chosen by the working agent, not an automatic CLI router or research service.
+
 Changes contain design prose and `data.specs`, a list of capability, delta path, and baseline digest. Delta paths must belong to a configured context store. `baseline: null` means a new capability.
 
 ```yaml

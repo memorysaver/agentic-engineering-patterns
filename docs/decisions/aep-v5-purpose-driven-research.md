@@ -1,7 +1,7 @@
 # AEP v5：以產品目的驅動的自主研究
 
 日期：2026-09-11
-狀態：使用者要求引入概念，並指定建議後徵詢意見、自主完成 product context；實作尚未進行
+狀態：已接受；依使用者要求實作原生指引，驗證與安裝結果另見 audit
 來源：[MITS 產品聚焦觀察](../lessons/2026-09-11-mits-product-focus-observation.md)
 
 ## 要補足的能力
@@ -46,7 +46,7 @@ MITS 這輪原先推薦一個保留的候選功能，經使用者追問才回查
 
 「auto」由 working agent 判斷何時研究及深度。CLI 提供可發現的指引、records 和既有檢查，不新增語意路由器、模型呼叫或固定 gen-eval 流程。外部研究工具、模型與 subagent 依可用能力及既有授權選用，概念本身不要求新增供應商相依。
 
-入口配置待選：融入既有 roadmap／design，以一份 canonical reference 按需展開；或新增獨立 research skill，供 agent 自主發現。既有八入口的收斂決策仍有效，直到明確決定調整；本文件尚未變更 catalog、嵌入指引或已安裝 binary。
+入口採用既有 roadmap／design：研究方法集中於 `roadmap/references/purpose-research.md`，使用者意見到 canonical context 的交接集中於 `roadmap/references/product-context.md`。roadmap、design 與進度解讀指引在需要時導向它們。保留八個入口與原有 description；不新增獨立 research skill 或語意路由命令。
 
 ## 建議、使用者意見與自主落檔的交接
 

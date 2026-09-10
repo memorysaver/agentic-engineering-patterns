@@ -19,6 +19,8 @@ aep --skill project
 
 Build enough context to identify intent, current behavior, applicable constraints, prior evidence and observable success. Carry the requested delivery endpoint and existing authorization through implementation, verification and handoffs. For end-to-end work, continue through `aep --skill deliver` and its closure guidance once validation is ready; explicit analysis, review or candidate-only requests keep their stated scope. `aep context` follows explicit links and accepted decisions referring back to that context; inspect relevant code and runtime behavior as the task requires. Use `--json` for complete structured records when a human summary omits details needed for a decision.
 
+For product refocusing, priority or benchmark decisions, use `aep --skill roadmap` to research the purpose, discuss the recommendation and maintain product context from the user's direction; continue through design when a selected change needs a contract.
+
 ## Read guidance as needed
 
 `aep --skill NAME` prints a complete procedure. `aep --skill NAME --ref REFERENCE` prints its supporting resource. REFERENCE accepts a catalog name such as `status` or its Markdown link path `references/status.md`. The list below includes the bundled procedures and any procedures discovered in this project. These commands serve Markdown directly from the executable or project; reading guidance needs no model key or installed AEP plugin.

@@ -79,7 +79,7 @@ def main():
             catalog = aep(fixture, "--skill")
             assert len(catalog["skills"]) == 8, catalog
             summary["guidance"] = catalog["metadata"]
-            for argv in [("project",), ("design", "--ref", "prototype"), ("validate", "--ref", "self-verification")]:
+            for argv in [("project",), ("roadmap", "--ref", "purpose-research"), ("roadmap", "--ref", "product-context"), ("design", "--ref", "prototype"), ("validate", "--ref", "self-verification")]:
                 aep(fixture, "--skill", *argv)
             summary["surfaces"].append("embedded guidance outside source checkout")
             aep(fixture, "init")
