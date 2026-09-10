@@ -76,3 +76,17 @@ Agent 加入 change 下的 `verification.md` 後，自行透過 verify plan 察�
 Agent 保存 progress record `20260910T160051Z573135044` 並 sync；這輪不是唯讀實驗。未建立 PR、合併、發布 spec 或替換 PATH binary，與這次「自主完成實作」的交付界線一致；不把交付資格當成已整合。MITS-108 原有分支／worktree 仍保留，其 freshness／恢復問題未在此解決。
 
 結論限於此案例：在使用者釐清目標後，agent 自行完成 reflection → design／prototype → dispatch／隔離實作 → 驗證／失敗恢復 → 獨立 review → readiness 檢查。觀察者沒有代補操作指令。真正的 PR／integration／cleanup 銜接尚未在本輪執行，因此不宣稱整個交付生命週期已驗證。
+
+## 目錄分類核對
+
+使用者另問資料是否寫回 v5 規劃的分類。觀察者比對 `1d775db..21347f7` 的 shared-store diff、implementation 的 `b26ccab..8d27541` diff 與 `.aep/config.toml`：
+
+- 原生 lesson 在 `lesson-learned/observations/`；長篇 reflection 與篩選後 JSON 在同一 lessons store 下的 `reflections/`，由 lesson 的 data 與內文指向。
+- Story、attempt、events、check evidence、review 分別在 `project-ledger/stories/`、`attempts/`、`events/`、`evidence/`、`reviews/`。
+- Change contract、BDD delta、prototype 與驗證摘要在 `project-ledger/changes/status-evidence-scope/`。
+- Product code／tests 只在 implementation worktree 的兩個既有 Rust 檔案；shared store 保存上述紀錄。兩部分各有已提交的 commit，尚未進 main。
+- 沒有更新 legacy `product-context.yaml`、`lessons-learned/` 或 `.dev-workflow/`。未採納新規則，未發布已整合規格，因此沒有要求本輪修改 `project-rules/` 或 `project-roadmap/specs/`。
+
+`aep check` 與 `aep migrate verify` 重新讀取後皆 PASS（330 records）。這支持 native records 的結構／路由與 legacy 來源保留，不代表所有手寫文件分類都已被 CLI 強制驗證。
+
+需要保留的規約問題：agent 將 design rationale 寫成 change 內的 `design.md`，沒有新增 `docs/design/` 草稿或 `project-roadmap/decisions/` ADR。Native design skill 指示 drafts／accepted tradeoffs 的落點，但 CLI workflow guide 又允許 change 含 design prose；不能僅憑本輪沒有獨立 ADR 就定為違規。應釐清何時 change 內文已足夠、何時需獨立草稿／decision，並保持文件與入口說明一致。本輪没有移動檔案或事後補造 ADR。
