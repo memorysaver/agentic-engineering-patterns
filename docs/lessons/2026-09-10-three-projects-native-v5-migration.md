@@ -74,6 +74,20 @@ Native check/migration verification passed in all three originals. Additional ob
 
 These do not verify every imported feature. Looplia's broad typecheck/E2E limitations remain explicit. MITS's full Rust suite, deferred Layer 19 work and model/benchmark downloads were not claimed. Rewarc's blocked OBS dispatch correctly refuses its state and two unverified imported dependencies; a lifecycle command requiring a feature worktree correctly refuses the migration root. No paid provider run or deployment was used to make migration look complete.
 
+## 11. Verify a fresh clone after integration
+
+PR integration exposed a boundary that original-machine checks missed. Looplia's receipt required an untracked `.claude/settings.json`; the original checkout passed, but a fresh GitHub clone failed migration verification. PR [#362](https://github.com/memorysaver/looplia/pull/362) retained that exact digest as a source-machine observation instead of a portable file requirement. Its tracked `.claude/settings.local.json` stayed mandatory. A negative control confirmed changing the tracked file still fails. No local host contents were published.
+
+Source-commit reachability also matters. Looplia's required squash integration leaves the migration source commit off develop ancestry, so its migration branch remains on origin. MITS and Rewarc use merge commits to preserve source ancestry. A full fresh clone, rather than only the original checkout or a shallow integration tip, exercises both provenance and portable files. Future CLI import should distinguish Git-backed consumer requirements from untracked local-host observations at receipt creation.
+
+## 12. Exercise the project's actual CI scanners
+
+Rewarc PR #131's first Semgrep job rejected `yaml.load` even though its loader inherited the safe loader. The fix uses explicit safe-loader construction, single-document parsing and disposal, retaining native timestamp strings without mutating global resolvers. The regression verifies constructor-time rejection of a Python object tag; a generic final CLI failure alone would not prove the payload was never executed. Scanner rules remain unchanged. Local focused tests and remote checks are distinct evidence, and the latest PR head must complete the required checks before integration.
+
+## 13. Check manifest identity pins after changing scripts
+
+Rewarc's dependency-assurance CI binds the complete root package.json bytes, including scripts. Replacing the formatter command for source-preserving migration left dependency declarations and all lockfiles unchanged but invalidated the current-installation manifest pin. Update that exact pin after comparing the full manifest delta; retain historical evaluation digests and all dependency constraints. The bounded correction passed 16 dependency-assurance/format-ratchet tests and independent review. Treat this as a missed migration consumer, rather than waiving the dependency check.
+
 ## Candidates for future AEP work
 
 Observed recurring gaps suggest targeted improvements: scope/provenance separation during import; detection of active legacy consumer paths; clearer archive mapping support; a migration-aware correction path for immutable records; and visibility into whether human-owned risk floors reached native config. These are grounded follow-up candidates, not accepted changes or extra mandatory workflow phases. The current run repaired the three projects and retained evidence before proposing broader automation.
