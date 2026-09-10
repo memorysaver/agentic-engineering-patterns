@@ -1,5 +1,7 @@
 # AEP v5 preview：雙版本並存與保留來源的 migration
 
+> Interface amendment (2026-09-10): [Human-readable CLI](aep-v5-human-cli.md) replaces the earlier `skills` command examples with `aep --skill`. Other accepted constraints remain applicable.
+
 日期：2026-09-10。狀態：**方向已接受；實作與發布證據另行記錄**。
 
 依據本次使用者決定：先記錄設計、用 subagents 分別完整 review，再收斂 `feat/aep-5-native-cli`，準備給 downstream 實際測試。第一個候選採 `5.0.0-preview.1`；它不是 stable 5.0，也不宣稱已有 production pilot 證據。

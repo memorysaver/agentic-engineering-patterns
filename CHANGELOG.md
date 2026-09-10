@@ -16,6 +16,9 @@ product work, integration evidence, and release history.
 
 ## [Unreleased] — 5.0.0-preview.1
 
+- Redesign the clap CLI for human-readable help, status, context and operation results. Keep complete structured responses behind `--json`; preserve exit codes and mutation behavior. No TUI is added.
+- Replace the unreleased `aep skills` command family with `aep --skill [NAME] [--ref NAME]`. The default emits a complete SKILL.md entrypoint; named procedures/references emit exact Markdown without metadata footers. Update active entrypoints and embedded guidance together.
+
 - Exercise isolated downstream adoption in Looplia, MITS and Rewarc. Preserve binary migration evidence and legacy hold states; map overlapping story/OpenSpec IDs with source-scoped provenance. Record project-specific cutover gaps separately from CLI fixture success.
 
 - Add the native Rust CLI, embedded skill catalog/references, local procedure discovery, short AGENTS.md entrypoint, and tracked project configuration.

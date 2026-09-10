@@ -11,7 +11,7 @@ Use `aep migrate plan --story <id> --output <plan>` to preview conversion. Repea
 
 Commit exact source files before cutover so imported context remains retrievable by commit/path/digest. Apply with `aep migrate apply --plan <plan>` and run `aep migrate verify`. Resolve source drift with a fresh plan and preserve edited native targets. Inspect copied rules/lessons and their relative links alongside retained originals.
 
-Switch affected readers/writers together and finish or explicitly restart old-contract attempts. Use `aep skills show project` to reconcile instruction discovery, project constraints and the selected workflow. Legacy workflow commands remain historical context; subsequent work updates native stores. Reading native guidance alone leaves migration unapplied.
+Switch affected readers/writers together and finish or explicitly restart old-contract attempts. Use `aep --skill project` to reconcile instruction discovery, project constraints and the selected workflow. Legacy workflow commands remain historical context; subsequent work updates native stores. Reading native guidance alone leaves migration unapplied.
 
 Commit the coherent migration after context and checks work. Git revert or selective restore supplies recovery; returning to a legacy workflow after native work requires an explicit handoff of new facts. Use `aep recover` for interrupted CLI file transactions.
 

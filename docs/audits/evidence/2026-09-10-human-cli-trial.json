@@ -1,0 +1,204 @@
+{
+  "artifact": {
+    "binary": "/home/memorysaver/.local/share/aep/builds/dcf177ca0c90eb99/bin/aep",
+    "sha256": "dcf177ca0c90eb99e991eaf87130b8a7e0444e9bed13b6f2e50b9e7f393008dd"
+  },
+  "projects": [
+    {
+      "project": "looplia",
+      "head": "b20c5cebc83d02f60947ee55d64015b253d78587",
+      "tracked_and_untracked_files_unchanged": 4805,
+      "checks": [
+        {
+          "args": ["--help"],
+          "exit_code": 0,
+          "stdout_lines": 60
+        },
+        {
+          "args": ["--skill"],
+          "exit_code": 0,
+          "stdout_lines": 59
+        },
+        {
+          "args": ["--skill", "verify-looplia"],
+          "exit_code": 0,
+          "stdout_lines": 14
+        },
+        {
+          "args": ["doctor"],
+          "exit_code": 0,
+          "stdout_lines": 16
+        },
+        {
+          "args": ["status"],
+          "exit_code": 0,
+          "stdout_lines": 65
+        },
+        {
+          "args": ["--json", "status"],
+          "exit_code": 0,
+          "stdout_lines": 1
+        },
+        {
+          "args": ["check"],
+          "exit_code": 0,
+          "stdout_lines": 4
+        },
+        {
+          "args": ["migrate", "verify"],
+          "exit_code": 0,
+          "stdout_lines": 7
+        },
+        {
+          "args": ["--json", "init", "--dry-run"],
+          "exit_code": 0,
+          "stdout_lines": 1
+        }
+      ]
+    },
+    {
+      "project": "MITS",
+      "head": "4c17c9e41759e8bb9be05281c57ef531808ce696",
+      "tracked_and_untracked_files_unchanged": 2631,
+      "checks": [
+        {
+          "args": ["--help"],
+          "exit_code": 0,
+          "stdout_lines": 60
+        },
+        {
+          "args": ["--skill"],
+          "exit_code": 0,
+          "stdout_lines": 59
+        },
+        {
+          "args": ["--skill", "verify-mits"],
+          "exit_code": 0,
+          "stdout_lines": 60
+        },
+        {
+          "args": ["doctor"],
+          "exit_code": 0,
+          "stdout_lines": 16
+        },
+        {
+          "args": ["status"],
+          "exit_code": 0,
+          "stdout_lines": 28
+        },
+        {
+          "args": ["--json", "status"],
+          "exit_code": 0,
+          "stdout_lines": 1
+        },
+        {
+          "args": ["check"],
+          "exit_code": 0,
+          "stdout_lines": 4
+        },
+        {
+          "args": ["migrate", "verify"],
+          "exit_code": 0,
+          "stdout_lines": 7
+        },
+        {
+          "args": ["--json", "init", "--dry-run"],
+          "exit_code": 0,
+          "stdout_lines": 1
+        }
+      ]
+    },
+    {
+      "project": "Rewarc-AutoResearch",
+      "head": "c1ef641e3fdeda6969921b1d265c9685b857f405",
+      "tracked_and_untracked_files_unchanged": 2987,
+      "checks": [
+        {
+          "args": ["--help"],
+          "exit_code": 0,
+          "stdout_lines": 60
+        },
+        {
+          "args": ["--skill"],
+          "exit_code": 0,
+          "stdout_lines": 59
+        },
+        {
+          "args": ["--skill", "e2e-test"],
+          "exit_code": 0,
+          "stdout_lines": 150
+        },
+        {
+          "args": ["doctor"],
+          "exit_code": 0,
+          "stdout_lines": 16
+        },
+        {
+          "args": ["status"],
+          "exit_code": 0,
+          "stdout_lines": 62
+        },
+        {
+          "args": ["--json", "status"],
+          "exit_code": 0,
+          "stdout_lines": 1
+        },
+        {
+          "args": ["check"],
+          "exit_code": 0,
+          "stdout_lines": 4
+        },
+        {
+          "args": ["migrate", "verify"],
+          "exit_code": 0,
+          "stdout_lines": 7
+        },
+        {
+          "args": ["--json", "init", "--dry-run"],
+          "exit_code": 0,
+          "stdout_lines": 1
+        }
+      ]
+    }
+  ],
+  "passed": true,
+  "disposable_fixture": {
+    "binary": "/home/memorysaver/.local/share/aep/builds/dcf177ca0c90eb99/bin/aep",
+    "binary_sha256": "dcf177ca0c90eb99e991eaf87130b8a7e0444e9bed13b6f2e50b9e7f393008dd",
+    "surfaces": [
+      "embedded guidance outside source checkout",
+      "v4 initialization and source preservation",
+      "migration, verification, and repeated apply",
+      "read-only inspection and independent native writes"
+    ],
+    "passed": true,
+    "version": "aep 5.0.0-preview.1",
+    "legacy_hashes": {
+      "product-context.yaml": "76037f265c3bb371dcb6aec74a68834db54dd0c10a2e4948771adfea193b6219",
+      "project-convention/README.md": "cfab584c9defcc6d0666f0bd92e8efe3220de7958f965ab02899c21cfba0a28a",
+      "lessons-learned/runtime.md": "285b56790107b4e8bdccd6866e084fa5118a4a577a0262dbb91b8afcae608cb5",
+      ".agents/skills/aep-build/SKILL.md": "494c5a58bd8b7929559918b319b4d8c400b63784790d4159ff454ec7fb06f8f1"
+    },
+    "guidance": {
+      "bundle_digest": "1e48dcf132b4f7ab5ca9c0e05ceece2142c34caa0ccd9688242d3f7aa12a16ce",
+      "complete": true,
+      "release": "5.0.0-preview.1"
+    },
+    "fixture_removed": true
+  },
+  "validation": {
+    "rust_tests_passed": 69,
+    "fmt": true,
+    "clippy": true,
+    "skill_checks": 4,
+    "native_skills_validated": 9,
+    "mits_bun_check": true,
+    "rewarc_bun_check": true,
+    "rewarc_operational_truth": true,
+    "review": "Two renderer findings fixed and independently rechecked; 28 downstream entrypoint changes independently reviewed with no material findings."
+  },
+  "archive": {
+    "path": "/home/memorysaver/.local/share/aep/builds/dcf177ca0c90eb99/aep-5.0.0-preview.1-linux-x86_64.tar.gz",
+    "sha256": "17e5d3bde8f99f2cca061196bfc9952881177babd800361692302691416a2e44"
+  }
+}

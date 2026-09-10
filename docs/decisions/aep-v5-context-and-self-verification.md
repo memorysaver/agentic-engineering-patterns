@@ -1,5 +1,7 @@
 # AEP v5：以 context 與 self verification 收斂 skill 分類
 
+> Interface amendment (2026-09-10): [Human-readable CLI](aep-v5-human-cli.md) replaces the earlier `skills` command examples with `aep --skill`. Other accepted constraints remain applicable.
+
 日期：2026-09-10。狀態：**分類與核心方向已接受，實作證據另行記錄**。使用者已要求據此收斂 v5 分支，完成獨立 review 並準備 downstream preview；見 [preview 採用決策](aep-v5-preview-adoption.md)。
 
 使用者已指定方向：AEP 的核心是 context 的完整度與 self verification 指引；gen-eval 等通用 pattern 交給模型自主運用。本文件記錄這個方向在既有 8 個 native skills、24 項 legacy 能力與 Rust CLI 上的落點。以下「目前」描述研究時點的實作；它與目標的差距需由後續 implementation audit 核實，接受決策不等於所有契約已實作或發布。

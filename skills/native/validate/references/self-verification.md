@@ -2,7 +2,7 @@
 
 Start from accepted intent and the actual diff or artifact. Identify which claims changed and which established checks still apply. For each important claim, connect its acceptance source to an operation, expected result, observed result, revision/environment, and retained artifact. A short evidence note can express this; it is not a new CLI receipt schema.
 
-Use the project's verification skill and Feature Map. If the operation method is missing, read `aep skills show project --ref verification-setup` and establish the smallest useful harness within task scope. Run preflight first so missing credentials, dependencies or services are distinguishable from product defects.
+Use the project's verification skill and Feature Map. If the operation method is missing, read `aep --skill project --ref verification-setup` and establish the smallest useful harness within task scope. Run preflight first so missing credentials, dependencies or services are distinguishable from product defects.
 
 | Surface | Useful observation | Limit of narrower evidence |
 | --- | --- | --- |

@@ -2,7 +2,7 @@
 
 Find existing test commands, CLI/API/browser controls, fixtures, and journeys. Start with an operation a user can actually perform, including an observable result or side effect. Unit tests remain useful, but product claims also need evidence at the relevant public surface.
 
-Create or repair a local skill such as `project-rules/skills/verify-<project>/SKILL.md`, adapting to the configured rules store or an existing registered `skill_paths` location. Give it a distinct frontmatter name and an applicability description; local names cannot shadow bundled skills. The initialized project's `aep skills` and `aep skills show <name>` should discover it. Keep references as directly contained Markdown files with simple names for `--ref`; link existing deeper journey files directly when needed.
+Create or repair a local skill such as `project-rules/skills/verify-<project>/SKILL.md`, adapting to the configured rules store or an existing registered `skill_paths` location. Give it a distinct frontmatter name and an applicability description; local names cannot shadow bundled skills. The initialized project's `aep --skill` and `aep --skill <name>` should discover it. Keep references as directly contained Markdown files with simple names for `--ref`; link existing deeper journey files directly when needed.
 
 The procedure should teach the parts another agent cannot infer reliably:
 

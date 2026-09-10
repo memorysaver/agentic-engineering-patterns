@@ -11,7 +11,7 @@ Install the pinned Rust toolchain with rustup, then run from this checkout:
 ```bash
 cargo install --locked --path crates/aep-cli
 aep --version
-aep skills
+aep --skill
 ```
 
 In a project with Git history:
@@ -19,7 +19,7 @@ In a project with Git history:
 ```bash
 aep init
 aep doctor
-aep skills show project
+aep --skill project
 ```
 
 The installation needs the binary and a short `AGENTS.md` entrypoint. `aep init --claude` also adds an `@AGENTS.md` pointer. Instructions and references are embedded in the binary. The CLI runs independently of this source checkout, Node, and Bun. It needs no LLM key, OpenSpec CLI, or per-runtime skill copies for its normal lifecycle.
@@ -41,10 +41,11 @@ Stores are created when needed. A maintenance story can exist without a user jou
 
 ## Working with AEP
 
-Start with `aep skills`. Read a selected procedure with `aep skills show design`, or a reference with `aep skills show design --ref bdd`. The agent selects procedures from the request and context; the CLI has no model or semantic route command.
+Start with `aep --skill`. Read a selected procedure with `aep --skill design`, or a reference with `aep --skill design --ref bdd`. The agent selects procedures from the request and context; the CLI has no model or semantic route command.
 
 Use `aep status`, `aep context <id>`, `aep query`, and `aep timeline` to inspect recorded facts. Use structured files or `--file -` to author records. `aep check` validates the project; verification runs its configured commands in the bound worktree. Self verification produces revision-bound check evidence; explicit project policy can also require independent review. Delivery records actual integration separately from accepted intent and published specifications.
 
+- [Human-readable CLI decision](docs/decisions/aep-v5-human-cli.md)
 - [Native CLI and configuration](docs/workflow/aep-v5-cli.md)
 - [Migration and OpenSpec compatibility](docs/workflow/aep-v5-migration.md)
 - [5.0 architecture and accepted design](docs/decisions/aep-v5-rust-cli-architecture.md)

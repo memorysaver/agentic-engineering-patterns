@@ -1,5 +1,7 @@
 # AEP 5.0: Rust CLI, project context, and verification
 
+> Interface amendment (2026-09-10): [Human-readable CLI](aep-v5-human-cli.md) replaces the earlier `skills` command examples with `aep --skill`. Other accepted constraints remain applicable.
+
 AEP 5.0 installs as a Rust `aep` binary and a short AGENTS.md entrypoint. The working agent interprets the request, selects skills, and decides the work sequence. The binary serves the requested instructions, maintains project records, and runs explicit operations and checks. OpenSpec remains an integrated specification format and optional interoperability tool.
 
 **Status:** Accepted architecture; implemented on the 5.0 development branch. **Target:** AEP 5.0.0, selected by the user. **Date:** 2026-09-09. The native command contract is documented in [the implementation guide](../workflow/aep-v5-cli.md); the published legacy release remains v4.1.0 until release publication.

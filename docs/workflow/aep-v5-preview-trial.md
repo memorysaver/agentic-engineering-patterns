@@ -9,7 +9,7 @@ Before publication, install from the reviewed candidate checkout into a separate
 ```bash
 cargo install --locked --path crates/aep-cli --root /tmp/aep-v5-preview
 /tmp/aep-v5-preview/bin/aep --version
-/tmp/aep-v5-preview/bin/aep skills
+/tmp/aep-v5-preview/bin/aep --skill
 ```
 
 Use that exact executable throughout the trial or put its `bin` directory first on the trial shell's PATH. Verify the selected version before using the short `aep` commands below. An existing installed executable or legacy skill package is not removed by this isolated install. The installed binary carries the preview guidance and needs no source checkout or JavaScript runtime.
@@ -26,7 +26,7 @@ Tell the working agent the selected version and task, for example:
 
 ```text
 Use AEP v5 preview for this migration and subsequent trial.
-Read the project's rules and `aep skills`.
+Read the project's rules and `aep --skill`.
 Preserve v4 skills and migration sources.
 Preview the conversion, resolve concrete source/consumer conflicts,
 then apply it and use v5 stores for the selected work.
@@ -60,11 +60,11 @@ aep context <imported-story-id> --json
 
 Inspect the actual generated `project-ledger/`, `project-roadmap/`, `project-rules/`, `lesson-learned/`, `.aep/config.toml` and AGENTS route. Verify the selected default is v5 and compare legacy source/skill bytes with the recorded base. Root entrypoints are intentionally updated; their original content remains an attributed source. Imported completion is still an unverified historical claim.
 
-Preserve explicitly configured downstream review/check requirements. A fresh native config defaults to self verification. Checks-only completion is permitted when policy allows it and no unresolved review findings remain; a project requiring independent review still needs that evidence. Use the [configuration guide](aep-v5-cli.md) and `aep skills show project` to configure the project's actual checks.
+Preserve explicitly configured downstream review/check requirements. A fresh native config defaults to self verification. Checks-only completion is permitted when policy allows it and no unresolved review findings remain; a project requiring independent review still needs that evidence. Use the [configuration guide](aep-v5-cli.md) and `aep --skill project` to configure the project's actual checks.
 
 ## Run one real task
 
-Select a bounded task with an observable outcome and load its context. Use `aep skills show design` when intent or a technical decision remains unresolved; use its prototype reference when an experiment can answer the question. Discover or establish the project's own runtime verification procedure before claiming behavior works.
+Select a bounded task with an observable outcome and load its context. Use `aep --skill design` when intent or a technical decision remains unresolved; use its prototype reference when an experiment can answer the question. Discover or establish the project's own runtime verification procedure before claiming behavior works.
 
 Implement in the proper worktree, execute applicable checks and real user paths, then perform only the requested delivery action. Preserve results and relevant lessons. New work writes to v5; original v4 files remain historical input, not a second status database.
 

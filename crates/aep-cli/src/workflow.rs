@@ -596,7 +596,9 @@ pub fn verify(args: &Cli, s: &Store, snap: &Snapshot, command: &cli::Verify) -> 
             r.set("stale_reason", "Inputs changed during verification");
         }
     }
+    let check_results = json!(receipts);
     let mut out = save(s, &fresh, receipts, BTreeMap::new(), false)?;
+    out.data["check_results"] = check_results;
     if failed || stale {
         out.exit_code = 1;
     }
@@ -763,7 +765,7 @@ pub fn dispatch(
             }
             let actual = attempt_path(s, &attempt)?;
             let mut out = Outcome::ok(
-                json!({"attempt":record_json(&attempt),"worktree":actual,"launch_request":{"cwd":actual,"store":s.root,"prompt":format!("Read AGENTS.md and aep skills show implement. Implement story {} in this worktree. Use aep --root {} for shared records. Record actual checks and results.",attempt.refs[0],s.root.display())},"worker_started":false}),
+                json!({"attempt":record_json(&attempt),"worktree":actual,"launch_request":{"cwd":actual,"store":s.root,"prompt":format!("Read AGENTS.md and aep --skill implement. Implement story {} in this worktree. Use aep --root {} for shared records. Record actual checks and results.",attempt.refs[0],s.root.display())},"worker_started":false}),
             );
             out.changed = true;
             Ok(out)

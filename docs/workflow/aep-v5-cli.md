@@ -12,7 +12,11 @@ separate checksum. Native release jobs depend only on native validation. Git and
 tools explicitly required by the requested operation remain external dependencies.
 Dashboard implementation is deferred; native inspection uses the commands below.
 
-`aep skills` lists the catalog. `aep skills show design` reads one procedure; `aep skills show design --ref bdd` reads one reference. Catalog/show work outside Git and without project setup. Responses identify release, source, digest, and completeness. Project procedures in `project-rules/skills/<name>/SKILL.md`, or configured `skill_paths`, use the same interface. Duplicate names are errors.
+`aep --help` groups commands by purpose and shows examples. Bare command groups such as `aep verify` show their help without doing work. Normal command output is human-readable; `--json` returns complete structured results, revisions and diagnostics. Large human summaries explicitly report omitted entries. JSON remains the interface for scripts and exhaustive context retrieval.
+
+`aep --skill` prints the complete agent entrypoint in SKILL.md format (YAML frontmatter and Markdown), including discovered procedures. `aep --skill design` reads one procedure; `aep --skill design --ref bdd` reads one reference. Named procedure/reference output is byte-exact source text without transport footers. These commands work outside Git and without project setup. Add `--json` for release, source, digest, completeness and reference metadata. Project procedures in `project-rules/skills/<name>/SKILL.md`, or configured `skill_paths`, use the same interface. Duplicate names and the reserved entrypoint name `aep` are errors.
+
+This unreleased preview replaces `aep skills` and `aep skills show` with the single `--skill` surface; no alias or second skill entrypoint remains. Update active project instructions and scripts together with the binary. Historical migration sources retain their original commands.
 
 Run `aep init` in an existing Git repository. It creates `.aep/config.toml`, a rules index if needed, and an explicit AGENTS workflow route. A detected legacy project defaults to v4; a fresh project defaults to v5. An explicit user choice takes precedence. Existing project instructions and legacy skill files are preserved; `--claude` adds `@AGENTS.md`. `--dry-run` exposes planned files. Repeated initialization preserves the route. Migration explicitly switches ownership to v5 while retaining legacy source files. See the [preview trial](aep-v5-preview-trial.md).
 

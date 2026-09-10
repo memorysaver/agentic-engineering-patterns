@@ -102,7 +102,7 @@ fn init_preserves_legacy_default_and_migration_selects_v5_without_changing_sourc
         .iter()
         .map(|p| fs::read(root.join(p)).unwrap())
         .collect();
-    call(root, &["skills"], 0);
+    call(root, &["--skill"], 0);
     assert!(!root.join(".aep/config.toml").exists());
     call(root, &["init"], 0);
     let entry = fs::read(root.join("AGENTS.md")).unwrap();

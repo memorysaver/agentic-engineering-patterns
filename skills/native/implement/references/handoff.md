@@ -1,6 +1,6 @@
 # Task context and continuity
 
-Assemble a small, source-linked handoff: selected workflow/release, task outcome and authority, story/change IDs, acceptance, applicable rules/decisions, relevant source areas, and the verification entrypoint. `aep context` supplies linked records; add reality and missing constraints from source/runtime as needed. Read `aep skills show project --ref context-sources` for a context gap.
+Assemble a small, source-linked handoff: selected workflow/release, task outcome and authority, story/change IDs, acceptance, applicable rules/decisions, relevant source areas, and the verification entrypoint. `aep context` supplies linked records; add reality and missing constraints from source/runtime as needed. Read `aep --skill project --ref context-sources` for a context gap.
 
 Include the base/head, branch, worker cwd, shared store root, attempt ID, setup commands and owned resources. Record known unknowns and existing evidence with its revision/environment. Pass the same information to a delegated worker; use the host's actual handle and observed status instead of equating a prepared claim with a running agent.
 

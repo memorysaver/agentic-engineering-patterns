@@ -76,11 +76,11 @@ def main():
             summary["legacy_hashes"] = legacy_hashes
             run(["git", "-C", fixture, "add", "."], fixture)
             run(["git", "-C", fixture, "-c", "core.hooksPath=/dev/null", "-c", "commit.gpgsign=false", "commit", "-qm", "legacy fixture"], fixture)
-            catalog = aep(fixture, "skills")
+            catalog = aep(fixture, "--skill")
             assert len(catalog["skills"]) == 8, catalog
             summary["guidance"] = catalog["metadata"]
             for argv in [("project",), ("design", "--ref", "prototype"), ("validate", "--ref", "self-verification")]:
-                aep(fixture, "skills", "show", *argv)
+                aep(fixture, "--skill", *argv)
             summary["surfaces"].append("embedded guidance outside source checkout")
             aep(fixture, "init")
             assert "AEP default: v4" in (fixture / "AGENTS.md").read_text()

@@ -5,7 +5,7 @@ description: Resolve change intent, product criteria, and technical uncertainty 
 
 # Design
 
-Read the relevant story, accepted contracts, rules, and ADRs through `aep context <id>` and task-selected sources. Establish outcome, boundaries, interfaces, failure cases, and observable success. Use `aep skills show project --ref context-sources` when important context is missing.
+Read the relevant story, accepted contracts, rules, and ADRs through `aep context <id>` and task-selected sources. Establish outcome, boundaries, interfaces, failure cases, and observable success. Use `aep --skill project --ref context-sources` when important context is missing.
 
 Read [Design criteria](references/design-criteria.md) when domain structure, usability, or the user's quality expectations need resolution. For a concrete uncertainty that an experiment can answer, read [Prototype decisions](references/prototype.md). Choose exploration depth from the actual unknowns.
 

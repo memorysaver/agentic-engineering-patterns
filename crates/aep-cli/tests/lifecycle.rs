@@ -163,8 +163,8 @@ fn standalone_binary_reads_native_state_with_only_git_on_path() {
         );
         serde_json::from_slice(&output.stdout).unwrap()
     };
-    assert_eq!(run(&["skills"])["side_effects"], false);
-    let reference = run(&["skills", "show", "design", "--ref", "bdd"]);
+    assert_eq!(run(&["--skill"])["side_effects"], false);
+    let reference = run(&["--skill", "design", "--ref", "bdd"]);
     assert!(
         reference["data"]["content"]
             .as_str()
@@ -223,7 +223,7 @@ fn standalone_binary_reads_native_state_with_only_git_on_path() {
 fn offline_guidance_and_idempotent_setup() {
     let d = tempfile::tempdir().unwrap();
     let offline = Command::new(env!("CARGO_BIN_EXE_aep"))
-        .args(["--json", "skills"])
+        .args(["--json", "--skill"])
         .current_dir(d.path())
         .env("PATH", "")
         .output()
@@ -235,19 +235,19 @@ fn offline_guidance_and_idempotent_setup() {
     );
     assert_eq!(
         serde_json::from_slice::<Value>(&offline.stdout).unwrap()["operation"],
-        "skills"
+        "skill"
     );
-    let skills = call(d.path(), &["skills"], 0);
+    let skills = call(d.path(), &["--skill"], 0);
     assert!(skills.to_string().contains("design"));
-    let selected = call(d.path(), &["skills", "show", "design", "--ref", "bdd"], 0);
+    let selected = call(d.path(), &["--skill", "design", "--ref", "bdd"], 0);
     assert!(
         selected["content"]
             .as_str()
             .unwrap()
             .contains("# BDD contracts")
     );
-    call(d.path(), &["skills", "route"], 2);
-    call(d.path(), &["skills", "show", "missing"], 2);
+    call(d.path(), &["--skill", "route"], 2);
+    call(d.path(), &["--skill", "missing"], 2);
     let d = setup();
     let root = d.path();
     let before = fs::read(root.join("AGENTS.md")).unwrap();
@@ -259,7 +259,7 @@ fn offline_guidance_and_idempotent_setup() {
         "---\nname: monet-test\ndescription: Project-specific test procedure.\n---\n\nRead project-rules/README.md.\n",
     );
     assert!(
-        call(root, &["skills"], 0)
+        call(root, &["--skill"], 0)
             .to_string()
             .contains("monet-test")
     );
@@ -271,7 +271,7 @@ fn offline_guidance_and_idempotent_setup() {
     fs::write(&config_path, toml::to_string(&config).unwrap()).unwrap();
     write(root, "package/.aep/config.toml", "cli_version = '6.0.0'\n");
     let nested = Command::new(env!("CARGO_BIN_EXE_aep"))
-        .args(["--json", "skills"])
+        .args(["--json", "--skill"])
         .current_dir(root.join("package"))
         .env("PATH", "")
         .output()
@@ -296,7 +296,7 @@ fn offline_guidance_and_idempotent_setup() {
         "project-rules/skills/collision/SKILL.md",
         "---\nname: design\ndescription: Duplicate.\n---\n\nContent.\n",
     );
-    call(root, &["skills"], 2);
+    call(root, &["--skill"], 2);
 }
 #[test]
 fn local_lifecycle_preserves_evidence_through_integration_and_publication() {
@@ -375,7 +375,17 @@ fn changed_bdd_and_new_failed_evidence_block_delivery_and_gates() {
     fs::remove_file(path.join("src/result.txt")).unwrap();
     git(&path, &["add", "."]);
     git(&path, &["commit", "-qm", "regression"]);
-    call(root, &["verify", "run", "--story", "S"], 1);
+    let failed = call(root, &["verify", "run", "--story", "S"], 1);
+    assert_eq!(failed["check_results"][0]["status"], "fail");
+    let human = Command::new(env!("CARGO_BIN_EXE_aep"))
+        .args(["verify", "run", "--story", "S"])
+        .current_dir(root)
+        .output()
+        .unwrap();
+    assert_eq!(human.status.code(), Some(1));
+    let output = String::from_utf8(human.stdout).unwrap();
+    assert!(output.contains("FAIL — evidence saved"), "{output}");
+    assert!(output.contains("Check id:"), "{output}");
     assert_eq!(
         call(root, &["dispatch", "plan", "--story", "D"], 0)["stories"][0]["ready"],
         false

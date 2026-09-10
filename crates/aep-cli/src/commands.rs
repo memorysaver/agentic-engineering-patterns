@@ -57,8 +57,14 @@ pub fn store(args: &Cli) -> Result<Store> {
     Store::open(&args.root)
 }
 pub fn run(args: &Cli) -> Result<Outcome> {
-    match &args.command {
-        Command::Skills { command } => return guidance::run(args, command.as_ref()),
+    if let Some(name) = &args.skill {
+        return guidance::run(args, name, args.reference.as_deref());
+    }
+    let command = args
+        .command
+        .as_ref()
+        .ok_or_else(|| Error::input("Choose a command; run aep --help"))?;
+    match command {
         Command::Init { claude } => return init(args, *claude),
         Command::Doctor => return doctor(args),
         Command::Migrate { command } => return migration::run(args, command),
@@ -92,7 +98,7 @@ pub fn run(args: &Cli) -> Result<Outcome> {
             })
             .collect::<BTreeMap<_, _>>(),
     )?);
-    match &args.command {
+    match command {
         Command::Config { command } => match command {
             crate::cli::ConfigAction::Show => Ok(Outcome::ok(
                 json!({"config":s.config,"revision":digest(snap.files.get(".aep/config.toml").ok_or_else(|| Error::blocked("Missing config"))?)}),

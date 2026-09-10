@@ -2,7 +2,7 @@
 
 Use a prototype to answer a question that matters to a design decision: whether a flow is understandable, an integration works, performance meets a constraint, or a context shape lets an agent locate necessary evidence. State the question, success observation, and what outcome would change the choice.
 
-Build the smallest experiment that can produce that observation in an isolated scratch directory or worktree. Use the project's verification procedure to operate the relevant surface; read `aep skills show validate --ref self-verification` for evidence quality. One candidate or sequential experiments may be sufficient. Delegation and competing candidates are optional methods under host authority.
+Build the smallest experiment that can produce that observation in an isolated scratch directory or worktree. Use the project's verification procedure to operate the relevant surface; read `aep --skill validate --ref self-verification` for evidence quality. One candidate or sequential experiments may be sufficient. Delegation and competing candidates are optional methods under host authority.
 
 Record the tested version, environment, inputs, method, result and limitations. Compare alternatives on the decision's criterion. For example, evaluate a context index by whether a cold reader can find the actual acceptance and run its check, rather than whether its summary looks complete.
 

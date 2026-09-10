@@ -6,4 +6,4 @@ Before changing history, inspect `git status`, the diff and recent commits in th
 
 Use `aep worktree inspect --attempt <id>` and Git's worktree inventory to reconcile paths and branch ownership. Reflog and retained commits can recover lost local work; inspect recovery candidates before replacing current files. Provider integration evidence is checked through delivery commands.
 
-For cleanup, read `aep skills show deliver --ref closure`. The CLI retains worktrees after recording delivery; removal is an explicit Git/host operation after useful work and evidence are preserved. A clean worktree alone does not establish that its branch was integrated.
+For cleanup, read `aep --skill deliver --ref closure`. The CLI retains worktrees after recording delivery; removal is an explicit Git/host operation after useful work and evidence are preserved. A clean worktree alone does not establish that its branch was integrated.

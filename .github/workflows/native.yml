@@ -35,8 +35,8 @@ jobs:
         run: |
           binary="$PWD/target/${{ matrix.target }}/release/aep"
           cd "$(mktemp -d)"
-          "$binary" --json skills > catalog.json
-          "$binary" --json skills show design --ref bdd > reference.json
+          "$binary" --json --skill > catalog.json
+          "$binary" --json --skill design --ref bdd > reference.json
           python3 -c 'import json; assert json.load(open("catalog.json"))["ok"]; assert json.load(open("reference.json"))["data"]["metadata"]["complete"]'
       - name: Package native artifact
         shell: bash

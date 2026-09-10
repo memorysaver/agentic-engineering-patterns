@@ -1,7 +1,4 @@
-use crate::{
-    cli::{Cli, Skills},
-    commands::Outcome,
-};
+use crate::{cli::Cli, commands::Outcome};
 use aep_core::{Error, Result, digest, valid_id};
 use aep_store::{contained, frontmatter, parse_yaml, read_optional};
 use serde_json::{Value, json};
@@ -94,7 +91,7 @@ fn local(root: &Path, dir: &str) -> Result<Skill> {
         source: format!("project:{dir}/SKILL.md"),
     })
 }
-pub fn run(args: &Cli, command: Option<&Skills>) -> Result<Outcome> {
+pub fn run(args: &Cli, name: &str, reference: Option<&str>) -> Result<Outcome> {
     let mut skills = builtin()?;
     let requested = std::fs::canonicalize(&args.root)?;
     // Match repository-root discovery for workflow commands, without invoking Git.
@@ -142,39 +139,39 @@ pub fn run(args: &Cli, command: Option<&Skills>) -> Result<Outcome> {
         }
     }
     skills.sort_by(|a, b| a.name.cmp(&b.name));
-    if skills.windows(2).any(|s| s[0].name == s[1].name) {
+    if skills.iter().any(|s| s.name == "aep") || skills.windows(2).any(|s| s[0].name == s[1].name) {
         return Err(Error::input(
-            "Duplicate skill names; project procedures cannot shadow bundled skills",
+            "Duplicate or reserved skill name; project procedures cannot shadow bundled skills or aep",
         ));
     }
     let common =
         json!({"release":aep_core::VERSION,"bundle_digest":bundle_digest(),"complete":true});
-    match command {
-        None => {
-            let entries:Vec<_>=skills.iter().map(|s|json!({"name":s.name,"description":s.description,"read_command":format!("aep skills show {}",s.name),"source":s.source,"content_digest":digest(&s.body)})).collect();
-            let mut text="Read the catalog and select skills using the user's request and project context.\n\n".to_string();
-            text.push_str(&format!(
-                "AEP {} · guidance {} · complete\n\n",
-                aep_core::VERSION,
-                bundle_digest()
-            ));
+    match name {
+        "aep" => {
+            if reference.is_some() {
+                return Err(Error::input(
+                    "Select a procedure before using --ref; see aep --skill",
+                ));
+            }
+            let entries:Vec<_>=skills.iter().map(|s|json!({"name":s.name,"description":s.description,"read_command":format!("aep --skill {}",s.name),"source":s.source,"content_digest":digest(&s.body)})).collect();
+            let mut text = asset("SKILL.md")?;
+            text.push_str("\n## Available procedures\n\nRead only the procedure needed for your task. Project procedures retain their own rules and verification requirements.\n\n");
             for s in skills {
                 text.push_str(&format!(
-                    "- {}: {}\n  aep skills show {}\n",
+                    "- {}: {}\n  aep --skill {}\n",
                     s.name, s.description, s.name
                 ));
             }
             Ok(Outcome::text(
-                text,
-                json!({"metadata":common,"skills":entries}),
+                text.clone(),
+                json!({"metadata":common,"skills":entries,"content":text}),
             ))
         }
-        Some(Skills::Show { name, r#ref }) => {
-            let skill = skills
-                .iter()
-                .find(|s| s.name == *name)
-                .ok_or_else(|| Error::input(format!("Unknown skill {name}; inspect aep skills")))?;
-            let content = if let Some(id) = r#ref {
+        name => {
+            let skill = skills.iter().find(|s| s.name == name).ok_or_else(|| {
+                Error::input(format!("Unknown skill {name}; inspect aep --skill"))
+            })?;
+            let content = if let Some(id) = reference {
                 skill.refs.get(id).ok_or_else(|| {
                     Error::input(format!(
                         "Unknown reference {id}; available: {}",
@@ -184,20 +181,10 @@ pub fn run(args: &Cli, command: Option<&Skills>) -> Result<Outcome> {
             } else {
                 &skill.body
             };
-            let refs:Vec<_>=skill.refs.keys().map(|id|json!({"name":id,"read_command":format!("aep skills show {} --ref {id}",skill.name)})).collect();
+            let refs:Vec<_>=skill.refs.keys().map(|id|json!({"name":id,"read_command":format!("aep --skill {} --ref {id}",skill.name)})).collect();
             Ok(Outcome::text(
-                format!(
-                    "{content}\n\nAEP {} · source {} · content {} · complete\n{}",
-                    aep_core::VERSION,
-                    skill.source,
-                    digest(content),
-                    skill
-                        .refs
-                        .keys()
-                        .map(|id| format!("Reference: aep skills show {} --ref {id}\n", skill.name))
-                        .collect::<String>()
-                ),
-                json!({"metadata":common,"name":name,"reference":r#ref,"source":skill.source,"content_digest":digest(content),"content":content,"references":refs}),
+                content.clone(),
+                json!({"metadata":common,"name":name,"reference":reference,"source":skill.source,"content_digest":digest(content),"content":content,"references":refs}),
             ))
         }
     }
