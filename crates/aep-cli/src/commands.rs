@@ -218,6 +218,36 @@ pub fn save(
     dry_run: bool,
 ) -> Result<Outcome> {
     s.check_version()?;
+    // Validate records under a config written in this same transaction, while
+    // retaining the original Store for optimistic source/concurrency checks.
+    let proposed = if let Some(config) = extra.get(".aep/config.toml") {
+        let config = config
+            .as_ref()
+            .ok_or_else(|| Error::input("Cannot delete configuration"))?;
+        let config: aep_core::Config =
+            toml::from_str(config).map_err(|e| Error::input(e.to_string()))?;
+        let proposed = Store::with_config(s.root.clone(), config)?;
+        if proposed.config.cli_version != aep_core::VERSION
+            || proposed.config.schema_version != aep_core::SCHEMA
+            || proposed.config.openspec_profile != "1.12.0-common"
+        {
+            return Err(Error::unsupported(
+                "Configuration requires an unsupported release/schema/profile",
+            ));
+        }
+        if proposed.roots() != s.roots() {
+            return Err(Error::input(
+                "Transaction store roots changed; configure roots before generating a new plan",
+            ));
+        }
+        Some(proposed)
+    } else {
+        None
+    };
+    let validation_config = proposed
+        .as_ref()
+        .map(|store| &store.config)
+        .unwrap_or(&s.config);
     let mut candidate = snap.records.clone();
     let mut writes = extra;
     let mut ids = vec![];
@@ -241,7 +271,7 @@ pub fn save(
         ids.push(r.id.clone());
         writes.insert(s.record_path(r.kind, &r.id)?, Some(s.record_bytes(&r)?));
     }
-    let diagnostics = validate(&candidate, &s.config);
+    let diagnostics = validate(&candidate, validation_config);
     if !diagnostics.is_empty() {
         return Err(Error::new(
             "validation",

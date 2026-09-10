@@ -56,32 +56,112 @@ fn bind_tree(
     s: &Store,
     path: &str,
     sources: &mut BTreeMap<String, String>,
+    assets: &mut BTreeMap<String, String>,
 ) -> Result<BTreeMap<String, String>> {
     fn walk(
         s: &Store,
         path: &str,
         sources: &mut BTreeMap<String, String>,
         files: &mut BTreeMap<String, String>,
+        assets: &mut BTreeMap<String, String>,
     ) -> Result<()> {
         for entry in std::fs::read_dir(contained(&s.root, path)?)? {
             let entry = entry?;
             let rel = format!("{path}/{}", entry.file_name().to_string_lossy());
             let file = contained(&s.root, &rel)?;
             if entry.file_type()?.is_dir() {
-                walk(s, &rel, sources, files)?;
+                walk(s, &rel, sources, files, assets)?;
             } else {
-                let content = std::fs::read_to_string(file)?;
-                sources.insert(rel.clone(), digest(&content));
-                files.insert(rel, content);
+                let bytes = std::fs::read(file)?;
+                let hash = digest(&bytes);
+                sources.insert(rel.clone(), hash.clone());
+                match String::from_utf8(bytes) {
+                    Ok(content) if !content.contains('\0') => {
+                        files.insert(rel, content);
+                    }
+                    _ => {
+                        // Source-preserving migration keeps binary evidence outside
+                        // canonical UTF-8 stores. Its receipt binds the original bytes.
+                        assets.insert(rel, hash);
+                    }
+                }
             }
         }
         Ok(())
     }
     let mut files = BTreeMap::new();
     if s.root.join(path).exists() {
-        walk(s, path, sources, &mut files)?;
+        walk(s, path, sources, &mut files, assets)?;
     }
     Ok(files)
+}
+// Rebase explicit asset references only. Arbitrary prose or unfamiliar syntax
+// requires agent review; it must not silently leave a broken native reference.
+fn retained_asset_links(
+    source: &str,
+    target: &str,
+    mut content: String,
+    assets: &BTreeMap<String, String>,
+    diagnostics: &mut Vec<String>,
+) -> String {
+    fn relative(document: &str, asset: &str) -> String {
+        let parent: Vec<_> = document
+            .split('/')
+            .rev()
+            .skip(1)
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+            .collect();
+        let asset: Vec<_> = asset.split('/').collect();
+        let common = parent
+            .iter()
+            .zip(&asset)
+            .take_while(|(a, b)| a == b)
+            .count();
+        format!(
+            "{}{}",
+            "../".repeat(parent.len() - common),
+            asset[common..].join("/")
+        )
+    }
+    for path in assets.keys() {
+        let old = relative(source, path);
+        let new = relative(target, path);
+        if old == new || !content.contains(&old) {
+            continue;
+        }
+        let mut rewritten = String::new();
+        let mut cursor = 0;
+        let mut unresolved = false;
+        for (start, _) in content.match_indices(&old) {
+            let end = start + old.len();
+            let before = content[..start].chars().next_back();
+            let after = content[end..].chars().next();
+            let bounded = matches!(
+                (before, after),
+                (Some('('), Some(')' | ' ' | '#'))
+                    | (Some('<'), Some('>'))
+                    | (Some('"'), Some('"'))
+                    | (Some('\''), Some('\''))
+                    | (Some('`'), Some('`'))
+            );
+            rewritten.push_str(&content[cursor..start]);
+            if bounded {
+                rewritten.push_str(&new);
+            } else {
+                rewritten.push_str(&old);
+                unresolved = true;
+            }
+            cursor = end;
+        }
+        rewritten.push_str(&content[cursor..]);
+        content = rewritten;
+        if unresolved {
+            diagnostics.push(format!("{source}: map retained asset reference {old} explicitly in {target}; binary evidence remains at {path}"));
+        }
+    }
+    content
 }
 const HOST_SETTINGS: [&str; 3] = [
     ".claude/settings.json",
@@ -402,6 +482,11 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                 .map(String::from)
                 .collect();
                 r.owner = old["owner"].as_str().map(String::from);
+                if !status.is_empty() {
+                    // Only pending/ready are dispatchable. Preserve project holds and
+                    // unknown statuses rather than silently making them ready work.
+                    r.status = status.clone();
+                }
                 r.set("legacy_status", status.clone());
                 r.set("legacy_source", json!({"path":source_path,"record":id}));
                 if ["completed", "done"].contains(&status.as_str()) {
@@ -516,8 +601,14 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
             if let Some(architecture) = legacy.get("architecture") {
                 roadmap.set("architecture", architecture.clone());
             }
+            let mut retained_assets = BTreeMap::new();
+            let product_files = bind_tree(&s, "product", &mut sources, &mut retained_assets)?;
+            let rule_files =
+                bind_tree(&s, "project-convention", &mut sources, &mut retained_assets)?;
+            let lesson_files =
+                bind_tree(&s, "lessons-learned", &mut sources, &mut retained_assets)?;
             let mut mapped_sources = vec![];
-            for (path, content) in bind_tree(&s, "product", &mut sources)? {
+            for (path, content) in product_files {
                 if path == "product/index.yaml" || path.contains("/archive/") {
                     continue;
                 }
@@ -533,6 +624,13 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                 if content.contains(&escape) {
                     diagnostics.push(format!("{path}: map relative references escaping product/ in copied target {target}; its directory depth changes"));
                 }
+                let content = retained_asset_links(
+                    &path,
+                    &target,
+                    content,
+                    &retained_assets,
+                    &mut diagnostics,
+                );
                 mapped_sources.push(target.clone());
                 writes.insert(target, Some(content));
             }
@@ -566,7 +664,7 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                 r.set("legacy_source", json!({"path":source_path,"index":n}));
                 insert_record(&mut records, r)?;
             }
-            for (path, content) in bind_tree(&s, "project-convention", &mut sources)? {
+            for (path, content) in rule_files {
                 let target = path.replacen(
                     "project-convention/",
                     &format!("{}/", s.config.stores.rules),
@@ -578,15 +676,37 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                         diagnostics.push(format!("{path}: map relative references escaping project-convention/ in copied target {target}; its directory depth changes"));
                     }
                 }
-                let content = content.replace(
+                // Rebase ordinary rule references first. Retained evidence must
+                // continue to name its original convention path.
+                let mut content = content.replace(
                     "project-convention/",
                     &format!("{}/", s.config.stores.rules),
+                );
+                for asset in retained_assets
+                    .keys()
+                    .filter(|p| p.starts_with("project-convention/"))
+                {
+                    content = content.replace(
+                        &asset.replacen(
+                            "project-convention/",
+                            &format!("{}/", s.config.stores.rules),
+                            1,
+                        ),
+                        asset,
+                    );
+                }
+                let content = retained_asset_links(
+                    &path,
+                    &target,
+                    content,
+                    &retained_assets,
+                    &mut diagnostics,
                 );
                 writes.insert(target, Some(content));
             }
             // Keep relative note/evidence links intact. Legacy prose is searchable
             // through lesson find; new observations use typed lesson records.
-            for (path, content) in bind_tree(&s, "lessons-learned", &mut sources)? {
+            for (path, content) in lesson_files {
                 let target = path.replacen(
                     "lessons-learned/",
                     &format!("{}/", s.config.stores.lessons),
@@ -599,6 +719,13 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                 {
                     diagnostics.push(format!("{path}: map legacy lesson links and reserved observation paths explicitly for this store layout"));
                 }
+                let content = retained_asset_links(
+                    &path,
+                    &target,
+                    content,
+                    &retained_assets,
+                    &mut diagnostics,
+                );
                 writes.insert(target, Some(content));
             }
             // Keep the original root instructions as source evidence. Existing project
@@ -651,7 +778,24 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                 }
             }
             if s.root.join("openspec").exists() {
-                let imported = spec::import_bundle(&s, &snap, &s.root.join("openspec"))?;
+                let reserved = all
+                    .keys()
+                    .cloned()
+                    .chain(
+                        records
+                            .values()
+                            .filter(|r| r.kind != Kind::Change)
+                            .map(|r| r.id.clone()),
+                    )
+                    .chain(
+                        snap.records
+                            .iter()
+                            .filter(|r| r.kind != Kind::Change)
+                            .map(|r| r.id.clone()),
+                    )
+                    .collect();
+                let imported =
+                    spec::import_bundle_reserved(&s, &snap, &s.root.join("openspec"), &reserved)?;
                 for r in imported.0 {
                     insert_record(&mut records, r)?;
                 }
@@ -682,12 +826,24 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                 bind(&s.root, &s.root.join("openspec"), &mut sources)?;
             }
             // Link only explicit legacy change references; semantic matches belong to the agent.
-            let change_ids: BTreeSet<_> = records
+            let changes: Vec<_> = records
                 .values()
                 .chain(snap.records.iter())
                 .filter(|r| r.kind == Kind::Change)
-                .map(|r| r.id.clone())
                 .collect();
+            let mut change_ids: BTreeMap<_, _> = changes
+                .iter()
+                .map(|r| (r.id.clone(), r.id.clone()))
+                .collect();
+            let source_root = s.root.join("openspec");
+            for change in changes {
+                if let Some(source) = change.data.get("source")
+                    && source.get("path") == Some(&json!(source_root))
+                    && let Some(id) = source.get("change").and_then(Value::as_str)
+                {
+                    change_ids.insert(id.into(), change.id.clone());
+                }
+            }
             for id in &selected {
                 let old = &all[id];
                 if let Some(change) = old
@@ -695,8 +851,8 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                     .or_else(|| old.get("openspec_change"))
                     .and_then(Value::as_str)
                 {
-                    if change_ids.contains(change) {
-                        records.get_mut(id).unwrap().change = Some(change.into());
+                    if let Some(native_id) = change_ids.get(change) {
+                        records.get_mut(id).unwrap().change = Some(native_id.clone());
                     } else {
                         diagnostics.push(format!("{id}: referenced change {change} is absent"));
                     }
@@ -750,6 +906,9 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                 json!({"path":review_path,"consumers":consumers}),
             );
             receipt.set("source_commit", base_commit.clone());
+            receipt.set("retained_assets", json!(retained_assets.iter().map(|(path, hash)|
+                json!({"path":path,"sha256":hash,"source_commit":base_commit,"disposition":"retained_at_source"})
+            ).collect::<Vec<_>>()));
             let context_sources: BTreeMap<_, _> = sources
                 .iter()
                 .filter(|(path, _)| !HOST_SETTINGS.contains(&path.as_str()))
@@ -854,17 +1013,22 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                     "Migration base changed; generate a new plan",
                 ));
             }
-            for (path, hash) in &plan.sources {
-                if digest(std::fs::read(contained(&s.root, path)?)?) != *hash {
-                    return Err(Error::conflict(format!("Migration source changed: {path}")));
-                }
+            if !plan.writes.contains_key(".aep/config.toml")
+                && !snap.files.contains_key(".aep/config.toml")
+            {
+                return Err(Error::input("Migration must establish a configuration"));
             }
             let mut checked = snap.clone();
-            for path in plan.sources.keys() {
-                checked.files.insert(
-                    path.clone(),
-                    std::fs::read_to_string(contained(&s.root, path)?)?,
-                );
+            for (path, hash) in &plan.sources {
+                // Validate and decode the same read; binary dependencies remain
+                // digest-bound but are never inserted into UTF-8 store writes.
+                let bytes = std::fs::read(contained(&s.root, path)?)?;
+                if digest(&bytes) != *hash {
+                    return Err(Error::conflict(format!("Migration source changed: {path}")));
+                }
+                if let Ok(content) = String::from_utf8(bytes) {
+                    checked.files.insert(path.clone(), content);
+                }
             }
             save(&s, &checked, plan.records, plan.writes, args.dry_run)
         }

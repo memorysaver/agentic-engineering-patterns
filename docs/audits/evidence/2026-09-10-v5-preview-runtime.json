@@ -1,6 +1,6 @@
 {
-  "binary": "/tmp/aep-preview-release-uqtkfv0t/extracted/aep",
-  "binary_sha256": "d0b8a6ff43014e5e12cda86ec3ea6dad71f55dd78c0a4c2db4a782d0a6a948ef",
+  "binary": "/tmp/aep-preview-final-7x626jh8/extracted/aep",
+  "binary_sha256": "11195ffddc9010c4cae91fa7062afd5c60defa01532a7c0736ef177862345175",
   "surfaces": [
     "embedded guidance outside source checkout",
     "v4 initialization and source preservation",

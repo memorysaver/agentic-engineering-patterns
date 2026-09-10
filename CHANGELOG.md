@@ -16,6 +16,8 @@ product work, integration evidence, and release history.
 
 ## [Unreleased] — 5.0.0-preview.1
 
+- Exercise isolated downstream adoption in Looplia, MITS and Rewarc. Preserve binary migration evidence and legacy hold states; map overlapping story/OpenSpec IDs with source-scoped provenance. Record project-specific cutover gaps separately from CLI fixture success.
+
 - Add the native Rust CLI, embedded skill catalog/references, local procedure discovery, short AGENTS.md entrypoint, and tracked project configuration.
 - Introduce project-ledger, project-roadmap/decisions, project-rules, and lesson-learned stores with versioned records, graph checks, revision conflicts, and transaction recovery.
 - Implement isolated attempts, actual command verification, independent review, gate evaluation, Git/GitHub delivery receipts and reconciliation, specification publication, and evidence-based rule adoption.

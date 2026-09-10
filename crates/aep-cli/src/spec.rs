@@ -590,6 +590,14 @@ fn read_bundle(root: &Path) -> Result<BTreeMap<String, String>> {
 }
 pub type ImportedBundle = (Vec<Record>, BTreeMap<String, Option<String>>);
 pub fn import_bundle(s: &Store, snap: &Snapshot, source: &Path) -> Result<ImportedBundle> {
+    import_bundle_reserved(s, snap, source, &BTreeSet::new())
+}
+pub fn import_bundle_reserved(
+    s: &Store,
+    snap: &Snapshot,
+    source: &Path,
+    reserved: &BTreeSet<String>,
+) -> Result<ImportedBundle> {
     let root = std::fs::canonicalize(source)?;
     let files = read_bundle(&root)?;
     let source_digest = digest(serde_json::to_vec(&files)?);
@@ -653,8 +661,35 @@ pub fn import_bundle(s: &Store, snap: &Snapshot, source: &Path) -> Result<Import
             changes.insert(id.to_string());
         }
     }
-    for id in changes {
-        let prefix = format!("changes/{id}/");
+    let source_ids = changes.clone();
+    for source_id in changes {
+        // AEP record IDs share one namespace; legacy stories and OpenSpec changes do not.
+        // Reserve every legacy story, including later migration scopes, for stable mapping.
+        let prior = snap.records.iter().find(|r| {
+            r.kind == Kind::Change
+                && r.data.get("source").and_then(|v| v.get("path")) == Some(&json!(root))
+                && r.data.get("source").and_then(|v| v.get("change")) == Some(&json!(source_id))
+        });
+        let id = if let Some(prior) = prior {
+            prior.id.clone()
+        } else if reserved.contains(&source_id) {
+            let mut candidate = format!("openspec-change-{source_id}");
+            let mut salt = 0;
+            while !valid_id(&candidate)
+                || reserved.contains(&candidate)
+                || source_ids.contains(&candidate)
+            {
+                candidate = format!(
+                    "openspec-change-{}",
+                    &digest(format!("{source_id}:{salt}"))[..32]
+                );
+                salt += 1;
+            }
+            candidate
+        } else {
+            source_id.clone()
+        };
+        let prefix = format!("changes/{source_id}/");
         let change_digest = digest(serde_json::to_vec(
             &files
                 .iter()
@@ -682,7 +717,7 @@ pub fn import_bundle(s: &Store, snap: &Snapshot, source: &Path) -> Result<Import
         record.refs.push(import_id.clone());
         record.set(
             "source",
-            json!({"path":root,"change":id,"implementation_evidence":"unknown"}),
+            json!({"path":root,"change":source_id,"implementation_evidence":"unknown"}),
         );
         let mut specs = vec![];
         let mut custom = vec![];
