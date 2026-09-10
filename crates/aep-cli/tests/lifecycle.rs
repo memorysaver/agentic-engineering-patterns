@@ -367,6 +367,8 @@ fn local_lifecycle_preserves_evidence_through_integration_and_publication() {
     call(root, &["attempt", "recover", &attempt, "--cancel"], 3);
     call(root, &["spec", "publish", "--change", "C"], 0);
     call(root, &["change", "close", "C"], 0);
+    git(root, &["add", "project-roadmap/specs/result/spec.md"]);
+    git(root, &["diff", "--cached", "--check"]);
     record(
         root,
         "gate",
@@ -1083,4 +1085,189 @@ fn empty_active_migration_retains_split_product_adrs_and_lesson_links() {
             .contains("Retain timeout evidence")
     );
     call(root, &["migrate", "verify"], 0);
+}
+
+#[test]
+fn accepted_followup_decisions_are_visible_and_invalidate_evidence_without_scope_exemptions() {
+    let d = setup();
+    let root = d.path();
+    let (_, worktree) = prepared(root);
+    call(root, &["verify", "run", "--story", "S"], 0);
+    review(root, json!([]), 0);
+    let original = call(root, &["verify", "plan", "--story", "S"], 0);
+    assert_eq!(
+        call(root, &["deliver", "plan", "--story", "S"], 0)["eligible"],
+        true
+    );
+
+    let story = call(root, &["story", "show", "S"], 0);
+    let mut revised = story["record"].clone();
+    revised["description"] = json!("Correct the delivery endpoint");
+    let file = tempfile::NamedTempFile::new().unwrap();
+    fs::write(file.path(), revised.to_string()).unwrap();
+    call(
+        root,
+        &[
+            "story",
+            "update",
+            "S",
+            "--file",
+            file.path().to_str().unwrap(),
+            "--expect",
+            story["revision"].as_str().unwrap(),
+        ],
+        3,
+    );
+    assert_eq!(call(root, &["story", "show", "S"], 0), story);
+
+    record(
+        root,
+        "decision",
+        json!({"kind":"decision","id":"D","title":"Delivery clarification","description":"Continue through authorized integration.","refs":["S"]}),
+    );
+    assert_eq!(
+        call(root, &["verify", "plan", "--story", "S"], 0)["fingerprint"],
+        original["fingerprint"]
+    );
+    call(root, &["decision", "accept", "D", "--by", "owner"], 0);
+    let accepted = call(root, &["verify", "plan", "--story", "S"], 0);
+    assert_ne!(accepted["fingerprint"], original["fingerprint"]);
+    assert_eq!(accepted["head"], original["head"]);
+    assert_eq!(
+        call(root, &["deliver", "plan", "--story", "S"], 0)["eligible"],
+        false
+    );
+    let before_read = git(root, &["status", "--porcelain"]);
+    let context = call(root, &["context", "S"], 0);
+    assert!(
+        context["records"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|r| r["record"]["id"] == "D")
+    );
+    assert_eq!(git(root, &["status", "--porcelain"]), before_read);
+
+    // Operational observations and unrelated accepted decisions do not become inputs.
+    record(
+        root,
+        "lesson",
+        json!({"kind":"lesson","id":"observation","title":"Observed execution","refs":["S"]}),
+    );
+    record(
+        root,
+        "decision",
+        json!({"kind":"decision","id":"unrelated","title":"Other work","description":"A different task."}),
+    );
+    call(
+        root,
+        &["decision", "accept", "unrelated", "--by", "owner"],
+        0,
+    );
+    assert_eq!(
+        call(root, &["verify", "plan", "--story", "S"], 0)["fingerprint"],
+        accepted["fingerprint"]
+    );
+
+    // Corrections can refer to an immutable prior decision or linked change.
+    for (id, target) in [("D2", "D"), ("D3", "C")] {
+        let previous = call(root, &["verify", "plan", "--story", "S"], 0);
+        record(
+            root,
+            "decision",
+            json!({"kind":"decision","id":id,"title":"Further clarification","description":"Retain the bounded delivery target.","refs":[target]}),
+        );
+        call(root, &["decision", "accept", id, "--by", "owner"], 0);
+        assert_ne!(
+            call(root, &["verify", "plan", "--story", "S"], 0)["fingerprint"],
+            previous["fingerprint"]
+        );
+        assert!(
+            call(root, &["context", "S"], 0)["records"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|r| r["record"]["id"] == id)
+        );
+        if id == "D2" {
+            let before = call(root, &["verify", "plan", "--story", "S"], 0);
+            call(root, &["decision", "supersede", "D", "--by", "D2"], 0);
+            let after = call(root, &["verify", "plan", "--story", "S"], 0);
+            assert_ne!(after["fingerprint"], before["fingerprint"]);
+            assert_ne!(after["fingerprint"], original["fingerprint"]);
+            let context = call(root, &["context", "S"], 0);
+            for (id, state) in [("D", "superseded"), ("D2", "accepted")] {
+                assert!(
+                    context["records"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .any(|r| r["record"]["id"] == id && r["record"]["status"] == state)
+                );
+            }
+            assert_eq!(
+                call(root, &["deliver", "plan", "--story", "S"], 0)["eligible"],
+                false
+            );
+        }
+    }
+    call(root, &["verify", "run", "--story", "S"], 0);
+    review(root, json!([]), 0);
+    assert_eq!(
+        call(root, &["deliver", "plan", "--story", "S"], 0)["eligible"],
+        true
+    );
+    // Shared-root receipts work; copying an out-of-scope ledger file into the
+    // candidate still fails, rather than exempting all managed directories.
+    write(
+        &worktree,
+        "project-ledger/attempts/copied.yaml",
+        "copied: execution record\n",
+    );
+    git(&worktree, &["add", "."]);
+    git(
+        &worktree,
+        &["commit", "-qm", "copy shared ledger into product candidate"],
+    );
+    call(root, &["verify", "plan", "--story", "S"], 3);
+}
+
+#[test]
+fn dispatch_requires_incoming_accepted_decisions_in_the_base() {
+    let d = setup();
+    let root = d.path();
+    let (attempt, _) = prepared(root);
+    call(root, &["attempt", "recover", &attempt, "--cancel"], 0);
+    record(
+        root,
+        "story",
+        json!({"kind":"story","id":"S2","title":"Second task","change":"C","paths":["src"]}),
+    );
+    git(root, &["add", "."]);
+    git(
+        root,
+        &["commit", "-qm", "retain second task before later decision"],
+    );
+    record(
+        root,
+        "decision",
+        json!({"kind":"decision","id":"D","title":"Task decision","description":"Required task context.","refs":["S2"]}),
+    );
+    call(root, &["decision", "accept", "D", "--by", "owner"], 0);
+    call(
+        root,
+        &[
+            "dispatch", "start", "--story", "S2", "--base", "HEAD", "--owner", "builder",
+        ],
+        3,
+    );
+    git(root, &["add", "."]);
+    git(root, &["commit", "-qm", "retain accepted followup context"]);
+    call(
+        root,
+        &[
+            "dispatch", "start", "--story", "S2", "--base", "HEAD", "--owner", "builder",
+        ],
+        0,
+    );
 }

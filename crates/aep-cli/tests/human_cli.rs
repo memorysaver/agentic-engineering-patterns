@@ -116,7 +116,29 @@ fn skill_discovery_includes_local_procedures_and_reserved_names_fail() {
     fs::write(p.join("SKILL.md"), "---\nname: check-product\ndescription: Exercise the actual product.\n---\n\n# Check product\n").unwrap();
     let r = run(d.path(), &["--skill"]);
     assert!(r.status.success());
-    assert!(String::from_utf8_lossy(&r.stdout).contains("aep --skill check-product"));
+    let catalog = String::from_utf8(r.stdout).unwrap();
+    let (builtin, project) = catalog.split_once("### Project procedures").unwrap();
+    assert!(builtin.contains("### Built-in procedures"));
+    assert!(builtin.contains("aep --skill validate"));
+    assert!(!builtin.contains("aep --skill check-product"));
+    assert!(project.contains("aep --skill check-product"));
+    assert!(project.contains("Source: `project-rules/skills/check-product/SKILL.md`"));
+    let body = fs::read(p.join("SKILL.md")).unwrap();
+    assert_eq!(run(d.path(), &["--skill", "check-product"]).stdout, body);
+    let outside = tempfile::tempdir().unwrap();
+    let outside_catalog = run(outside.path(), &["--skill"]);
+    assert!(!String::from_utf8_lossy(&outside_catalog.stdout).contains("check-product"));
+    let local = data(d.path(), &["--skill"]);
+    let local = local["skills"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|s| s["name"] == "check-product")
+        .unwrap();
+    assert_eq!(
+        local["source"],
+        "project:project-rules/skills/check-product/SKILL.md"
+    );
     fs::write(
         p.join("SKILL.md"),
         "---\nname: aep\ndescription: Shadow the entrypoint.\n---\n\nBad.\n",

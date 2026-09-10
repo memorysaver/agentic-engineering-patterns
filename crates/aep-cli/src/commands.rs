@@ -499,6 +499,7 @@ fn context(s: &Store, snap: &Snapshot, id: &str, sources: &[String]) -> Result<O
         match snap.get(&id) {
             Ok(r) => {
                 pending.extend(r.links().iter().map(|s| s.to_string()));
+                pending.extend(workflow::referring_decisions(snap, &r.id));
                 records.push(record_json(r));
             }
             Err(_) => unknowns.push(id),
@@ -516,7 +517,7 @@ fn context(s: &Store, snap: &Snapshot, id: &str, sources: &[String]) -> Result<O
         files.push(json!({"path":source,"digest":digest(&text),"content":text}));
     }
     Ok(Outcome::ok(
-        json!({"repository":s.root,"head":git(&s.root,&["rev-parse","HEAD"]).ok(),"revision":snap.revision,"subject":id,"records":records,"sources":files,"missing_references":unknowns,"scope":"Explicit record links and requested files; agent selects additional context"}),
+        json!({"repository":s.root,"head":git(&s.root,&["rev-parse","HEAD"]).ok(),"revision":snap.revision,"subject":id,"records":records,"sources":files,"missing_references":unknowns,"scope":"Explicit record links, incoming accepted decisions, and requested files; agent reconciles intent and selects additional context"}),
     ))
 }
 fn records(
@@ -644,7 +645,7 @@ fn records(
             }
             if !["pending", "draft"].contains(&old.status.as_str()) {
                 return Err(Error::blocked(
-                    "Accepted records are immutable; create a superseding record",
+                    "Accepted records are immutable. For a context correction, create and accept a decision whose refs include this record; inspect aep context <id> --json. Changed acceptance or implementation scope needs a new change/story. See aep --skill design --ref records",
                 ));
             }
             r

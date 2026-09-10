@@ -309,7 +309,7 @@ pub fn render(operation: &str, result: &Outcome) -> String {
                     );
                 }
             }
-            out.push_str("\nThis follows recorded links. Inspect relevant code and runtime evidence for the task.\n");
+            out.push_str("\nThis follows recorded links and incoming accepted decisions. Use --json for their full content; reconcile intent with the request and actual behavior.\n");
         }
         "query" => {
             let values = d["records"]

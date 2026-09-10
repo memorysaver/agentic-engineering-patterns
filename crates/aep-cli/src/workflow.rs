@@ -300,8 +300,23 @@ pub struct VerificationPlan {
     pub checks: Vec<String>,
     pub paths: Vec<String>,
 }
+// Accepted follow-up decisions can point to immutable records. Reverse only this
+// context edge, retaining superseded anchors and their successors: execution receipts and retrospective lessons must not recursively
+// become new verification inputs just by referring to a story.
+pub fn referring_decisions(snap: &Snapshot, id: &str) -> Vec<String> {
+    snap.records
+        .iter()
+        .filter(|r| {
+            r.kind == Kind::Decision
+                && ["accepted", "superseded"].contains(&r.status.as_str())
+                && r.refs.iter().any(|r| r == id)
+        })
+        .map(|r| r.id.clone())
+        .collect()
+}
 fn linked_context(s: &Store, snap: &Snapshot, story: &Record) -> Result<BTreeMap<String, String>> {
     let mut pending = story.refs.clone();
+    pending.extend(referring_decisions(snap, &story.id));
     pending.extend(story.change_ids().into_iter().map(str::to_string));
     let mut seen = BTreeSet::new();
     let mut files = BTreeMap::new();
@@ -317,6 +332,7 @@ fn linked_context(s: &Store, snap: &Snapshot, story: &Record) -> Result<BTreeMap
             continue;
         }
         pending.extend(record.refs.iter().cloned());
+        pending.extend(referring_decisions(snap, &record.id));
         if record.kind != Kind::Change {
             let path = s.record_path(record.kind, &record.id)?;
             let content = snap

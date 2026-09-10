@@ -17,7 +17,7 @@ aep context STORY-ID
 aep --skill project
 ```
 
-Build enough context to identify intent, current behavior, applicable constraints, prior evidence and observable success. Carry the requested delivery endpoint and existing authorization through implementation, verification and handoffs. For end-to-end work, continue through `aep --skill deliver` and its closure guidance once validation is ready; explicit analysis, review or candidate-only requests keep their stated scope. `aep context` follows explicit links; inspect relevant code and runtime behavior as the task requires. Use `--json` for complete structured records when a human summary omits details needed for a decision.
+Build enough context to identify intent, current behavior, applicable constraints, prior evidence and observable success. Carry the requested delivery endpoint and existing authorization through implementation, verification and handoffs. For end-to-end work, continue through `aep --skill deliver` and its closure guidance once validation is ready; explicit analysis, review or candidate-only requests keep their stated scope. `aep context` follows explicit links and accepted decisions referring back to that context; inspect relevant code and runtime behavior as the task requires. Use `--json` for complete structured records when a human summary omits details needed for a decision.
 
 ## Read guidance as needed
 

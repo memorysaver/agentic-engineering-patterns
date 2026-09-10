@@ -156,11 +156,26 @@ pub fn run(args: &Cli, name: &str, reference: Option<&str>) -> Result<Outcome> {
             let entries:Vec<_>=skills.iter().map(|s|json!({"name":s.name,"description":s.description,"read_command":format!("aep --skill {}",s.name),"source":s.source,"content_digest":digest(&s.body)})).collect();
             let mut text = asset("SKILL.md")?;
             text.push_str("\n## Available procedures\n\nRead only the procedure needed for your task. Project procedures retain their own rules and verification requirements.\n\n");
-            for s in skills {
-                text.push_str(&format!(
-                    "- {}: {}\n  aep --skill {}\n",
-                    s.name, s.description, s.name
-                ));
+            for (project, heading) in [(false, "Built-in procedures"), (true, "Project procedures")]
+            {
+                let group: Vec<_> = skills
+                    .iter()
+                    .filter(|s| s.source.starts_with("project:") == project)
+                    .collect();
+                if group.is_empty() {
+                    continue;
+                }
+                text.push_str(&format!("### {heading}\n\n"));
+                for s in group {
+                    text.push_str(&format!(
+                        "- {}: {}\n  aep --skill {}\n",
+                        s.name, s.description, s.name
+                    ));
+                    if let Some(path) = s.source.strip_prefix("project:") {
+                        text.push_str(&format!("  Source: `{path}`\n"));
+                    }
+                }
+                text.push('\n');
             }
             Ok(Outcome::text(
                 text.clone(),

@@ -16,6 +16,10 @@ product work, integration evidence, and release history.
 
 ## [Unreleased] — 5.0.0-preview.1
 
+- Label bundled and project-owned skills separately in the human catalog, retaining one discovery interface. Clarify reflect-to-project-skill authoring and shared-ledger delivery transport.
+- Include incoming accepted decisions and their superseded history in task context, verification fingerprints and dispatch base requirements so later clarifications of immutable records remain discoverable and invalidate stale evidence. Preserve story-scope enforcement.
+- Publish changed specifications with a single final newline while preserving untouched document content and no-op publication bytes.
+
 - Carry the requested outcome and existing authorization through native implementation, validation, delivery and closure. Clarify that delivery-plan eligibility is candidate readiness; preserve explicit review/candidate/PR scope and report remaining authorization boundaries.
 
 - Resolve native skill references by catalog name or their exact Markdown link path; show executable reference commands in guidance and errors.

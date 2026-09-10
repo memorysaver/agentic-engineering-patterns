@@ -342,15 +342,14 @@ fn apply_delta(baseline: Option<&str>, delta: &str) -> Result<String> {
     if doc.blocks == original {
         return Ok(baseline.unwrap_or("# Requirements\n\n").into());
     }
-    Ok(format!(
-        "{}{}{}",
-        doc.prefix,
-        doc.blocks
-            .iter()
-            .map(|(_, b)| b.trim_end().to_string() + "\n\n")
-            .collect::<String>(),
-        doc.suffix
-    ))
+    let blocks = doc
+        .blocks
+        .iter()
+        .map(|(_, b)| b.trim_end())
+        .collect::<Vec<_>>()
+        .join("\n\n");
+    let separator = if doc.suffix.is_empty() { "\n" } else { "\n\n" };
+    Ok(format!("{}{blocks}{separator}{}", doc.prefix, doc.suffix))
 }
 pub fn contracts(change: &Record) -> Result<Vec<Contract>> {
     serde_json::from_value(change.data.get("specs").cloned().unwrap_or(json!([])))
@@ -987,7 +986,19 @@ mod tests {
     #[test]
     fn delta_baseline_conflicts_and_bdd() {
         let first = apply_delta(None, ADD).unwrap();
+        assert!(first.ends_with("Then result\n"));
+        assert!(!first.ends_with("\n\n"));
         assert_eq!(apply_delta(Some(&first), ADD).unwrap(), first);
+        let second = apply_delta(
+            Some(&first),
+            &ADD.replace("Requirement: A", "Requirement: B"),
+        )
+        .unwrap();
+        assert!(second.contains("Then result\n\n### Requirement: B"));
+        assert!(!second.ends_with("\n\n"));
+        // A no-op delta preserves existing source bytes, including old formatting.
+        let historical = format!("{first}\n");
+        assert_eq!(apply_delta(Some(&historical), ADD).unwrap(), historical);
         assert!(parse_delta("## ADDED Requirements\n### Requirement: A\nNo scenario").is_err());
         let renamed = apply_delta(
             Some(&first),
