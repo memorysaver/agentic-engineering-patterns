@@ -82,3 +82,5 @@ Observed friction to retain for later work:
 - Human skill discovery needs clearer project-versus-bundled provenance. Preserve the user-endorsed local-skill interface and reflect-to-skill path.
 
 Raw Herdr snapshots, observed final state, and copied command artifacts are retained locally under `~/.local/share/aep/trials/2026-09-11-mits-delivery-continuity/`, with file digests in `sha256.json`. They are supporting observations rather than a deterministic acceptance suite. Post-integration command output copied here is preserved separately from the downstream lesson's summarized hashes and its full pre-merge native receipts.
+
+Follow-up: the user subsequently authorized fixing these findings in AEP 5.0. The implemented corrections, additional incoming-decision defect, independent review and installed artifact are recorded in [the downstream findings verification](../audits/2026-09-11-aep-v5-downstream-findings.md). This observation remains the historical account of the original run.
