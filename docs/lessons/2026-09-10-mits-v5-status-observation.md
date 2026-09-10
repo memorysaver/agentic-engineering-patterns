@@ -44,3 +44,5 @@ Agent 的盤點摘要：近期完成 MITS-105 embeddings reuse、MITS-106 cache 
 ## 後續處置
 
 本輪觀察已完成，保留上述問題供後續討論。上述項目均保持待評估／待修正；本紀錄不改 CLI、skill、AGENTS.md、MITS 程式碼或 native 帳本。
+
+後續使用者另行授權修正已知錯誤；處置與驗證另記於[修正紀錄](../audits/2026-09-10-status-observation-fixes.md)，上述觀察保留本輪當時狀態。
