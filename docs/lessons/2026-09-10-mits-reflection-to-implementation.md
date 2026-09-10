@@ -73,7 +73,7 @@ Agent 加入 change 下的 `verification.md` 後，自行透過 verify plan 察�
 
 最終 fingerprint `e73368ee8d68f0a14c18761fe4e5943e6c5792912dc47430acae57d539ecf2c9` 下，local-preflight、repo-check、rust-tests、secret-scan 均 pass，Rust 為 523 passed／1 ignored；獨立 review `review-18d400ebbd888542-11908b-0` 已登錄。觀察者在證據提交後另行讀取 delivery plan，仍是 Eligible: true、Missing: none。
 
-Agent 保存 progress record `20260910T160051Z573135044` 並 sync；這輪不是唯讀實驗。未建立 PR、合併、發布 spec 或替換 PATH binary，與這次「自主完成實作」的交付界線一致；不把交付資格當成已整合。MITS-108 原有分支／worktree 仍保留，其 freshness／恢復問題未在此解決。
+Agent 保存 progress record `20260910T160051Z573135044` 並 sync；這輪不是唯讀實驗。未建立 PR、合併、發布 spec 或替換 PATH binary。這反映 agent 將「自主完成實作」解讀為 candidate completion；不能據此認定使用者期待的 AEP 完整收尾已滿足，也不把交付資格當成已整合。MITS-108 原有分支／worktree 仍保留，其 freshness／恢復問題未在此解決。
 
 結論限於此案例：在使用者釐清目標後，agent 自行完成 reflection → design／prototype → dispatch／隔離實作 → 驗證／失敗恢復 → 獨立 review → readiness 檢查。觀察者沒有代補操作指令。真正的 PR／integration／cleanup 銜接尚未在本輪執行，因此不宣稱整個交付生命週期已驗證。
 
@@ -90,3 +90,11 @@ Agent 保存 progress record `20260910T160051Z573135044` 並 sync；這輪不是
 `aep check` 與 `aep migrate verify` 重新讀取後皆 PASS（330 records）。這支持 native records 的結構／路由與 legacy 來源保留，不代表所有手寫文件分類都已被 CLI 強制驗證。
 
 需要保留的規約問題：agent 將 design rationale 寫成 change 內的 `design.md`，沒有新增 `docs/design/` 草稿或 `project-roadmap/decisions/` ADR。Native design skill 指示 drafts／accepted tradeoffs 的落點，但 CLI workflow guide 又允許 change 含 design prose；不能僅憑本輪沒有獨立 ADR 就定為違規。應釐清何時 change 內文已足夠、何時需獨立草稿／decision，並保持文件與入口說明一致。本輪没有移動檔案或事後補造 ADR。
+
+## 使用者指出的交付收尾缺口
+
+使用者觀察「做完好像沒有自主 wrap，像 4.x」。對照 source 後，4.x build 的輸出包含 PR／merge，wrap 在 merge 後承接 archive、story 狀態、證據與 lessons 收斂，以及 worker／worktree 清理；interactive／autopilot 的合併權限不同。5.0 將這些交付責任集中到 deliver／closure，沒有宣告取消收尾。
+
+本輪 agent 讀過 deliver，也跑出 Eligible: true，卻選擇把完成界線停在可交付 candidate。它已保存證據與記憶，但没有 PR／integration receipt、spec publication、change closure 或 worktree cleanup，MITS-109 仍 in_progress。直接刪除未整合 worktree 當然不是正確補救；真正待驗證的是 implement／validate 如何接入使用者預期的 delivery endpoint，再於整合後完成 closure。
+
+觀察者先前將「未交付」描述成符合授權界線，過早替 agent 的終點選擇背書。使用者的實驗目標是檢驗流程整併後仍能自主維持 AEP 全生命週期；目前只能證明到 delivery readiness，並已出現使用者預期與 agent 自訂 completion boundary 不一致的證據。此處記為流程引導／交付終點的缺口，沒有代替 MITS agent 建立 PR、merge 或清理 worktree。
