@@ -1,5 +1,7 @@
 # AEP v5 preview: three downstream experiments
 
+This report records the isolated pilots. The owner subsequently authorized complete migrations in the original repositories; their current cutover status and rebuilt executable trial are recorded in [the live migration report](2026-09-10-aep-v5-live-migrations.md).
+
 The owner selected Looplia, then requested parallel experiments on MITS and Rewarc. Each pilot uses an independent local clone with its remote removed. Live projects, uncommitted work, host settings, production resources and provider jobs remain unchanged. These are migration and context/verification observations, not production deployments or feature-completion claims.
 
 ## Observed outcomes

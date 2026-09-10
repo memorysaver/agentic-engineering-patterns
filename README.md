@@ -56,6 +56,8 @@ Use `aep status`, `aep context <id>`, `aep query`, and `aep timeline` to inspect
 - [Preview implementation and review evidence](docs/audits/2026-09-10-aep-v5-preview.md)
 - [Downstream preview trial](docs/workflow/aep-v5-preview-trial.md)
 - [Looplia, MITS and Rewarc pilot observations](docs/audits/2026-09-10-aep-v5-downstream-pilots.md)
+- [Completed original-project migrations and rebuilt CLI trial](docs/audits/2026-09-10-aep-v5-live-migrations.md)
+- [Lessons from the three actual v5 migrations](docs/lessons/2026-09-10-three-projects-native-v5-migration.md)
 - [Legacy v4.1 installation and skills](docs/workflow/aep-v4.1-guide.md)
 
 ## Develop AEP
