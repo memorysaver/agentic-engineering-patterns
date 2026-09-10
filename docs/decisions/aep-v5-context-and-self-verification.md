@@ -214,3 +214,8 @@ Project-owned Feature Map 可先採單層 `references/feature-map.md` 與拆分�
 目前 runtime 已發現 rules store 下的 skills，也支援設定額外 `skill_paths`；同名／保留名稱會拒絕，避免專案覆蓋內建程序。這裡的「搜尋」目前指 catalog 的發現與選用，尚無獨立語意搜尋能力。JSON 有 source 標記；人類版應清楚呈現內建與專案來源，以免把專案 procedure 誤認成 AEP 依賴。後者是待改善的呈現項目，這次觀察沒有修改 runtime 或技能。
 
 實際來源與下游行為見 [MITS 交付續行觀察](../lessons/2026-09-11-mits-delivery-continuity-observation.md)。
+
+
+## 後續概念：以產品目的驅動自主研究
+
+MITS 的產品聚焦觀察促成使用者提出「auto deep research for purpose」，並補充建議後應徵詢意見、自主完成 product context。具體設計與 roadmap → design 的文件責任見 [目的驅動研究提案](aep-v5-purpose-driven-research.md)。此處記錄新方向，不代表已修改八入口 catalog 或安裝新的指引。
