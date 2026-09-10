@@ -14,3 +14,5 @@ Independent review is required when project policy says so and available as an a
 Resolve concrete blocking/material findings with current evidence, including findings from optional reviews. A follow-up review is useful when an unresolved issue or changed candidate warrants it. Let evidence and remaining problems determine further investigation. Report limits or needed decisions when progress depends on missing access, intent or authority.
 
 Evaluate declared gates with `aep gate evaluate <id>` when their scope is ready. Distinguish pass, fail, blocked and skipped results; local evidence supports local claims. Changes to relevant inputs require current evidence before delivery.
+
+After completion validation, continue with `aep --skill deliver` toward the carried delivery endpoint. Passing checks and a clean review establish candidate readiness. Finish a validation-only request with findings; for end-to-end work, carry this evidence into authorized delivery and closure.

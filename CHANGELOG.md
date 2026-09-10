@@ -16,6 +16,8 @@ product work, integration evidence, and release history.
 
 ## [Unreleased] — 5.0.0-preview.1
 
+- Carry the requested outcome and existing authorization through native implementation, validation, delivery and closure. Clarify that delivery-plan eligibility is candidate readiness; preserve explicit review/candidate/PR scope and report remaining authorization boundaries.
+
 - Resolve native skill references by catalog name or their exact Markdown link path; show executable reference commands in guidance and errors.
 
 - Redesign the clap CLI for human-readable help, status, context and operation results. Keep complete structured responses behind `--json`; preserve exit codes and mutation behavior. No TUI is added.

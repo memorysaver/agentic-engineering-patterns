@@ -343,6 +343,24 @@ pub fn render(operation: &str, result: &Outcome) -> String {
             }
             field(&mut out, "ordering", &d["ordering"]);
         }
+        "deliver.plan" | "deliver.pr" | "deliver.merge" if d.get("eligible").is_some() => {
+            out.push_str("Delivery readiness\n\n");
+            let state = if d["eligible"] == true {
+                "Ready for the authorized delivery action"
+            } else {
+                "Requirements remain"
+            };
+            let _ = writeln!(out, "  Candidate: {state}");
+            for key in ["story", "attempt", "head"] {
+                field(&mut out, key, &d["verification"][key]);
+            }
+            strings(&mut out, "Missing requirements", &d["missing"]);
+            render_value(&mut out, "evidence", &d["evidence"], 0);
+            out.push_str("\nThis inspection performs no delivery or cleanup.\n");
+            if let Some(guidance) = d["guidance"].as_str() {
+                let _ = writeln!(out, "{guidance}");
+            }
+        }
         "migrate.plan" => {
             let p = &d["plan"];
             out.push_str("Migration plan\n\n");

@@ -2,6 +2,8 @@
 
 Assemble a small, source-linked handoff: selected workflow/release, task outcome and authority, story/change IDs, acceptance, applicable rules/decisions, relevant source areas, and the verification entrypoint. `aep context` supplies linked records; add reality and missing constraints from source/runtime as needed. Read `aep --skill project --ref context-sources` for a context gap.
 
+Carry the original requested endpoint, prior authorization, remaining delivery actions and the agent responsible for continuing them. A worker’s implementation assignment can be narrower than the overall task; its completed handoff returns control to the coordinator. Recover these facts from the conversation and project workflow when resuming.
+
 Include the base/head, branch, worker cwd, shared store root, attempt ID, setup commands and owned resources. Record known unknowns and existing evidence with its revision/environment. Pass the same information to a delegated worker; use the host's actual handle and observed status instead of equating a prepared claim with a running agent.
 
 The current agent can execute the task itself. Scheduling, decomposition, parallelism and retry strategy belong to the model/host; AEP records claims, dependencies, progress and evidence. Choose added coordination only when it helps the authorized outcome.

@@ -1312,7 +1312,8 @@ pub fn deliver(args: &Cli, s: &Store, snap: &Snapshot, command: &cli::Deliver) -
     let (plan, missing, evidence) = evidence_requirements(s, snap, &story)?;
     if matches!(command, cli::Deliver::Plan { .. }) || args.dry_run {
         return Ok(Outcome::ok(
-            json!({"verification":plan,"missing":missing,"evidence":evidence,"eligible":missing.is_empty()}),
+            json!({"verification":plan,"missing":missing,"evidence":evidence,"eligible":missing.is_empty(),
+                "guidance": "This checks candidate readiness only. Continue the requested delivery and closure using aep --skill deliver; use existing authorization and report any remaining decision."}),
         ));
     }
     if !missing.is_empty() {

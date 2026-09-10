@@ -53,6 +53,7 @@ Use `aep status`, `aep context <id>`, `aep query`, and `aep timeline` to inspect
 - [Current CLI scope and validation](docs/audits/2026-09-09-aep-v5-cli-focus.md)
 - [Legacy-to-v5 skill capability inventory](docs/audits/2026-09-10-aep-v5-skill-migration-inventory.md)
 - [Skill classification: context and self verification](docs/decisions/aep-v5-context-and-self-verification.md)
+- [Delivery continuity and closure](docs/decisions/aep-v5-delivery-continuity.md)
 - [Preview adoption and v4/v5 coexistence](docs/decisions/aep-v5-preview-adoption.md)
 - [Preview implementation and review evidence](docs/audits/2026-09-10-aep-v5-preview.md)
 - [Downstream preview trial](docs/workflow/aep-v5-preview-trial.md)

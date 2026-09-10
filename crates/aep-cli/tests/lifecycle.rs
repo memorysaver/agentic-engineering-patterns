@@ -305,9 +305,59 @@ fn local_lifecycle_preserves_evidence_through_integration_and_publication() {
     let (attempt, _) = prepared(root);
     call(root, &["verify", "run", "--story", "S"], 0);
     review(root, json!([]), 0);
+    let before_story = call(root, &["story", "show", "S"], 0);
+    let before_deliveries = call(root, &["query", "--kind", "delivery"], 0);
+    let before_git = git(root, &["status", "--porcelain"]);
+    let before_head = git(root, &["rev-parse", "HEAD"]);
+    let before_worktrees = git(root, &["worktree", "list", "--porcelain"]);
+    let plan = call(root, &["deliver", "plan", "--story", "S"], 0);
+    assert_eq!(plan["eligible"], true);
+    assert!(
+        plan["guidance"]
+            .as_str()
+            .unwrap()
+            .contains("aep --skill deliver")
+    );
+    for args in [
+        vec!["deliver", "plan", "--story", "S"],
+        vec![
+            "--dry-run",
+            "deliver",
+            "pr",
+            "--story",
+            "S",
+            "--base",
+            "main",
+        ],
+        vec!["--dry-run", "deliver", "merge", "--story", "S", "--local"],
+    ] {
+        let output = Command::new(env!("CARGO_BIN_EXE_aep"))
+            .current_dir(root)
+            .args(args)
+            .output()
+            .unwrap();
+        assert!(output.status.success(), "{output:?}");
+        let text = String::from_utf8(output.stdout).unwrap();
+        assert!(
+            text.contains("Ready for the authorized delivery action"),
+            "{text}"
+        );
+        assert!(
+            text.contains("This inspection performs no delivery or cleanup."),
+            "{text}"
+        );
+        assert!(text.contains("aep --skill deliver"), "{text}");
+    }
+    assert_eq!(call(root, &["story", "show", "S"], 0), before_story);
     assert_eq!(
-        call(root, &["deliver", "plan", "--story", "S"], 0)["eligible"],
-        true
+        call(root, &["query", "--kind", "delivery"], 0),
+        before_deliveries
+    );
+    assert_eq!(git(root, &["status", "--porcelain"]), before_git);
+    assert_eq!(git(root, &["rev-parse", "HEAD"]), before_head);
+    assert_eq!(
+        git(root, &["worktree", "list", "--porcelain"]),
+        before_worktrees
     );
     call(root, &["deliver", "merge", "--story", "S", "--local"], 0);
     assert_eq!(
