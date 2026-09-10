@@ -49,3 +49,19 @@ MITS `crates/mits/src/packet/mod.rs` 的 `memory_checkpoint_context` 只保留�
 ## 判讀界線
 
 本輪比第一次盤點的 3m 56s 短，但修正版 CLI、已新增的 verification 文件與 memory checkpoint、對話 context 均已改變；不能將時間差單獨歸因於 CLI 或 skill 改善。可確認的是 reference 讀取順利、整合狀態辨識正確，以及 agent 主動找出新的即時驗證落差。
+
+## 使用者校正觀察者的角色
+
+使用者隨後明確指出：應引導 MITS agent reflect，不應由外部觀察者直接代為診斷或指定修正。上述根因核對是觀察者額外做的工作，不是 MITS agent 的自主反思成果；這也是本次觀察方法需要修正的地方。
+
+後續透過 Herdr 要求 MITS agent 使用 `aep --skill reflect`，回顧自己的 context 取得、證據判讀、驗證落差與操作摩擦，自行選擇有限查證並保存 lessons。沒有提供上述 checkpoint 視窗診斷；交付限定 reflection 與紀錄，不實作產品修正、放寬 gate 或補造通過證據。應評估它如何依現有 context 與 self-verification 指引形成判斷，再據此改善 AEP。
+
+### Agent 自行 reflect 的結果
+
+Herdr 最終回報 done，畫面顯示 5m 21s。Agent 自行發現前後 binary hash 相同、記憶筆數由 273 增為 274，並讀取程式確認 dogfood 判定使用 packet 選入的 checkpoints。它保留「選取內容或 metadata 影響結果」為假設，指出尚缺歷史選取清單與受控比較，沒有把它提升成已確認 regression。
+
+它反思自己對「以本次結果為準」與「缺少證據」的表述範圍，並認為即時檢查前應讀 verify-mits。三項 lessons 為：比較時標明版本、時間及輸入範圍；摘要缺席不等於完整資料不存在；先檢視自己的查詢與推論，再決定修正建議。沒有將三項 lessons 自動採納成規則。
+
+本輪另觀察到 AEP 摩擦：`aep lesson find evidence` 顯示超過 1,262 行摺疊輸出；agent 為 lesson 輸入格式搜尋 help／既有紀錄，初次 dry-run 因缺少 `kind` 失敗，自行依錯誤訊息補上後成功，觀察者未提供格式答案。
+
+MITS 新增 `lesson-learned/reflections/2026-09-10-status-context-evidence.md` 與原生 lesson `lesson-learned/observations/status-context-evidence-reflection-20260910.md`，連同觀察 JSON／事件共四個檔案。Agent 回報 aep check（303 records）、bun run check、讀回與 JSON／連結／空白檢查通過；未跑 Rust suite、未改產品／gate、未新增 live-vault checkpoint。這些反思檔案留在 MITS 工作目錄，尚未提交；觀察者沒有接手修改或提交它們。
