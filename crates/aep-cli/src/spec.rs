@@ -537,15 +537,36 @@ pub fn run(args: &Cli, s: &Store, snap: &Snapshot, command: &Spec) -> Result<Out
                     .text("delivery")
                     .and_then(|id| snap.get(id).ok())
                     .ok_or_else(|| Error::blocked("Missing integration receipt"))?;
-                let (plan, missing, _) = workflow::evidence_requirements(s, snap, story)?;
-                if !missing.is_empty()
-                    || delivery.text("fingerprint") != Some(plan.fingerprint.as_str())
-                {
+                let (plan, missing, evidence) = workflow::evidence_requirements(s, snap, story)?;
+                if !missing.is_empty() {
+                    return Err(Error::blocked(format!(
+                        "Publication requires current verification for {}: {}. Run aep verify run --story {} and resolve required review before retrying publication.",
+                        story.id,
+                        missing.join("; "),
+                        story.id
+                    )));
+                }
+                // Integration is a historical fact; verification is a current-context
+                // assertion. Recheck the exact Git trees rather than requiring a new
+                // merge just because context arrived in the shared store afterward.
+                let integration = delivery
+                    .text("integration_head")
+                    .ok_or_else(|| Error::blocked("Delivery has no integration revision"))?;
+                let integrated_tree = aep_store::git(&s.root, &["rev-parse", "--verify", &format!("{integration}^{{tree}}")])
+                    .map_err(|_| Error::blocked("Integration tree is unavailable; restore the recorded commit before publication"))?;
+                let candidate_tree = aep_store::git(
+                    &s.root,
+                    &["rev-parse", "--verify", &format!("{}^{{tree}}", plan.head)],
+                )?;
+                if integrated_tree != candidate_tree {
                     return Err(Error::blocked(
-                        "Publication requires current integration and verification evidence",
+                        "Integrated tree differs from the verified candidate; inspect and reopen the story for current validation",
                     ));
                 }
-                receipts.push(json!({"story":story.id,"delivery":delivery.id,"implementation_head":delivery.text("head"),"integration_head":delivery.text("integration_head"),"environment":"local/CI only; release evidence is separate"}));
+                receipts.push(json!({"story":story.id,"delivery":delivery.id,"implementation_head":plan.head,"integration_head":integration,
+                    "integration_fingerprint":delivery.text("fingerprint"),"verification_fingerprint":plan.fingerprint,
+                    "verification_evidence":evidence,"producer":plan.producer,
+                    "environment":"local/CI only; release evidence is separate"}));
             }
             let outputs = candidates(s, snap, &r)?;
             let mut writes: BTreeMap<String, Option<String>> = outputs

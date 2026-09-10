@@ -299,6 +299,100 @@ fn offline_guidance_and_idempotent_setup() {
     call(root, &["--skill"], 2);
 }
 #[test]
+fn publication_reverifies_changed_context_without_remerging() {
+    let d = setup();
+    let root = d.path();
+    let config_path = root.join(".aep/config.toml");
+    let mut config: aep_core::Config =
+        toml::from_str(&fs::read_to_string(&config_path).unwrap()).unwrap();
+    config.policy.independent_review = true;
+    fs::write(&config_path, toml::to_string(&config).unwrap()).unwrap();
+    let (_, worktree) = prepared(root);
+    call(root, &["verify", "run", "--story", "S"], 0);
+    review(root, json!([]), 0);
+    let original_plan = call(root, &["verify", "plan", "--story", "S"], 0);
+    call(root, &["deliver", "merge", "--story", "S", "--local"], 0);
+    let deliveries = call(root, &["query", "--kind", "delivery"], 0);
+    let integrated_story = call(root, &["story", "show", "S"], 0);
+    // Model context/evidence arriving in the canonical store on integration.
+    write(
+        root,
+        "project-ledger/changes/C/evidence/probe.txt",
+        "Retained actual probe result\n",
+    );
+    let current = call(root, &["verify", "plan", "--story", "S"], 0);
+    assert_eq!(current["head"], original_plan["head"]);
+    assert_ne!(current["fingerprint"], original_plan["fingerprint"]);
+    call(root, &["spec", "publish", "--change", "C"], 3);
+    // A moved verification checkout cannot certify the historical candidate.
+    write(&worktree, "src/extra.txt", "later work\n");
+    git(&worktree, &["add", "."]);
+    git(&worktree, &["commit", "-qm", "later work"]);
+    call(root, &["verify", "run", "--story", "S"], 3);
+    git(
+        &worktree,
+        &["reset", "--hard", original_plan["head"].as_str().unwrap()],
+    );
+    call(root, &["verify", "run", "--story", "S"], 0);
+    call(root, &["spec", "publish", "--change", "C"], 3); // review still stale
+    review(root, json!([]), 0);
+    call(root, &["--dry-run", "spec", "publish", "--change", "C"], 0);
+    assert!(!root.join("project-roadmap/specs/result/spec.md").exists());
+    call(root, &["spec", "publish", "--change", "C"], 0);
+    let published = call(root, &["change", "show", "C"], 0);
+    let binding = &published["record"]["data"]["publication_evidence"][0];
+    assert_eq!(binding["verification_fingerprint"], current["fingerprint"]);
+    assert_eq!(
+        binding["integration_fingerprint"],
+        original_plan["fingerprint"]
+    );
+    assert!(
+        !binding["verification_evidence"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+    assert_eq!(
+        binding["producer"]["binary_sha256"],
+        aep_core::digest(fs::read(env!("CARGO_BIN_EXE_aep")).unwrap())
+    );
+    assert_eq!(
+        call(root, &["query", "--kind", "delivery"], 0)["records"],
+        deliveries["records"]
+    );
+    assert_eq!(call(root, &["story", "show", "S"], 0), integrated_story);
+    call(root, &["change", "close", "C"], 0);
+}
+
+#[test]
+fn integrated_delivery_plan_and_dry_run_do_not_offer_another_merge() {
+    let d = setup();
+    let root = d.path();
+    prepared(root);
+    call(root, &["verify", "run", "--story", "S"], 0);
+    review(root, json!([]), 0);
+    call(root, &["deliver", "merge", "--story", "S", "--local"], 0);
+    let story = call(root, &["story", "show", "S"], 0);
+    let plan = call(root, &["deliver", "plan", "--story", "S"], 0);
+    assert_eq!(plan["eligible"], false);
+    assert_eq!(plan["candidate_ready"], true);
+    assert_eq!(plan["integrated"], true);
+    for dry in [true, false] {
+        let mut args = vec!["deliver", "merge", "--story", "S", "--local"];
+        if dry {
+            args.insert(0, "--dry-run");
+        }
+        call(root, &args, 3);
+        let mut args = vec!["deliver", "pr", "--story", "S", "--base", "main"];
+        if dry {
+            args.insert(0, "--dry-run");
+        }
+        call(root, &args, 3);
+    }
+    assert_eq!(call(root, &["story", "show", "S"], 0), story);
+}
+
+#[test]
 fn local_lifecycle_preserves_evidence_through_integration_and_publication() {
     let d = setup();
     let root = d.path();
@@ -467,7 +561,14 @@ fn shared_code_drift_blocks_local_integration() {
     prepared(root);
     call(root, &["verify", "run", "--story", "S"], 0);
     review(root, json!([]), 0);
+    call(root, &["--dry-run", "deliver", "merge", "--story", "S"], 3);
+    call(root, &["deliver", "merge", "--story", "S"], 3);
     write(root, "README.md", "Unverified edit\n");
+    call(
+        root,
+        &["--dry-run", "deliver", "merge", "--story", "S", "--local"],
+        3,
+    );
     call(root, &["deliver", "merge", "--story", "S", "--local"], 3);
     assert_eq!(
         fs::read_to_string(root.join("README.md")).unwrap(),

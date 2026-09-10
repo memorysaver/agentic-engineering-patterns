@@ -289,8 +289,22 @@ fn ensure_clean_code(path: &Path) -> Result<()> {
     }
     Ok(())
 }
+// This identifies the executing artifact, including distinct builds of one preview
+// version. It is provenance, not an input that invalidates every check on rebuild.
+pub fn producer() -> Result<Value> {
+    static IDENTITY: std::sync::OnceLock<Value> = std::sync::OnceLock::new();
+    if let Some(value) = IDENTITY.get() {
+        return Ok(value.clone());
+    }
+    let executable = std::env::current_exe()?;
+    let value = json!({"cli_version": aep_core::VERSION,
+        "binary_sha256": digest(std::fs::read(executable)?)});
+    let _ = IDENTITY.set(value.clone());
+    Ok(value)
+}
 #[derive(Debug, Serialize)]
 pub struct VerificationPlan {
+    pub producer: Value,
     pub story: String,
     pub attempt: String,
     pub head: String,
@@ -505,6 +519,7 @@ pub fn verification_plan(s: &Store, snap: &Snapshot, story: &Record) -> Result<V
         &json!({"head":head,"story":story_contract,"changes":change_contracts,"contracts":contract_files,"declared_contracts":declared_contracts,"linked_context":linked_context(s,snap,story)?,"rules":rules,"checks":s.config.checks,"risk":risk,"base":attempt.text("base")}),
     )?);
     Ok(VerificationPlan {
+        producer: producer()?,
         story: story.id.clone(),
         attempt: attempt.id,
         head,
@@ -560,6 +575,7 @@ pub fn verify(args: &Cli, s: &Store, snap: &Snapshot, command: &cli::Verify) -> 
         r.set("check_id", id);
         r.set("head", plan.head.clone());
         r.set("fingerprint", plan.fingerprint.clone());
+        r.set("producer", plan.producer.clone());
         r.set("environment", c.environment.clone());
         r.set("started_at", now());
         r.set("command", json!(c.command));
@@ -919,6 +935,7 @@ pub fn review(args: &Cli, s: &Store, snap: &Snapshot, command: &cli::Review) -> 
             r.refs = vec![story.id.clone(), attempt.id.clone()];
             r.set("head", plan.head.clone());
             r.set("fingerprint", plan.fingerprint.clone());
+            r.set("producer", plan.producer.clone());
             r.set("builder", attempt.owner.clone().unwrap_or_default());
             r.set("round", json!(prior.len() + 1));
             let carried = latest_completed_review(snap, &story.id)
@@ -1061,6 +1078,7 @@ pub fn review(args: &Cli, s: &Store, snap: &Snapshot, command: &cli::Review) -> 
             .into();
             r.set("head", response.head);
             r.set("fingerprint", response.fingerprint);
+            r.set("response_producer", producer()?);
             r.set("findings", json!(response.findings));
             save(s, snap, vec![r], BTreeMap::new(), args.dry_run)
         }
@@ -1325,12 +1343,25 @@ pub fn deliver(args: &Cli, s: &Store, snap: &Snapshot, command: &cli::Deliver) -
             .ok_or_else(|| Error::blocked("Provider omitted merge revision"))?;
         return finalize_delivery(s, receipt, &story.id, &attempt.id, head);
     }
-    let (plan, missing, evidence) = evidence_requirements(s, snap, &story)?;
-    if matches!(command, cli::Deliver::Plan { .. }) || args.dry_run {
-        return Ok(Outcome::ok(
-            json!({"verification":plan,"missing":missing,"evidence":evidence,"eligible":missing.is_empty(),
-                "guidance": "This checks candidate readiness only. Continue the requested delivery and closure using aep --skill deliver; use existing authorization and report any remaining decision."}),
-        ));
+    let integrated = ["integrated", "released"].contains(&story.status.as_str());
+    let closure_guidance = "Already integrated. Continue current verification/review, spec publication and change closure using aep --skill deliver; another merge is unnecessary for context-only updates.";
+    if integrated && !matches!(command, cli::Deliver::Plan { .. }) {
+        return Err(Error::blocked(closure_guidance));
+    }
+    let (plan, mut missing, evidence) = evidence_requirements(s, snap, &story)?;
+    let candidate_ready = missing.is_empty();
+    if integrated {
+        missing.push(closure_guidance.into());
+    }
+    let inspection = |missing: Vec<String>| {
+        Outcome::ok(
+            json!({"verification":plan,"eligible":missing.is_empty(),"missing":missing,"evidence":evidence,
+            "candidate_ready":candidate_ready,"integrated":integrated,
+            "guidance": if integrated {closure_guidance} else {"This checks candidate and local action prerequisites. Provider readiness is rechecked when executing. Continue the requested delivery and closure using aep --skill deliver."}}),
+        )
+    };
+    if matches!(command, cli::Deliver::Plan { .. }) {
+        return Ok(inspection(missing));
     }
     if !missing.is_empty() {
         return Err(Error::blocked(missing.join("; ")));
@@ -1338,6 +1369,32 @@ pub fn deliver(args: &Cli, s: &Store, snap: &Snapshot, command: &cli::Deliver) -
     let attempt = active_attempt(snap, id)?;
     let path = attempt_path(s, &attempt)?;
     let branch = attempt.text("branch").unwrap().to_string();
+    // Local prerequisites apply equally to real actions and dry runs.
+    match command {
+        cli::Deliver::Pr { .. } if story.text("pr_url").is_some() => {
+            return Err(Error::blocked(
+                "A PR is already recorded; inspect deliver status",
+            ));
+        }
+        cli::Deliver::Merge { local: true, .. } => {
+            if s.root == path {
+                return Err(Error::blocked(
+                    "Run local integration from the integration checkout",
+                ));
+            }
+            ensure_clean_integration(s)?;
+            let target_head = git(&s.root, &["rev-parse", "HEAD"])?;
+            git(&s.root, &["merge-base", "--is-ancestor", &target_head, &plan.head])
+                .map_err(|_| Error::blocked("Rebase the implementation onto the integration head, then verify and review the new candidate"))?;
+        }
+        cli::Deliver::Merge { local: false, .. } if story.text("pr_url").is_none() => {
+            return Err(Error::blocked("Create or reconcile a PR before merging"));
+        }
+        _ => {}
+    }
+    if args.dry_run {
+        return Ok(inspection(missing));
+    }
     let mut receipt = Record::new(
         Kind::Delivery,
         &unique_id("delivery"),
@@ -1348,14 +1405,10 @@ pub fn deliver(args: &Cli, s: &Store, snap: &Snapshot, command: &cli::Deliver) -
     receipt.set("attempt", plan.attempt.clone());
     receipt.set("head", plan.head.clone());
     receipt.set("fingerprint", plan.fingerprint.clone());
+    receipt.set("producer", plan.producer.clone());
     receipt.set("evidence", json!(evidence));
     match command {
         cli::Deliver::Pr { base, .. } => {
-            if story.text("pr_url").is_some() {
-                return Err(Error::blocked(
-                    "A PR is already recorded; inspect deliver status",
-                ));
-            }
             let existing = gh(
                 s,
                 &[
@@ -1448,14 +1501,6 @@ pub fn deliver(args: &Cli, s: &Store, snap: &Snapshot, command: &cli::Deliver) -
                 },
             );
             let integration_head = if *local {
-                if s.root == path {
-                    return Err(Error::blocked(
-                        "Run local integration from the integration checkout",
-                    ));
-                }
-                ensure_clean_integration(s)?;
-                let target_head = git(&s.root, &["rev-parse", "HEAD"])?;
-                git(&s.root,&["merge-base","--is-ancestor",&target_head,&plan.head]).map_err(|_|Error::blocked("Rebase the implementation onto the integration head, then verify and review the new candidate"))?;
                 save(s, snap, vec![receipt.clone()], BTreeMap::new(), false)?;
                 git(&s.root, &["merge", "--ff-only", &plan.head]).map_err(Error::changed)?;
                 git(&s.root, &["rev-parse", "HEAD"]).map_err(Error::changed)?
@@ -1548,6 +1593,7 @@ fn finalize_delivery(
         return Err(Error::conflict("Story already has a different integration receipt").changed());
     }
     receipt.status = "integrated".into();
+    receipt.set("integration_producer", producer()?);
     receipt.set("integration_head", head.to_string());
     if git(&s.root, &["cat-file", "-e", &format!("{head}^{{commit}}")]).is_err() {
         let _ = git(&s.root, &["fetch", "--no-tags", "origin", head]);

@@ -16,6 +16,9 @@ product work, integration evidence, and release history.
 
 ## [Unreleased] — 5.0.0-preview.1
 
+- Publish specifications after context-only changes using fresh checks/review for the same confirmed integration tree, retaining the original delivery receipt and recording both fingerprints. Avoid reopening and remerging unchanged code solely to refresh publication evidence.
+- Report integrated stories as awaiting closure rather than eligible for another delivery; apply local action prerequisites to dry runs. Record AEP executable digests on verification, review, delivery and publication evidence, and clarify shared-ledger conflict reconciliation.
+
 - Label bundled and project-owned skills separately in the human catalog, retaining one discovery interface. Clarify reflect-to-project-skill authoring and shared-ledger delivery transport.
 - Include incoming accepted decisions and their superseded history in task context, verification fingerprints and dispatch base requirements so later clarifications of immutable records remain discoverable and invalidate stale evidence. Preserve story-scope enforcement.
 - Publish changed specifications with a single final newline while preserving untouched document content and no-op publication bytes.

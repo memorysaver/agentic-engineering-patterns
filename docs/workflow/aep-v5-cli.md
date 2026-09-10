@@ -108,7 +108,7 @@ data:
 
 `aep spec diff --change retry-result` previews the candidate. `aep change accept retry-result --by <actor>` records accepted intent after BDD/baseline checks. Documentation-only changes declare `data.documentation_only: true` and need no artificial behavior contract.
 
-After every linked story is integrated with current check/review evidence, `aep spec publish --change retry-result` updates `project-roadmap/specs/<capability>/spec.md` and its evidence file in one transaction. `aep change close retry-result` closes the published change. Acceptance, integration, publication, and release are distinct facts.
+After every linked story is integrated with current check/review evidence, `aep spec publish --change retry-result` updates `project-roadmap/specs/<capability>/spec.md` and its evidence file in one transaction. `aep change close retry-result` closes the published change. Acceptance, integration, publication, and release are distinct facts. When shared context changes after integration, rerun checks and required review at the retained candidate, then retry publication. The publisher rechecks candidate/integration tree equality and records the original integration fingerprint alongside the current verification fingerprint and evidence IDs; no replacement merge receipt is needed for context-only movement.
 
 ## Isolated execution and evidence
 
@@ -121,9 +121,11 @@ After every linked story is integrated with current check/review evidence, `aep 
 
 Workers use `aep --root <control-checkout>` for shared records. Inspections verify the recorded root, Git repository, branch, base, and worktree. Duplicate attempts, overlapping scopes, unavailable dependencies, stale gates, and exhausted capacity block dispatch. A host must reconcile worker liveness before relaunching a claim.
 
-Verification receipts include command, check identity, candidate head, contract/rule/config fingerprint, linked decision/context revisions, instruction files, environment, result, and timestamps. Failed, blocked, interrupted, truncated, and stale results remain visible. Exact worktree head and cleanliness are checked before and after execution, including revalidation of integrated work. Checks that modify candidate inputs cannot certify the old inputs.
+Verification receipts include command, check identity, candidate head, contract/rule/config fingerprint, linked decision/context revisions, instruction files, environment, result, timestamps, and the executing AEP version/binary SHA-256. Review request/response, delivery intent/integration and publication records retain their producer identities as well. Failed, blocked, interrupted, truncated, and stale results remain visible. Exact worktree head and cleanliness are checked before and after execution, including revalidation of integrated work. Checks that modify candidate inputs cannot certify the old inputs.
 
 ## Delivery, gates, and release
+
+`deliver plan` separates `candidate_ready` from delivery eligibility. Already integrated/released stories report `integrated=true` and `eligible=false` for another PR/merge; continue verification/publication/closure. PR/merge dry runs enforce the same local prerequisites as execution, including integration state, PR presence and local checkout cleanliness/ancestry. Provider readiness is checked on execution.
 
 `aep deliver pr --story FIX-retry --base main` uses the optional `gh` adapter. It records intent, looks up an existing branch PR, pushes, and records the confirmed URL. `aep deliver merge --story FIX-retry --local` performs a verified fast-forward in the control checkout. Uncommitted changes outside the ledger block local integration.
 

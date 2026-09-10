@@ -345,7 +345,9 @@ pub fn render(operation: &str, result: &Outcome) -> String {
         }
         "deliver.plan" | "deliver.pr" | "deliver.merge" if d.get("eligible").is_some() => {
             out.push_str("Delivery readiness\n\n");
-            let state = if d["eligible"] == true {
+            let state = if d["integrated"] == true {
+                "Already integrated; continue publication and closure"
+            } else if d["eligible"] == true {
                 "Ready for the authorized delivery action"
             } else {
                 "Requirements remain"
