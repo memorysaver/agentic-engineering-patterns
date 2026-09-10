@@ -3,6 +3,8 @@
 Date: 2026-09-11, Asia/Taipei
 Status: completed observation; follow-up AEP issues recorded, not fixed in this trial
 
+Follow-up: the subsequent authorized correction and reinstall are recorded in [publication reverification audit](../audits/2026-09-11-aep-v5-publication-reverification.md); the observation below retains the original trial's facts.
+
 ## Scope and entry
 
 The user asked the observer to “觀察 mits agent 開發108”. Herdr reported the existing MITS Codex agent at `w4:p2` working. The observer sent no prompt and made no downstream modifications. The first read at approximately 01:14 found the downstream turn already about 15 minutes into execution; earlier events below were recovered from its visible recent transcript and retained records, not watched from their start.
