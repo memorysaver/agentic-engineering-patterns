@@ -156,3 +156,5 @@ Agents decide whether a lesson belongs in a local rule, local procedure, or an A
 | 6 | External execution or I/O failure |
 
 Managed stores contain UTF-8 text, bounded to 16 MiB per file. Large or binary evidence belongs in an artifact store or Git source with explicit pointers. Git history protects migration context; the transaction journal protects interrupted current writes. These serve different purposes.
+
+References accept their catalog name or exact Markdown link path: `aep --skill roadmap --ref status` and `aep --skill roadmap --ref references/status.md` return identical content. Both resolve only resources in the selected procedure catalog. Native skill links include the command beside the relative link.

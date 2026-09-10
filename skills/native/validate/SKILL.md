@@ -7,7 +7,7 @@ description: Verify implementation or other artifacts against intent using obser
 
 For a review-only request, inspect the supplied candidate and report findings. Use read-only `aep context`, `aep verify plan`, and `aep query` as needed. Do not start another review, repair code, or merge unless requested. Respond to an existing review using its supplied shape and carried findings.
 
-For completion validation, read [Self verification](references/self-verification.md). Inspect the actual candidate against acceptance, use the project's operation procedure, and identify untested claims. Run `aep verify plan --story <id>` to inspect required checks and policy, then `aep verify run --story <id>` to execute them. Record failures and repair defects against the accepted behavior.
+For completion validation, read [Self verification](references/self-verification.md) (`aep --skill validate --ref self-verification`). Inspect the actual candidate against acceptance, use the project's operation procedure, and identify untested claims. Run `aep verify plan --story <id>` to inspect required checks and policy, then `aep verify run --story <id>` to execute them. Record failures and repair defects against the accepted behavior.
 
 Independent review is required when project policy says so and available as an additional chosen method. Use `aep review request --story <id>` and pass the contract, revisions, and evidence to an independent reviewer under host authority. Record the structured response with `aep review record --file <file>`. CLI validation checks attribution structure and freshness; reviewer independence also depends on actual host execution.
 

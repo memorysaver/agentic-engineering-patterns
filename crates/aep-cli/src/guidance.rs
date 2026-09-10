@@ -172,16 +172,31 @@ pub fn run(args: &Cli, name: &str, reference: Option<&str>) -> Result<Outcome> {
                 Error::input(format!("Unknown skill {name}; inspect aep --skill"))
             })?;
             let content = if let Some(id) = reference {
-                skill.refs.get(id).ok_or_else(|| {
-                    Error::input(format!(
-                        "Unknown reference {id}; available: {}",
-                        skill.refs.keys().cloned().collect::<Vec<_>>().join(", ")
-                    ))
-                })?
+                // Resolve only catalogued resources; a Markdown link is an alias,
+                // never an arbitrary filesystem path.
+                skill
+                    .refs
+                    .get(id)
+                    .or_else(|| {
+                        skill.refs.iter().find_map(|(key, body)| {
+                            (id == format!("references/{key}.md")).then_some(body)
+                        })
+                    })
+                    .ok_or_else(|| {
+                        Error::input(format!(
+                            "Unknown reference {id}; read an available resource with:\n{}",
+                            skill
+                                .refs
+                                .keys()
+                                .map(|key| format!("  aep --skill {name} --ref {key}"))
+                                .collect::<Vec<_>>()
+                                .join("\n")
+                        ))
+                    })?
             } else {
                 &skill.body
             };
-            let refs:Vec<_>=skill.refs.keys().map(|id|json!({"name":id,"read_command":format!("aep --skill {} --ref {id}",skill.name)})).collect();
+            let refs:Vec<_>=skill.refs.keys().map(|id|json!({"name":id,"path":format!("references/{id}.md"),"read_command":format!("aep --skill {} --ref {id}",skill.name)})).collect();
             Ok(Outcome::text(
                 content.clone(),
                 json!({"metadata":common,"name":name,"reference":reference,"source":skill.source,"content_digest":digest(content),"content":content,"references":refs}),

@@ -7,7 +7,7 @@ description: Select ready work and implement an accepted story in its worktree, 
 
 Read the story and linked change with `aep context <story>`. Check readiness with `aep dispatch plan --story <story>`. Select work using requested priority, value, dependency unlocks, and uncertainty; CLI readiness establishes mechanical prerequisites. Resolve missing intent through `aep --skill design` when needed.
 
-Read [Task handoff](references/handoff.md) when assembling context, starting work or resuming it; read [Git and worktree operations](references/git.md) for base selection, conflicts or recovery. Commit accepted design and dependencies so the chosen base is reproducible.
+Read [Task handoff](references/handoff.md) (`aep --skill implement --ref handoff`) when assembling context, starting work or resuming it; read [Git and worktree operations](references/git.md) (`aep --skill implement --ref git`) for base selection, conflicts or recovery. Commit accepted design and dependencies so the chosen base is reproducible.
 
 Create the claim/worktree with `aep dispatch start --story <id> --base <commit> --owner <actor>`. Inspect its returned branch, bootstrap, and shared store path. Work there yourself or use the host's agent mechanism when delegation is authorized. A prepared claim reports preparation only.
 

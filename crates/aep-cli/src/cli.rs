@@ -21,8 +21,8 @@ pub struct Cli {
     /// Print the agent skill, or a named procedure, as Markdown.
     #[arg(long, num_args = 0..=1, default_missing_value = "aep", value_name = "NAME")]
     pub skill: Option<String>,
-    /// Read a supporting reference from the selected procedure.
-    #[arg(long = "ref", requires = "skill", value_name = "NAME")]
+    /// Read a reference by name or its references/NAME.md link path.
+    #[arg(long = "ref", requires = "skill", value_name = "NAME|PATH")]
     pub reference: Option<String>,
     #[command(subcommand)]
     pub command: Option<Command>,
@@ -449,7 +449,7 @@ pub fn command() -> clap::Command {
         ),
     ];
     let mut help = format!(
-        "aep — {}\n\nUsage: aep [OPTIONS] <COMMAND>\n       aep --skill [NAME] [--ref NAME]\n",
+        "aep — {}\n\nUsage: aep [OPTIONS] <COMMAND>\n       aep --skill [NAME] [--ref NAME|PATH]\n",
         command.get_about().unwrap()
     );
     for (title, names) in groups {
@@ -459,7 +459,7 @@ pub fn command() -> clap::Command {
             help.push_str(&format!("  {name:<12} {}\n", sub.get_about().unwrap()));
         }
     }
-    help.push_str("\nOptions:\n  --root <PATH>    Use a project directory (default: current directory)\n  --json           Print structured JSON\n  --dry-run        Preview supported writes without applying them\n  --skill [NAME]   Print the agent skill or a named procedure as Markdown\n  --ref <NAME>     Read a reference with --skill <NAME>\n  -h, --help       Show help\n  -V, --version    Show version\n\nExamples:\n  aep status\n  aep context STORY-ID\n  aep verify --help\n\nFor coding agents:\n  aep --skill      Read the bundled SKILL.md and discover project procedures\n");
+    help.push_str("\nOptions:\n  --root <PATH>    Use a project directory (default: current directory)\n  --json           Print structured JSON\n  --dry-run        Preview supported writes without applying them\n  --skill [NAME]   Print the agent skill or a named procedure as Markdown\n  --ref <NAME|PATH> Read a catalog name or references/NAME.md with --skill\n  -h, --help       Show help\n  -V, --version    Show version\n\nExamples:\n  aep status\n  aep context STORY-ID\n  aep verify --help\n\nFor coding agents:\n  aep --skill      Read the bundled SKILL.md and discover project procedures\n");
     command = command.override_help(help);
     command
 }

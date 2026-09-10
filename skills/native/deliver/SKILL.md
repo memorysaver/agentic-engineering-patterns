@@ -13,4 +13,4 @@ Reconcile ambiguous external results with `aep deliver status --story <id>` befo
 
 Review combined integration and run required checks. Publish applicable deltas with `aep spec publish --change <id>` and close the change when linked work is integrated. A different or unavailable integration tree blocks promotion; inspect it and use `aep story reopen <id>` for current validation while retaining historical delivery. `aep release promote <id> --environment <target> --by <actor>` requires current gates and environment evidence.
 
-Read [Closure](references/closure.md) before cleaning resources or completing handoff. Use `aep --skill reflect` for useful observations. Report integration identity, actual verification scope, retained evidence and remaining resources or gaps.
+Read [Closure](references/closure.md) (`aep --skill deliver --ref closure`) before cleaning resources or completing handoff. Use `aep --skill reflect` for useful observations. Report integration identity, actual verification scope, retained evidence and remaining resources or gaps.

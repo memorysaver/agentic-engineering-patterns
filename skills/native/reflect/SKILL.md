@@ -5,7 +5,7 @@ description: Turn observed product or execution feedback into context updates, l
 
 # Reflect
 
-Read prior lessons, rules, and rejected proposals relevant to the observation. Separate the evidence from an uncertain diagnosis. Read [Feedback destinations](references/feedback.md) when deciding whether the result changes product intent, implementation, verification or process.
+Read prior lessons, rules, and rejected proposals relevant to the observation. Separate the evidence from an uncertain diagnosis. Read [Feedback destinations](references/feedback.md) (`aep --skill reflect --ref feedback`) when deciding whether the result changes product intent, implementation, verification or process.
 
 Use `aep lesson record --file <file>` for durable observations; `aep lesson find <text>` provides literal text search. Choose the smallest useful destination: a product story/decision, code/configuration, a scoped rule, a project-owned procedure, or an upstream AEP proposal.
 

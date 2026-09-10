@@ -21,7 +21,7 @@ Build enough context to identify intent, current behavior, applicable constraint
 
 ## Read guidance as needed
 
-`aep --skill NAME` prints a complete procedure. `aep --skill NAME --ref REFERENCE` prints its supporting resource. The list below includes the bundled procedures and any procedures discovered in this project. These commands serve Markdown directly from the executable or project; reading guidance needs no model key or installed AEP plugin.
+`aep --skill NAME` prints a complete procedure. `aep --skill NAME --ref REFERENCE` prints its supporting resource. REFERENCE accepts a catalog name such as `status` or its Markdown link path `references/status.md`. The list below includes the bundled procedures and any procedures discovered in this project. These commands serve Markdown directly from the executable or project; reading guidance needs no model key or installed AEP plugin.
 
 ```bash
 aep --skill design

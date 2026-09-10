@@ -66,7 +66,46 @@ fn skill_is_valid_markdown_offline_and_has_no_transport_footer() {
                 String::from_utf8(r.stdout).unwrap(),
                 data(d.path(), &["--skill", name, "--ref", id])["content"]
             );
+            let path = reference["path"].as_str().unwrap();
+            let linked = run(d.path(), &["--skill", name, "--ref", path]);
+            assert!(linked.status.success());
+            assert_eq!(
+                linked.stdout,
+                run(d.path(), &["--skill", name, "--ref", id]).stdout
+            );
         }
+    }
+}
+#[test]
+fn reference_links_are_catalogued_resources_not_arbitrary_paths() {
+    let d = repo();
+    let p = d.path().join("project-rules/skills/check-product");
+    fs::create_dir_all(p.join("references")).unwrap();
+    fs::write(p.join("SKILL.md"), "---\nname: check-product\ndescription: Verify product behavior.\n---\n\nRead [Checks](references/checks.md).\n").unwrap();
+    fs::write(
+        p.join("references/checks.md"),
+        "# Checks\n\nRun the product.\n",
+    )
+    .unwrap();
+    fs::write(d.path().join("private.md"), "outside-catalog-sentinel").unwrap();
+    let short = run(d.path(), &["--skill", "check-product", "--ref", "checks"]);
+    let link = run(
+        d.path(),
+        &["--skill", "check-product", "--ref", "references/checks.md"],
+    );
+    assert!(short.status.success() && link.status.success());
+    assert_eq!(short.stdout, link.stdout);
+    for path in [
+        "../../private.md",
+        "references/../SKILL.md",
+        "/private.md",
+        "references/missing.md",
+    ] {
+        let r = run(d.path(), &["--skill", "check-product", "--ref", path]);
+        assert_eq!(r.status.code(), Some(2));
+        let error = String::from_utf8(r.stderr).unwrap();
+        assert!(error.contains("aep --skill check-product --ref checks"));
+        assert!(!error.contains("outside-catalog-sentinel"));
     }
 }
 #[test]
