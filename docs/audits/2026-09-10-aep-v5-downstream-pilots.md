@@ -17,7 +17,7 @@ The owner selected Looplia, then requested parallel experiments on MITS and Rewa
 - Preserve non-completed blocked/deferred/cancelled/unknown states. Migration cannot silently turn a project hold into dispatchable pending work.
 - Validate a reviewed plan's prospective configuration before writing. Invalid fields, deleted configuration, incompatible versions and changed store roots are rejected; candidate records are checked under the proposed policy.
 
-Regression fixtures cover binary drift and links, unsupported reference syntax, scoped ID stability, foreign-source aliases, retained holds, and invalid prospective configuration. The final workspace suite has **62 passing tests**; formatting and Clippy pass.
+Regression fixtures cover binary drift and links, unsupported reference syntax, scoped ID stability, foreign-source aliases, retained holds, and invalid prospective configuration. The final workspace suite has **62 passing tests**; formatting and Clippy pass. macOS CI then exposed a fixture assertion comparing `/var` with its canonical `/private/var` spelling. The assertion now compares canonical paths, matching the importer's existing behavior; no production code changed for this platform correction.
 
 ## Remaining adoption work
 

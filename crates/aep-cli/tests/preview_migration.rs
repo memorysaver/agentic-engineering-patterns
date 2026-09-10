@@ -517,7 +517,7 @@ fn legacy_change_link_ignores_same_source_id_from_another_bundle() {
         .unwrap();
     assert_eq!(
         imported["data"]["source"]["path"],
-        json!(root.join("openspec"))
+        json!(fs::canonicalize(root.join("openspec")).unwrap())
     );
     assert_eq!(imported["data"]["source"]["change"], "one");
     apply(root, &plan, 0);
