@@ -38,7 +38,7 @@ The agent's first version of the design section linked the containers under `pro
 
 ## Handoff and retained state
 
-The final response listed actual paths, the checks run, the 0-ready status with its reason, and stated that files were saved but not staged or committed, with `main` still at `7af2d5b`. It named remaining work: the MITS-110 contract, collection entry, data maturity and research spend authorization. No implementation or V2 run occurred. Git retention in MITS has now been deferred across four turns; the user has not asked MITS to commit.
+The final response listed actual paths, the checks run, the 0-ready status with its reason, and stated that files were saved but not staged or committed, with `main` still at `7af2d5b`. It named remaining work: the MITS-110 contract, collection entry, data maturity and research spend authorization. No implementation or V2 run occurred. Git retention in MITS had been deferred across four turns. On the user's instruction the observer then prompted MITS to commit; it committed 80 files as `26aeaa8` on `main` after repo check, preflight, secret scan, `aep check` and nine spec checks, verified per-file hashes unchanged, and did not push because the project procedure did not require it.
 
 Open observations for AEP: `aep context` on a container still expands through decisions and the roadmap into most of the imported history; the store for containers is the ledger, which the design-store prose initially got wrong; the CLI candidates in the decision (empty-container diagnostic, status grouped by layer) remain unimplemented.
 
