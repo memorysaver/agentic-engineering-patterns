@@ -54,6 +54,7 @@ Use `aep status`, `aep context <id>`, `aep query`, and `aep timeline` to inspect
 - [Legacy-to-v5 skill capability inventory](docs/audits/2026-09-10-aep-v5-skill-migration-inventory.md)
 - [Skill classification: context and self verification](docs/decisions/aep-v5-context-and-self-verification.md)
 - [Purpose-driven research and product-context handoff](docs/decisions/aep-v5-purpose-driven-research.md)
+- [Layer and wave encapsulation of a multi-story design](docs/decisions/aep-v5-layer-wave-encapsulation.md)
 - [Delivery continuity and closure](docs/decisions/aep-v5-delivery-continuity.md)
 - [Corrections from downstream delivery](docs/decisions/aep-v5-downstream-delivery-findings.md)
 - [Publication after integration context changes](docs/decisions/aep-v5-publication-reverification.md)

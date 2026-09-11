@@ -32,6 +32,20 @@ required_checks: [tests]
 
 Configure the named checks in `.aep/config.toml` with explicit command argument arrays. Acceptance prose belongs in the change and scenarios; the story supplies work organization and references. IDs remain stable across layers, waves, releases, and attempts.
 
+When a design or decision breaks into several stories, create the layer before the changes and stories, then set each story's `layer` (and `wave` when a batch needs its own coordination). Point the roadmap record's `refs` at the layer instead of repeating story order in `data`. A minimal layer input is:
+
+```yaml
+kind: layer
+id: L-42
+title: Name the concept
+description: Observable outcome once every member story is integrated.
+refs: [S-42, S-43, ADR-42]
+data:
+  design_artifact: docs/design/2026-09-11-concept.md
+```
+
+A wave lists its member stories in `refs`, names the preceding wave in `depends_on`, and describes the batch's intent. Members inherit container `depends_on` and `required_gates` in readiness; `aep context <layer>` expands to members, changes and the source decision. A layer completes when its members are integrated, its gates are current and its outcome has observed evidence.
+
 A story may add `changes: [other-contract]` alongside its primary `change`. All linked contracts must be accepted. Release records can select story IDs through `refs`; their `required_gates` govern promotion. Story/layer/wave prerequisite gates govern dispatch.
 
 Attribute delivery limits and non-goals to the user's request or applicable project policy. Separate an implementation worker's assignment from the overall requested endpoint.

@@ -16,6 +16,8 @@ product work, integration evidence, and release history.
 
 ## [Unreleased] — 5.0.0-preview.1
 
+- Encapsulate a multi-story design in a layer: native roadmap, design, records, status and handoff guidance now say to create the concept's layer (observable outcome, member stories, source decision, design artifact) before its changes and stories, set story `layer`/`wave`, point roadmap `refs` at the layer, and express order through dependencies and waves instead of ordering fields in `data`.
+
 - Add purpose-driven research to native roadmap/design guidance: investigate decision-changing evidence before recommending priorities or benchmarks, invite user feedback, then autonomously maintain canonical product context and carry authorized design/implementation forward. Keep unresolved exploration draft and preserve the eight-skill catalog.
 
 - Publish specifications after context-only changes using fresh checks/review for the same confirmed integration tree, retaining the original delivery receipt and recording both fingerprints. Avoid reopening and remerging unchanged code solely to refresh publication evidence.

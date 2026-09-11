@@ -4,6 +4,8 @@ Use `aep status`, `aep query`, `aep context <id>`, and `aep timeline` to find th
 
 A useful update states the current outcome, what changed, supporting evidence, remaining work, and decisions that really require the reader. Distinguish accepted intent, candidate implementation, verified behavior, integration, and deployment. A recorded “done” label alone is weaker than the associated integration/check evidence.
 
+When stories belong to a layer, summarize by that container: its outcome, member states, current gates and remaining members, then the next ready story.
+
 For blockers, name the unresolved dependency, finding, access gap or decision and its owner when known. Report “waiting since” only with a source for that time. Event recording timestamps cannot reconstruct unknown historical merge dates.
 
 When asked to recommend next work, establish product value and evidence separately from a candidate's readiness or position in the backlog. If that basis is uncertain, use `aep --skill roadmap --ref purpose-research` before presenting a priority as supported. A status-only request calls for the observed state, not an unrequested product decision.

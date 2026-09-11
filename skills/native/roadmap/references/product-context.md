@@ -8,6 +8,8 @@ Choose the smallest end-to-end slice that demonstrates an outcome, even if depth
 
 Use explicit dependency edges for required interfaces, data, or integrations. Separate readiness from business priority: a ready story may still provide less value or learning than another. Compare value, dependency unlocks, uncertainty, and real integration cost with the evidence available. Numeric layer labels are organization, not implicit barriers.
 
+When one design or decision produces several stories or changes, create a layer for that concept before its changes and stories, set each story's `layer`, and point the roadmap record's `refs` at the layer. The layer's description states the observable outcome once all members are integrated; its `refs` list the member stories and source decision; its `data` names the design artifact. Add a wave when a batch needs its own ordering or coordination. Express order through `depends_on` and waves rather than ordering fields in `data`. A single story needs no container. Read `aep --skill design --ref records` for the container inputs and creation order.
+
 ## From feedback to maintained context
 
 After presenting a proposed direction and obtaining enough user input to settle it, complete the authorized context work in the same task. Writing and linking the affected records is part of that deliverable; per-file permission questions add no decision. Carry forward the user's accepted choices and existing authority, while keeping unresolved alternatives visibly draft. An explicit discussion, analysis or read-only request retains that boundary.

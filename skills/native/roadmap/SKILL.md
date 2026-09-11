@@ -7,7 +7,7 @@ description: Maintain product direction, journeys, collaboration containers, and
 
 Distinguish desired product direction from actual implementation and delivery history. Keep backbone and journeys in `project-roadmap/`, ADRs in `project-roadmap/decisions/`, and work in `project-ledger/`, honoring configured store paths.
 
-For a new opportunity or work breakdown, read [Product context](references/product-context.md) (`aep --skill roadmap --ref product-context`). Use `aep roadmap`, `aep decision`, `aep story`, `aep layer`, `aep wave`, and `aep release` for records; inspect each command's help for its input. Layers organize a theme or owner; waves/releases organize coordination and delivery. Explicit dependencies and gates establish readiness.
+For a new opportunity or work breakdown, read [Product context](references/product-context.md) (`aep --skill roadmap --ref product-context`). Use `aep roadmap`, `aep decision`, `aep story`, `aep layer`, `aep wave`, and `aep release` for records; inspect each command's help for its input. A layer encapsulates one concept: its observable outcome, design source and member stories; waves and releases organize coordination and delivery. When a design or decision breaks into several stories, create the layer before its changes and stories. Explicit dependencies and gates establish readiness.
 
 Before recommending a product priority, technical direction or benchmark, identify evidence gaps that could change the choice. Read [Purpose-driven research](references/purpose-research.md) (`aep --skill roadmap --ref purpose-research`) when those gaps need investigation. Research depth follows the decision's uncertainty; reuse sufficient current evidence.
 

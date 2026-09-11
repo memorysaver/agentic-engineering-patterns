@@ -1,6 +1,6 @@
 # Task context and continuity
 
-Assemble a small, source-linked handoff: selected workflow/release, task outcome and authority, story/change IDs, acceptance, applicable rules/decisions, relevant source areas, and the verification entrypoint. `aep context` supplies linked records; add reality and missing constraints from source/runtime as needed. Read `aep --skill project --ref context-sources` for a context gap.
+Assemble a small, source-linked handoff: selected workflow/release, task outcome and authority, story/change IDs, the story's layer or wave with that container's outcome, acceptance, applicable rules/decisions, relevant source areas, and the verification entrypoint. `aep context` supplies linked records; add reality and missing constraints from source/runtime as needed. Read `aep --skill project --ref context-sources` for a context gap.
 
 Carry the original requested endpoint, prior authorization, remaining delivery actions and the agent responsible for continuing them. A worker’s implementation assignment can be narrower than the overall task; its completed handoff returns control to the coordinator. Recover these facts from the conversation and project workflow when resuming.
 
