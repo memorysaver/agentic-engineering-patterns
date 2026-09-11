@@ -36,6 +36,8 @@ Fixture history is retained as a verified Git bundle, final documents as an arch
 
 This local scenario is a behavior observation, not an A/B result or proof that all live agents will choose research at the right time. The initial research-before-recommendation behavior, ambiguous-feedback cases and future live MITS continuation remain separate coverage boundaries.
 
+Subsequent live evidence: [MITS feedback-to-context continuation](../lessons/2026-09-11-mits-product-focus-followup.md) observed the agent consume the new guidance and use native AEP records for the user's different priority, cross-project learning. That observation retains remaining artifact-discovery and uncommitted-handoff limits; it does not turn the earlier fixture into a broader behavior guarantee.
+
 ## Preview artifact
 
 - Version: `5.0.0-preview.1`.
