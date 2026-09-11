@@ -1,21 +1,50 @@
 # Changelog
 
-All notable changes to this skills plugin are recorded here. The format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres
-to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) on the
-`metadata.version` field in [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json).
+All notable changes to AEP are recorded here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases use
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-**Maintenance convention:** every change that bumps the `marketplace.json`
-version ships with a matching entry here, in the same PR. Add work in progress
-under `[Unreleased]` as you go; when cutting a release, rename `[Unreleased]` to
-`[X.Y.Z] - YYYY-MM-DD` and tag `vX.Y.Z` on merge to `main`. SemVer guide for this
-repo: new skills / new backends / additive capability → **minor**; recipe and
-bug fixes → **patch**; removing or breaking a skill contract → **major**.
+Native CLI releases use the Cargo workspace version and include their embedded
+instructions. The optional legacy plugin uses `metadata.version` in
+[`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json). Each version
+change ships with a matching entry here. Add development work under
+`[Unreleased]`; move it to a dated version entry when publishing the matching tag.
+See [project release rules](project-rules/release.md).
 
-> This is **release history for the plugin**. It is unrelated to the per-project
-> `changelog:` array inside a downstream `product-context.yaml` (written by
-> `/envision`, `/dispatch`, `/reflect`, …), which records product-state history
-> for that project. See [`docs/glossary.md`](docs/glossary.md).
+This file records AEP releases. A downstream project's ledger records its own
+product work, integration evidence, and release history.
+
+## [Unreleased] — 5.0.0-preview.1
+
+- Encapsulate a multi-story design in a layer: native roadmap, design, records, status and handoff guidance now say to create the concept's layer (observable outcome, member stories, source decision, design artifact) before its changes and stories, set story `layer`/`wave`, point roadmap `refs` at the layer, and express order through dependencies and waves instead of ordering fields in `data`.
+
+- Add purpose-driven research to native roadmap/design guidance: investigate decision-changing evidence before recommending priorities or benchmarks, invite user feedback, then autonomously maintain canonical product context and carry authorized design/implementation forward. Keep unresolved exploration draft and preserve the eight-skill catalog.
+
+- Publish specifications after context-only changes using fresh checks/review for the same confirmed integration tree, retaining the original delivery receipt and recording both fingerprints. Avoid reopening and remerging unchanged code solely to refresh publication evidence.
+- Report integrated stories as awaiting closure rather than eligible for another delivery; apply local action prerequisites to dry runs. Record AEP executable digests on verification, review, delivery and publication evidence, and clarify shared-ledger conflict reconciliation.
+
+- Label bundled and project-owned skills separately in the human catalog, retaining one discovery interface. Clarify reflect-to-project-skill authoring and shared-ledger delivery transport.
+- Include incoming accepted decisions and their superseded history in task context, verification fingerprints and dispatch base requirements so later clarifications of immutable records remain discoverable and invalidate stale evidence. Preserve story-scope enforcement.
+- Publish changed specifications with a single final newline while preserving untouched document content and no-op publication bytes.
+
+- Carry the requested outcome and existing authorization through native implementation, validation, delivery and closure. Clarify that delivery-plan eligibility is candidate readiness; preserve explicit review/candidate/PR scope and report remaining authorization boundaries.
+
+- Resolve native skill references by catalog name or their exact Markdown link path; show executable reference commands in guidance and errors.
+
+- Redesign the clap CLI for human-readable help, status, context and operation results. Keep complete structured responses behind `--json`; preserve exit codes and mutation behavior. No TUI is added.
+- Replace the unreleased `aep skills` command family with `aep --skill [NAME] [--ref NAME]`. The default emits a complete SKILL.md entrypoint; named procedures/references emit exact Markdown without metadata footers. Update active entrypoints and embedded guidance together.
+
+- Exercise isolated downstream adoption in Looplia, MITS and Rewarc. Preserve binary migration evidence and legacy hold states; map overlapping story/OpenSpec IDs with source-scoped provenance. Record project-specific cutover gaps separately from CLI fixture success.
+
+- Add the native Rust CLI, embedded skill catalog/references, local procedure discovery, short AGENTS.md entrypoint, and tracked project configuration.
+- Introduce project-ledger, project-roadmap/decisions, project-rules, and lesson-learned stores with versioned records, graph checks, revision conflicts, and transaction recovery.
+- Implement isolated attempts, actual command verification, independent review, gate evaluation, Git/GitHub delivery receipts and reconciliation, specification publication, and evidence-based rule adoption.
+- Integrate common OpenSpec 1.12.0 delta/BDD semantics without requiring its CLI. Retain custom context with explicit mapping, and support Git-backed current-context migration.
+- Add native CI/release archives, lifecycle/failure fixtures, and independent review observations. Verify the copied executable with only Git on PATH; native archives contain the binary and license, with a separate checksum.
+- Focus the 5.0 deliverable on the standalone CLI and embedded guidance. Defer dashboard integration and runtime bundling; inspect native state through status/query/context/timeline JSON. Migration converts old context into native stores.
+- Prepare opt-in v5 preview alongside stable v4.1, preserving legacy migration sources and making the selected workflow explicit.
+- Center native guidance on context construction, project-owned self verification, and evidence from prototypes; retain independent review when project policy requires it.
+- Keep the optional v4.1 plugin distribution at its existing version. Native migration does not relabel old plugin files or update downstream projects automatically.
 
 ## [4.1.0] - 2026-09-03
 

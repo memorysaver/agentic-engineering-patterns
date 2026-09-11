@@ -1,47 +1,11 @@
-<!-- aep-agents-template: v4.1.0 -->
+<!-- aep-agents-template: v5.0.0 -->
 # AGENTS.md
 
-## Project Context
+Read `README.md` for project context. Project-specific maintenance rules are indexed in `project-rules/README.md`; open the files that apply to the task.
 
-- Read `README.md` before starting work to understand the project's purpose and concepts.
-- Treat the repository's documentation and code as the source of truth. Do not invent architecture, commands, conventions, or requirements.
-- This project's conventions live in `project-convention/`. Read `project-convention/README.md` first and open only the files that apply to the task.
+Use the user's request and prior authorization to define the deliverable. Complete authorized work and verify actual results. Analysis requests produce findings. Preserve unrelated user work and state missing evidence or unresolved decisions.
 
-## Working Agreement
+<!-- aep-cli-entrypoint: 5.0 -->
+Run `aep --skill` to discover procedures, then read `aep --skill <name>` and selected references. The working agent chooses skills and work order. This source repository can read its bundled guidance with `cargo run -p aep-cli -- --skill` before installation.
 
-- The user's request or approved plan defines the deliverable. Do not silently narrow, widen, or replace it.
-- Work autonomously on reversible actions within scope. Ask only when materially different interpretations would change the result, or when an action is destructive or outside scope.
-- When the user asks for analysis or diagnosis, report findings without applying a fix unless requested.
-- Complete all work that does not depend on missing input. If blocked, state exactly what remains and why.
-- Do not fix, optimize, or extend unrelated behavior. Report noteworthy issues as follow-ups.
-- Do not stop after announcing a next step. Execute it, verify the result, and finish the requested work.
-
-## Engineering Principles
-
-- Follow repository conventions and the surrounding code.
-- Make the smallest coherent change that fully satisfies the request.
-- Make surgical edits when they produce the same result as rewriting a file.
-- Before changing state, confirm that the evidence supports that specific change.
-
-## Tools and Verification
-
-- First privately identify what information is needed; gather independent items in parallel when possible.
-- Inspect relevant files before editing. Prefer `rg` and `rg --files` for searches.
-- Verify changes in proportion to their risk using the repository's existing checks (see `project-convention/`).
-- Add permanent tests only when requested or when the repository already tests that kind of behavior. Keep them focused on the requested behavior.
-- Use temporary checks when useful, but do not commit disposable artifacts.
-- Never claim a command or test passed unless it was run successfully. Report the exact checks performed and any checks that could not run.
-
-## Communication
-
-- Before substantial work, briefly state what you will inspect or change. Provide concise progress updates during long tasks.
-- End with a self-contained summary of what changed, what was verified, and any remaining issue.
-- Cite retrieved sources near the claims they support. Paraphrase by default and clearly mark direct quotations.
-- Use structure only when it improves clarity or the user requests it.
-- Please remove all mannered prose.
-
-## AEP Workflow
-
-This repository **is** [Agentic Engineering Patterns](https://github.com/memorysaver/agentic-engineering-patterns) (AEP): the `/aep-*` skills are authored here under `skills/` and consumed by downstream projects, not installed and run in this repository. Changes to how AEP works start with a decision document in `docs/decisions/` and ship as a tagged release with a `CHANGELOG.md` entry. The instruction-file templates a downstream receives live in `skills/project-setup/onboard/templates/`; this file is that template, dogfooded.
-
-For human-facing status and decisions, use the `/aep-easy-explain` register: one line of context first, ASD-STE100 Simplified Technical English, and this project's own nouns.
+End with the outcome, relevant checks, and remaining work. When guidance causes a stop, cite its command or file and the operative instruction.

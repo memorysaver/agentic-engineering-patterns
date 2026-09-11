@@ -1,0 +1,125 @@
+{
+  "pull_requests": [
+    {
+      "baseRefName": "develop",
+      "headRefOid": "b28dd52ee8f2a8f1985423eec6716964dce6d4b1",
+      "mergeCommit": {
+        "oid": "da9199ed2dc4d7f876f07e3f23a322b282f755bd"
+      },
+      "mergedAt": "2026-09-10T12:15:43Z",
+      "state": "MERGED",
+      "url": "https://github.com/memorysaver/looplia/pull/361",
+      "project": "looplia",
+      "local_branch": "develop"
+    },
+    {
+      "baseRefName": "develop",
+      "headRefOid": "203fbf98edbbf1e6293139de23af01424d62a5da",
+      "mergeCommit": {
+        "oid": "e423712909fb44539f6f88b8ef6e4a002946b82f"
+      },
+      "mergedAt": "2026-09-10T12:20:36Z",
+      "state": "MERGED",
+      "url": "https://github.com/memorysaver/looplia/pull/362",
+      "project": "looplia",
+      "local_branch": "develop"
+    },
+    {
+      "baseRefName": "main",
+      "headRefOid": "8e3da598f3d2ad9ea7eeebadb2713a73844dad9d",
+      "mergeCommit": {
+        "oid": "67d9db9dc210a65036be905b4e8bd74949bca87e"
+      },
+      "mergedAt": "2026-09-10T12:15:43Z",
+      "state": "MERGED",
+      "url": "https://github.com/memorysaver/MITS/pull/100",
+      "project": "MITS",
+      "local_branch": "main"
+    },
+    {
+      "mergeCommit": {
+        "oid": "0761cd5c7a465d91427a5b9f75e54a6fbe5d3df8"
+      },
+      "mergedAt": "2026-09-10T13:05:46Z",
+      "state": "MERGED",
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-10T13:05:12Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/memorysaver/Rewarc-AutoResearch/actions/runs/34476540436/job/102868720822",
+          "name": "Repository correctness",
+          "startedAt": "2026-09-10T12:24:59Z",
+          "status": "COMPLETED",
+          "workflowName": "CI"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-10T12:25:51Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/memorysaver/Rewarc-AutoResearch/actions/runs/34476540435/job/102868573093",
+          "name": "Frozen dependency audits",
+          "startedAt": "2026-09-10T12:24:31Z",
+          "status": "COMPLETED",
+          "workflowName": "Supply Chain"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-10T13:05:18Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/memorysaver/Rewarc-AutoResearch/actions/runs/34476540436/job/102881673984",
+          "name": "CI / required",
+          "startedAt": "2026-09-10T13:05:15Z",
+          "status": "COMPLETED",
+          "workflowName": "CI"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-10T12:24:57Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/memorysaver/Rewarc-AutoResearch/actions/runs/34476540435/job/102868573257",
+          "name": "Offline Semgrep",
+          "startedAt": "2026-09-10T12:24:30Z",
+          "status": "COMPLETED",
+          "workflowName": "Supply Chain"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-10T12:26:10Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/memorysaver/Rewarc-AutoResearch/actions/runs/34476540435/job/102868573250",
+          "name": "Full history and tracked tree secrets",
+          "startedAt": "2026-09-10T12:24:30Z",
+          "status": "COMPLETED",
+          "workflowName": "Supply Chain"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-10T12:26:28Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/memorysaver/Rewarc-AutoResearch/actions/runs/34476540435/job/102868573281",
+          "name": "SPDX SBOM and license inventory",
+          "startedAt": "2026-09-10T12:24:30Z",
+          "status": "COMPLETED",
+          "workflowName": "Supply Chain"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-10T12:26:35Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/memorysaver/Rewarc-AutoResearch/actions/runs/34476540435/job/102869199752",
+          "name": "Supply Chain / required",
+          "startedAt": "2026-09-10T12:26:31Z",
+          "status": "COMPLETED",
+          "workflowName": "Supply Chain"
+        }
+      ],
+      "url": "https://github.com/memorysaver/Rewarc-AutoResearch/pull/131",
+      "fresh_clone_verified": true,
+      "local_main": "0761cd5c7a465d91427a5b9f75e54a6fbe5d3df8",
+      "project": "Rewarc-AutoResearch"
+    }
+  ],
+  "fresh_clone_verification": "all three projects passed; Looplia after #362",
+  "obs_worktree_unchanged": true
+}

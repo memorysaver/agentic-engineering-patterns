@@ -1,0 +1,220 @@
+{
+  "source_commit": "18cc86ab1f43305c6b51df5d0cf041d4559eec4e",
+  "binary_sha256": "11195ffddc9010c4cae91fa7062afd5c60defa01532a7c0736ef177862345175",
+  "version": "aep 5.0.0-preview.1",
+  "projects": [
+    {
+      "project": "looplia",
+      "branch": "migration/aep-v5-preview",
+      "head": "e17b05bc0ae33552df9a340fa440e2de82161a0e",
+      "stories": 416,
+      "states": {
+        "imported": 345,
+        "deferred": 16,
+        "failed": 2,
+        "superseded": 2,
+        "pending": 47,
+        "ready": 3,
+        "blocked": 1
+      },
+      "records": 786,
+      "commands": [
+        {
+          "command": "aep doctor",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep skills",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep skills show validate",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep status",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep query",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep context L41-006b",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep timeline L41-006b",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep check",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep migrate verify",
+          "exit_code": 0,
+          "ok": true
+        }
+      ],
+      "unchanged_files": 4805,
+      "read_only": true
+    },
+    {
+      "project": "MITS",
+      "branch": "migration/aep-v5-preview",
+      "head": "8471b5eeaefc26168e5299f05d33588d81f49665",
+      "stories": 107,
+      "states": {
+        "imported": 96,
+        "deferred": 7,
+        "pending": 4
+      },
+      "records": 276,
+      "commands": [
+        {
+          "command": "aep doctor",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep skills",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep skills show validate",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep status",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep query",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep context MITS-107",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep timeline MITS-107",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep check",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep migrate verify",
+          "exit_code": 0,
+          "ok": true
+        }
+      ],
+      "unchanged_files": 2631,
+      "read_only": true
+    },
+    {
+      "project": "Rewarc-AutoResearch",
+      "branch": "migration/aep-v5-preview",
+      "head": "f00aa60bf55e5a50266919fb13af219e893492a5",
+      "stories": 96,
+      "states": {
+        "imported": 79,
+        "ready": 1,
+        "pending": 15,
+        "blocked": 1
+      },
+      "records": 266,
+      "commands": [
+        {
+          "command": "aep doctor",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep skills",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep skills show validate",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep status",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep query",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep context OBS-001",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep timeline OBS-001",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep check",
+          "exit_code": 0,
+          "ok": true
+        },
+        {
+          "command": "aep migrate verify",
+          "exit_code": 0,
+          "ok": true
+        }
+      ],
+      "unchanged_files": 2987,
+      "read_only": true
+    }
+  ],
+  "runtime_probe": {
+    "passed": true,
+    "surfaces": [
+      "embedded guidance outside source checkout",
+      "v4 initialization and source preservation",
+      "migration, verification, and repeated apply",
+      "read-only inspection and independent native writes"
+    ],
+    "fixture_removed": true,
+    "guidance": {
+      "bundle_digest": "52d89d282578dad3ddf6915c3f835de33b27e4141a040613b801a4681cd5f92b",
+      "complete": true,
+      "release": "5.0.0-preview.1"
+    }
+  },
+  "archive_sha256": "fec2f068a1a54840c60ddc27735b5bf52f2313b5de8553871e18be84d48ddd4f",
+  "installed_binary_matches": true,
+  "passed": true,
+  "build_checks": {
+    "fmt": "pass",
+    "clippy": "pass",
+    "rust_tests_passed": 62,
+    "command": "cargo build --release --locked --offline -p aep-cli"
+  },
+  "archive_extraction_verified": true
+}

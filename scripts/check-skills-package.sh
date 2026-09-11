@@ -54,7 +54,7 @@ const declared = marketplace.plugins
   .flatMap((plugin) => plugin.skills)
   .map((skillPath) => skillPath.replace(/^\.\//, "").replace(/\/$/, ""));
 const source = walk("skills")
-  .filter((file) => path.basename(file) === "SKILL.md")
+  .filter((file) => path.basename(file) === "SKILL.md" && !normalized(file).startsWith("skills/native/"))
   .map((file) => normalized(path.dirname(file)))
   .sort();
 
@@ -276,7 +276,8 @@ NODE
 INSTALL_ROOT="$TMP_ROOT/install"
 mkdir -p "$INSTALL_ROOT"
 git -C "$INSTALL_ROOT" init -q
-if ! (cd "$INSTALL_ROOT" && npx -y "skills@$SKILLS_CLI_VERSION" add "$REPO_ROOT" -a codex --skill '*' --copy -y) >"$TMP_ROOT/install.log" 2>&1; then
+mapfile -t LEGACY_NAMES < "$EXPECTED_NAMES"
+if ! (cd "$INSTALL_ROOT" && npx -y "skills@$SKILLS_CLI_VERSION" add "$REPO_ROOT" -a codex --skill "${LEGACY_NAMES[@]}" --copy -y) >"$TMP_ROOT/install.log" 2>&1; then
   cat "$TMP_ROOT/install.log" >&2
   exit 1
 fi

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "note": "Per-skill steering ceilings (C1/C6 of docs/decisions/claude-5-context-engineering.md; F4 of fable-5-1-behavioral-rebaseline.md adds the gen-eval prompt payloads). A file may fall below its entry; rising above it fails CI. Raising an entry is a reviewable decision, not a fix — the question it asks is which prohibition in THIS file earned its place.",
+  "note": "Per-skill steering ceilings (C1/C6 of docs/decisions/claude-5-context-engineering.md; F4 of fable-5-1-behavioral-rebaseline.md adds the gen-eval prompt payloads). A file may fall below its entry; rising above it fails CI. Raising an entry is a reviewable decision, not a fix \u2014 the question it asks is which prohibition in THIS file earned its place.",
   "skills": {
     "skills/agentic-development-workflow/build/SKILL.md": {
       "negations": 11,
@@ -24,6 +24,42 @@
     },
     "skills/human-alignment/SKILL.md": {
       "negations": 7,
+      "imperatives": 0
+    },
+    "skills/native/SKILL.md": {
+      "negations": 0,
+      "imperatives": 0
+    },
+    "skills/native/deliver/SKILL.md": {
+      "negations": 0,
+      "imperatives": 0
+    },
+    "skills/native/design/SKILL.md": {
+      "negations": 0,
+      "imperatives": 0
+    },
+    "skills/native/implement/SKILL.md": {
+      "negations": 0,
+      "imperatives": 0
+    },
+    "skills/native/migrate/SKILL.md": {
+      "negations": 0,
+      "imperatives": 0
+    },
+    "skills/native/project/SKILL.md": {
+      "negations": 0,
+      "imperatives": 0
+    },
+    "skills/native/reflect/SKILL.md": {
+      "negations": 0,
+      "imperatives": 0
+    },
+    "skills/native/roadmap/SKILL.md": {
+      "negations": 0,
+      "imperatives": 0
+    },
+    "skills/native/validate/SKILL.md": {
+      "negations": 1,
       "imperatives": 0
     },
     "skills/patterns/autopilot/SKILL.md": {
