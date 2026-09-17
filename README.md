@@ -4,6 +4,16 @@ AEP 5.0 is a Rust CLI for project context, isolated implementation, verification
 
 This branch prepares **5.0.0-preview.1** for downstream trials. The stable legacy skill release remains **v4.1.0**; the native preview does not replace it.
 
+## Install
+
+Linux x86_64 and macOS Apple Silicon, from the newest v5 GitHub release:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/memorysaver/agentic-engineering-patterns/main/scripts/install.sh | bash
+```
+
+The script downloads the release archive for your platform, verifies its SHA-256 against the published checksum, keeps the binary under `~/.local/share/aep/builds/<sha16>/` with a manifest, and switches the `~/.local/bin/aep` link atomically. Set `AEP_VERSION=v5.x.y` to pin a tag; `AEP_HOME` and `AEP_BIN_DIR` change the locations. Rerunning installs the newer build beside the old one, so a previous build can be relinked by hand. The script needs `curl`, `tar` and `git`; the CLI itself needs only `git` on `PATH`.
+
 ## Install from source
 
 Install the pinned Rust toolchain with rustup, then run from this checkout:

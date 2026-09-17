@@ -16,6 +16,8 @@ product work, integration evidence, and release history.
 
 ## [Unreleased] — 5.0.0-preview.1
 
+- Add `scripts/install.sh`: a `curl | bash` installer that picks the platform archive from the newest v5 GitHub release (or `AEP_VERSION`), verifies the published SHA-256, stores the binary under `~/.local/share/aep/builds/<sha16>/` with a manifest, and switches the `~/.local/bin/aep` link atomically.
+
 - Native release targets are Linux x86_64 and macOS Apple Silicon; the macOS Intel (`x86_64-apple-darwin`) build is no longer produced.
 
 - Record the reason for a write: every command accepts a global `--note <TEXT>`, stored as the description of the event that the write produces, so `aep timeline` and `aep context` show why a record changed without reading Git. Events keep their title, transitions and revisions; a note is optional and is not a verification input.
