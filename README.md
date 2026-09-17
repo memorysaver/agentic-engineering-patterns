@@ -24,7 +24,7 @@ aep --skill project
 
 The installation needs the binary and a short `AGENTS.md` entrypoint. `aep init --claude` also adds an `@AGENTS.md` pointer. Instructions and references are embedded in the binary. The CLI runs independently of this source checkout, Node, and Bun. It needs no LLM key, OpenSpec CLI, or per-runtime skill copies for its normal lifecycle.
 
-Linux and macOS are the native validation targets. Project checks still need their own toolchains. The optional GitHub adapter needs `gh` and repository access.
+Linux x86_64 and macOS Apple Silicon are the native validation and release targets; macOS Intel is not built. Project checks still need their own toolchains. The optional GitHub adapter needs `gh` and repository access.
 
 ## Project structure
 
