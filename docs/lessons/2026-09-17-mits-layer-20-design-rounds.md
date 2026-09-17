@@ -45,7 +45,7 @@ These are structural observations on the records, not model-specific reactions.
 
 ## Delivery turn outcome
 
-The 2026-09-17 turn started from the user's "好繼續工作" and, at inspection, had not ended. Within it the agent delivered MITS-110 and moved on to MITS-111 without a stop:
+The 2026-09-17 turn started from the user's "好繼續工作" and ran 19 minutes 56 seconds. Within it the agent delivered MITS-110 and moved on to MITS-111 without a stop, then ended by asking the user to choose the reader/judge tool boundary (allow pure computation with proof of no external access, or keep strict zero tools) before changing any contract. At the end `main` was at `09316b5`, seven commits ahead of `origin/main`, with two checkpoint commits retaining MITS-111 attempt and check records; the attempt branch was at `f573cbd` with an independent review checkpoint; both trees clean; MITS-111 `in_progress`:
 
 | Step | Observer-verified state |
 | --- | --- |
