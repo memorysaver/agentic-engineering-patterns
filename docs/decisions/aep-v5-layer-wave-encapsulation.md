@@ -84,10 +84,10 @@ Layer 20 建立後，MITS-110 在使用者直接引導下走了四輪設計，ag
 
 CLI 候選：
 
-- `aep <kind> update` 與 `change accept` 接受 `--note`，寫入事件的 `description`，事件標題保留 Records updated。
+- `--note`：已接受並實作（2026-09-17，使用者同意）。做法是全域參數而不是逐子命令加參數，因為所有寫入都經過同一個 `save` 函式產生事件；文字寫入事件的 `description`，標題保留 Records updated，空白字串拒絕。`aep timeline` 在事件下一行印出 note。實作在 `8e8a79c`，安裝為 build `11186c26c439cec0`，安裝前以候選 binary 對 MITS、looplia、Rewarc-AutoResearch 做唯讀 check／doctor／timeline 通過，證據在 `~/.local/share/aep/trials/2026-09-17-note-install/`。
 - `aep check` 不對成員間重複的狀態文字做診斷；重複是語意問題，交給指引。
 
-這兩批候選都等使用者決定；依「結構確認優先」原則，只有在觀察到結構性失敗時才加 check 或機制。第一現象是結構性的（記錄內容重複），第二與第三現象目前只是可追溯性較弱，尚未造成錯誤判斷。
+指引候選中的第一項（概念層級狀態的落點）隨 `--note` 一起寫入 `design/references/records.md`，各一句。第二項（改變 readiness 的接受歸因）仍等使用者表態。依「結構確認優先」原則，只有在觀察到結構性失敗時才加 check 或機制。
 
 ## 驗證方式
 
