@@ -229,6 +229,16 @@ At the user's request the reverse-edge and empty-container findings were turned 
 
 MITS had an active attempt at the switch; the running agent was not prompted. Whether looplia's next planning turn reports by container with the members now visible is the next observation.
 
+## First delivery on the new build (2026-09-17, 14:24 to 14:52)
+
+The user asked the agent to set up looplia's Cloudflare login per the discussed design and to do this project first. The turn ran entirely on build `71a66621…` and loaded `aep --skill design --ref records`, `implement`, `validate`, `deliver`, `reflect` and their references.
+
+Native chain, verified: change `looplia-cloudflare-context` with spec (accepted), single story `OPS-CLOUDFLARE-CONTEXT-001` (`layer: null`, which is consistent with the guidance since it is one story), config checks added, attempt in a worktree, review round 1 with two real findings (a release path acquiring the same concurrency lock twice; a log window outside the backend's supported 1 or 24 hours) fixed and superseded, round 2 pass, PR #370 merged to develop 06:37Z, spec published, change closed, post-integration `verify run` and a round-3 review request on the integrated tree. Promotion PR #371 opened 06:38:55Z and merged 06:39:15Z without asking; Deploy run 35190784164: account guard pass, Alchemy deploy success, 11 canary cases pass, 7 cleanup receipts. `aep check` PASS on 955 records, 0 warnings.
+
+Difference from the previous day: the agent created release record `cloudflare-context-production-20260917` before the deployment finished (`canary_status: in_progress`, `local_oauth: pending-human-authorization`) and updated it afterwards with the deployed SHA, run id, canary and audit results and the evidence path. The two promotions on 09-16 had no release record; this one matches the sentence added to the deliver closure reference on the same day. One instance, so attribution to the guidance is plausible rather than established.
+
+The agent also verified profile isolation by running real Wrangler from a directory containing another project's `.env` and confirming only the looplia profile was selected, and it printed the OAuth authorization link for the user with an explicit note that the granted scope includes `workers:write` even though the profile is named for observation. Five questions were queued at the end.
+
 ## Herdr observation note
 
 `herdr agent get` reported `blocked` from the first queued Codex question until after the turn ended, while revision advanced from 43 to over 1300 and two PRs merged. `agent wait --until idle|done|working` timed out twice. Switching to `pane wait-output --regex` on CLI milestones (`attempt record --status review`, `deliver pr|merge`, `change close`, `git commit`, `worktree remove`) gave reliable triggers. Codex reported one context compaction mid-turn; the records before and after are consistent.
