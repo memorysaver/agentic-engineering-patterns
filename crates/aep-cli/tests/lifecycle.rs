@@ -1372,3 +1372,100 @@ fn dispatch_requires_incoming_accepted_decisions_in_the_base() {
         0,
     );
 }
+
+#[test]
+fn context_follows_incoming_edges_and_check_warns_on_empty_containers() {
+    let d = setup();
+    let root = d.path();
+    let delta = "project-ledger/changes/C/specs/result/spec.md";
+    write(root, delta, BDD);
+    record(
+        root,
+        "change",
+        json!({"kind":"change","id":"C","title":"Result contract","description":"Create a result file.","data":{"specs":[{"capability":"result","path":delta,"baseline":null}]}}),
+    );
+    call(root, &["change", "accept", "C", "--by", "designer"], 0);
+    // A layer whose refs stay empty; its member only sets `layer`.
+    record(
+        root,
+        "layer",
+        json!({"kind":"layer","id":"L","title":"Concept layer"}),
+    );
+    // A second container nothing belongs to.
+    record(
+        root,
+        "layer",
+        json!({"kind":"layer","id":"L-empty","title":"Unused layer"}),
+    );
+    record(
+        root,
+        "story",
+        json!({"kind":"story","id":"S","title":"Implement result","change":"C","layer":"L","paths":["src"]}),
+    );
+    git(root, &["add", "."]);
+    git(root, &["commit", "-qm", "accepted design"]);
+    // Verification inputs stay unchanged by lessons/releases (covered by the
+    // decision-context fixture); this fixture checks context reachability.
+    record(
+        root,
+        "lesson",
+        json!({"kind":"lesson","id":"observation","title":"Observed execution","refs":["S"]}),
+    );
+    record(
+        root,
+        "release",
+        json!({"kind":"release","id":"R","title":"Promote result","refs":["S"]}),
+    );
+    let ids = |data: &Value| -> Vec<String> {
+        data["records"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|r| r["record"]["id"].as_str().unwrap().to_string())
+            .collect()
+    };
+    let layer = ids(&call(root, &["context", "L"], 0));
+    assert!(
+        layer.contains(&"S".to_string()),
+        "layer context lacks member: {layer:?}"
+    );
+    assert!(
+        layer.contains(&"C".to_string()),
+        "layer context lacks member change: {layer:?}"
+    );
+    let story = ids(&call(root, &["context", "S"], 0));
+    for expected in ["L", "observation", "R"] {
+        assert!(
+            story.contains(&expected.to_string()),
+            "story context lacks {expected}: {story:?}"
+        );
+    }
+    assert!(!story.contains(&"L-empty".to_string()));
+    let check = call(root, &["check"], 0);
+    assert_eq!(check["pass"], true);
+    assert_eq!(check["warnings"], 1);
+    let warnings: Vec<&Value> = check["diagnostics"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|d| d["severity"] == "warning")
+        .collect();
+    assert_eq!(warnings.len(), 1);
+    assert_eq!(warnings[0]["code"], "empty_container");
+    assert_eq!(warnings[0]["record"], "L-empty");
+    // Filling refs clears the warning; writes were never blocked by it.
+    let file = tempfile::NamedTempFile::new().unwrap();
+    fs::write(
+        file.path(),
+        json!({"kind":"story","id":"S2","title":"Second result","change":"C","layer":"L-empty","paths":["src2"]}).to_string(),
+    )
+    .unwrap();
+    call(
+        root,
+        &["story", "new", "--file", file.path().to_str().unwrap()],
+        0,
+    );
+    let check = call(root, &["check"], 0);
+    assert_eq!(check["warnings"], 0);
+    assert_eq!(check["pass"], true);
+}

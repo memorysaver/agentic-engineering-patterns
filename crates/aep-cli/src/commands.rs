@@ -478,17 +478,28 @@ pub fn check(s: &Store, snap: &Snapshot) -> Result<Outcome> {
     for d in spec::check_all(s, snap)? {
         diagnostics.push(d);
     }
+    let errors: Vec<Value> = diagnostics
+        .iter()
+        .filter(|d| d["severity"] != "warning")
+        .cloned()
+        .collect();
+    let warnings: Vec<Value> = aep_core::advisories(&snap.records)
+        .iter()
+        .map(|d| json!(d))
+        .collect();
+    diagnostics.extend(warnings.iter().cloned());
     let mut out = Outcome::ok(
-        json!({"revision":snap.revision,"records":snap.records.len(),"pass":diagnostics.is_empty(),"diagnostics":diagnostics}),
+        json!({"revision":snap.revision,"records":snap.records.len(),"pass":errors.is_empty(),"warnings":warnings.len(),"diagnostics":diagnostics}),
     );
-    if !diagnostics.is_empty() {
+    if !errors.is_empty() {
         out.exit_code = 1;
-        out.diagnostics = diagnostics;
+        out.diagnostics = errors;
     }
     Ok(out)
 }
 fn context(s: &Store, snap: &Snapshot, id: &str, sources: &[String]) -> Result<Outcome> {
-    let mut pending = vec![id.to_string()];
+    let subject = id.to_string();
+    let mut pending = vec![subject.clone()];
     let mut seen = BTreeSet::new();
     let mut records = vec![];
     let mut unknowns = vec![];
@@ -500,6 +511,12 @@ fn context(s: &Store, snap: &Snapshot, id: &str, sources: &[String]) -> Result<O
             Ok(r) => {
                 pending.extend(r.links().iter().map(|s| s.to_string()));
                 pending.extend(workflow::referring_decisions(snap, &r.id));
+                // Incoming edges are followed for the subject only; reached
+                // records expand through their own links, so a container's
+                // members do not pull every sibling of every imported layer.
+                if r.id == subject {
+                    pending.extend(workflow::incoming_context(snap, &r.id));
+                }
                 records.push(record_json(r));
             }
             Err(_) => unknowns.push(id),
@@ -517,7 +534,7 @@ fn context(s: &Store, snap: &Snapshot, id: &str, sources: &[String]) -> Result<O
         files.push(json!({"path":source,"digest":digest(&text),"content":text}));
     }
     Ok(Outcome::ok(
-        json!({"repository":s.root,"head":git(&s.root,&["rev-parse","HEAD"]).ok(),"revision":snap.revision,"subject":id,"records":records,"sources":files,"missing_references":unknowns,"scope":"Explicit record links, incoming accepted decisions, and requested files; agent reconciles intent and selects additional context"}),
+        json!({"repository":s.root,"head":git(&s.root,&["rev-parse","HEAD"]).ok(),"revision":snap.revision,"subject":id,"records":records,"sources":files,"missing_references":unknowns,"scope":"Explicit record links, container members, lessons and releases that refer here, incoming accepted decisions, and requested files; agent reconciles intent and selects additional context"}),
     ))
 }
 fn records(

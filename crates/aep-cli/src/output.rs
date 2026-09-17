@@ -41,7 +41,11 @@ fn diagnostics(out: &mut String, values: &Value) {
                 .or_else(|| v.get("path"))
                 .map(|v| format!("{}: ", text(v)))
                 .unwrap_or_default();
-            let _ = writeln!(out, "  - {prefix}{message}");
+            let severity = match v.get("severity").map(text).as_deref() {
+                Some("warning") => "warning: ",
+                _ => "",
+            };
+            let _ = writeln!(out, "  - {severity}{prefix}{message}");
         }
     }
 }
@@ -309,7 +313,7 @@ pub fn render(operation: &str, result: &Outcome) -> String {
                     );
                 }
             }
-            out.push_str("\nThis follows recorded links and incoming accepted decisions. Use --json for their full content; reconcile intent with the request and actual behavior.\n");
+            out.push_str("\nThis follows recorded links, container members, lessons and releases that refer here, and incoming accepted decisions. Use --json for their full content; reconcile intent with the request and actual behavior.\n");
         }
         "query" => {
             let values = d["records"]

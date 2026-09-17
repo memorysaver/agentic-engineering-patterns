@@ -83,7 +83,8 @@ Use `aep story new --file story.yaml`. The same new/show/list/update shape appli
 
 - `aep status`: recorded state, readiness, and diagnostics.
 - `aep query --kind story --status pending`: filtered records and revisions.
-- `aep context FIX-retry --source docs/design/retry.md`: explicitly linked records and requested source content.
+- `aep context FIX-retry --source docs/design/retry.md`: explicitly linked records, container members, lessons and releases that refer to the record, incoming accepted decisions, and requested source content.
+- `aep check` fails only on errors; it also lists warnings such as `empty_container` for a layer or wave that no record belongs to.
 - `aep timeline FIX-retry`: recorded events; unknown occurrence times remain unknown.
 - `aep decision accept ADR-001 --by <actor>`: attributed acceptance; ADR files live in `project-roadmap/decisions/`.
 - `aep lesson record --file lesson.yaml` and `aep lesson find retry`: observations and searchable imported notes.

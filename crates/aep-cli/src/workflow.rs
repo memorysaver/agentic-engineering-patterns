@@ -328,6 +328,23 @@ pub fn referring_decisions(snap: &Snapshot, id: &str) -> Vec<String> {
         .map(|r| r.id.clone())
         .collect()
 }
+/// Records reachable only through edges that point at `id`: members whose
+/// `layer`/`wave` field names a container, and lessons or releases whose
+/// `refs` select the record. Verification inputs are unaffected; this widens
+/// `aep context` so a container, story or change also shows what refers to it.
+pub fn incoming_context(snap: &Snapshot, id: &str) -> Vec<String> {
+    snap.records
+        .iter()
+        .filter(|r| {
+            r.id != id
+                && (r.layer.as_deref() == Some(id)
+                    || r.wave.as_deref() == Some(id)
+                    || (matches!(r.kind, Kind::Lesson | Kind::Release)
+                        && r.refs.iter().any(|x| x == id)))
+        })
+        .map(|r| r.id.clone())
+        .collect()
+}
 fn linked_context(s: &Store, snap: &Snapshot, story: &Record) -> Result<BTreeMap<String, String>> {
     let mut pending = story.refs.clone();
     pending.extend(referring_decisions(snap, &story.id));

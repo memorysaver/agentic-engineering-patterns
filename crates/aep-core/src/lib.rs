@@ -388,6 +388,60 @@ impl Diagnostic {
             message: message.into(),
         }
     }
+    pub fn warning(code: &str, record: Option<&str>, message: impl Into<String>) -> Self {
+        Self {
+            code: code.into(),
+            severity: "warning".into(),
+            record: record.map(String::from),
+            message: message.into(),
+        }
+    }
+}
+/// Records that a container (layer or wave) reaches: forward `refs` plus every
+/// record whose `layer` or `wave` field names the container.
+pub fn container_members<'a>(container: &'a Record, records: &'a [Record]) -> Vec<&'a Record> {
+    fn layer_of(r: &Record) -> Option<&str> {
+        r.layer.as_deref()
+    }
+    fn wave_of(r: &Record) -> Option<&str> {
+        r.wave.as_deref()
+    }
+    let field: fn(&Record) -> Option<&str> = match container.kind {
+        Kind::Layer => layer_of,
+        Kind::Wave => wave_of,
+        _ => return vec![],
+    };
+    records
+        .iter()
+        .filter(|r| {
+            r.id != container.id
+                && (field(r) == Some(container.id.as_str())
+                    || container.refs.iter().any(|x| x == &r.id))
+        })
+        .collect()
+}
+/// Non-blocking observations about record structure. These never reject a
+/// write; `check` reports them with `severity: warning` so an agent can
+/// complete a container before relying on it.
+pub fn advisories(records: &[Record]) -> Vec<Diagnostic> {
+    let mut out = vec![];
+    for r in records {
+        if matches!(r.kind, Kind::Layer | Kind::Wave)
+            && !["superseded", "cancelled"].contains(&r.status.as_str())
+            && container_members(r, records).is_empty()
+        {
+            out.push(Diagnostic::warning(
+                "empty_container",
+                Some(&r.id),
+                format!(
+                    "{} has no members: list them in refs or set each member's {} field",
+                    r.kind.name(),
+                    r.kind.name()
+                ),
+            ));
+        }
+    }
+    out
 }
 pub fn validate(records: &[Record], config: &Config) -> Vec<Diagnostic> {
     let mut out = vec![];

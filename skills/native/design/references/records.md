@@ -44,7 +44,7 @@ data:
   design_artifact: docs/design/2026-09-11-concept.md
 ```
 
-A wave lists its member stories in `refs`, names the preceding wave in `depends_on`, and describes the batch's intent. Members inherit container `depends_on` and `required_gates` in readiness; `aep context <layer>` expands to members, changes and the source decision. A layer completes when its members are integrated, its gates are current and its outcome has observed evidence.
+A wave lists its member stories in `refs`, names the preceding wave in `depends_on`, and describes the batch's intent. Members inherit container `depends_on` and `required_gates` in readiness; `aep context <layer>` expands to members (through `refs` or each member's `layer`/`wave` field), changes and the source decision, and `aep check` reports a container without members as a warning. A layer completes when its members are integrated, its gates are current and its outcome has observed evidence.
 
 A story may add `changes: [other-contract]` alongside its primary `change`. All linked contracts must be accepted. Release records can select story IDs through `refs`; their `required_gates` govern promotion. Story/layer/wave prerequisite gates govern dispatch.
 
