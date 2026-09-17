@@ -1,8 +1,8 @@
 # AEP v5：以 layer／wave 封裝同一概念的設計與工作
 
-狀態：指引部分已接受並實作（2026-09-11，使用者同意後修改 native skill、重建並安裝 CLI）；CLI 候選變更（check 診斷、status 分組）仍為待決。使用者指出目前設計「只有開 story」，要求以 layer 與 wave 封裝同一概念的設計以保證關聯性，並將此內建到 skill 流程。
-日期：2026-09-11
-證據：[MITS 故事規劃觀察](../lessons/2026-09-11-mits-story-planning.md)、[MITS layer／wave 引導觀察](../lessons/2026-09-11-mits-layer-wave-steering.md)
+狀態：指引部分已接受並實作（2026-09-11，使用者同意後修改 native skill、重建並安裝 CLI）。第一批 CLI 候選中的 `empty_container` 警告與 context 反向邊，已於 2026-09-17 由另一個 session 依使用者要求實作，見 [context 反向邊](aep-v5-context-reverse-edges.md)；status 依 layer 分組仍待決。2026-09-17 新增採用後觀察與第二批候選方向，狀態為提案。使用者指出目前設計「只有開 story」，要求以 layer 與 wave 封裝同一概念的設計以保證關聯性，並將此內建到 skill 流程。
+日期：2026-09-11，更新 2026-09-17
+證據：[MITS 故事規劃觀察](../lessons/2026-09-11-mits-story-planning.md)、[MITS layer／wave 引導觀察](../lessons/2026-09-11-mits-layer-wave-steering.md)、[MITS layer／wave 採用觀察](../lessons/2026-09-11-mits-layer-wave-adoption.md)、[Layer 20 四輪設計觀察](../lessons/2026-09-17-mits-layer-20-design-rounds.md)
 相關：[產品目的驅動研究](aep-v5-purpose-driven-research.md)、[研究與草案 context](aep-v5-research-draft-context.md)、[skill 分類決策](aep-v5-context-and-self-verification.md)
 
 ## 問題
@@ -60,6 +60,34 @@ v5 的分類決策移除了數字 layer 的隱含流程與 `.5` gate，並以明
 - roadmap 記錄與 layer 的分工：roadmap 表達方向與優先序，layer 表達可完成的概念；兩者的 refs 方向要在指引中固定。
 - 遷移產生的 `layer-N` 空描述是否回填 legacy 的 name／outcome。回填只影響描述，不改變已 imported 的完成主張。
 - MITS-110 至 118 可作為第一個採用案例：在使用者授權下建立 layer 與 wave、更新 story 欄位並移除 `data` 中的順序欄位。這是下游工作，不在本提案內執行。
+
+## 採用後觀察（2026-09-14 至 09-17）
+
+Layer 20 建立後，MITS-110 在使用者直接引導下走了四輪設計，agent 自行提交四個 commit。結構面符合本提案的預期：四個新決策都以 `refs` 指向 layer-20 與受影響成員，成員同回合補上反向連結；決策替換使用 `supersede`，舊決策保留內容並指向後繼；readiness 全程正確，契約接受後 MITS-110 成為唯一 ready 的 story。每次觀察 `aep check` 與受影響 change 的 `spec check` 都通過。
+
+同時觀察到三個結構性現象，屬於本提案未涵蓋的責任分工：
+
+| 現象 | 證據 | 影響 |
+| --- | --- | --- |
+| 概念層級狀態被複製到每個成員 | 四輪後 layer-20 的 `data` 有 7 個 key，MITS-110 有 16 個，change 有 17 個；同一段 `design_status` 同時存在 story 與 change，`trajectory_design_status` 複製到 6 筆記錄；每個新決策都在 layer、story、change 各加一組 `<主題>_decision`／`<主題>_design_artifact` | 狀態 prose 有多個 canonical 位置；每個新決策要改所有成員；後續 agent 無法判斷哪一份是權威 |
+| 改變 readiness 的契約接受依據是概括性授權 | `eval-v2-evaluation-contract` 由 agent 在自行獨立審查後接受，`accepted_by` 與 `authority` 有填，但引用的是「好我們照著流程往下」與 agent 前一回合宣告的計畫；前四個決策都引用使用者的具體陳述。同日另一位觀察者在 Rewarc 專案看到相同模式：change 由 agent 以 `--by owner-implementation-order` 自行接受。MITS-110 交付後的同一回合，agent 又以 `codex-user-authorized-implementation` 接受 `eval-v2-mits-adapter` 並開始 MITS-111 | 歸因欄位有用到，可追溯；但這是讓 story 可派工的轉換，指引沒有區分「改變 readiness 的接受」與「補充脈絡的決策」 |
+| 更新事件沒有說明 | 2026-09-14 至 09-16 的 33 筆事件全部標題為 Records updated、description 為空 | 只能靠 revision 與 commit message 回推；`update` 指令沒有可填說明的參數 |
+
+另外，`aep context layer-20 --json` 在 agent 終端輸出約一萬兩千八百行，設計文件內容仍只能循 `data` 路徑另讀，與研究草案 context 提案的發現相同。
+
+## 第二批候選方向（提案，未接受）
+
+指引候選，每處一到兩句，不加硬性指令：
+
+- `design/references/records.md` 的容器段落：概念層級的狀態與決策清單放在 layer 與決策記錄；成員 story 與 change 以 `refs` 連回，不複製狀態 prose。新決策連到 layer 與直接受影響的記錄即可。
+- `roadmap/SKILL.md` 或 `design/references/records.md` 的接受句：接受會讓 story 變成 ready 的 change 時，`accepted_by` 引用使用者對該契約的陳述；只有概括性授權時，把接受列為下一個待決事項而不是直接執行。
+
+CLI 候選：
+
+- `aep <kind> update` 與 `change accept` 接受 `--note`，寫入事件的 `description`，事件標題保留 Records updated。
+- `aep check` 不對成員間重複的狀態文字做診斷；重複是語意問題，交給指引。
+
+這兩批候選都等使用者決定；依「結構確認優先」原則，只有在觀察到結構性失敗時才加 check 或機制。第一現象是結構性的（記錄內容重複），第二與第三現象目前只是可追溯性較弱，尚未造成錯誤判斷。
 
 ## 驗證方式
 
