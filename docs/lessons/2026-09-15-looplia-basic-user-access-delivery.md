@@ -239,6 +239,17 @@ Difference from the previous day: the agent created release record `cloudflare-c
 
 The agent also verified profile isolation by running real Wrangler from a directory containing another project's `.env` and confirming only the looplia profile was selected, and it printed the OAuth authorization link for the user with an explicit note that the granted scope includes `workers:write` even though the profile is named for observation. Five questions were queued at the end.
 
+## Permissions follow-up on the new build (2026-09-17, 15:00 to 16:20)
+
+Three short turns and one delivery. The user completed the Wrangler OAuth over an SSH port forward (the agent had explained the forward and the Tailscale variant when asked). Verification: profile `looplia-production-observe` logged in, account and deploy info readable, historical logs still permission-denied. The user then said to open all permissions for this workstation. The agent re-ran Wrangler OAuth with every optional scope (28 granted, user-approved through a fresh link), confirmed logs are still denied, and identified the cause: Wrangler's optional scopes do not include `workers_observability_telemetry:write`, which the pinned Alchemy version does support. It started an Alchemy named profile (`looplia-production-admin`, via `configure` since it is a first setup) and asked the user for a second forward on port 9976, stopping before submitting scopes.
+
+Native chain for the login-entry change: change `looplia-full-oauth` (accepted `--by owner-full-permissions-request-20260917`), story `OPS-CLOUDFLARE-OAUTH-002` (`layer: null`, `depends_on: []`), attempt, tests, review pass, PR #372 merged to develop 08:12Z, spec published, change closed. `aep check` PASS on 978 records, 0 warnings.
+
+Two observations for v5:
+
+- The Cloudflare concept now has two stories (`OPS-CLOUDFLARE-CONTEXT-001`, `OPS-CLOUDFLARE-OAUTH-002`) and no layer. The `empty_container` warning installed today cannot fire because no container exists; this is the first instance of the second candidate in the layer/wave decision (several stories under one concept with no container), the one deferred there for false-positive risk.
+- Commit `d513084f` added five more per-value gitleaks allowlist entries for event revision digests. The verification-setup sentence added today suggests path-and-field scoping, but looplia's own migration rule (2026-09-10 lesson §7) requires exact value plus exact path exceptions with no generic hash exemption, so the project policy wins and the guidance sentence cannot change this here. The friction is therefore a project-policy cost of the record format, not something guidance resolves.
+
 ## Herdr observation note
 
 `herdr agent get` reported `blocked` from the first queued Codex question until after the turn ended, while revision advanced from 43 to over 1300 and two PRs merged. `agent wait --until idle|done|working` timed out twice. Switching to `pane wait-output --regex` on CLI milestones (`attempt record --status review`, `deliver pr|merge`, `change close`, `git commit`, `worktree remove`) gave reliable triggers. Codex reported one context compaction mid-turn; the records before and after are consistent.
