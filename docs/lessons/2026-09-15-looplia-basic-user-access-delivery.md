@@ -217,6 +217,18 @@ The user opened a cross-project question: the main projects manage Cloudflare re
 
 No file, record, decision, draft or lesson was written; the working tree stayed clean. That is correct for an undecided discussion under current guidance, and it is the exact gap the research/draft context proposal describes: real research and a reusable cross-project principle now exist only in this pane's scrollback. `aep --skill roadmap` was loaded at the start of the turn but no purpose-driven research record or design draft followed.
 
+## CLI change implemented and installed from these observations (2026-09-17, 14:10 to 14:23)
+
+At the user's request the reverse-edge and empty-container findings were turned into [a decision](../decisions/aep-v5-context-reverse-edges.md), implemented on `feat/aep-5-native-cli` as commit `9bc3686`, and installed as the shared `aep`.
+
+- Build `71a66621…` (`~/.local/share/aep/builds/71a66621575e9709/bin/aep`, manifest beside it) replaced `3fae0e42…`; the previous manifest records the replacement. Version string unchanged, `5.0.0-preview.1`.
+- Checks before install: fmt, clippy, 66 workspace tests including a new lifecycle fixture, skills steering and generated-copy checks, `verify-native-preview.py` passed.
+- A first build followed incoming edges transitively and expanded every looplia context to 690 of 913 records; the installed build follows them for the subject only.
+- After install, read-only on the three downstream projects: looplia `aep check` PASS 913 records, 0 warnings; `aep context basic-user-access` 205 records now including BASIC-001, BASIC-002, FIX-DEPLOY-STARTUP-CPU-001 and both changes; `aep context BASIC-001` includes its lesson and the release. MITS PASS 540 records, 0 warnings, `layer-20` context lists all nine members. Rewarc PASS 382 records, 0 warnings. No migrated container produced an `empty_container` warning, so the advisory is quiet on the current projects.
+- Outputs are retained in the trial bundle as `preinstall-0475eae7-verification.txt`, `preinstall-71a66621-verification.txt`, `postinstall-71a66621-looplia.txt` and `postinstall-71a66621-mits-rewarc.txt`.
+
+MITS had an active attempt at the switch; the running agent was not prompted. Whether looplia's next planning turn reports by container with the members now visible is the next observation.
+
 ## Herdr observation note
 
 `herdr agent get` reported `blocked` from the first queued Codex question until after the turn ended, while revision advanced from 43 to over 1300 and two PRs merged. `agent wait --until idle|done|working` timed out twice. Switching to `pane wait-output --regex` on CLI milestones (`attempt record --status review`, `deliver pr|merge`, `change close`, `git commit`, `worktree remove`) gave reliable triggers. Codex reported one context compaction mid-turn; the records before and after are consistent.
