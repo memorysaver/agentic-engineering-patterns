@@ -1469,3 +1469,67 @@ fn context_follows_incoming_edges_and_check_warns_on_empty_containers() {
     assert_eq!(check["warnings"], 0);
     assert_eq!(check["pass"], true);
 }
+
+#[test]
+fn note_becomes_the_event_description() {
+    let d = setup();
+    let root = d.path();
+    let file = tempfile::NamedTempFile::new().unwrap();
+    fs::write(
+        file.path(),
+        json!({"kind":"layer","id":"L","title":"Concept layer"}).to_string(),
+    )
+    .unwrap();
+    let path = file.path().to_str().unwrap();
+    // Whitespace alone is not a note.
+    call(root, &["layer", "new", "--file", path, "--note", "  "], 2);
+    call(
+        root,
+        &[
+            "layer",
+            "new",
+            "--file",
+            path,
+            "--note",
+            "Container for the retry concept, per the user's 2026-09-17 reply",
+        ],
+        0,
+    );
+    let events = call(root, &["timeline", "L"], 0);
+    let events = events["events"].as_array().unwrap();
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0]["title"], "Records updated");
+    assert_eq!(
+        events[0]["description"],
+        "Container for the retry concept, per the user's 2026-09-17 reply"
+    );
+    // A write without a note keeps the description empty.
+    let shown = call(root, &["layer", "show", "L"], 0);
+    let revision = shown["revision"].as_str().unwrap().to_string();
+    let mut updated = shown["record"].clone();
+    updated["description"] = json!("Observable outcome.");
+    fs::write(file.path(), updated.to_string()).unwrap();
+    call(
+        root,
+        &[
+            "layer", "update", "L", "--file", path, "--expect", &revision,
+        ],
+        0,
+    );
+    let events = call(root, &["timeline", "L"], 0);
+    let events = events["events"].as_array().unwrap();
+    assert_eq!(events.len(), 2);
+    assert_eq!(events[1]["description"], "");
+    // The human-readable timeline prints the note under its event.
+    let out = Command::new(env!("CARGO_BIN_EXE_aep"))
+        .arg("--root")
+        .arg(root)
+        .args(["timeline", "L"])
+        .output()
+        .unwrap();
+    let text = String::from_utf8(out.stdout).unwrap();
+    assert!(
+        text.contains("      Container for the retry concept"),
+        "{text}"
+    );
+}

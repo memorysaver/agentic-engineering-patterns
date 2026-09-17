@@ -79,13 +79,13 @@ risk: standard
 
 `change` names a primary contract; `changes` can name additional contracts. Each must be accepted. A change may serve several stories. Optional `layer`, `wave`, and `release` fields refer to containers; product journey references are optional. Release records can select stories through `refs`, including stories from several layers. Dependencies and gates determine readiness, not numeric IDs or folder order.
 
-Use `aep story new --file story.yaml`. The same new/show/list/update shape applies to changes, layers, waves, releases, gates, roadmap records, decisions, lessons, and rule proposals. Use `--file -` for stdin. Updates require `--expect <record revision>` and preserve identity/status. Protected transitions have explicit commands; accepted decisions are superseded by a new accepted record.
+Use `aep story new --file story.yaml`. The same new/show/list/update shape applies to changes, layers, waves, releases, gates, roadmap records, decisions, lessons, and rule proposals. Use `--file -` for stdin. Updates require `--expect <record revision>` and preserve identity/status. Protected transitions have explicit commands; accepted decisions are superseded by a new accepted record. Every write records an event with the affected IDs, status transitions and revisions; add `--note "<reason>"` to any write command to store the reason as that event's description.
 
 - `aep status`: recorded state, readiness, and diagnostics.
 - `aep query --kind story --status pending`: filtered records and revisions.
 - `aep context FIX-retry --source docs/design/retry.md`: explicitly linked records, container members, lessons and releases that refer to the record, incoming accepted decisions, and requested source content.
 - `aep check` fails only on errors; it also lists warnings such as `empty_container` for a layer or wave that no record belongs to.
-- `aep timeline FIX-retry`: recorded events; unknown occurrence times remain unknown.
+- `aep timeline FIX-retry`: recorded events with their notes; unknown occurrence times remain unknown.
 - `aep decision accept ADR-001 --by <actor>`: attributed acceptance; ADR files live in `project-roadmap/decisions/`.
 - `aep lesson record --file lesson.yaml` and `aep lesson find retry`: observations and searchable imported notes.
 

@@ -18,6 +18,9 @@ pub struct Cli {
     /// Preview supported writes without applying them.
     #[arg(long, global = true)]
     pub dry_run: bool,
+    /// Reason for a write, recorded as the description of the event it produces.
+    #[arg(long, global = true, value_name = "TEXT")]
+    pub note: Option<String>,
     /// Print the agent skill, or a named procedure, as Markdown.
     #[arg(long, num_args = 0..=1, default_missing_value = "aep", value_name = "NAME")]
     pub skill: Option<String>,

@@ -9,6 +9,7 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     io::Read,
     path::Path,
+    sync::OnceLock,
 };
 
 pub struct Outcome {
@@ -56,9 +57,19 @@ pub fn record_json(r: &Record) -> Value {
 pub fn store(args: &Cli) -> Result<Store> {
     Store::open(&args.root)
 }
+/// Note supplied with `--note`, applied to every event written by this invocation.
+static NOTE: OnceLock<String> = OnceLock::new();
+
 pub fn run(args: &Cli) -> Result<Outcome> {
     if let Some(name) = &args.skill {
         return guidance::run(args, name, args.reference.as_deref());
+    }
+    if let Some(note) = &args.note {
+        let note = note.trim();
+        if note.is_empty() {
+            return Err(Error::input("A note needs text"));
+        }
+        let _ = NOTE.set(note.to_string());
     }
     let command = args
         .command
@@ -288,6 +299,7 @@ pub fn save(
     if !ids.is_empty() {
         let mut event = Record::new(Kind::Event, &unique_id("event"), "Records updated");
         event.status = "recorded".into();
+        event.description = NOTE.get().cloned().unwrap_or_default();
         event.refs = ids.clone();
         event.set("transitions", json!(transitions));
         event.set("recorded_at", now());

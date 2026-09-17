@@ -16,6 +16,8 @@ product work, integration evidence, and release history.
 
 ## [Unreleased] — 5.0.0-preview.1
 
+- Record the reason for a write: every command accepts a global `--note <TEXT>`, stored as the description of the event that the write produces, so `aep timeline` and `aep context` show why a record changed without reading Git. Events keep their title, transitions and revisions; a note is optional and is not a verification input.
+
 - Follow incoming edges in `aep context`: a container includes members that set `layer`/`wave`, and a record includes lessons and releases whose `refs` select it. Verification inputs are unchanged. Report a layer or wave without members as an `empty_container` warning from `aep check`; warnings do not fail the check or block writes. Guidance now asks for a release record per environment promotion and for CI/deployment gates to be registered as configured checks.
 
 - Encapsulate a multi-story design in a layer: native roadmap, design, records, status and handoff guidance now say to create the concept's layer (observable outcome, member stories, source decision, design artifact) before its changes and stories, set story `layer`/`wave`, point roadmap `refs` at the layer, and express order through dependencies and waves instead of ordering fields in `data`.

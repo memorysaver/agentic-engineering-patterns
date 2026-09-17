@@ -338,6 +338,9 @@ pub fn render(operation: &str, result: &Outcome) -> String {
                     text(&event["id"]),
                     text(&event["title"])
                 );
+                if let Some(note) = event["description"].as_str().filter(|s| !s.is_empty()) {
+                    let _ = writeln!(out, "      {note}");
+                }
             }
             if values.is_empty() {
                 out.push_str("  No events recorded.\n");
