@@ -1,103 +1,123 @@
 # Agentic Engineering Patterns
 
-AEP 5.0 is a Rust CLI for project context, isolated implementation, verification, and learning. Agents choose the work and skills. The CLI serves instructions, maintains records, and checks declared constraints.
+AEP is a native CLI, `aep`, that keeps a software project's context, work and verification together so coding agents can plan, implement and deliver with evidence. The agent decides what to do; `aep` serves the procedures, maintains the records, isolates implementation in Git worktrees, runs the project's checks and records what actually happened.
 
-**v5** is the maintained line: a native `aep` CLI with embedded guidance, released from `main` starting with **5.0.0-preview.1**. **v4** (the Claude Code skill bundle, last release v4.1.0) is kept on the `v4` branch and its tags for existing installs, receives no new features, and is being retired; see [v4 sunset](docs/decisions/aep-v4-sunset.md) and the [legacy v4.1 guide](docs/workflow/aep-v4.1-guide.md).
+Current release: **5.0.0-preview.1** (Linux x86_64, macOS Apple Silicon). The earlier skill bundle, v4, is kept for existing installs and is being retired; see [Coming from v4](#coming-from-v4).
 
 ## Install
-
-Linux x86_64 and macOS Apple Silicon, from the newest v5 GitHub release:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/memorysaver/agentic-engineering-patterns/main/scripts/install.sh | bash
 ```
 
-The script downloads the release archive for your platform, verifies its SHA-256 against the published checksum, keeps the binary under `~/.local/share/aep/builds/<sha16>/` with a manifest, and switches the `~/.local/bin/aep` link atomically. Set `AEP_VERSION=v5.x.y` to pin a tag; `AEP_HOME` and `AEP_BIN_DIR` change the locations. Rerunning installs the newer build beside the old one, so a previous build can be relinked by hand. The script needs `curl`, `tar` and `git`; the CLI itself needs only `git` on `PATH`.
+The script picks the archive for your platform from the newest v5 release, verifies its SHA-256, keeps the binary under `~/.local/share/aep/builds/<sha16>/` and links `~/.local/bin/aep`. `AEP_VERSION=v5.x.y` pins a tag; `AEP_HOME` and `AEP_BIN_DIR` change the locations. Runtime needs are `git` on `PATH` and nothing else: no Node, no LLM key, no per-agent skill copies.
 
-## Install from source
+To build from source, install the pinned Rust toolchain with rustup and run `cargo install --locked --path crates/aep-cli` from this checkout.
 
-Install the pinned Rust toolchain with rustup, then run from this checkout:
+## Quick start
 
-```bash
-cargo install --locked --path crates/aep-cli
-aep --version
-aep --skill
-```
-
-In a project with Git history:
+In a Git repository:
 
 ```bash
-aep init
-aep doctor
-aep --skill project
+aep init            # .aep/config.toml, AGENTS.md, project-rules/README.md, .gitignore entry
+aep doctor          # installation, project compatibility, available tools
+aep --skill         # the agent entrypoint: how to work in this project
+aep --skill project # set up stores, checks and the verification procedure
 ```
 
-The installation needs the binary and a short `AGENTS.md` entrypoint. `aep init --claude` also adds an `@AGENTS.md` pointer. Instructions and references are embedded in the binary. The CLI runs independently of this source checkout, Node, and Bun. It needs no LLM key, OpenSpec CLI, or per-runtime skill copies for its normal lifecycle.
+`aep init --claude` also writes a `CLAUDE.md` that points at `AGENTS.md`. Existing `AGENTS.md` content is kept; `init` prepends a short routing block. Running `init` again changes nothing.
 
-Linux x86_64 and macOS Apple Silicon are the native validation and release targets; macOS Intel is not built. Project checks still need their own toolchains. The optional GitHub adapter needs `gh` and repository access.
+From there the agent reads the procedure it needs (`aep --skill design`, `--skill implement`, and so on), creates records with `aep <kind> new --file`, and moves work through the lifecycle below. A human can follow along with `aep status`, `aep context <id>` and `aep timeline`.
 
-## Project structure
+## How it works
 
-| Store | Content |
+### Records and stores
+
+Everything is a YAML or Markdown record with an ID, status, references and typed data, kept in plain directories that Git retains:
+
+| Store | Default path | Holds |
+| --- | --- | --- |
+| Ledger | `project-ledger/` | Stories, changes with BDD specs, layers, waves, releases, gates, attempts, reviews, evidence, deliveries, events |
+| Roadmap | `project-roadmap/` | Product direction, journeys, decisions (ADRs), published specifications |
+| Rules | `project-rules/` | Project-specific code, testing and release rules, indexed for agents |
+| Designs | `docs/design/` | Design drafts and research behind a change |
+| Lessons | `lesson-learned/` | Observations that should change future work |
+
+Stores are created when first needed. `aep check` validates every record, reference and specification and warns about containers with no members. Every write records an event with the affected IDs, status transitions and revision hashes; add `--note "<reason>"` to any write command and the reason is stored with that event.
+
+### Lifecycle
+
+The agent chooses skills and order; the CLI enforces structure.
+
+1. **roadmap**: state direction, group a multi-story concept in a layer, record decisions with attribution.
+2. **design**: write the change contract with BDD scenarios, accept it under the user's authority, create its stories.
+3. **implement**: `aep dispatch start` checks readiness (dependencies, gates, capacity) and opens an isolated worktree for one attempt.
+4. **validate**: `aep verify run` executes the project's configured checks in that worktree and records revision-bound evidence; policy can require an independent review.
+5. **deliver**: `aep deliver merge` or `deliver pr` records the actual integration with a receipt tied to the verified tree, then `spec publish` and `change close`.
+6. **reflect**: turn what was observed into lessons, rules or context updates.
+
+Readiness comes from explicit dependencies, gates and accepted contracts, never from numbering or folder order. Delivery is recorded separately from intent, so `aep status` reports what is integrated, what is ready and why something is blocked.
+
+### Commands
+
+| Group | Commands |
 | --- | --- |
-| `project-rules/` | Project code, testing, DevOps, release rules, and optional local procedures |
-| `project-ledger/` | Stories, changes, layers, waves, releases, gates, attempts, and evidence |
-| `project-roadmap/` | Product direction, journeys, architecture, **decisions/ ADRs**, and published specifications |
-| `docs/design/` | Design drafts and research supporting a change |
-| `lesson-learned/` | Observations and retained execution lessons |
-| `.aep/config.toml` | CLI pin, store locations, capacity, and explicit check commands |
+| Start | `init`, `doctor`, `status`, `context`, `check` |
+| Plan | `query`, `timeline`, `story`, `roadmap`, `change`, `decision`, `layer`, `wave` |
+| Implement and verify | `dispatch`, `worktree`, `attempt`, `verify`, `review`, `gate` |
+| Deliver and learn | `deliver`, `release`, `spec`, `lesson`, `reflect`, `rule` |
+| Maintain | `config`, `migrate`, `openspec`, `recover` |
 
-Stores are created when needed. A maintenance story can exist without a user journey. IDs are opaque; dependencies and gates determine readiness. Git retains older context.
+Every command accepts `--json` for structured output, `--dry-run` for supported writes and `--note` for the reason. `aep --skill [name] [--ref name]` prints the embedded guidance; it is the only place agents read procedures from.
 
-## Working with AEP
+### Verification and policy
 
-Start with `aep --skill`. Read a selected procedure with `aep --skill design`, or a reference with `aep --skill design --ref bdd`. The agent selects procedures from the request and context; the CLI has no model or semantic route command.
+`.aep/config.toml` pins the CLI version, names the stores and declares the project's checks as explicit command arrays, together with policy: parallel attempt capacity, whether independent review is required, protected paths. Checks run inside the attempt's worktree and their results are stored as evidence bound to the revision they checked. Passing `aep check` proves structure; product behavior is proved by the project's own verification procedure, which `aep --skill project --ref verification-setup` helps establish.
 
-Use `aep status`, `aep context <id>`, `aep query`, and `aep timeline` to inspect recorded facts. Use structured files or `--file -` to author records. `aep check` validates the project; verification runs its configured commands in the bound worktree. Self verification produces revision-bound check evidence; explicit project policy can also require independent review. Delivery records actual integration separately from accepted intent and published specifications.
+## For coding agents
 
-- [Human-readable CLI decision](docs/decisions/aep-v5-human-cli.md)
+`aep init` writes an `AGENTS.md` that tells any agent to run `aep --skill` and follow the project's rules index. The guidance is embedded in the binary and versioned with it, so every agent working in the project reads the same procedures. Handoffs carry story, change, container and worktree identity; a later agent resumes from `aep context <id>` rather than from chat history.
+
+## Coming from v4
+
+v4 was a bundle of Agent Skills installed with `npx skills`. It is kept on the [`v4` branch](https://github.com/memorysaver/agentic-engineering-patterns/tree/v4) and its tags for existing installs, receives no new features, and is retired once downstream projects deliver on v5 and a v5 stable release exists. Details:
+
+- [v4 legacy README and installation](docs/workflow/aep-v4.1-guide.md), including the `@v4.1.0` and `@v4` install refs
+- [v4 sunset decision](docs/decisions/aep-v4-sunset.md)
+- [Migrating a v4 project to v5](docs/workflow/aep-v5-migration.md): `aep migrate` converts useful legacy context into native records, preserves provenance and switches the workflow owner explicitly
+
+A v4 project does not change behavior by installing the binary; the switch is an explicit migration.
+
+## Documentation
+
 - [Native CLI and configuration](docs/workflow/aep-v5-cli.md)
 - [Migration and OpenSpec compatibility](docs/workflow/aep-v5-migration.md)
-- [5.0 architecture and accepted design](docs/decisions/aep-v5-rust-cli-architecture.md)
-- [Implementation and validation report](docs/audits/2026-09-09-aep-v5-implementation.md)
-- [Current CLI scope and validation](docs/audits/2026-09-09-aep-v5-cli-focus.md)
-- [Legacy-to-v5 skill capability inventory](docs/audits/2026-09-10-aep-v5-skill-migration-inventory.md)
+- [Architecture and accepted design](docs/decisions/aep-v5-rust-cli-architecture.md)
+- [Human-readable CLI](docs/decisions/aep-v5-human-cli.md)
 - [Skill classification: context and self verification](docs/decisions/aep-v5-context-and-self-verification.md)
-- [Purpose-driven research and product-context handoff](docs/decisions/aep-v5-purpose-driven-research.md)
-- [Layer and wave encapsulation of a multi-story design](docs/decisions/aep-v5-layer-wave-encapsulation.md)
+- [Purpose-driven research and product context](docs/decisions/aep-v5-purpose-driven-research.md)
+- [Layer and wave encapsulation](docs/decisions/aep-v5-layer-wave-encapsulation.md)
+- [Context reverse edges and container completeness](docs/decisions/aep-v5-context-reverse-edges.md)
 - [Delivery continuity and closure](docs/decisions/aep-v5-delivery-continuity.md)
-- [Corrections from downstream delivery](docs/decisions/aep-v5-downstream-delivery-findings.md)
 - [Publication after integration context changes](docs/decisions/aep-v5-publication-reverification.md)
 - [Preview adoption and v4/v5 coexistence](docs/decisions/aep-v5-preview-adoption.md)
-- [v4 sunset and the v4/v5 split](docs/decisions/aep-v4-sunset.md)
-- [Preview implementation and review evidence](docs/audits/2026-09-10-aep-v5-preview.md)
-- [Downstream preview trial](docs/workflow/aep-v5-preview-trial.md)
-- [Looplia, MITS and Rewarc pilot observations](docs/audits/2026-09-10-aep-v5-downstream-pilots.md)
-- [Completed original-project migrations and rebuilt CLI trial](docs/audits/2026-09-10-aep-v5-live-migrations.md)
-- [Lessons from the three actual v5 migrations](docs/lessons/2026-09-10-three-projects-native-v5-migration.md)
-- [Legacy v4.1 installation and skills](docs/workflow/aep-v4.1-guide.md)
+- [Downstream pilots and live migrations](docs/audits/2026-09-10-aep-v5-downstream-pilots.md), [lessons](docs/lessons/)
+- [Changelog](CHANGELOG.md)
 
 ## Develop AEP
 
-The Rust crates own the native runtime. `skills/native/` contains its embedded guidance. The current deliverable is the CLI; [dashboard work is deferred](docs/decisions/aep-v5-cli-first.md). Existing `apps/` and `packages/` code is retained at its pre-v5 state and is outside the native release.
+The Rust workspace has three crates: `aep-core` (records, validation, readiness), `aep-store` (transactions, Git, worktrees) and `aep-cli` (commands, embedded guidance from `skills/native/`).
 
 ```bash
 cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
+bun run skills:check-steering   # guidance stays within its steering ceilings
+bun run skills:check            # generated resources are in sync
 ```
 
-The native release archive contains `aep` and `LICENSE`, with a separate SHA-256
-checksum. Project state is available through `aep status`, `aep query`,
-`aep context`, and `aep timeline`; each supports `--json`.
+Releases are tagged `v5.*` on `main`; CI builds both platforms, publishes the archives with checksums and the installer picks them up. Read [project-rules/README.md](project-rules/README.md) before changing source. AEP's own design decisions live in `docs/decisions/`; a downstream project's ADRs live in its `project-roadmap/decisions/`.
 
-For skill-source maintenance, run the applicable authoring checks:
+## License
 
-```bash
-bun run skills:check
-bun run skills:check-vocab
-bun run skills:check-steering
-bun run skills:package-check
-```
-
-Read [project-rules/README.md](project-rules/README.md) before source changes. AEP's own design decisions remain in `docs/decisions/`; downstream ADRs live in `project-roadmap/decisions/`.
+MIT. See [LICENSE](LICENSE).
