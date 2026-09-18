@@ -136,6 +136,6 @@ A candidate must preserve required gates and show no new authorization violation
 | Paired Astra/Fable benchmark | Astra is the first target; no dependency on resolving another model's identity. |
 | README count and moved links | Separate documentation maintenance; not evidence for an Astra design change. |
 
-Implementation PRs should name their finding ID, changed contract, compatibility effect, and checks. Follow the [release convention](../../project-convention/release.md) when shipping: classify fixes, additive capability, and breaking contracts correctly, then update version, changelog, tag, and migration ledger. Do not promise a minor release for a breaking change.
+Implementation PRs should name their finding ID, changed contract, compatibility effect, and checks. Follow the [release convention](../../project-rules/release.md) when shipping: classify fixes, additive capability, and breaking contracts correctly, then update version, changelog, tag, and migration ledger. Do not promise a minor release for a breaking change.
 
 Template changes require an explicit downstream migration. Verify each installed runtime's committed skill files and lockfile, then update instruction markers and any already-rendered recipes. Re-pin alone does not rewrite those project files. Preserve local conventions and the previous pin for rollback. This design PR leaves PR #33 open for a separate disposition decision.

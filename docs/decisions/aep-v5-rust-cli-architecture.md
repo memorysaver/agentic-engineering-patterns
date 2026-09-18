@@ -1,8 +1,10 @@
 # AEP 5.0: Rust CLI, project context, and verification
 
+> Interface amendment (2026-09-10): [Human-readable CLI](aep-v5-human-cli.md) replaces the earlier `skills` command examples with `aep --skill`. Other accepted constraints remain applicable.
+
 AEP 5.0 installs as a Rust `aep` binary and a short AGENTS.md entrypoint. The working agent interprets the request, selects skills, and decides the work sequence. The binary serves the requested instructions, maintains project records, and runs explicit operations and checks. OpenSpec remains an integrated specification format and optional interoperability tool.
 
-**Status:** Proposed architecture. **Target:** AEP 5.0.0, selected by the user. **Date:** 2026-09-09. No CLI or migration is implemented by this document, and the current release remains v4.1.0.
+**Status:** Accepted architecture; implemented on the 5.0 development branch. **Target:** AEP 5.0.0, selected by the user. **Date:** 2026-09-09. The native command contract is documented in [the implementation guide](../workflow/aep-v5-cli.md); the published legacy release remains v4.1.0 until release publication.
 
 This is the entrypoint for the 5.0 design. It governs the implementation boundary and delivery order of the supporting proposals:
 
@@ -42,7 +44,7 @@ flowchart TB
     T --> M[Rules, design drafts, lessons]
     C --> A[Adapters: Git, tests, hosts, providers, OpenSpec]
     A --> H[External tools and environments]
-    L --> Q[Derived context and dashboard views]
+    L --> Q[CLI context, status, and query views]
     R --> Q
     M --> Q
 ```
@@ -76,7 +78,7 @@ Use one detailed change/BDD contract, referenced by story records. Preserve acce
 
 ## 4. Command surface
 
-All syntax below is proposed, not a claim that a binary exists. Keep command names task-oriented and make help/examples part of compatibility tests.
+These command families define the design contract. See the [native CLI guide](../workflow/aep-v5-cli.md) and built-in help for implemented syntax. Keep help/examples part of compatibility tests.
 
 | Family | Principal commands | Result |
 | --- | --- | --- |
@@ -153,7 +155,7 @@ A receipt records check ID/version, command or review method, actor/host provena
 
 Cache only results with explicit input/environment fingerprints. Reuse requires matching relevant inputs, policy/check version, and freshness requirements. A post-review code edit, changed gate scope, or mutable external environment can invalidate evidence. Enforce the final check against the integration candidate; checks of an earlier head do not silently certify a later merge.
 
-Keep current verification floors and bounded gen-eval while porting them into one policy implementation. One self-validation pass plus risk-based independent review remains the target. Stage any relaxation after the context/CLI migration so a new engine and weaker verification cannot hide each other's defects.
+Preview amendment (2026-09-10): the accepted [context/self-verification decision](aep-v5-context-and-self-verification.md) replaces mandatory gen-eval with self verification and explicit project review policy. Model topology and round count are agent/host choices. Current evidence, unresolved findings, and declared project requirements remain enforced in the shared policy implementation.
 
 ## 6. OpenSpec integration without a core runtime dependency
 
@@ -220,7 +222,7 @@ Ship the CLI with embedded skills, templates, schemas, checks, and compatibility
 
 Before release, confirm the public binary/package name and distribution channel are available; do not assume that the `aep` registry name can be published. Document supported OS/architecture and minimum Git/toolchain versions from actual CI. Keep the chosen binary release reproducible and inspectable through doctor and guidance output. An upgrade changes one release pin and checks schema compatibility; it does not reinstall skills once per host.
 
-A 4.x consumer can remain pinned while another migrates. Active old-contract stories finish or restart explicitly; changing the main branch's CLI/instruction release does not retroactively change their records. After switching affected entrypoints and consumers, remove unused vendored AEP skill copies and their AEP-only lock entries; preserve unrelated local skills and shared lock entries. Keep legacy views only where needed and disable old writers before cutover. The dashboard must use the new Rust-owned JSON/read model or a tested adapter; do not maintain a competing TypeScript readiness algorithm.
+Active old-contract stories finish or restart explicitly; changing the main branch's CLI/instruction release does not retroactively change their records. After migration, v5 stores are the live authority. Retain installed v4 skills and lock entries alongside the preview. Preserve legacy source bytes and record their Git identity; v5 is the selected live writer after cutover. Inspect and retire conflicting active writers under the existing task authority. The [preview adoption decision](aep-v5-preview-adoption.md) defines explicit version routing and source-preserving conversion. The [CLI-first scope decision](aep-v5-cli-first.md) defers dashboard implementation and packaging. Native state is inspected through the CLI's status, query, context, and timeline commands. No backward-compatible dashboard or JavaScript runtime is required for native installation, migration, or release.
 
 ## 10. Implementation stages and release gates
 
@@ -231,7 +233,7 @@ A 4.x consumer can remain pinned while another migrates. Active old-contract sto
 | 2 | Transactions, init, and practical migration plan/apply/verify | Current-context conversion and Git references; crash/stale-write handling; no-op rerun |
 | 3 | Change/BDD/spec/rules/lesson maintenance and OpenSpec integration | Supported-subset round trips, unsupported custom diagnostics, promotion evidence and concurrent-delta fixtures |
 | 4 | Worktree dispatch, verification runner, reviews, gates, delivery receipts | Dependency/capacity/isolation checks, timeout/cancel recovery, stale evidence, provider reconciliation |
-| 5 | Guidance and dashboard cutover; representative downstream pilot | Usable current context and full lifecycle, preserved custom preflights, next-task recall without separate AEP skill installs |
+| 5 | Guidance cutover; representative downstream pilot | Usable current context and full lifecycle, preserved custom preflights, next-task recall without separate AEP skill installs |
 | 6 | Release 5.0.0 | Native install matrix, embedded instruction/command consistency, changelog/tag/migration notes, documented support and limitations |
 
 Use Rust unit tests for pure invariants and integration fixtures for filesystem/process behavior. Extend the repository's existing shell fixture corpus to exercise the binary and preserve current routing/verification cases; do not port only success paths. Keep checks independent from the behavior they certify. Required cases include malformed data, incomplete tasks, empty lessons, duplicate layer gates, partial/unsynced specs, unsafe path resolution, lost worker handles, changed merge candidates, and interrupted external operations.

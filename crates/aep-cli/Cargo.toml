@@ -1,0 +1,29 @@
+[package]
+name = "aep-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+build = "build.rs"
+
+[[bin]]
+name = "aep"
+path = "src/main.rs"
+
+[dependencies]
+aep-core = { path = "../aep-core" }
+aep-store = { path = "../aep-store" }
+clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml_ng.workspace = true
+toml.workspace = true
+ctrlc.workspace = true
+libc.workspace = true
+
+[build-dependencies]
+serde_json.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

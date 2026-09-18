@@ -1,0 +1,279 @@
+{
+  "observed_at": "2026-09-10T07:22:33.018616+00:00",
+  "observer": "cold_guidance_review (independent reader; did not author guidance)",
+  "repository": "/home/memorysaver/Work/github/agentic-engineering-patterns",
+  "catalog": {
+    "cli_version": "5.0.0-preview.1",
+    "data": {
+      "metadata": {
+        "bundle_digest": "52d89d282578dad3ddf6915c3f835de33b27e4141a040613b801a4681cd5f92b",
+        "complete": true,
+        "release": "5.0.0-preview.1"
+      },
+      "skills": [
+        {
+          "content_digest": "c76b9b4ae3dd377c023a1e89ac0df7e4438f9213a7cebcc72a0f8684094e644c",
+          "description": "Prepare a PR or perform authorized integration using current evidence, then preserve lessons and close owned resources.",
+          "name": "deliver",
+          "read_command": "aep skills show deliver",
+          "source": "aep:5.0.0-preview.1:deliver/SKILL.md"
+        },
+        {
+          "content_digest": "be241d4cd0aa901390f8e1097bd5f3fe9a670e1838a9a1bc0b031c2f023c450d",
+          "description": "Resolve change intent, product criteria, and technical uncertainty through contracts, BDD scenarios, decisions, and useful prototypes.",
+          "name": "design",
+          "read_command": "aep skills show design",
+          "source": "aep:5.0.0-preview.1:design/SKILL.md"
+        },
+        {
+          "content_digest": "cdf9a7d043fc577aaee9ac0a9badc32a1ca58880b7184c13082e37f3cffbd16c",
+          "description": "Select ready work and implement an accepted story in its worktree, preserving task context, verification, and recovery information.",
+          "name": "implement",
+          "read_command": "aep skills show implement",
+          "source": "aep:5.0.0-preview.1:implement/SKILL.md"
+        },
+        {
+          "content_digest": "552de4c15934450c3cdb8bb85271f2f5516f2edd803737c36338a916dc5f3c54",
+          "description": "Convert useful legacy context into native stores, preserve source provenance, and explicitly switch the project's workflow owner.",
+          "name": "migrate",
+          "read_command": "aep skills show migrate",
+          "source": "aep:5.0.0-preview.1:migrate/SKILL.md"
+        },
+        {
+          "content_digest": "016b9dd595d869c00b844f6583de2dfe877eb221f178f154cc760a0258258830",
+          "description": "Install or inspect project entrypoints, assemble project context, and establish the project's runtime verification procedure and checks.",
+          "name": "project",
+          "read_command": "aep skills show project",
+          "source": "aep:5.0.0-preview.1:project/SKILL.md"
+        },
+        {
+          "content_digest": "39d5e13f28dacc7ac017054dae9ac76a73047d4b1bd99f64c4b68a459b495925",
+          "description": "Turn observed product or execution feedback into context updates, lessons, project rules, local procedures, or grounded upstream proposals.",
+          "name": "reflect",
+          "read_command": "aep skills show reflect",
+          "source": "aep:5.0.0-preview.1:reflect/SKILL.md"
+        },
+        {
+          "content_digest": "946c20b57880f85e1ff64866f7121031d6becc77909467672cfebf8e43df627f",
+          "description": "Maintain product direction, journeys, collaboration containers, and decision records, or explain current progress from recorded evidence.",
+          "name": "roadmap",
+          "read_command": "aep skills show roadmap",
+          "source": "aep:5.0.0-preview.1:roadmap/SKILL.md"
+        },
+        {
+          "content_digest": "cff1c898d062c774971b6831cdc1f219ab706aad32010f0c65e4ca1fe1ddb22d",
+          "description": "Verify implementation or other artifacts against intent using observable results, current evidence, and project-required checks or reviews.",
+          "name": "validate",
+          "read_command": "aep skills show validate",
+          "source": "aep:5.0.0-preview.1:validate/SKILL.md"
+        }
+      ]
+    },
+    "diagnostics": [],
+    "exit_code": 0,
+    "ok": true,
+    "operation": "skills",
+    "schema_version": 1,
+    "side_effects": false
+  },
+  "method": "Read AGENTS, README, applicable rules; executed source-bundled catalog/show/reference commands; read linked local procedure, feature map and helper; inspected command help and guidance discovery code only to resolve observed gaps. No feature implementation, repository initialization, external services or downstream mutation.",
+  "selected_skill_reads": [
+    "project",
+    "migrate",
+    "design",
+    "implement",
+    "validate",
+    "deliver",
+    "roadmap",
+    "reflect"
+  ],
+  "selected_reference_reads": [
+    "project/context-sources",
+    "project/verification-setup",
+    "design/design-criteria",
+    "design/prototype",
+    "design/bdd",
+    "design/records",
+    "implement/handoff",
+    "implement/git",
+    "validate/self-verification",
+    "deliver/closure",
+    "roadmap/status",
+    "reflect/feedback"
+  ],
+  "local_procedure_discovery": {
+    "catalog_includes_verify_aep": false,
+    "show_verify_aep_exit_code": 2,
+    "show_verify_aep_output": "invalid_input: Unknown skill verify-aep; inspect aep skills",
+    "explanation": "The source repo has no .aep/config.toml. crates/aep-cli/src/guidance.rs loads project-owned skills only with an explicit config. project-rules/skills.md and preview trial docs link the local skill directly. No source initialization was attempted; source maintenance is not a synthetic downstream project.",
+    "severity": "Documented source-checkout discovery limitation; no contradiction with initialized-project promise."
+  },
+  "cases": [
+    {
+      "id": "v4_disposable_migration",
+      "request": "Keep my existing v4 project working while I try v5 migration in a disposable copy",
+      "selected_skills": ["project", "migrate"],
+      "selected_references": ["project/context-sources"],
+      "reason": "The request chooses v5 for one isolated trial while preserving the existing v4 owner; project establishes workflow/context and migrate describes conversion and source attribution.",
+      "additional_sources": [
+        "docs/workflow/aep-v5-preview-trial.md",
+        "docs/decisions/aep-v5-preview-adoption.md",
+        "aep migrate plan --help"
+      ],
+      "intended_actions": [
+        "Inspect the original repository rules, work, source commit, consumers and legacy skill installation without changing them; create a disposable Git copy and record its relation to the source.",
+        "Use the exact preview executable in that copy, retain original installed skills, select trial scope, and commit exact migration inputs in the copy.",
+        "Plan conversion, review source hashes, writes, store overlap, target collisions, unknown/custom semantics and consumers. When needed, create the tracked factual consumer disposition note and pass --consumer-review, rather than inventing an approval requirement.",
+        "Apply and verify only in the copy; inspect native records and v5 entrypoint ownership, keep original source bytes and provenance, and run project checks.",
+        "Retain evidence outside the disposable copy, then remove owned scratch resources. Original project remains v4; importing later v5 work back would be a separate explicit handoff."
+      ],
+      "needed_context": [
+        "Actual downstream repository and commit, intended trial scope, existing uncommitted work, active consumers, custom configuration and explicit review/check policy."
+      ],
+      "proof": [
+        "Exact binary version/digest and guidance digest; source commit/path/digests; reviewed migration plan; apply/verify/check results; native status/query/context; hashes of original legacy data and skills; original checkout remains unchanged."
+      ],
+      "unfillable_gap": "No downstream repository was supplied for this observation task. Guidance can define the action but this review does not establish a downstream migration succeeded.",
+      "guidance_gap": "migrate skill names consumer changes without mentioning --consumer-review remediation; command help and the preview trial guide make the operation discoverable."
+    },
+    {
+      "id": "establish_runtime_verification",
+      "request": "This Rust CLI has unit tests but no instructions letting another agent verify the real migration command; establish that capability",
+      "selected_skills": ["project", "validate"],
+      "selected_references": [
+        "project/context-sources",
+        "project/verification-setup",
+        "validate/self-verification"
+      ],
+      "reason": "Project explicitly owns establishing operation capability; validate supplies observation and evidence quality rather than equating unit tests with public behavior.",
+      "additional_sources": [
+        "project-rules/skills.md",
+        "project-rules/rust.md",
+        "project-rules/skills/verify-aep/SKILL.md",
+        "project-rules/skills/verify-aep/references/feature-map.md",
+        "scripts/verify-native-preview.py"
+      ],
+      "intended_actions": [
+        "Find actual build commands, Rust toolchain and executable, then reuse or establish a distinct local verify-<project> skill with exact cwd, startup/preflight, fixture identity, public CLI invocations, expected side effects, observation, reset and cleanup.",
+        "Create a Feature Map linking migration operations to canonical acceptance and existing journeys rather than duplicating requirements.",
+        "Drive a real selected executable through a disposable committed legacy Git fixture: plan/apply/verify, inspect output/state, compare retained legacy bytes, inspect native work and explicit v5 route.",
+        "Configure suitable repeatable checks through aep config update in an initialized downstream project; rehearse the written procedure and retain command transcripts, binary identity and before/after state outside cleanup.",
+        "In this source repository, reuse the existing indexed verify-aep procedure and helper; source maintenance rules explicitly disallow manufacturing a downstream story loop."
+      ],
+      "needed_context": [
+        "Public command contract/accepted migration behavior, executable path and version, Git/Python preflight, fixture source identity, check configuration and canonical journeys."
+      ],
+      "proof": [
+        "Actual executable stdout/stderr/exit status, migration state changes, source preservation hashes, evidence artifact identity, cleaned owned fixture and readable retained evidence; unit tests alone are insufficient."
+      ],
+      "unfillable_gap": "The current source repository already has this capability, so the hypothetical missing-procedure premise does not hold here. This observation read the procedure/helper but did not execute its runtime probe; no runtime success is claimed.",
+      "guidance_gap": "Source checkout is intentionally uninitialized: catalog lists eight bundled skills and skills show verify-aep fails; direct project-rules index still exposes it. The reference promises local catalog discovery for initialized projects, consistent with source code."
+    },
+    {
+      "id": "api_exploration",
+      "request": "We do not know which API interaction will work best; investigate and converge before committing production implementation",
+      "selected_skills": ["design", "validate"],
+      "selected_references": [
+        "design/design-criteria",
+        "design/prototype",
+        "design/bdd",
+        "design/records",
+        "validate/self-verification",
+        "project/context-sources"
+      ],
+      "reason": "The unresolved choice needs explicit criteria and evidence from experiments before formal accepted-contract implementation.",
+      "intended_actions": [
+        "Read current API behavior, accepted contracts and constraints; state the concrete uncertainty, criteria and observation that would change the choice (discoverability, input/result consistency, errors/retries only when relevant).",
+        "Use isolated scratch experiments against the relevant public API or consumer harness. One candidate or sequential experiments may suffice; additional models are optional under host authority.",
+        "Record version, environment, inputs, method, observed result, limitations and inference; compare options on the chosen criterion and save rejected alternatives/counterevidence.",
+        "Converge in the canonical change/ADR, write observable success and failure scenarios as appropriate, structurally check the contract, and accept only under existing authority.",
+        "Retain useful evidence before scratch cleanup; dispatch formal implementation only after acceptance and revalidate any prototype code reused at its final revision."
+      ],
+      "needed_context": [
+        "Which API, available test surface/access, use case, existing contract, unknown decision, acceptance criteria and authority."
+      ],
+      "proof": [
+        "Reproducible public interactions, response and persistence/permission effects as applicable, experiment artifact identity and comparative observations; durable choice with limitations."
+      ],
+      "unfillable_gap": "No API or decision criterion supplied in the hypothetical prompt; establish these from project context or seek missing intent if material. No unearned production reliability claim follows from a prototype.",
+      "guidance_gap": null
+    },
+    {
+      "id": "accepted_small_story_required_review",
+      "request": "Implement an accepted small story, verify it yourself, and prepare delivery under explicit independent_review=true",
+      "selected_skills": ["implement", "validate", "deliver"],
+      "selected_references": [
+        "implement/handoff",
+        "implement/git",
+        "validate/self-verification",
+        "deliver/closure",
+        "project/context-sources"
+      ],
+      "reason": "Accepted intent routes directly to implementation; self execution and verification coexist with the explicit independent-review constraint; delivery scope is preparation.",
+      "intended_actions": [
+        "Read linked story/change, applicable rules and exact acceptance; inspect dispatch readiness, choose a reproducible base with accepted contract/dependencies and start a claim/worktree.",
+        "Carry workflow/release, branch/head, cwd/shared-store, attempt, setup and verification context; record actual running and review transitions, implement in the assigned worktree.",
+        "Operate changed behavior through local verification, inspect verify plan and run configured checks, retain failures and repair defects against acceptance.",
+        "Request independent review, pass exact contract/revision/evidence to an actually independent host reviewer, record its structured response and resolve concrete material/blocking findings; rerun relevant checks and review when changes invalidate evidence.",
+        "Inspect deliver plan for the exact candidate and unmet requirements. Prepare the requested delivery handoff; do not turn preparation into an unrequested merge or deployment. Retain useful work/evidence and report required review gaps if no independent reviewer is available."
+      ],
+      "needed_context": [
+        "Story ID and accepted contract, dispatch readiness, project review/check policy, reproducible base, operation procedure, host independent reviewer and intended delivery destination/action."
+      ],
+      "proof": [
+        "Candidate head and diff, actual public-surface observations, current configured check records, independent reviewer attribution/response freshness, resolved findings and exact-head delivery plan."
+      ],
+      "unfillable_gap": "An independent reviewer and actual story are not supplied for this observation task. Self verification cannot fill required independent review by relabeling the same author; the host must supply real independence.",
+      "guidance_gap": null
+    },
+    {
+      "id": "status_decision",
+      "request": "Tell me where the project stands and what decision you need from me",
+      "selected_skills": ["roadmap"],
+      "selected_references": ["roadmap/status", "project/context-sources"],
+      "reason": "The status reference explicitly routes evidence-based progress reporting and decisions genuinely requiring the user.",
+      "intended_actions": [
+        "Use status/query/context/timeline and selected source/runtime facts to inspect current scope, work, checks, integration and environment gates.",
+        "Separate accepted intent, candidate implementation, verified behavior, integration and deployment; use event recording timestamps only for the event they actually date.",
+        "Explain outcome, what changed, evidence, remaining work and specific unresolved decision/owner in user terms; link canonical artifacts.",
+        "Ask only a decision that remains material after using existing authority/context; say no decision is needed if none is supported."
+      ],
+      "needed_context": [
+        "Relevant project/scope, canonical records and source/runtime evidence, actual unresolved choice and decision authority."
+      ],
+      "proof": [
+        "Revision-bound check/integration identities, cited records/artifacts, observed dates and explicit unknowns."
+      ],
+      "unfillable_gap": "Cannot infer project completion or invent a human decision from procedure text alone; actual records/source evidence are required.",
+      "guidance_gap": null
+    },
+    {
+      "id": "stale_journey_after_feature",
+      "request": "After a feature change, the old verification journey fails; capture what changed and fix the right source",
+      "selected_skills": ["reflect", "validate", "project"],
+      "selected_references": [
+        "reflect/feedback",
+        "validate/self-verification",
+        "project/verification-setup",
+        "project/context-sources"
+      ],
+      "reason": "Feedback classifies the observation destination; verification distinguishes product regression from a stale operation path and project guidance owns repair of the local procedure.",
+      "intended_actions": [
+        "Capture exact changed feature revision/environment, old journey and failure transcript; run preflight and compare actual behavior with the current canonical acceptance.",
+        "If navigation/tool instructions are stale while behavior meets acceptance, update the local verification procedure/Feature Map links and rerun the affected operation.",
+        "If implementation violates accepted behavior, retain the failure and fix implementation; do not rewrite expected results to erase the defect.",
+        "If the intended behavior changed, reconcile the canonical accepted change/journey under its authority, then update the operation map to it; keep uncertainty explicit when evidence cannot distinguish cases.",
+        "Record a useful durable observation/lesson, preserve relevant prior or rejected evidence, and make scoped rule/procedure or upstream proposals only when evidence calls for that destination. Retain before/after proof and cleanup."
+      ],
+      "needed_context": [
+        "Before/after feature revisions, old journey/procedure, canonical acceptance and approved behavior changes, observed error/environment and relevant earlier lessons."
+      ],
+      "proof": [
+        "Reproduced failure and classified cause, acceptance-linked corrected-source diff, real operation rerun at final revision, retained artifacts and current Feature Map."
+      ],
+      "unfillable_gap": "No failing journey or candidate was supplied; cannot classify it as instruction drift or product defect without those facts.",
+      "guidance_gap": null
+    }
+  ],
+  "overall": "All six requests have intelligible native routes and substantive actions/context/evidence criteria. The installed guidance preserves workflow ownership, distinguishes exploration from implementation, enforces explicit review independently of self verification, and separates stale verification instructions from behavioral defects. No blocking guidance contradiction found. This is a cold selection/content observation, not proof of actual downstream execution or provider behavior."
+}

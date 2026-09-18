@@ -1,0 +1,17 @@
+[package]
+name = "aep-store"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+aep-core = { path = "../aep-core" }
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml_ng.workspace = true
+toml.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
