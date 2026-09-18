@@ -1058,6 +1058,31 @@ fn with_text(mut out: Outcome, text: String) -> Outcome {
     out.text = Some(text);
     out
 }
+/// Agent-specific arguments so the observer can read Herdr and write its run.
+fn observer_args(kind: &str) -> Result<Vec<String>> {
+    if kind != "codex" {
+        return Ok(vec![]);
+    }
+    let mut roots = vec![home()?];
+    if let Some(dir) = std::env::var_os("HERDR_SOCKET_PATH")
+        .map(PathBuf::from)
+        .as_deref()
+        .and_then(Path::parent)
+    {
+        roots.push(dir.to_path_buf());
+    }
+    let list = roots
+        .iter()
+        .map(|r| serde_json::to_string(&r.to_string_lossy()).unwrap_or_default())
+        .collect::<Vec<_>>()
+        .join(",");
+    Ok(vec![
+        "-s".into(),
+        "workspace-write".into(),
+        "-c".into(),
+        format!("sandbox_workspace_write.writable_roots=[{list}]"),
+    ])
+}
 fn herdr(args: &[&str]) -> Result<Value> {
     let output = Command::new("herdr")
         .args(args)
@@ -1130,10 +1155,17 @@ fn watch(
     let mut result = json!({"run": run, "dir": dir, "project_id": project, "target_pane": target, "observer_kind": kind, "observer_name": name, "spawned": false, "dry_run": args.dry_run});
     let commands = json!([
         format!(
-            "herdr pane split --current --direction right --cwd {} --no-focus",
+            "herdr pane split --pane {target} --direction right --cwd {} --no-focus",
             root.display()
         ),
-        format!("herdr agent start {name} --kind {kind} --pane <returned pane id>"),
+        format!(
+            "herdr agent start {name} --kind {kind} --pane <returned pane id>{}",
+            observer_args(&kind)?
+                .iter()
+                .map(|a| format!(" {a}"))
+                .collect::<String>()
+                .replace(" -s", " -- -s")
+        ),
         format!(
             "herdr agent prompt {name} \"$(cat {}/prompt.md)\"",
             dir.display()
@@ -1154,10 +1186,12 @@ fn watch(
     manifest["target_pane"] = json!(target);
     manifest["observer"] = json!({"name": name, "kind": kind, "spawned": false});
     if !no_spawn {
+        // Split beside the observed pane so the observer lives in the project's workspace.
         let split = herdr(&[
             "pane",
             "split",
-            "--current",
+            "--pane",
+            &target,
             "--direction",
             "right",
             "--cwd",
@@ -1168,7 +1202,16 @@ fn watch(
             .as_str()
             .ok_or_else(|| Error::new("herdr", "pane split returned no pane id", 1))?
             .to_string();
-        herdr(&["agent", "start", &name, "--kind", &kind, "--pane", &pane])?;
+        let mut start = vec!["agent", "start", &name, "--kind", &kind, "--pane", &pane];
+        // Codex sandboxes the observer to the project tree; let it reach the AEP
+        // home (eval runs) and the Herdr socket without an approval per command.
+        let extra = observer_args(&kind)?;
+        let extra_refs: Vec<&str> = extra.iter().map(String::as_str).collect();
+        if !extra_refs.is_empty() {
+            start.push("--");
+            start.extend(extra_refs.iter().copied());
+        }
+        herdr(&start)?;
         herdr(&["agent", "prompt", &name, &prompt])?;
         manifest["observer"] = json!({"name": name, "kind": kind, "pane": pane, "spawned": true, "prompted_at": now()});
         result["spawned"] = json!(true);

@@ -94,7 +94,7 @@ observer_kind = "claude"      # 選用的專案覆寫
 ## `aep eval watch`：Herdr 之下的監看模式
 
 - 需要 `HERDR_ENV=1`；不在 Herdr 之下時只提示改用 `snapshot`／`report`。
-- 建立一個 run，用 `aep --skill eval` 產生觀察者 prompt（含 run id、專案路徑、要觀察的 pane），在旁邊開一個 pane 以 `config.eval.observer_kind` 啟動專用觀察者 agent 並送出 prompt。`--no-spawn` 只印出 Herdr 指令。
+- 建立一個 run，用 `aep --skill eval` 產生觀察者 prompt（含 run id、專案路徑、要觀察的 pane），在被觀察的 pane 旁邊（同一個 workspace）split 一個 pane，以 `config.eval.observer_kind` 啟動專用觀察者 agent 並送出 prompt。`--no-spawn` 只印出 Herdr 指令。
 - 觀察者 agent 依 skill `eval` 的程序：用 Herdr 找到同一 cwd 的工作 agent；在它每次 idle／done 時做 `aep eval snapshot --run <id>`、讀 transcript、對照記錄與 Git；把宣稱與證據的差異用 `aep eval record --run <id> --file <obs.json> --note` 寫進 run；結束時 `aep eval report --run <id>`。
 - 中立規則寫在 skill 裡：不提示工作 agent、不回答它的問題、不改專案檔案、不提交它的工作、不評價產品決策。
 - 從 Codex 或 Claude Code 啟動：使用者在自己的 session 說「開始 aep eval」，工作 agent 執行 `aep eval watch`。
@@ -109,6 +109,13 @@ observer_kind = "claude"      # 選用的專案覆寫
 2. `eval` 做成第九個內建 skill，還是 `reflect` 的一個 reference。建議第九個，因為讀者是觀察者 agent 而不是工作 agent；preview proof 與 catalog 測試的「8」要一併改。
 3. `watch` 預設自動 spawn 觀察者，還是只印指令。建議在 `HERDR_ENV=1` 時預設 spawn，`--no-spawn` 關掉。
 4. 第一版規則的門檻（N 天、比例）先寫死在 CLI，之後再開放到 `config.toml`。
+
+## 第一次實跑的修正（2026-09-19）
+
+第一次在真實專案上跑 `watch` 發現兩個問題，都已修：
+
+1. 觀察者 pane 開錯地方。原本 split 的是執行 `watch` 的 pane，觀察者落在觀察者自己的 workspace；使用者預期它出現在被觀察 agent 旁邊。改成 `herdr pane split --pane <target>`，觀察者現在開在目標 pane 同一個 tab。已啟動的觀察者用 `herdr pane move` 搬過去。
+2. Codex 的 sandbox 擋住 Herdr socket 與 `~/.aep`。觀察者每跑一個 `herdr` 指令或 `aep eval record` 都要人核准。改成以 codex 為 kind 時，`agent start` 帶 `-s workspace-write -c sandbox_workspace_write.writable_roots=[<AEP home>, <Herdr socket 目錄>]`。其他 kind 不加參數。
 
 ## 驗證方式
 

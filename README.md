@@ -77,7 +77,7 @@ Every command accepts `--json` for structured output, `--dry-run` for supported 
 
 ### Observing a project from outside
 
-`aep eval` is a neutral view of how a project is run. `aep eval snapshot` collects structural facts (records, verification policy, delivery receipts, Git state, legacy residue, CI and secret scanning) into a run under `~/.aep/eval/<project>/<run>/` and `aep eval report` applies fixed rules that name the engineering practice behind each finding. Nothing is written into the project. Under Herdr, `aep eval watch` starts a separate observer agent that follows `aep --skill eval`: it reads the working agent's transcript at each milestone, compares its claims with records and Git, and stores observations with `aep eval record`. The observer never sends input to the working agent and never judges product decisions or feature value.
+`aep eval` is a neutral view of how a project is run. `aep eval snapshot` collects structural facts (records, verification policy, delivery receipts, Git state, legacy residue, CI and secret scanning) into a run under `~/.aep/eval/<project>/<run>/` and `aep eval report` applies fixed rules that name the engineering practice behind each finding. Nothing is written into the project. Under Herdr, `aep eval watch` starts a separate observer agent beside the observed pane that follows `aep --skill eval`: it reads the working agent's transcript at each milestone, compares its claims with records and Git, and stores observations with `aep eval record`. The observer never sends input to the working agent and never judges product decisions or feature value.
 
 The machine-level AEP home is `~/.aep` (`AEP_HOME` overrides it): `config.toml` from `aep eval init`, `eval/` for runs, and `builds/` from the installer.
 
