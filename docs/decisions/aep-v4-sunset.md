@@ -19,4 +19,4 @@
 
 ## 執行紀錄
 
-- 2026-09-18：PR #35 合併到 `main`，建立 `v4` 分支，打 `v5.0.0-preview.1` tag，CI 發布 prerelease。實際結果記錄在 `CHANGELOG.md` 與發布時的觀察文件。
+- 2026-09-18：PR #35 以 merge commit `31f4d42` 合併到 `main`；`v4` 分支建立於 `acf03fc`（v4.1.0）；tag `v5.0.0-preview.1` 指向 `198c2fe`。GitHub Actions run 35301781613 三個 job 全部成功，release 以 prerelease 發布，`latest` 仍是 v4.1.0。資產：`aep-x86_64-unknown-linux-gnu.tar.gz`（1.55 MB，sha256 `f104dd03…`）與 `aep-aarch64-apple-darwin.tar.gz`（1.39 MB），各附 `.sha256`。用 `main` 上的 `scripts/install.sh` 從真實 release 安裝到暫存目錄驗證：自動選到 v5.0.0-preview.1、checksum 相符、binary `d083229a…` 可執行、`--note` 存在、對 MITS 唯讀 `aep check` 548 筆通過。macOS Apple Silicon 的資產只有 CI 建置證據，尚未在實機安裝驗證。
