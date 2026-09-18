@@ -264,6 +264,10 @@ Verified with the installed `dc7aaf75…` on project-b: `aep check` PASS on 986 
 
 One linking observation in the same shape as before: `aep-v4-removal` has `refs: []` and `paths: []`, so nothing connects it to the migration import record or the receipt whose retained sources it mentions; it is reachable only by ID.
 
+### Follow-up commits (2026-09-18, 23:23)
+
+Two more Project B commits from the same session, both pushed to `develop`: `17a4f3e0` retained the 09-17 session's uncommitted work (the Cloudflare setup doc and lesson edits, the Alchemy auth verification JSON) together with the four untracked files that had predated this observation since 09-15 (host settings, the CI workflow draft, two setup handoff docs). `548177f6` added decision `aep-v4-removal-context` (accepted) whose `refs` name `aep-v4-removal` and the migration import record `migration-c4782ca44fee809a`, describing itself as a context correction so the removal stays tied to the receipt whose sources it left in place. `aep context aep-v4-removal` now reaches the import record through the incoming accepted decision. This is the clarification mechanism the records reference describes, used correctly, and it closes the linking gap noted above. `aep check` PASS on 989 records, 0 warnings; the working tree is clean for the first time since the observation began.
+
 ## Herdr observation note
 
 `herdr agent get` reported `blocked` from the first queued Codex question until after the turn ended, while revision advanced from 43 to over 1300 and two PRs merged. `agent wait --until idle|done|working` timed out twice. Switching to `pane wait-output --regex` on CLI milestones (`attempt record --status review`, `deliver pr|merge`, `change close`, `git commit`, `worktree remove`) gave reliable triggers. Codex reported one context compaction mid-turn; the records before and after are consistent.
