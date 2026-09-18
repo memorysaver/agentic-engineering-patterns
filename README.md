@@ -101,6 +101,7 @@ A v4 project does not change behavior by installing the binary; the switch is an
 - [Delivery continuity and closure](docs/decisions/aep-v5-delivery-continuity.md)
 - [Publication after integration context changes](docs/decisions/aep-v5-publication-reverification.md)
 - [Preview adoption and v4/v5 coexistence](docs/decisions/aep-v5-preview-adoption.md)
+- [Migration cleanliness and projects new to AEP](docs/decisions/aep-v5-migration-cleanliness.md)
 - [Downstream pilots and live migrations](docs/audits/2026-09-10-aep-v5-downstream-pilots.md), [lessons](docs/lessons/)
 - [Changelog](CHANGELOG.md)
 
