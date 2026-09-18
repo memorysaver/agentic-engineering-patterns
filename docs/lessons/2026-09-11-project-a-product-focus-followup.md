@@ -1,13 +1,13 @@
-# MITS user-feedback-to-context continuation
+# Project A user-feedback-to-context continuation
 
 Date: 2026-09-11, Asia/Taipei
 Status: observed turn complete, 3 minutes 48 seconds
-Previous observation: [product focus research](2026-09-11-mits-product-focus-observation.md)
+Previous observation: [product focus research](2026-09-11-project-a-product-focus-observation.md)
 Guidance: [purpose-research implementation](../audits/2026-09-11-aep-v5-purpose-research.md)
 
 ## User direction and guidance consumption
 
-The observer was asked to continue monitoring, then specifically to establish whether the MITS agent used AEP to record the direction and ensure format/content completeness. The observer sent no prompt, answered no downstream question, and changed no MITS file.
+The observer was asked to continue monitoring, then specifically to establish whether the Project A agent used AEP to record the direction and ensure format/content completeness. The observer sent no prompt, answered no downstream question, and changed no Project A file.
 
 The downstream user chose “跨專案學習：把過去的教訓與偏好用到新工作”. This differs from the agent's prior recommendation of same-project handoff as the primary outcome. The agent adopted the user's selection, revisited cross-project research and existing specifications, and revised the design proposal accordingly.
 
@@ -24,7 +24,7 @@ The agent used a Python orchestration cell invoking native record commands. Term
 | `docs/design/2026-09-11-product-focus-and-longmemeval-v2.md` | Revised prose design: chosen product priority, proposed first journey, eight positive/negative cases, existing research, benchmark mapping and limits, comparison/cost design, unresolved next decisions |
 | `project-ledger/events/event-18d42832*.yaml` | Four native events: each new record moves from absent to pending, then pending to accepted |
 
-The accepted scope is product priority only. The records explicitly exclude story activation/implementation acceptance, benchmark execution, baseline changes and spending decisions. Detailed first scenario, metrics/thresholds and benchmark contract remain under design. No new implementation change/story was created for unresolved scope; existing MITS-068/MITS-072 were linked as context and retained their prior states.
+The accepted scope is product priority only. The records explicitly exclude story activation/implementation acceptance, benchmark execution, baseline changes and spending decisions. Detailed first scenario, metrics/thresholds and benchmark contract remain under design. No new implementation change/story was created for unresolved scope; existing A-068/A-072 were linked as context and retained their prior states.
 
 The design was edited as ordinary Markdown. AEP serves its authoring guidance and maintains linked native records; it has no separate command that semantically authors or approves the prose file. Both records use normal frontmatter and prose, with additional intent in structured `data`; an empty `description` alone does not mean their full file content is empty.
 
@@ -38,10 +38,10 @@ Semantic inspection confirmed that the chosen priority is cross-project learning
 
 ## Handoff and retained state
 
-The agent wrote MITS progress memory `20260911T035943Z641121167`, inspected it, then wrote a user-origin decision memory `20260911T035952Z004988765` and synchronized successfully according to the visible commands. The observer did not independently inspect the memory service.
+The agent wrote Project A progress memory `20260911T035943Z641121167`, inspected it, then wrote a user-origin decision memory `20260911T035952Z004988765` and synchronized successfully according to the visible commands. The observer did not independently inspect the memory service.
 
-The final response reported the updated direction, asked for a concrete cross-project example to resolve the first journey, and explicitly said the files were saved but uncommitted. Herdr reported `done`. Main remained `7af2d5ba96ef042c005ee3139dac863bf8a01719`; the new design, two canonical records and four events were untracked. Native persistence occurred, but Git retention/synchronization remains incomplete at this checkpoint. No observer commit or repair was made in MITS.
+The final response reported the updated direction, asked for a concrete cross-project example to resolve the first journey, and explicitly said the files were saved but uncommitted. Herdr reported `done`. Main remained `7af2d5ba96ef042c005ee3139dac863bf8a01719`; the new design, two canonical records and four events were untracked. Native persistence occurred, but Git retention/synchronization remains incomplete at this checkpoint. No observer commit or repair was made in Project A.
 
 The user-feedback-to-canonical-context behavior was observed: the agent acted on feedback without another request to write files. This does not prove all research triggers, full design acceptance or subsequent implementation are complete. Follow-up concerns are explicit artifact discovery/completeness, historical context expansion, and the uncommitted handoff.
 
-Evidence: `~/.local/share/aep/trials/2026-09-11-mits-product-focus-followup/`, including transcript, native records, event timeline, context response, source-file copies, checks, final Git/agent state and SHA-256 manifest.
+Evidence: `~/.local/share/aep/trials/2026-09-11-project-a-product-focus-followup/`, including transcript, native records, event timeline, context response, source-file copies, checks, final Git/agent state and SHA-256 manifest.

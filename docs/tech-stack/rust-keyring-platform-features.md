@@ -1,6 +1,6 @@
 # Rust `keyring` Crate — Platform Features Required
 
-**Discovered:** 2026-04-03 (Looplia Layer 0.5 dogfood testing)
+**Discovered:** 2026-04-03 (Project B Layer 0.5 dogfood testing)
 
 ## Problem
 

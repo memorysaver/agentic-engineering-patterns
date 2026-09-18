@@ -8,8 +8,8 @@
       },
       "mergedAt": "2026-09-10T12:15:43Z",
       "state": "MERGED",
-      "url": "https://github.com/memorysaver/looplia/pull/361",
-      "project": "looplia",
+      "url": "https://github.com/memorysaver/project-b/pull/361",
+      "project": "project-b",
       "local_branch": "develop"
     },
     {
@@ -20,8 +20,8 @@
       },
       "mergedAt": "2026-09-10T12:20:36Z",
       "state": "MERGED",
-      "url": "https://github.com/memorysaver/looplia/pull/362",
-      "project": "looplia",
+      "url": "https://github.com/memorysaver/project-b/pull/362",
+      "project": "project-b",
       "local_branch": "develop"
     },
     {
@@ -32,8 +32,8 @@
       },
       "mergedAt": "2026-09-10T12:15:43Z",
       "state": "MERGED",
-      "url": "https://github.com/memorysaver/MITS/pull/100",
-      "project": "MITS",
+      "url": "https://github.com/memorysaver/Project A/pull/100",
+      "project": "Project A",
       "local_branch": "main"
     },
     {
@@ -47,7 +47,7 @@
           "__typename": "CheckRun",
           "completedAt": "2026-09-10T13:05:12Z",
           "conclusion": "SUCCESS",
-          "detailsUrl": "https://github.com/memorysaver/Rewarc-AutoResearch/actions/runs/34476540436/job/102868720822",
+          "detailsUrl": "https://github.com/memorysaver/Project C/actions/runs/34476540436/job/102868720822",
           "name": "Repository correctness",
           "startedAt": "2026-09-10T12:24:59Z",
           "status": "COMPLETED",
@@ -57,7 +57,7 @@
           "__typename": "CheckRun",
           "completedAt": "2026-09-10T12:25:51Z",
           "conclusion": "SUCCESS",
-          "detailsUrl": "https://github.com/memorysaver/Rewarc-AutoResearch/actions/runs/34476540435/job/102868573093",
+          "detailsUrl": "https://github.com/memorysaver/Project C/actions/runs/34476540435/job/102868573093",
           "name": "Frozen dependency audits",
           "startedAt": "2026-09-10T12:24:31Z",
           "status": "COMPLETED",
@@ -67,7 +67,7 @@
           "__typename": "CheckRun",
           "completedAt": "2026-09-10T13:05:18Z",
           "conclusion": "SUCCESS",
-          "detailsUrl": "https://github.com/memorysaver/Rewarc-AutoResearch/actions/runs/34476540436/job/102881673984",
+          "detailsUrl": "https://github.com/memorysaver/Project C/actions/runs/34476540436/job/102881673984",
           "name": "CI / required",
           "startedAt": "2026-09-10T13:05:15Z",
           "status": "COMPLETED",
@@ -77,7 +77,7 @@
           "__typename": "CheckRun",
           "completedAt": "2026-09-10T12:24:57Z",
           "conclusion": "SUCCESS",
-          "detailsUrl": "https://github.com/memorysaver/Rewarc-AutoResearch/actions/runs/34476540435/job/102868573257",
+          "detailsUrl": "https://github.com/memorysaver/Project C/actions/runs/34476540435/job/102868573257",
           "name": "Offline Semgrep",
           "startedAt": "2026-09-10T12:24:30Z",
           "status": "COMPLETED",
@@ -87,7 +87,7 @@
           "__typename": "CheckRun",
           "completedAt": "2026-09-10T12:26:10Z",
           "conclusion": "SUCCESS",
-          "detailsUrl": "https://github.com/memorysaver/Rewarc-AutoResearch/actions/runs/34476540435/job/102868573250",
+          "detailsUrl": "https://github.com/memorysaver/Project C/actions/runs/34476540435/job/102868573250",
           "name": "Full history and tracked tree secrets",
           "startedAt": "2026-09-10T12:24:30Z",
           "status": "COMPLETED",
@@ -97,7 +97,7 @@
           "__typename": "CheckRun",
           "completedAt": "2026-09-10T12:26:28Z",
           "conclusion": "SUCCESS",
-          "detailsUrl": "https://github.com/memorysaver/Rewarc-AutoResearch/actions/runs/34476540435/job/102868573281",
+          "detailsUrl": "https://github.com/memorysaver/Project C/actions/runs/34476540435/job/102868573281",
           "name": "SPDX SBOM and license inventory",
           "startedAt": "2026-09-10T12:24:30Z",
           "status": "COMPLETED",
@@ -107,19 +107,19 @@
           "__typename": "CheckRun",
           "completedAt": "2026-09-10T12:26:35Z",
           "conclusion": "SUCCESS",
-          "detailsUrl": "https://github.com/memorysaver/Rewarc-AutoResearch/actions/runs/34476540435/job/102869199752",
+          "detailsUrl": "https://github.com/memorysaver/Project C/actions/runs/34476540435/job/102869199752",
           "name": "Supply Chain / required",
           "startedAt": "2026-09-10T12:26:31Z",
           "status": "COMPLETED",
           "workflowName": "Supply Chain"
         }
       ],
-      "url": "https://github.com/memorysaver/Rewarc-AutoResearch/pull/131",
+      "url": "https://github.com/memorysaver/Project C/pull/131",
       "fresh_clone_verified": true,
       "local_main": "0761cd5c7a465d91427a5b9f75e54a6fbe5d3df8",
-      "project": "Rewarc-AutoResearch"
+      "project": "Project C"
     }
   ],
-  "fresh_clone_verification": "all three projects passed; Looplia after #362",
+  "fresh_clone_verification": "all three projects passed; Project B after #362",
   "obs_worktree_unchanged": true
 }

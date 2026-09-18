@@ -2,7 +2,7 @@
 
 > **Status:** Accepted — implemented on branch `release/v4.1.0` as **v4.1.0**, alongside [fable-5-1-behavioral-rebaseline.md](fable-5-1-behavioral-rebaseline.md). It changes what `/aep-onboard` and `/aep-scaffold` write into a downstream repository and how a downstream repository upgrades, so it lives in `decisions/` per the [docs routing guide](../README.md).
 >
-> **Sourcing note:** the owner's direction (2026-09-03) after reviewing this repository's own `AGENTS.md` (commit `9b281fd`), the `AGENTS.md` files of looplia and 91app-agent-platform, and their `docs/` trees.
+> **Sourcing note:** the owner's direction (2026-09-03) after reviewing this repository's own `AGENTS.md` (commit `9b281fd`), the `AGENTS.md` files of project-b and 91app-agent-platform, and their `docs/` trees.
 
 ## Diagnosis
 
@@ -10,7 +10,7 @@
 
 **The instruction files carry the wrong content for the current generation.** Both downstream repos open `AGENTS.md` with a downstream-authored "Agent behavioral guidelines" block (Think Before Coding / Simplicity First / Surgical Changes / Goal-Driven Execution). Two of its lines — "If uncertain, ask" and "If something is unclear, stop. Name what's confusing. Ask." — are the opposite of the Fable 5.1 guidance for autonomous work, and "loop until verified" with per-step checks steers the main agent into small local fixes. AEP never shipped that block (no copy exists in this corpus), so removing it is a migration step, not a corpus edit.
 
-**Conventions are inlined, so `AGENTS.md` grows and the repo layout drifts anyway.** Each downstream `AGENTS.md` carries a `## Project Conventions (authoritative)` section followed by monorepo layout, stack, commands, release flow, and more (91app: ~370 lines). Meanwhile `docs/` has no routing rule: 91app's has more than thirty top-level directories (research, prototypes, postmortems, fixes, decisions, all peers); looplia keeps `DEVELOPMENT.md` and `LICENSING.md` at the root and `docs/` beside `product/`, `calibration/`, `project-memory/`, `lessons-learned/`. Every session pays for the whole `AGENTS.md`, and the parts that would answer "where does this file go" are the parts nobody wrote.
+**Conventions are inlined, so `AGENTS.md` grows and the repo layout drifts anyway.** Each downstream `AGENTS.md` carries a `## Project Conventions (authoritative)` section followed by monorepo layout, stack, commands, release flow, and more (91app: ~370 lines). Meanwhile `docs/` has no routing rule: 91app's has more than thirty top-level directories (research, prototypes, postmortems, fixes, decisions, all peers); project-b keeps `DEVELOPMENT.md` and `LICENSING.md` at the root and `docs/` beside `product/`, `calibration/`, `project-memory/`, `lessons-learned/`. Every session pays for the whole `AGENTS.md`, and the parts that would answer "where does this file go" are the parts nobody wrote.
 
 ## The standard (normative)
 
@@ -42,4 +42,4 @@
 - [fable-5-1-behavioral-rebaseline.md](fable-5-1-behavioral-rebaseline.md) — the execution-plane half of the same release; F5 is why the bootstrap does not repeat the generic agreement.
 - [claude-5-context-engineering.md](claude-5-context-engineering.md) — C5 (`/aep-onboard` stops authoring memory-loop prose) is completed by step 2 above.
 - `docs/README.md` — the routing table the `project-convention` README adapts.
-- looplia and 91app-agent-platform `AGENTS.md` and `docs/` trees (2026-09-03) — the diagnosis.
+- project-b and 91app-agent-platform `AGENTS.md` and `docs/` trees (2026-09-03) — the diagnosis.

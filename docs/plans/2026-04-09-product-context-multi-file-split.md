@@ -602,19 +602,19 @@ git commit -m "feat: update /validate for split-mode product-context"
 
 ---
 
-### Task 8: Sync Updated Skills to Looplia
+### Task 8: Sync Updated Skills to Project B
 
 After updating all source skills, sync to the downstream project.
 
 **Files:**
 
-- Modify: Multiple files in `/Users/memorysaver/Documents/github/looplia/.claude/skills/`
+- Modify: Multiple files in `/Users/memorysaver/Documents/github/project-b/.claude/skills/`
 
 - [ ] **Step 1: Copy updated SKILL.md files**
 
 ```bash
 SRC=/Users/memorysaver/Documents/github/agentic-engineering-patterns/skills
-DST=/Users/memorysaver/Documents/github/looplia/.claude/skills
+DST=/Users/memorysaver/Documents/github/project-b/.claude/skills
 
 cp "$SRC/product-context/envision/SKILL.md" "$DST/aep-envision/SKILL.md"
 cp "$SRC/product-context/map/SKILL.md" "$DST/aep-map/SKILL.md"
@@ -632,18 +632,18 @@ for dir in aep-envision aep-map aep-dispatch aep-calibrate aep-reflect aep-valid
 done
 ```
 
-- [ ] **Step 3: Migrate looplia product-context.yaml (remove opportunity + product)**
+- [ ] **Step 3: Migrate project-b product-context.yaml (remove opportunity + product)**
 
-Read `/Users/memorysaver/Documents/github/looplia/product-context.yaml` and remove the `opportunity` and `product` sections (they now live in `product/index.yaml`). Keep: `schema`, `project`, `version`, `updated_at`, `dispatch_epoch`, `calibration`, `architecture`, `stories`, `topology`, `layer_gates`, `waves`, `cost`, `changelog`.
+Read `/Users/memorysaver/Documents/github/project-b/product-context.yaml` and remove the `opportunity` and `product` sections (they now live in `product/index.yaml`). Keep: `schema`, `project`, `version`, `updated_at`, `dispatch_epoch`, `calibration`, `architecture`, `stories`, `topology`, `layer_gates`, `waves`, `cost`, `changelog`.
 
-- [ ] **Step 4: Expand looplia product/index.yaml**
+- [ ] **Step 4: Expand project-b product/index.yaml**
 
-Read `/Users/memorysaver/Documents/github/looplia/product/index.yaml` and ensure it has ALL fields from the current `product-context.yaml` opportunity + product sections. Specifically add any missing fields that were in product-context.yaml but not yet in index.yaml (failure_model, security_model, goals, non_goals, open_questions, decisions, stress_test, success_criteria, quality_dimensions, mvp_boundary, etc.).
+Read `/Users/memorysaver/Documents/github/project-b/product/index.yaml` and ensure it has ALL fields from the current `product-context.yaml` opportunity + product sections. Specifically add any missing fields that were in product-context.yaml but not yet in index.yaml (failure_model, security_model, goals, non_goals, open_questions, decisions, stress_test, success_criteria, quality_dimensions, mvp_boundary, etc.).
 
 - [ ] **Step 5: Validate the migration**
 
 ```bash
-cd /Users/memorysaver/Documents/github/looplia
+cd /Users/memorysaver/Documents/github/project-b
 python3 -c "
 import yaml
 with open('product/index.yaml') as f:
@@ -683,7 +683,7 @@ print('Migration validated: no duplication, cross-file consistency OK')
 
 ```bash
 SRC=/Users/memorysaver/Documents/github/agentic-engineering-patterns/skills
-DST=/Users/memorysaver/Documents/github/looplia/.claude/skills
+DST=/Users/memorysaver/Documents/github/project-b/.claude/skills
 for pair in "product-context/envision:aep-envision" "product-context/map:aep-map" "product-context/dispatch:aep-dispatch" "product-context/calibrate:aep-calibrate" "product-context/reflect:aep-reflect" "product-context/validate:aep-validate"; do
   src_dir="${pair%%:*}"; dst_dir="${pair##*:}"
   diff -q "$SRC/$src_dir/SKILL.md" "$DST/$dst_dir/SKILL.md" > /dev/null && echo "OK $dst_dir" || echo "MISMATCH $dst_dir"
@@ -692,7 +692,7 @@ done
 
 Expected: All `OK`.
 
-- [ ] **Step 7: Add changelog entry to looplia product-context.yaml**
+- [ ] **Step 7: Add changelog entry to project-b product-context.yaml**
 
 Append to changelog:
 
@@ -704,10 +704,10 @@ Append to changelog:
   sections_changed: [opportunity, product, calibration, architecture, stories, topology]
 ```
 
-- [ ] **Step 8: Commit in looplia**
+- [ ] **Step 8: Commit in project-b**
 
 ```bash
-cd /Users/memorysaver/Documents/github/looplia
+cd /Users/memorysaver/Documents/github/project-b
 git add -A
 git commit -m "feat: migrate to split-mode product-context (product/index.yaml + product-context.yaml)"
 ```

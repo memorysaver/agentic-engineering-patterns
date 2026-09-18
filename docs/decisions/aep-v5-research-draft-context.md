@@ -2,14 +2,14 @@
 
 Status: proposal; user requested AEP-managed idea/research/draft classification, concrete schema and CLI design remain open
 Date: 2026-09-11
-Evidence: [MITS idea capture observation](../lessons/2026-09-11-mits-idea-draft.md)
+Evidence: [Project A idea capture observation](../lessons/2026-09-11-project-a-idea-draft.md)
 Related: [purpose-driven research](aep-v5-purpose-driven-research.md)
 
 ## Problem
 
 A user may ask only to save an idea. The agent needs to retain its origin, uncertainty and supporting research so a future task can retrieve it, continue exploration, or make a decision. Creating an implementation contract or accepting the idea at capture time would misrepresent the request.
 
-The current design store defaults to `docs/design`, and MITS used that configured path correctly. Native decisions can carry arbitrary artifact paths, but those paths do not give the draft an identity in AEP's record graph or automatically supply its contents to `aep context`. Directory placement, record validity and semantic completeness are separate responsibilities.
+The current design store defaults to `docs/design`, and Project A used that configured path correctly. Native decisions can carry arbitrary artifact paths, but those paths do not give the draft an identity in AEP's record graph or automatically supply its contents to `aep context`. Directory placement, record validity and semantic completeness are separate responsibilities.
 
 ## Proposed behavior
 

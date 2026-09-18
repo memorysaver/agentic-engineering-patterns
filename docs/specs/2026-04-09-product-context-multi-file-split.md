@@ -6,7 +6,7 @@
 
 ## Problem
 
-`product-context.yaml` serves as both the product definition (stable, human-authored) and the operational state (frequently modified by agents). At ~2700 lines for a real project (looplia), it's unwieldy. The v2 capability maps added `product/index.yaml` as an additive mirror, creating duplication. We need a single source of truth with no redundancy.
+`product-context.yaml` serves as both the product definition (stable, human-authored) and the operational state (frequently modified by agents). At ~2700 lines for a real project (project-b), it's unwieldy. The v2 capability maps added `product/index.yaml` as an additive mirror, creating duplication. We need a single source of truth with no redundancy.
 
 This spec intentionally goes beyond the narrower additive index described in the v2 roadmap. In split mode, `product/index.yaml` becomes the canonical home for stable product definition, not just a lightweight program frame.
 
@@ -444,14 +444,14 @@ operational_path = "product-context.yaml"
 
 ## Migration Path
 
-### For existing projects (looplia, 91app-agent-platform)
+### For existing projects (project-b, 91app-agent-platform)
 
 1. Expand `product/index.yaml` to be the full stable definition, not the current roadmap-era mirror. Copy in `opportunity.counter_arguments`, `opportunity.scale_of_impact`, `opportunity.decided_at`, and all stable product-definition fields currently still living under `product` in `product-context.yaml`.
 2. Normalize persona data. For v1 projects, migrate `product.persona` into top-level `personas`. If an index already exists, merge with any existing personas instead of overwriting them blindly.
-3. Preserve or create `capabilities`. For Looplia, retain the existing `remote-relay` capability and `maps/remote-relay/` path rather than regenerating a generic single-capability stub.
+3. Preserve or create `capabilities`. For Project B, retain the existing `remote-relay` capability and `maps/remote-relay/` path rather than regenerating a generic single-capability stub.
 4. Keep `calibration`, `architecture`, `stories`, `topology`, `layer_gates`, `waves`, `cost`, and `changelog` in `product-context.yaml`. Remove only `opportunity` and `product` once the split-aware skill updates are in place.
 5. Update the skill docs and synced copies together so `/envision`, `/map`, `/dispatch`, `/calibrate`, `/reflect`, and `/validate` all agree on split-mode paths.
-6. Validate the migrated project against the real split: YAML parses, no duplicated stable sections remain, and Looplia's current `product/index.yaml` retains its existing personas/capability metadata while gaining the missing stable product fields.
+6. Validate the migrated project against the real split: YAML parses, no duplicated stable sections remain, and Project B's current `product/index.yaml` retains its existing personas/capability metadata while gaining the missing stable product fields.
 
 ### For new projects
 
@@ -476,5 +476,5 @@ The convention-based fallback ensures v1 single-file projects continue working w
 2. Run each split-aware skill (`/envision`, `/map`, `/dispatch`, `/calibrate`, `/reflect`, `/validate`) on a test project and verify its documented read/write targets.
 3. Verify no duplication: `opportunity` and stable `product` fields exist in exactly one file, while operational sections remain only in `product-context.yaml`.
 4. Cross-file consistency: all story layer references exist in `product/index.yaml` `product.layers`; all `stories[].activity` values resolve to `product/index.yaml` `product.activities`; all calibration references point to the correct file.
-5. Migration verification against Looplia: after migration, `product-context.yaml` no longer contains `opportunity` or `product`, and `product/index.yaml` contains the full stable definition plus existing personas/capability metadata.
+5. Migration verification against Project B: after migration, `product-context.yaml` no longer contains `opportunity` or `product`, and `product/index.yaml` contains the full stable definition plus existing personas/capability metadata.
 6. Legacy fallback: on a legacy single-file project with no `product/index.yaml`, verify skills still fall back to reading stable definition from `product-context.yaml`.

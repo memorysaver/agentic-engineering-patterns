@@ -1,13 +1,13 @@
-# Rewarc AEP v5 isolated migration pilot — 2026-09-10
+# Project C AEP v5 isolated migration pilot — 2026-09-10
 
 ## Outcome
 
 Full cutover is blocked honestly; no live checkout was modified. AEP 5.0.0-preview.1 initialization works and preserves the default v4 owner. Apply rejects unresolved context rather than converting this active research project incompletely.
 
-- Original: `/home/memorysaver/Work/github/Rewarc-AutoResearch`, clean HEAD `e551a2ab368cb7f3b439e1a40a6596d4a4323987`.
+- Original: `/home/memorysaver/Work/github/Project C`, clean HEAD `e551a2ab368cb7f3b439e1a40a6596d4a4323987`.
 - Candidate source: `808fa3e29530311ddc3fae942cde9ad1a1a98d0f`; binary `/tmp/aep-preview-release-uqtkfv0t/extracted/aep`.
-- Isolated independent clone: `/tmp/aep-rewarc-pilot-ga18j4vs/repo`; origin removed. No original `.venv`, `.dev-workflow`, credentials or runtime jobs copied; existing original Python interpreter used read-only with isolated cwd, sanitized environment and bytecode disabled.
-- Evidence: `/tmp/aep-rewarc-pilot-ga18j4vs/evidence`. Exact command argv, exit codes, stdout/stderr are retained in per-command JSON.
+- Isolated independent clone: `/tmp/aep-project-c-pilot-ga18j4vs/repo`; origin removed. No original `.venv`, `.dev-workflow`, credentials or runtime jobs copied; existing original Python interpreter used read-only with isolated cwd, sanitized environment and bytecode disabled.
+- Evidence: `/tmp/aep-project-c-pilot-ga18j4vs/evidence`. Exact command argv, exit codes, stdout/stderr are retained in per-command JSON.
 
 ## Actual compatibility response
 
@@ -35,4 +35,4 @@ Resolve archived change identities with attributable source paths; checkpoint/re
 
 ## Final candidate recheck
 
-The final extracted binary at `/tmp/aep-preview-final-7x626jh8/extracted/aep` (SHA-256 `11195ffddc9010c4cae91fa7062afd5c60defa01532a7c0736ef177862345175`) was rerun against the isolated repository. Doctor/status/check still pass on the empty native store; a fresh plan retains the same 63 diagnostics. No apply or project mutation was performed. Evidence: `/tmp/aep-rewarc-pilot-ga18j4vs/evidence/final-candidate-recheck.json`.
+The final extracted binary at `/tmp/aep-preview-final-7x626jh8/extracted/aep` (SHA-256 `11195ffddc9010c4cae91fa7062afd5c60defa01532a7c0736ef177862345175`) was rerun against the isolated repository. Doctor/status/check still pass on the empty native store; a fresh plan retains the same 63 diagnostics. No apply or project mutation was performed. Evidence: `/tmp/aep-project-c-pilot-ga18j4vs/evidence/final-candidate-recheck.json`.

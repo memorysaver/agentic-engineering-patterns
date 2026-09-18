@@ -50,7 +50,7 @@ First native release. `aep` is a single Rust binary with embedded guidance; it r
 - Redesign the clap CLI for human-readable help, status, context and operation results. Keep complete structured responses behind `--json`; preserve exit codes and mutation behavior. No TUI is added.
 - Replace the unreleased `aep skills` command family with `aep --skill [NAME] [--ref NAME]`. The default emits a complete SKILL.md entrypoint; named procedures/references emit exact Markdown without metadata footers. Update active entrypoints and embedded guidance together.
 
-- Exercise isolated downstream adoption in Looplia, MITS and Rewarc. Preserve binary migration evidence and legacy hold states; map overlapping story/OpenSpec IDs with source-scoped provenance. Record project-specific cutover gaps separately from CLI fixture success.
+- Exercise isolated downstream adoption in Project B, Project A and Project C. Preserve binary migration evidence and legacy hold states; map overlapping story/OpenSpec IDs with source-scoped provenance. Record project-specific cutover gaps separately from CLI fixture success.
 
 - Add the native Rust CLI, embedded skill catalog/references, local procedure discovery, short AGENTS.md entrypoint, and tracked project configuration.
 - Introduce project-ledger, project-roadmap/decisions, project-rules, and lesson-learned stores with versioned records, graph checks, revision conflicts, and transaction recovery.
@@ -411,7 +411,7 @@ ships is what survived that: the deterministic half.
   passes, but on prose asserting more than the facts carried. Its per-layer
   regeneration trigger is unbuilt; today it generates per invocation, which the
   decision doc identifies as the central design error. Findings and a generated
-  example are committed at `docs/human-alignment/example-looplia/` as evidence,
+  example are committed at `docs/human-alignment/example-project-b/` as evidence,
   not as a model to copy. Use the pulse.
 
 ### Notes
@@ -432,14 +432,14 @@ hidden/deprecated alias absent from the documented command set — the supported
 staged-scan form is `gitleaks git --staged`. This is a doc-string example only
 (the scaffolder renders `{{SECRET_SCAN_CMD}}` from the project's actual tooling,
 and no shipped script executes the comment), but it seeded the deprecated form
-into consumers (surfaced by the MITS v3.2.0 Phase-3 review). Re-pin to `@v3.2.1`
+into consumers (surfaced by the Project A v3.2.0 Phase-3 review). Re-pin to `@v3.2.1`
 before the remaining consumer migrations so they inherit the durable form.
 
 ### Fixed
 
 - **`policy.md.tmpl` `secret_scan` example** — `gitleaks protect --staged` →
   `gitleaks git --staged --redact --no-banner`, matching the form SIBYL and
-  looplia already settled on
+  project-b already settled on
   (`skills/project-setup/e2e-skill-scaffolding/templates/policy.md.tmpl`).
 
 ## [3.2.0] - 2026-07-16

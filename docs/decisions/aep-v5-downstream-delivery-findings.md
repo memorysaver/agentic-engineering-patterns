@@ -2,11 +2,11 @@
 
 Date: 2026-09-11
 Status: Accepted implementation of the user's request to fix the new 5.0 findings
-Evidence: [MITS delivery continuation](../lessons/2026-09-11-mits-delivery-continuity-observation.md)
+Evidence: [Project A delivery continuation](../lessons/2026-09-11-project-a-delivery-continuity-observation.md)
 
 ## Follow-up decisions and immutable context
 
-The downstream agent corrected its own candidate-only interpretation with a new accepted decision referencing the immutable story. Inspection and verification followed outgoing references only, so that decision was invisible from the story and absent from its verification fingerprint. A separate delivery-context file happened to invalidate evidence in MITS; the decision itself was not recognized. An independent reviewer reproduced the missing edge with the previous executable in a disposable project.
+The downstream agent corrected its own candidate-only interpretation with a new accepted decision referencing the immutable story. Inspection and verification followed outgoing references only, so that decision was invisible from the story and absent from its verification fingerprint. A separate delivery-context file happened to invalidate evidence in Project A; the decision itself was not recognized. An independent reviewer reproduced the missing edge with the previous executable in a disposable project.
 
 Include incoming accepted decisions when traversing task context and the linked context used by verification. Follow later decisions that reference earlier decisions, retaining superseded decision anchors and their accepted successors. Native `decision supersede` must preserve discoverability and keep older evidence stale, including when the successor refers only to the earlier decision. Preserve both original and correcting records; the agent reconciles their meaning with the user's current intent and actual authority. Acceptance does not authorize an action by itself, and this is not an automatic latest-record-wins resolver.
 
@@ -30,4 +30,4 @@ The publisher joined every requirement with two newlines, including the final re
 
 ## Validation boundaries
 
-Real subprocess fixtures cover reverse-decision discovery, stale verification, immutable history, committed dispatch context, separate-store scope enforcement, catalog provenance and published-spec whitespace. Existing suites cover isolated provider mocks, lifecycle completion, and exact embedded guidance. A copied release executable must pass the standalone preview procedure and be installed with source/digest provenance. This correction does not rerun or mutate MITS delivery, and local fixtures do not establish cross-platform or new live-agent behavior.
+Real subprocess fixtures cover reverse-decision discovery, stale verification, immutable history, committed dispatch context, separate-store scope enforcement, catalog provenance and published-spec whitespace. Existing suites cover isolated provider mocks, lifecycle completion, and exact embedded guidance. A copied release executable must pass the standalone preview procedure and be installed with source/digest provenance. This correction does not rerun or mutate Project A delivery, and local fixtures do not establish cross-platform or new live-agent behavior.

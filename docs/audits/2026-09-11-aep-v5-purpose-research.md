@@ -3,7 +3,7 @@
 Date: 2026-09-11
 Source commits: `9a23c32ec42e8ef33cac6f32edf257df33a48348` (capability) and `45861f2717219e941972be4b31240a59f1d20d39` (record-update clarification)
 Decision: [Purpose-driven research](../decisions/aep-v5-purpose-driven-research.md)
-Observation: [MITS product focus](../lessons/2026-09-11-mits-product-focus-observation.md)
+Observation: [Project A product focus](../lessons/2026-09-11-project-a-product-focus-observation.md)
 
 ## Implemented guidance
 
@@ -34,9 +34,9 @@ The agent's first roadmap update omitted immutable fields and was rejected. It r
 
 Fixture history is retained as a verified Git bundle, final documents as an archive, and record/status/check snapshots under `~/.local/share/aep/trials/2026-09-11-purpose-research/agent-trial/`. Its temporary project and executable were removed after retention and inspection.
 
-This local scenario is a behavior observation, not an A/B result or proof that all live agents will choose research at the right time. The initial research-before-recommendation behavior, ambiguous-feedback cases and future live MITS continuation remain separate coverage boundaries.
+This local scenario is a behavior observation, not an A/B result or proof that all live agents will choose research at the right time. The initial research-before-recommendation behavior, ambiguous-feedback cases and future live Project A continuation remain separate coverage boundaries.
 
-Subsequent live evidence: [MITS feedback-to-context continuation](../lessons/2026-09-11-mits-product-focus-followup.md) observed the agent consume the new guidance and use native AEP records for the user's different priority, cross-project learning. That observation retains remaining artifact-discovery and uncommitted-handoff limits; it does not turn the earlier fixture into a broader behavior guarantee.
+Subsequent live evidence: [Project A feedback-to-context continuation](../lessons/2026-09-11-project-a-product-focus-followup.md) observed the agent consume the new guidance and use native AEP records for the user's different priority, cross-project learning. That observation retains remaining artifact-discovery and uncommitted-handoff limits; it does not turn the earlier fixture into a broader behavior guarantee.
 
 ## Preview artifact
 
@@ -46,4 +46,4 @@ Subsequent live evidence: [MITS feedback-to-context continuation](../lessons/202
 - Archive SHA-256: `422a153cbf76132ddedb03654331cb43f54d2610cb0052ff1c406ddc4948d4da`.
 - Source, previous binary and installation status: that build directory's `manifest.json`.
 
-The local PATH symlink was atomically switched after the probes passed. Herdr reported MITS `blocked` on its queued product-direction question, with a completed recommendation visible and no visible running tool activity; it was not labeled idle. This cutover was recorded explicitly while it awaited user input. Future skill reads receive the new instructions; existing agent context is not retroactively rewritten. Previous build `aec8e775495a49ff` remains available for rollback. Installed PATH, version and digest were checked. No public release/tag, MITS prompt or MITS product-file change was made.
+The local PATH symlink was atomically switched after the probes passed. Herdr reported Project A `blocked` on its queued product-direction question, with a completed recommendation visible and no visible running tool activity; it was not labeled idle. This cutover was recorded explicitly while it awaited user input. Future skill reads receive the new instructions; existing agent context is not retroactively rewritten. Previous build `aec8e775495a49ff` remains available for rollback. Installed PATH, version and digest were checked. No public release/tag, Project A prompt or Project A product-file change was made.

@@ -7,14 +7,14 @@ split product context.
 
 The evidence-backed path is v2.5.0 → v3.0.0. Repositories on an earlier v2 release
 must also review the cumulative release notes between their pin and v2.5.0; do not
-assume the Looplia audit covers an older local schema or custom workflow fork.
+assume the Project B audit covers an older local schema or custom workflow fork.
 
 The migration is a **skill re-pin plus a controlled runtime cutover**. It is not a
 product-context data migration. Do not rewrite stories, layers, calibration files,
 or autopilot state merely to adopt v3.0.0.
 
 For the concrete evidence behind these instructions, see the
-[Looplia v2.5.0 → v3.0.0 compatibility audit](audits/2026-07-15-looplia-v2.5.0-to-v3.0.0-compatibility.md).
+[Project B v2.5.0 → v3.0.0 compatibility audit](audits/2026-07-15-project-b-v2.5.0-to-v3.0.0-compatibility.md).
 
 ## Migration Contract
 
@@ -544,9 +544,9 @@ trail and avoids destroying canary work. Because the migration PR excludes produ
 data, rollback should affect only installed skills, layout entries, the lockfile,
 and the prose pin.
 
-## Looplia-specific Cutover Gate
+## Project B-specific Cutover Gate
 
-The July 15 compatibility audit found Looplia structurally compatible with v3.0.0,
+The July 15 compatibility audit found Project B structurally compatible with v3.0.0,
 but not yet at a safe runtime cutover boundary. Before applying this guide there:
 
 1. Finish, merge, and wrap `FIX-L31-DOGFOOD-SECRETS-001` on v2.5.0.
@@ -590,4 +590,4 @@ migration PR.
 - [Build convergence pipeline](decisions/build-convergence-pipeline.md)
 - [Deterministic orchestration](decisions/deterministic-orchestration.md)
 - [Lean skills refactor plan](plans/2026-07-14-lean-skills-refactor.md)
-- [Looplia compatibility audit](audits/2026-07-15-looplia-v2.5.0-to-v3.0.0-compatibility.md)
+- [Project B compatibility audit](audits/2026-07-15-project-b-v2.5.0-to-v3.0.0-compatibility.md)

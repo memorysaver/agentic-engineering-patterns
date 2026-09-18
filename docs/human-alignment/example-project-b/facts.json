@@ -3,7 +3,7 @@
   "generated_from": "product-context.yaml",
   "commit": "a28fec13",
   "baseline_commit": null,
-  "project": "looplia-run",
+  "project": "project-b-run",
   "version": "0.5.3",
   "updated_at": "2026-07-24",
   "story_total": 396,
@@ -1766,7 +1766,7 @@
         },
         {
           "id": "LR-026",
-          "title": "Agent container image with PTY server + Pi-Mono + looplia-run",
+          "title": "Agent container image with PTY server + Pi-Mono + project-b-run",
           "status": "completed",
           "stage": 5,
           "exception": null,
@@ -2350,7 +2350,7 @@
         },
         {
           "id": "LR-085",
-          "title": "CLI: looplia email login — browser OAuth → aelk_ key + OS keyring storage",
+          "title": "CLI: project-b email login — browser OAuth → aelk_ key + OS keyring storage",
           "status": "completed",
           "stage": 5,
           "exception": null,
@@ -2374,7 +2374,7 @@
         },
         {
           "id": "LR-086",
-          "title": "CLI: looplia email send / read / show / search / reply subcommands",
+          "title": "CLI: project-b email send / read / show / search / reply subcommands",
           "status": "completed",
           "stage": 5,
           "exception": null,
@@ -2382,7 +2382,7 @@
         },
         {
           "id": "LR-087",
-          "title": "CLI: looplia email keys / webhooks subcommands",
+          "title": "CLI: project-b email keys / webhooks subcommands",
           "status": "completed",
           "stage": 5,
           "exception": null,
@@ -2398,7 +2398,7 @@
         },
         {
           "id": "LR-088",
-          "title": "CLI: looplia email watch — SSE stream of new-mail events",
+          "title": "CLI: project-b email watch — SSE stream of new-mail events",
           "status": "completed",
           "stage": 5,
           "exception": null,
@@ -3355,7 +3355,7 @@
           "status": "deferred",
           "stage": 1,
           "exception": "deferred",
-          "why": "Looplia should turn repeated AI-company transformations into reusable blueprint templates and product learnings."
+          "why": "Project B should turn repeated AI-company transformations into reusable blueprint templates and product learnings."
         },
         {
           "id": "L14-006",
@@ -3417,7 +3417,7 @@
           "status": "completed",
           "stage": 5,
           "exception": null,
-          "why": "Foundation for adopting the Agents SDK's official progressive-disclosure skills mechanism (SkillProvider + load_context). Today Looplia rolls its own keyword-push full-body injection in memory/assemble.ts — it never shows the model a skill CATALOG and gives it no tool to load a skill on demand, so the model can't discover existing skills (this is why the company agent re-invented a malformed agent-hiring skill on prod). This story adds the provider only — the read/load primitive everything else builds on — with zero production wiring, so it ships risk-free."
+          "why": "Foundation for adopting the Agents SDK's official progressive-disclosure skills mechanism (SkillProvider + load_context). Today Project B rolls its own keyword-push full-body injection in memory/assemble.ts — it never shows the model a skill CATALOG and gives it no tool to load a skill on demand, so the model can't discover existing skills (this is why the company agent re-invented a malformed agent-hiring skill on prod). This story adds the provider only — the read/load primitive everything else builds on — with zero production wiring, so it ships risk-free."
         },
         {
           "id": "L15-002",
@@ -3527,7 +3527,7 @@
           "status": "completed",
           "stage": 5,
           "exception": null,
-          "why": "BUG found in prod dogfood (2026-06-17, test@looplia.run): in the New-Agent dialog, after filling name+slug with the 'Create with defaults' button ENABLED, clicking it closes the dialog but fires NO network request and creates NO agent (reproduced 3x; agent-browser `network requests` shows nothing on click; roster stays 2/10; no error toast). Creating an agent from the UI is a core path — it is currently broken (the existing agents on the account were created via the agent-driven hire_agent flow, not this dialog, which is why it went unnoticed). This also BLOCKS live verification of L17-001 (a fresh agent is needed to confirm the new 7-skill seed)."
+          "why": "BUG found in prod dogfood (2026-06-17, test@project-b.run): in the New-Agent dialog, after filling name+slug with the 'Create with defaults' button ENABLED, clicking it closes the dialog but fires NO network request and creates NO agent (reproduced 3x; agent-browser `network requests` shows nothing on click; roster stays 2/10; no error toast). Creating an agent from the UI is a core path — it is currently broken (the existing agents on the account were created via the agent-driven hire_agent flow, not this dialog, which is why it went unnoticed). This also BLOCKS live verification of L17-001 (a fresh agent is needed to confirm the new 7-skill seed)."
         }
       ]
     },
@@ -3716,11 +3716,11 @@
         },
         {
           "id": "FIX-COO-MAILBOX-001",
-          "title": "Company agent (COO/default Looplia) has no mailbox — any email-delivery goal dead-ends in blocked",
+          "title": "Company agent (COO/default Project B) has no mailbox — any email-delivery goal dead-ends in blocked",
           "status": "completed",
           "stage": 5,
           "exception": null,
-          "why": "PROD BUG found in the 2026-06-24 journeys 13-18 autonomy dogfood (clean account, creative-writing north star that requires emailing a deliverable). The COO (default agent 'Looplia') WROTE the episode but could not send it — its own task comment: 'the company agent (Looplia) has no mailbox configured ... list_mailboxes returns empty'. Employee agents auto-provision a default mailbox on agent.create; the backfilled company/default agent never gets one, so the canonical keyed task sticks in BLOCKED and the loop improvises by dumping the work on whatever mailboxed agent is idle (see FIX-COO-DELEGATION-001). Any north star whose deliverable is an email is structurally un-completable by the COO."
+          "why": "PROD BUG found in the 2026-06-24 journeys 13-18 autonomy dogfood (clean account, creative-writing north star that requires emailing a deliverable). The COO (default agent 'Project B') WROTE the episode but could not send it — its own task comment: 'the company agent (Project B) has no mailbox configured ... list_mailboxes returns empty'. Employee agents auto-provision a default mailbox on agent.create; the backfilled company/default agent never gets one, so the canonical keyed task sticks in BLOCKED and the loop improvises by dumping the work on whatever mailboxed agent is idle (see FIX-COO-DELEGATION-001). Any north star whose deliverable is an email is structurally un-completable by the COO."
         },
         {
           "id": "FIX-COO-DELEGATION-001",
@@ -3748,11 +3748,11 @@
         },
         {
           "id": "FIX-EMAIL-ADDR-001",
-          "title": "Agent-to-agent email fails because sibling mailboxes are surfaced as bare aliases (no @looplia.run) — recipients bounce or silently lose to a guessed @localhost",
+          "title": "Agent-to-agent email fails because sibling mailboxes are surfaced as bare aliases (no @project-b.run) — recipients bounce or silently lose to a guessed @localhost",
           "status": "completed",
           "stage": 5,
           "exception": null,
-          "why": "PROD BUG found in the 2026-06-25 journeys 13-18 RE-dogfood (after FIX-COO-* shipped). Now that delegation works (producer != reviewer, FIX-COO-DELEGATION-001), agent->agent email is on the critical path — and it fails. The COO was asked to email a deliverable to 'nftasasc-reviewer' (a bare alias, as surfaced in the roster/north-star) and addressed it to nftasasc-reviewer@localhost; the message showed status=delivered but NEVER reached the reviewer (reviewer inbox empty). Proven decisively with three forms of the SAME recipient: bare 'nftasasc-reviewer' -> BOUNCED (trash); 'nftasasc-reviewer@localhost' (model-guessed domain) -> phantom 'delivered' but lost; 'nftasasc-reviewer@looplia.run' (correct) -> delivered into the reviewer inbox. The email SERVICE is healthy (internal round-trip + external gmail both confirmed) — the defect is that agents are never given the canonical @looplia.run address and the send path does not canonicalize/validate an internal recipient."
+          "why": "PROD BUG found in the 2026-06-25 journeys 13-18 RE-dogfood (after FIX-COO-* shipped). Now that delegation works (producer != reviewer, FIX-COO-DELEGATION-001), agent->agent email is on the critical path — and it fails. The COO was asked to email a deliverable to 'nftasasc-reviewer' (a bare alias, as surfaced in the roster/north-star) and addressed it to nftasasc-reviewer@localhost; the message showed status=delivered but NEVER reached the reviewer (reviewer inbox empty). Proven decisively with three forms of the SAME recipient: bare 'nftasasc-reviewer' -> BOUNCED (trash); 'nftasasc-reviewer@localhost' (model-guessed domain) -> phantom 'delivered' but lost; 'nftasasc-reviewer@project-b.run' (correct) -> delivered into the reviewer inbox. The email SERVICE is healthy (internal round-trip + external gmail both confirmed) — the defect is that agents are never given the canonical @project-b.run address and the send path does not canonicalize/validate an internal recipient."
         },
         {
           "id": "FIX-DELIVERY-GATE-001",
@@ -3795,7 +3795,7 @@
           "status": "completed",
           "stage": 5,
           "exception": null,
-          "why": "Makes Looplia's shared/company knowledge a valid Open Knowledge Format (OKF v0.1) bundle without changing the runtime memory model — the prerequisite for portability. The shared layer Looplia already writes (L19-002 /org/company-state.md + /company/wiki/company-plan.md, L19-003 progressive disclosure) is reshaped to OKF's primitives so any OKF consumer can read it."
+          "why": "Makes Project B's shared/company knowledge a valid Open Knowledge Format (OKF v0.1) bundle without changing the runtime memory model — the prerequisite for portability. The shared layer Project B already writes (L19-002 /org/company-state.md + /company/wiki/company-plan.md, L19-003 progressive disclosure) is reshaped to OKF's primitives so any OKF consumer can read it."
         },
         {
           "id": "L20-002",
@@ -3819,7 +3819,7 @@
           "status": "completed",
           "stage": 5,
           "exception": null,
-          "why": "Proves Looplia genuinely interoperates with the OKF ecosystem: produced bundles conform, round-trip is lossless, and an external bundle is consumable."
+          "why": "Proves Project B genuinely interoperates with the OKF ecosystem: produced bundles conform, round-trip is lossless, and an external bundle is consumable."
         }
       ]
     },
@@ -3854,7 +3854,7 @@
           "status": "completed",
           "stage": 5,
           "exception": null,
-          "why": "One place for humans to talk to the whole company (a single #general channel) plus the operating surfaces and a prominent Company Vision panel to set/steer the north star. v1 routes every message to the company agent Looplia (front-desk); the @mention-to-an-employee and agents-meeting upgrade is deferred (Layer 22). Reuses the existing chat + autopilot stacks; no backend dependency."
+          "why": "One place for humans to talk to the whole company (a single #general channel) plus the operating surfaces and a prominent Company Vision panel to set/steer the north star. v1 routes every message to the company agent Project B (front-desk); the @mention-to-an-employee and agents-meeting upgrade is deferred (Layer 22). Reuses the existing chat + autopilot stacks; no backend dependency."
         },
         {
           "id": "L21-003",
@@ -3932,7 +3932,7 @@
           "status": "completed",
           "stage": 5,
           "exception": null,
-          "why": "Company mode inside the unified shell: the former Company tabs become sidebar items (Chat / Mission / Overview / Context / Activity) rendered full-bleed into the shell center (dropping the centered max-w-7xl, grid-bg, prose header, tab strip). The duplicate VISION + AUTOPILOT tabs MERGE into ONE Mission surface (goal + loop controls). The chat is reframed as 'Chat (Looplia · COO)' — the default Company surface, no #general wording."
+          "why": "Company mode inside the unified shell: the former Company tabs become sidebar items (Chat / Mission / Overview / Context / Activity) rendered full-bleed into the shell center (dropping the centered max-w-7xl, grid-bg, prose header, tab strip). The duplicate VISION + AUTOPILOT tabs MERGE into ONE Mission surface (goal + loop controls). The chat is reframed as 'Chat (Project B · COO)' — the default Company surface, no #general wording."
         },
         {
           "id": "L23-003",
@@ -3948,7 +3948,7 @@
           "status": "completed",
           "stage": 5,
           "exception": null,
-          "why": "The backend core of the COO model (fixes the L21 dogfood incoherence). Looplia (the COO) gets a tool — set_company_mission — to WRITE the company north star + objectives to the Mission single source of truth from within the chat, so the COO can persist the setup it figures out WITH the CEO. The autopilot north star and the company-setup goal become ONE record that the chat context AND the autonomous heartbeat both read — so asking the COO 'what's our north star?' answers correctly."
+          "why": "The backend core of the COO model (fixes the L21 dogfood incoherence). Project B (the COO) gets a tool — set_company_mission — to WRITE the company north star + objectives to the Mission single source of truth from within the chat, so the COO can persist the setup it figures out WITH the CEO. The autopilot north star and the company-setup goal become ONE record that the chat context AND the autonomous heartbeat both read — so asking the COO 'what's our north star?' answers correctly."
         },
         {
           "id": "L23-005",
@@ -3968,11 +3968,11 @@
         },
         {
           "id": "L23-007",
-          "title": "COO chat: restore voice + rename surface to 'Talk to Looplia'",
+          "title": "COO chat: restore voice + rename surface to 'Talk to Project B'",
           "status": "completed",
           "stage": 5,
           "exception": null,
-          "why": "Two CEO dogfood findings on the shipped redesign. (1) BUG/regression: the voice (mic) affordance vanished from the chat — it is not lost, just GATED OFF (company-chat.tsx hardcodes voiceEligible={false}); the whole voice stack (mic button, useVoiceCall, CallOverlay, voice-surface gating, the voice DO + ASR/TTS adapters + voice_usage ledger) is 100% intact, so restoring it is a pure gating fix. (2) COPY: the COO chat surface still reads 'Chat (Looplia · COO)'; the CEO wants the friendlier 'Talk to Looplia' (drop the parenthetical role)."
+          "why": "Two CEO dogfood findings on the shipped redesign. (1) BUG/regression: the voice (mic) affordance vanished from the chat — it is not lost, just GATED OFF (company-chat.tsx hardcodes voiceEligible={false}); the whole voice stack (mic button, useVoiceCall, CallOverlay, voice-surface gating, the voice DO + ASR/TTS adapters + voice_usage ledger) is 100% intact, so restoring it is a pure gating fix. (2) COPY: the COO chat surface still reads 'Chat (Project B · COO)'; the CEO wants the friendlier 'Talk to Project B' (drop the parenthetical role)."
         },
         {
           "id": "L23-008",
@@ -4019,11 +4019,11 @@
       "stories": [
         {
           "id": "L24-001",
-          "title": "json-render substrate + render_ui channel (Talk-to-Looplia generative UI foundation)",
+          "title": "json-render substrate + render_ui channel (Talk-to-Project B generative UI foundation)",
           "status": "completed",
           "stage": 5,
           "exception": null,
-          "why": "The foundation every inline card stands on. Adopt Vercel Labs json-render (@json-render/core + @json-render/react): a Looplia CATALOG (whitelisted components + actions + Zod props) + REGISTRY (React impls), an agent->UI channel via a render_ui tool whose arg is a json-render spec, a chat render bridge that detects a render_ui tool call and renders the spec via the json-render Renderer (+ SpecStream streaming) INSTEAD of the inert GenericToolCard, and catalog.prompt() appended to Looplia's system prompt so the model knows what it can render. Ships with an empty/trivial catalog (no real cards yet) to prove the pipeline end-to-end. Per docs/research-note/17-generative-ui-chat-spine.md."
+          "why": "The foundation every inline card stands on. Adopt Vercel Labs json-render (@json-render/core + @json-render/react): a Project B CATALOG (whitelisted components + actions + Zod props) + REGISTRY (React impls), an agent->UI channel via a render_ui tool whose arg is a json-render spec, a chat render bridge that detects a render_ui tool call and renders the spec via the json-render Renderer (+ SpecStream streaming) INSTEAD of the inert GenericToolCard, and catalog.prompt() appended to Project B's system prompt so the model knows what it can render. Ships with an empty/trivial catalog (no real cards yet) to prove the pipeline end-to-end. Per docs/research-note/17-generative-ui-chat-spine.md."
         },
         {
           "id": "L24-002",
@@ -4043,11 +4043,11 @@
         },
         {
           "id": "L24-004",
-          "title": "Looplia emits the HireApprovalCard via render_ui after hire_agent propose",
+          "title": "Project B emits the HireApprovalCard via render_ui after hire_agent propose",
           "status": "completed",
           "stage": 5,
           "exception": null,
-          "why": "Closes the chat-native hire loop: when the user asks Looplia to hire, Looplia calls hire_agent(propose) to create ONE pending approval, then calls render_ui with a HireApprovalCard spec bound to that approvalId — so the approve happens INLINE in the chat, not on a separate surface. One propose = one card (no duplicate-hire spam)."
+          "why": "Closes the chat-native hire loop: when the user asks Project B to hire, Project B calls hire_agent(propose) to create ONE pending approval, then calls render_ui with a HireApprovalCard spec bound to that approvalId — so the approve happens INLINE in the chat, not on a separate surface. One propose = one card (no duplicate-hire spam)."
         },
         {
           "id": "L24-005",
@@ -4071,7 +4071,7 @@
           "status": "completed",
           "stage": 5,
           "exception": null,
-          "why": "Proves the Wave-1 hire vertical: a user can hire an employee entirely inside Talk-to-Looplia (propose -> inline HireApprovalCard -> Approve -> provisioned), with the loop OFF, plus the consolidated list + P0 fixes. Guards the dogfood-confirmed dead-end from regressing."
+          "why": "Proves the Wave-1 hire vertical: a user can hire an employee entirely inside Talk-to-Project B (propose -> inline HireApprovalCard -> Approve -> provisioned), with the loop OFF, plus the consolidated list + P0 fixes. Guards the dogfood-confirmed dead-end from regressing."
         }
       ]
     },
@@ -4090,7 +4090,7 @@
           "status": "completed",
           "stage": 5,
           "exception": null,
-          "why": "Layer 24's inline-hire magic moment WORKS but is carried entirely by server-side backstops: the Looplia model cannot reliably populate hire_agent's nested `blueprint` arg (4 dogfoods showed it looping `{mode:'propose'}` with no role), so 'hire a research assistant' provisions a generically-named 'Assistant'. Derive the blueprint (name/slug/purpose) server-side from the triggering user request / recent conversation so the hired employee matches the role asked for. Moves the moment from 'works' to 'feels right' and stops every hire collapsing onto the single 'assistant' slug."
+          "why": "Layer 24's inline-hire magic moment WORKS but is carried entirely by server-side backstops: the Project B model cannot reliably populate hire_agent's nested `blueprint` arg (4 dogfoods showed it looping `{mode:'propose'}` with no role), so 'hire a research assistant' provisions a generically-named 'Assistant'. Derive the blueprint (name/slug/purpose) server-side from the triggering user request / recent conversation so the hired employee matches the role asked for. Moves the moment from 'works' to 'feels right' and stops every hire collapsing onto the single 'assistant' slug."
         },
         {
           "id": "L25-002",
@@ -4126,11 +4126,11 @@
         },
         {
           "id": "FIX-TESTS-003",
-          "title": "Break the @looplia/agent-runtime barrel circular-export cycle (2 do-agent test files error at module-load)",
+          "title": "Break the @project-b/agent-runtime barrel circular-export cycle (2 do-agent test files error at module-load)",
           "status": "completed",
           "stage": 5,
           "exception": null,
-          "why": "Surfaced by FIX-TESTS-002: 2 do-agent test files (index.test.ts, tools/run-long-shell.integration.test.ts) ERROR at module-load on a circular-export in @looplia/agent-runtime's barrel — ./spawn -> ./fiber -> @cloudflare/think (the workerd-only SDK) throws mid-eval under bun's loader, leaving ./spawn partially initialized so a named export (DEFAULT_AWAITER_TIMEOUT_MS) that DOES exist appears missing. It cascades into @looplia/db (sessionTicket) when chased, can't be it.skip'd (top-level import throws), and was red on baseline (not a regression). These 2 errors are the entire remaining do-agent known-red baseline after FIX-TESTS-002. Low priority (test-infra only, no shipped-behavior impact known) but tracked so the do-agent suite can reach true absolute-green."
+          "why": "Surfaced by FIX-TESTS-002: 2 do-agent test files (index.test.ts, tools/run-long-shell.integration.test.ts) ERROR at module-load on a circular-export in @project-b/agent-runtime's barrel — ./spawn -> ./fiber -> @cloudflare/think (the workerd-only SDK) throws mid-eval under bun's loader, leaving ./spawn partially initialized so a named export (DEFAULT_AWAITER_TIMEOUT_MS) that DOES exist appears missing. It cascades into @project-b/db (sessionTicket) when chased, can't be it.skip'd (top-level import throws), and was red on baseline (not a regression). These 2 errors are the entire remaining do-agent known-red baseline after FIX-TESTS-002. Low priority (test-infra only, no shipped-behavior impact known) but tracked so the do-agent suite can reach true absolute-green."
         },
         {
           "id": "FIX-EMAIL-READ",
@@ -4158,11 +4158,11 @@
         },
         {
           "id": "FIX-TRAJ-CHAT-REASONING",
-          "title": "Capture reasoning on the live /agui chat path so 'Talk to Looplia' turns are observable in the trajectory (Part A)",
+          "title": "Capture reasoning on the live /agui chat path so 'Talk to Project B' turns are observable in the trajectory (Part A)",
           "status": "completed",
           "stage": 5,
           "exception": null,
-          "why": "While diagnosing the dogfood we confirmed the trajectory log DOES capture per-step reasoning on autonomous/heartbeat runs (that's how we read the employee's 'I can't read email bodies' trace) — but the interactive /agui chat path does NOT. #runStreamSse -> runStreamOpenRouter (run-stream.ts ~681) omits the reasoning providerOptions that runModelStep (~1054) passes and has no reasoning-delta handling, so interactive chat turns persist no reasoning. This is the L21 'dogfood pending: live reasoning' gap: when a human talks to Looplia, we can't see how it reasoned."
+          "why": "While diagnosing the dogfood we confirmed the trajectory log DOES capture per-step reasoning on autonomous/heartbeat runs (that's how we read the employee's 'I can't read email bodies' trace) — but the interactive /agui chat path does NOT. #runStreamSse -> runStreamOpenRouter (run-stream.ts ~681) omits the reasoning providerOptions that runModelStep (~1054) passes and has no reasoning-delta handling, so interactive chat turns persist no reasoning. This is the L21 'dogfood pending: live reasoning' gap: when a human talks to Project B, we can't see how it reasoned."
         }
       ]
     },
@@ -4320,7 +4320,7 @@
           "status": "completed",
           "stage": 5,
           "exception": null,
-          "why": "The COO plans silently: strategy derived each supervision turn evaporates (appendCompanyPlanDecision has ZERO callers — owner Decision B was right for L19, wrong for an autonomous company whose strategy must be auditable), there is no CEO briefing, and no channel for the COO to PROPOSE a mission change. This story is what makes Looplia a COO that ASSISTS the CEO — reports, advises, and records — rather than a scheduler. (research-note/21 G5)"
+          "why": "The COO plans silently: strategy derived each supervision turn evaporates (appendCompanyPlanDecision has ZERO callers — owner Decision B was right for L19, wrong for an autonomous company whose strategy must be auditable), there is no CEO briefing, and no channel for the COO to PROPOSE a mission change. This story is what makes Project B a COO that ASSISTS the CEO — reports, advises, and records — rather than a scheduler. (research-note/21 G5)"
         }
       ]
     },
@@ -4441,7 +4441,7 @@
           "status": "completed",
           "stage": 5,
           "exception": null,
-          "why": "2026-07-08 prod dogfood: asking Looplia to change an existing employee's standing-goal cadence produced a NEW hire proposal (deduped harmlessly, but the intent was lost) instead of calling L27-001's shipped setOwnedGoalCadence on the existing owned-goal anchor. The park/resume/per-goal-cadence machinery exists but is unreachable through the natural COO chat instruction. (dogfood finding 2)"
+          "why": "2026-07-08 prod dogfood: asking Project B to change an existing employee's standing-goal cadence produced a NEW hire proposal (deduped harmlessly, but the intent was lost) instead of calling L27-001's shipped setOwnedGoalCadence on the existing owned-goal anchor. The park/resume/per-goal-cadence machinery exists but is unreachable through the natural COO chat instruction. (dogfood finding 2)"
         },
         {
           "id": "ENABLE-DOGFOOD-CADENCE",
@@ -4817,7 +4817,7 @@
         },
         {
           "id": "L33-006",
-          "title": "Thin Looplia Native CMS with exact publish and reconciliation",
+          "title": "Thin Project B Native CMS with exact publish and reconciliation",
           "status": "pending",
           "stage": 1,
           "exception": null,
@@ -5322,7 +5322,7 @@
       "gate_status": "passed",
       "tense": "IS",
       "settles_on": null,
-      "definition": "User signs up, installs daemon, runs looplia-run connect, types ls -la, sees directory listing. Also: looplia-run exec returns structured output. Resize works.",
+      "definition": "User signs up, installs daemon, runs project-b-run connect, types ls -la, sees directory listing. Also: project-b-run exec returns structured output. Resize works.",
       "completed_at": "2026-04-07",
       "source": "layer_gates[layer=0]"
     },
@@ -5340,7 +5340,7 @@
       "gate_status": "passed",
       "tense": "IS",
       "settles_on": null,
-      "definition": "User launches agent container from looplia.run, opens Ghostty web terminal, interacts with Pi-Mono agent, agent executes commands on remote daemon via looplia-run. Blocked command returns rejection. Audit log shows command history.",
+      "definition": "User launches agent container from project-b.run, opens Ghostty web terminal, interacts with Pi-Mono agent, agent executes commands on remote daemon via project-b-run. Blocked command returns rejection. Audit log shows command history.",
       "completed_at": "2026-04-09",
       "source": "layer_gates[layer=1]"
     },
@@ -5358,7 +5358,7 @@
       "gate_status": "passed",
       "tense": "IS",
       "settles_on": null,
-      "definition": "Agent email — inbound + outbound through LoopliaAgent. User creates <user-slug>-default@looplia.run, an external Gmail account sends a test message (with attachment) to the alias, the inbox row appears in the dashboard with parsed body + downloadable attachment, user clicks Reply, the reply lands in Gmail in the original thread, Gmail 'Show original' confirms SPF=pass + DKIM=pass + DMARC=pass. HMAC reply-routing header on outbound roundtrips back to the correct LoopliaAgent. Spam-score header captured.",
+      "definition": "Agent email — inbound + outbound through LoopliaAgent. User creates <user-slug>-default@project-b.run, an external Gmail account sends a test message (with attachment) to the alias, the inbox row appears in the dashboard with parsed body + downloadable attachment, user clicks Reply, the reply lands in Gmail in the original thread, Gmail 'Show original' confirms SPF=pass + DKIM=pass + DMARC=pass. HMAC reply-routing header on outbound roundtrips back to the correct LoopliaAgent. Spam-score header captured.",
       "completed_at": "2026-05-27T10:13:59Z",
       "source": "layer_gates[layer=4]"
     },
@@ -5367,7 +5367,7 @@
       "gate_status": "passed",
       "tense": "IS",
       "settles_on": null,
-      "definition": "External agent surface. (a) Dashboard issues an aelk_ API key scoped to <slug>-bot@looplia.run with email:send + email:read; (b) Claude Code with the Looplia MCP installed lists + sends + replies, send_email triggers Claude Code's destructive-action confirmation prompt; (c) `looplia email send/read --json | jq` and `curl POST /v1/email/messages` succeed with the same key; (d) a webhook registered for email.received fires within 5s of delivery, X-Looplia-Signature verifies, replay-window (>5min) is rejected. Per-key rate limit + per-mailbox daily quotas enforced (429 on overflow). Scope mismatch returns 403.",
+      "definition": "External agent surface. (a) Dashboard issues an aelk_ API key scoped to <slug>-bot@project-b.run with email:send + email:read; (b) Claude Code with the Project B MCP installed lists + sends + replies, send_email triggers Claude Code's destructive-action confirmation prompt; (c) `project-b email send/read --json | jq` and `curl POST /v1/email/messages` succeed with the same key; (d) a webhook registered for email.received fires within 5s of delivery, X-Project B-Signature verifies, replay-window (>5min) is rejected. Per-key rate limit + per-mailbox daily quotas enforced (429 on overflow). Scope mismatch returns 403.",
       "completed_at": "2026-05-29",
       "source": "layer_gates[layer=4.5]"
     },
@@ -5430,7 +5430,7 @@
       "gate_status": "scripted_passed",
       "tense": "EXP",
       "settles_on": "layer 12 human acceptance run",
-      "definition": "Voice E2E (scripted + prod dogfood): scripted — voiceTurn bridge frames (delta/tool/error/done) + server-side history + voice metadata + per-thread busy latch + ticket gate matrix + guardrail state machine with faked clocks, e2e suite at known-red baseline zero-delta. Prod dogfood (real mic on looplia.run) — spoken Q&A with per-stage latency recorded; daemon tool turn speaks a status line then the result (long run → handoff phrase, result in thread); barge-in stops audio <300ms with the run persisting; idle/cap hangups; voice chips in thread; mic absent on company agent/email/touch; performance-quality + ux-flow calibration verdicts captured by listening on the real call.",
+      "definition": "Voice E2E (scripted + prod dogfood): scripted — voiceTurn bridge frames (delta/tool/error/done) + server-side history + voice metadata + per-thread busy latch + ticket gate matrix + guardrail state machine with faked clocks, e2e suite at known-red baseline zero-delta. Prod dogfood (real mic on project-b.run) — spoken Q&A with per-stage latency recorded; daemon tool turn speaks a status line then the result (long run → handoff phrase, result in thread); barge-in stops audio <300ms with the run persisting; idle/cap hangups; voice chips in thread; mic absent on company agent/email/touch; performance-quality + ux-flow calibration verdicts captured by listening on the real call.",
       "completed_at": null,
       "source": "layer_gates[layer=12]"
     },
@@ -5466,7 +5466,7 @@
       "gate_status": "passed",
       "tense": "IS",
       "settles_on": null,
-      "definition": "The autonomy-first surface works end-to-end: agent.trajectory.list returns a per-agent UNIFIED timeline merging run-store entries (agent_run: heartbeat/autonomous/work/delegated) and chat threads (assistant_messages) newest-first under one normalized cross-store keyset cursor; agent.trajectory.detail returns full steps including the model's ENABLED + captured per-step reasoning + tool calls + files (a live heartbeat shows NON-EMPTY reasoning, not just a mock). Web: the Agents page shows the per-agent trajectory (no chat), the left sidebar is exactly Company / Agent / Settings, and a row opens a detail modal. The Company page hosts a single #general chat (agent=default, thread=company-general) routed FRONT-DESK to the company agent Looplia (single target; @mention->employee + agents-meeting deferred to Layer 22), plus the moved work/messaging/activity surfaces + a Company Vision panel reusing companyAutopilot.northStar. Memory/company-context (assemble.ts, /org, /company/wiki, manage_memory, L19 anti-context-rot) unchanged — trajectory only surfaces those writes.",
+      "definition": "The autonomy-first surface works end-to-end: agent.trajectory.list returns a per-agent UNIFIED timeline merging run-store entries (agent_run: heartbeat/autonomous/work/delegated) and chat threads (assistant_messages) newest-first under one normalized cross-store keyset cursor; agent.trajectory.detail returns full steps including the model's ENABLED + captured per-step reasoning + tool calls + files (a live heartbeat shows NON-EMPTY reasoning, not just a mock). Web: the Agents page shows the per-agent trajectory (no chat), the left sidebar is exactly Company / Agent / Settings, and a row opens a detail modal. The Company page hosts a single #general chat (agent=default, thread=company-general) routed FRONT-DESK to the company agent Project B (single target; @mention->employee + agents-meeting deferred to Layer 22), plus the moved work/messaging/activity surfaces + a Company Vision panel reusing companyAutopilot.northStar. Memory/company-context (assemble.ts, /org, /company/wiki, manage_memory, L19 anti-context-rot) unchanged — trajectory only surfaces those writes.",
       "completed_at": "2026-06-20",
       "source": "layer_gates[layer=21]"
     },
@@ -5475,7 +5475,7 @@
       "gate_status": "passed",
       "tense": "IS",
       "settles_on": null,
-      "definition": "The redesign works end-to-end: ONE unified full-bleed app shell replaces the two divergent pages; a vertical sidebar-TOP mode list (Company/Agents) switches the center surface and switching modes does NOT remount the COO chat; the top horizontal AGENTS/COMPANY nav is gone; Settings is in the sidebar footer. Company mode renders former tabs as sidebar items (Chat/Mission/Overview/Context/Activity) full-bleed, with VISION+AUTOPILOT merged into one Mission surface and the chat labeled 'Chat (Looplia · COO)' as the default surface. COO MODEL: the company agent calls a set_company_mission tool to write the north star/objectives to the Mission single source of truth, which the chat context AND the heartbeat read (so the chat reports the persisted north star — the L21 incoherence is fixed). Agents mode keeps the trajectory with the 21.5 behaviors (reasoning expanded, two-line rows, live streaming). Default landing = Company -> Chat. Mobile = sidebar drawer + full-screen detail sheet. Memory/company-context unchanged.",
+      "definition": "The redesign works end-to-end: ONE unified full-bleed app shell replaces the two divergent pages; a vertical sidebar-TOP mode list (Company/Agents) switches the center surface and switching modes does NOT remount the COO chat; the top horizontal AGENTS/COMPANY nav is gone; Settings is in the sidebar footer. Company mode renders former tabs as sidebar items (Chat/Mission/Overview/Context/Activity) full-bleed, with VISION+AUTOPILOT merged into one Mission surface and the chat labeled 'Chat (Project B · COO)' as the default surface. COO MODEL: the company agent calls a set_company_mission tool to write the north star/objectives to the Mission single source of truth, which the chat context AND the heartbeat read (so the chat reports the persisted north star — the L21 incoherence is fixed). Agents mode keeps the trajectory with the 21.5 behaviors (reasoning expanded, two-line rows, live streaming). Default landing = Company -> Chat. Mobile = sidebar drawer + full-screen detail sheet. Memory/company-context unchanged.",
       "completed_at": "2026-06-24",
       "source": "layer_gates[layer=23]"
     },
@@ -5484,7 +5484,7 @@
       "gate_status": "passed",
       "tense": "IS",
       "settles_on": null,
-      "definition": "A user hires an employee agent ENTIRELY inside Talk-to-Looplia: asking Looplia to hire produces ONE inline HireApprovalCard (json-render via render_ui) bound to a real pending approval; Approve provisions the employee within seconds WITH THE LOOP OFF (P0-B) and the card shows the hired/first-task state; no leaving the chat. The duplicate approval surfaces are consolidated to one PendingApprovalsList (Work-board strip removed) reusing the same card + resolve path; the manual create-agent dialog surfaces errors instead of closing silently (P0-C). Scripted (vitest-pool-workers): resolve(approve)->provision with loop OFF, idempotent double-resolve, render_ui round-trip, catalog Zod rejects a malformed spec, card dedup by approvalId. Prod dogfood (agent-browser, fresh account): the full inline-hire happy path.",
+      "definition": "A user hires an employee agent ENTIRELY inside Talk-to-Project B: asking Project B to hire produces ONE inline HireApprovalCard (json-render via render_ui) bound to a real pending approval; Approve provisions the employee within seconds WITH THE LOOP OFF (P0-B) and the card shows the hired/first-task state; no leaving the chat. The duplicate approval surfaces are consolidated to one PendingApprovalsList (Work-board strip removed) reusing the same card + resolve path; the manual create-agent dialog surfaces errors instead of closing silently (P0-C). Scripted (vitest-pool-workers): resolve(approve)->provision with loop OFF, idempotent double-resolve, render_ui round-trip, catalog Zod rejects a malformed spec, card dedup by approvalId. Prod dogfood (agent-browser, fresh account): the full inline-hire happy path.",
       "completed_at": "2026-06-28",
       "source": "layer_gates[layer=24]"
     },
@@ -5493,7 +5493,7 @@
       "gate_status": "passed",
       "tense": "IS",
       "settles_on": null,
-      "definition": "Hire-vertical polish + generative-UI durability (the Layer 24 follow-ups). (1) Asking Looplia to hire a specific role provisions an employee whose blueprint (name/slug/purpose) reflects the REQUESTED role even when the model omits the blueprint arg — derived server-side from the triggering message, not a generic 'Assistant'; two different role requests yield two distinct employees; no-role falls back to the FIX-HIRE-002 generic synthesis with the single-pending-approval idempotency preserved. (2) An inline render_ui/HireApprovalCard SURVIVES a full page reload and re-queries live status (tool-call+result parts now persist on the outbound assistant turn and rehydrate via threadRowsToMessages -> setMessages); byte-stable for non-tool turns; an unresolved approvalId still renders inert (FIX-HIRE-004 guard). (3) The stale unit reds (COO 6-vs-7 tools, advisory blueprint_mismatch) are refreshed so the suite is a trustworthy signal. Scripted (do-agent bun + web bun + e2e vitest-pool-workers): server-derived role blueprint from sparse context, two-distinct-roles, generic fallback + idempotency; render_ui round-trip persisted + rehydrated toolCalls message, byte-stable non-tool turns; refreshed COO-tool-count + advisory-blueprint assertions. Prod dogfood (agent-browser, test@looplia.run): hire a named role -> role-named employee in the roster; render a hire card -> hard reload -> card still there + actionable.",
+      "definition": "Hire-vertical polish + generative-UI durability (the Layer 24 follow-ups). (1) Asking Project B to hire a specific role provisions an employee whose blueprint (name/slug/purpose) reflects the REQUESTED role even when the model omits the blueprint arg — derived server-side from the triggering message, not a generic 'Assistant'; two different role requests yield two distinct employees; no-role falls back to the FIX-HIRE-002 generic synthesis with the single-pending-approval idempotency preserved. (2) An inline render_ui/HireApprovalCard SURVIVES a full page reload and re-queries live status (tool-call+result parts now persist on the outbound assistant turn and rehydrate via threadRowsToMessages -> setMessages); byte-stable for non-tool turns; an unresolved approvalId still renders inert (FIX-HIRE-004 guard). (3) The stale unit reds (COO 6-vs-7 tools, advisory blueprint_mismatch) are refreshed so the suite is a trustworthy signal. Scripted (do-agent bun + web bun + e2e vitest-pool-workers): server-derived role blueprint from sparse context, two-distinct-roles, generic fallback + idempotency; render_ui round-trip persisted + rehydrated toolCalls message, byte-stable non-tool turns; refreshed COO-tool-count + advisory-blueprint assertions. Prod dogfood (agent-browser, test@project-b.run): hire a named role -> role-named employee in the roster; render a hire card -> hard reload -> card still there + actionable.",
       "completed_at": "2026-06-30",
       "source": "layer_gates[layer=25]"
     },
@@ -5502,7 +5502,7 @@
       "gate_status": "scripted_passed",
       "tense": "EXP",
       "settles_on": "layer 26 human acceptance run",
-      "definition": "Autonomous goal-owning employees + memory-through-execution (docs/research-note/18+19+20). Tier-1 scripted (vitest-pool-workers + do-agent bun): (EXEC) an owned-goal anchor assigned to an employee routes its wake to a goal-pursuit-style turn (reconciling its own goal tree) while the north-star anchor still routes the COO (regression); the scheduler fan-out mints exactly one coalesced `schedule` wake per active goal-owner (overlapping ticks no-op via the one-active-run index); #needsSupervision throttles the COO (no COO wake when covered); per-owned-goal cadence (awaiting_reply/paused not ticked); buildTurnTrigger renders each RunTrigger kind + parseHeartbeatTrigger round-trip; an inbound reply wakes the owner with email_received; an employee owned-goal turn creates a scoped subtask but cannot hire/set-mission/create-root. (MEM) an autonomous heartbeat/task turn that learns a durable fact triggers a consolidation/self-review pass over its agent_run_step window and writes to the right relationship memory (or authors a skill); an external counterparty keyed by channel id has a durable home and is retrieved into the current task's turn. Tier-2/3 dogfood (https://looplia.run): re-run the reader-outreach campaign; a schedule-triggered episode-2 (no inbound reply) autonomously advances the employee's owned goal in the counterparty's STORED language/cadence, without re-reading the thread and without a COO relay each tick.",
+      "definition": "Autonomous goal-owning employees + memory-through-execution (docs/research-note/18+19+20). Tier-1 scripted (vitest-pool-workers + do-agent bun): (EXEC) an owned-goal anchor assigned to an employee routes its wake to a goal-pursuit-style turn (reconciling its own goal tree) while the north-star anchor still routes the COO (regression); the scheduler fan-out mints exactly one coalesced `schedule` wake per active goal-owner (overlapping ticks no-op via the one-active-run index); #needsSupervision throttles the COO (no COO wake when covered); per-owned-goal cadence (awaiting_reply/paused not ticked); buildTurnTrigger renders each RunTrigger kind + parseHeartbeatTrigger round-trip; an inbound reply wakes the owner with email_received; an employee owned-goal turn creates a scoped subtask but cannot hire/set-mission/create-root. (MEM) an autonomous heartbeat/task turn that learns a durable fact triggers a consolidation/self-review pass over its agent_run_step window and writes to the right relationship memory (or authors a skill); an external counterparty keyed by channel id has a durable home and is retrieved into the current task's turn. Tier-2/3 dogfood (https://project-b.run): re-run the reader-outreach campaign; a schedule-triggered episode-2 (no inbound reply) autonomously advances the employee's owned goal in the counterparty's STORED language/cadence, without re-reading the thread and without a COO relay each tick.",
       "completed_at": "2026-07-02T10:02:00Z",
       "source": "layer_gates[layer=26]"
     },
@@ -5615,7 +5615,7 @@
       "daemon",
       "cli",
       "web",
-      "looplia-agent",
+      "project-b-agent",
       "agent-memory",
       "agent-self-improve",
       "company-work-system",
@@ -5655,15 +5655,15 @@
         "responsibility": null,
         "files": 68,
         "units": [
-          "@looplia/agent",
-          "@looplia/agent-e2e-test",
-          "@looplia/agent-runtime",
-          "@looplia/api",
-          "@looplia/db",
-          "@looplia/do-agent",
-          "@looplia/do-relay",
-          "@looplia/infra",
-          "@looplia/protocol",
+          "@project-b/agent",
+          "@project-b/agent-e2e-test",
+          "@project-b/agent-runtime",
+          "@project-b/api",
+          "@project-b/db",
+          "@project-b/do-agent",
+          "@project-b/do-relay",
+          "@project-b/infra",
+          "@project-b/protocol",
           "server",
           "web"
         ]
@@ -5674,11 +5674,11 @@
         "responsibility": null,
         "files": 13,
         "units": [
-          "@looplia/agent-e2e-test",
-          "@looplia/api",
-          "@looplia/db",
-          "@looplia/do-agent",
-          "@looplia/infra"
+          "@project-b/agent-e2e-test",
+          "@project-b/api",
+          "@project-b/db",
+          "@project-b/do-agent",
+          "@project-b/infra"
         ]
       },
       {
@@ -5687,9 +5687,9 @@
         "responsibility": "Single-agent durable memory and skill lifecycle: Workspace-backed identity, people memory, org context, agent notes, machine familiarity, thread summaries, skill recall, scheduled consolidation, MemoryManager orchestration, and curator safety. Layer 26 (memory-through-execution): the AUTONOMOUS execution loop (agent_run_step turns) also routes back into durable memory — closing the today-only-chat write-back gap — and the person store becomes RELATIONAL (owner / peer-agent / external-counterparty keyed by channel id, with task-relevant retrieval of the current counterparty, not only the primary person). Layer 28 (Hermes-grade durability, research-note/22): standing goals get goal-scoped working memory (/memory/goals/<goalId>.md, a new goal-state taxonomy class — bounded replace-in-place, trigger-goal-scoped writes, task-relevant injection, archived on retirement); the 1500-token cap stops failing silently (in-turn usage header + dropped-source notice, over-cap targeted consolidation, distill circuit breaker, per-phase report retention); relationships get a lifecycle (hot/warm/cold _index.json sidecar, daily cold archival with transparent restore, an unresolved/ home for display-name-only parties merged on email discovery); and deprovisioning exports the agent Workspace as an OKF bundle before a two-phase teardown (memory becomes a company asset at exit).",
         "files": 14,
         "units": [
-          "@looplia/agent-e2e-test",
-          "@looplia/api",
-          "@looplia/do-agent",
+          "@project-b/agent-e2e-test",
+          "@project-b/api",
+          "@project-b/do-agent",
           "web"
         ]
       },
@@ -5699,9 +5699,9 @@
         "responsibility": null,
         "files": 23,
         "units": [
-          "@looplia/agent-e2e-test",
-          "@looplia/api",
-          "@looplia/do-agent",
+          "@project-b/agent-e2e-test",
+          "@project-b/api",
+          "@project-b/do-agent",
           "web"
         ]
       },
@@ -5711,9 +5711,9 @@
         "responsibility": null,
         "files": 8,
         "units": [
-          "@looplia/api",
-          "@looplia/db",
-          "@looplia/do-agent",
+          "@project-b/api",
+          "@project-b/db",
+          "@project-b/do-agent",
           "web"
         ]
       },
@@ -5723,7 +5723,7 @@
         "responsibility": null,
         "files": 3,
         "units": [
-          "@looplia/agent-runtime"
+          "@project-b/agent-runtime"
         ]
       },
       {
@@ -5732,9 +5732,9 @@
         "responsibility": "The learning engine on top of agent-memory (Layer 8, Hermes background-review pattern): alarm-scheduled post-turn review runs, cadence counters, capacity-forced consolidation, review prompt pack, curator lifecycle states, learning-event surfacing, and per-agent review budgets. Layer 26 extends the review/skill-from-experience engine — today wired only to the /agui chat path — onto the EXECUTION loop (agent_run_step), and schedules the skill-curator lifecycle pass (which today never fires), so employees compound reusable skills from the work they DO. FIX-SKILL-REVIEW-001 (2026-07-07): the review tool gate must admit manage_skill — the L15-005 skill-write guard closed the generic write/edit route and the allowlist was never updated, leaving prod skill-authoring dead; the gate test must dispatch through the REAL guarded registry. Layer 28 (skill circulation): the skill-curator daily pass surfaces promotion proposals (usage+age thresholds); the COO supervision turn publishes proven skills to /company/wiki/skills/<name>/SKILL.md with provenance; hires seed from default pack UNION role-relevant library skills.",
         "files": 9,
         "units": [
-          "@looplia/agent-e2e-test",
-          "@looplia/agent-runtime",
-          "@looplia/do-agent"
+          "@project-b/agent-e2e-test",
+          "@project-b/agent-runtime",
+          "@project-b/do-agent"
         ]
       },
       {
@@ -5743,12 +5743,12 @@
         "responsibility": "HTTP API gateway, WebSocket upgrade routing, daemon CRUD, session ticket generation, per-user session count guard",
         "files": 34,
         "units": [
-          "@looplia/api",
-          "@looplia/db",
-          "@looplia/do-agent",
-          "@looplia/env",
-          "@looplia/infra",
-          "@looplia/protocol",
+          "@project-b/api",
+          "@project-b/db",
+          "@project-b/do-agent",
+          "@project-b/env",
+          "@project-b/infra",
+          "@project-b/protocol",
           "server",
           "web"
         ]
@@ -5759,8 +5759,8 @@
         "responsibility": "User signup/login (Better Auth), daemon API key generation/validation",
         "files": 9,
         "units": [
-          "@looplia/auth",
-          "@looplia/db"
+          "@project-b/auth",
+          "@project-b/db"
         ]
       },
       {
@@ -5776,14 +5776,14 @@
         "responsibility": "Close the first professional vertical through CMS draft/version/preview/publish/update/hold/withdraw/correction, then separately gated newsletter/social distribution, reader analytics and correction intake. Later business systems reuse the stable query/propose/execute/reconcile adapter contract.",
         "files": 4,
         "units": [
-          "@looplia/do-agent",
-          "@looplia/infra"
+          "@project-b/do-agent",
+          "@project-b/infra"
         ]
       },
       {
         "module": "cli",
         "declared": true,
-        "responsibility": "User-facing CLI (looplia-run), OAuth login flow, interactive terminal session, daemon listing",
+        "responsibility": "User-facing CLI (project-b-run), OAuth login flow, interactive terminal session, daemon listing",
         "files": 5,
         "units": []
       },
@@ -5800,10 +5800,10 @@
         "responsibility": "The virtual workspace mount layer (Layer 10): a dedicated CompanyContext DO running a Mirage-contract mount-table dispatcher that presents scoped external sources (Notion database/page subtree, Drive folder) as read-through paths under /company/* inside agent workspaces, with cache-on-read, per-mount ACL, and per-tenant OAuth. Layer 29 (living shared context, research-note/23): the wiki becomes the company operating library — briefing archive, goal dossiers, a daily-gated wiki curator pass and a per-mount sources digest; freshness markers reach every agent turn and the bounded projection remains protected. Meeting transcripts, raw paper full text and skill catalogs stay out of the always-on projection. route/receiveHandoff//org/handoff:* are permanently deprecated; Layer 36 deliberation uses typed durable artifacts instead of reviving them.",
         "files": 20,
         "units": [
-          "@looplia/agent-e2e-test",
-          "@looplia/api",
-          "@looplia/do-agent",
-          "@looplia/infra",
+          "@project-b/agent-e2e-test",
+          "@project-b/api",
+          "@project-b/do-agent",
+          "@project-b/infra",
           "server",
           "web"
         ]
@@ -5828,8 +5828,8 @@
         "responsibility": "Layer 13 company-agent formation and employee design boundary: turns a new account's company-agent interview into confirmed company facts, a canonical company brief, employee-agent blueprints, approval-backed hire_agent provisioning, and first-task receipts. Layer 27 (hire-for-goal): the blueprint carries an optional standingGoal {title, body, cadenceSeconds}; when present, provisioning mints an owned-goal anchor instead of the one-shot firstTask (rollback-safe, markHireConsumed last), and the hire approval shows the mission the employee will own.",
         "files": 21,
         "units": [
-          "@looplia/api",
-          "@looplia/do-agent",
+          "@project-b/api",
+          "@project-b/do-agent",
           "web"
         ]
       },
@@ -5846,11 +5846,11 @@
         "responsibility": "The auto-company work ledger on the LoopliaCompany supervisor DO (Layer 9a): company_task / task_run / task_comment / approval tables, atomic checkout, heartbeat wake protocol, run liveness supervision, failure taxonomy, and the task board + approval card surfaces. Layer 26 (goal-ownership recursion): goal-ownership generalizes from the single COO north-star anchor to any goal-owner (owned-goal marker + generalized routeHeartbeatWake + parametrized goal-pursuit assembler); the single cron fans out schedule-wakes to each goal-owning EMPLOYEE (wiring the dead wakeForSchedule seam through the existing one-active-run coalescing) on a per-goal cadence (active/awaiting_reply/paused); the COO throttles to a planner (#needsSupervision); heartbeat + event unify into one trigger taxonomy (buildTurnTrigger). No new clock, no per-facet scheduleEvery; trust hierarchy (hire/mission COO-only) preserved. Layer 27 (topology closure, research-note/21): the cadence lifecycle gets its WRITE paths (set_goal_cadence own-goal-scoped verb, inbound-reply reactivation, per-goal cadence_seconds honored by the fan-out enumeration); owned goals get a completion lifecycle (employee proposes in_review -> a new #needsSupervision arm wakes the COO to verify -> done + cadence done, or feedback-return); the COO gains assign_standing_goal (kind:plan approval-gated, graduating to direct-mint via a per-company autonomy setting — goal-tree depth stays 2 by construction); employees escalate structurally (tagged @default comments counted by supervision); and the strategy surface lands (strategic-tier decision-log calls, cadenced CEO briefing email, approval-gated autonomous mission changes). Layer 29 adds a read-only scoped board verb (list_company_work: own subtree full, foreign goals summary-only) and the goal-portfolio operating-state projection v2 refreshed by EMPLOYEE owned-goal turns.",
         "files": 33,
         "units": [
-          "@looplia/agent-e2e-test",
-          "@looplia/api",
-          "@looplia/db",
-          "@looplia/do-agent",
-          "@looplia/infra",
+          "@project-b/agent-e2e-test",
+          "@project-b/api",
+          "@project-b/db",
+          "@project-b/do-agent",
+          "@project-b/infra",
           "server",
           "web"
         ]
@@ -5861,19 +5861,19 @@
         "responsibility": "Layer 13 company-context freshness check (minimal slice): the company agent can ask which watched /company/wiki + scoped Notion sources changed since the brief was last confirmed, by reading the EXISTING mount warmer's fingerprints.",
         "files": 3,
         "units": [
-          "@looplia/do-agent"
+          "@project-b/do-agent"
         ]
       },
       {
         "module": "daemon",
         "declared": true,
-        "responsibility": "PTY spawning (portable-pty), WebSocket client with auto-reconnect, daemon registration, API key storage in ~/.looplia/credentials",
+        "responsibility": "PTY spawning (portable-pty), WebSocket client with auto-reconnect, daemon registration, API key storage in ~/.project-b/credentials",
         "files": 32,
         "units": [
-          "@looplia/api",
-          "@looplia/db",
-          "@looplia/do-relay",
-          "@looplia/protocol",
+          "@project-b/api",
+          "@project-b/db",
+          "@project-b/do-relay",
+          "@project-b/protocol",
           "web"
         ]
       },
@@ -5897,9 +5897,9 @@
         "responsibility": null,
         "files": 43,
         "units": [
-          "@looplia/agent-e2e-test",
-          "@looplia/api",
-          "@looplia/do-agent",
+          "@project-b/agent-e2e-test",
+          "@project-b/api",
+          "@project-b/do-agent",
           "server"
         ]
       },
@@ -5916,9 +5916,9 @@
         "responsibility": null,
         "files": 4,
         "units": [
-          "@looplia/agent-e2e-test",
-          "@looplia/api",
-          "@looplia/do-agent",
+          "@project-b/agent-e2e-test",
+          "@project-b/api",
+          "@project-b/do-agent",
           "web"
         ]
       },
@@ -5928,8 +5928,8 @@
         "responsibility": null,
         "files": 23,
         "units": [
-          "@looplia/agent-e2e-test",
-          "@looplia/do-agent"
+          "@project-b/agent-e2e-test",
+          "@project-b/do-agent"
         ]
       },
       {
@@ -5945,9 +5945,9 @@
         "responsibility": "External agent surface. /v1/email/* REST and /mcp MCP server, mounted on apps/server. Validates Bearer aelk_… API keys, checks scope + rate limit + quota, RPCs into LoopliaAgent.",
         "files": 12,
         "units": [
-          "@looplia/do-agent",
-          "@looplia/email-sdk-ts",
-          "@looplia/infra",
+          "@project-b/do-agent",
+          "@project-b/email-sdk-ts",
+          "@project-b/infra",
           "server",
           "web"
         ]
@@ -5955,7 +5955,7 @@
       {
         "module": "email-cli",
         "declared": true,
-        "responsibility": "`looplia email` subcommand tree extending the existing apps/cli binary. Stateless commands, --json output, wraps email-api REST.",
+        "responsibility": "`project-b email` subcommand tree extending the existing apps/cli binary. Stateless commands, --json output, wraps email-api REST.",
         "files": 12,
         "units": [
           "server"
@@ -5976,7 +5976,7 @@
         "responsibility": "Adapter over Cloudflare Email Sending (public beta). Builds MIME with PostalMime, attaches HMAC-signed routing headers, calls env.EMAIL.send. Invoked only from LoopliaAgent.sendEmail.",
         "files": 2,
         "units": [
-          "@looplia/email-protocol"
+          "@project-b/email-protocol"
         ]
       },
       {
@@ -5985,7 +5985,7 @@
         "responsibility": "Outbound delivery of email events (email.received, email.delivered, email.bounced) to user-registered URLs. Signs payloads with HMAC-SHA256 + timestamp.",
         "files": 3,
         "units": [
-          "@looplia/infra",
+          "@project-b/infra",
           "server"
         ]
       },
@@ -5995,11 +5995,11 @@
         "responsibility": "Own the versioned professional employee product contract: archetypes, skill-bundle manifests and locks, EmployeeBlueprintV2 resolution, qualification suites, capability evidence, readiness status and routing eligibility.",
         "files": 63,
         "units": [
-          "@looplia/agent-e2e-test",
-          "@looplia/api",
-          "@looplia/db",
-          "@looplia/do-agent",
-          "@looplia/protocol"
+          "@project-b/agent-e2e-test",
+          "@project-b/api",
+          "@project-b/db",
+          "@project-b/do-agent",
+          "@project-b/protocol"
         ]
       },
       {
@@ -6015,17 +6015,17 @@
         "responsibility": null,
         "files": 3,
         "units": [
-          "@looplia/infra",
+          "@project-b/infra",
           "server"
         ]
       },
       {
-        "module": "looplia-agent",
+        "module": "project-b-agent",
         "declared": true,
         "responsibility": "Per-user agent Durable Object (extends Cloudflare Agents SDK). Already orchestrates stories and runs Claude inference via CF AI Gateway. Layer 4 adds onEmail / sendEmail / listMessages / getMessage methods — LoopliaAgent is now also the canonical execution surface for inbound + outbound mail.",
         "files": 10,
         "units": [
-          "@looplia/do-agent",
+          "@project-b/do-agent",
           "server",
           "web"
         ]
@@ -6036,11 +6036,11 @@
         "responsibility": "Accept capability-shaped professional execution intents through a compact facade, then resolve and run reproducible E0/E1/E2/E3 jobs through one broker/driver port; Workspace, packages and browser are additive governed capabilities rather than runtimes.",
         "files": 77,
         "units": [
-          "@looplia/agent-e2e-test",
-          "@looplia/do-agent",
-          "@looplia/env",
-          "@looplia/infra",
-          "@looplia/protocol"
+          "@project-b/agent-e2e-test",
+          "@project-b/do-agent",
+          "@project-b/env",
+          "@project-b/infra",
+          "@project-b/protocol"
         ]
       },
       {
@@ -6056,9 +6056,9 @@
         "responsibility": "Wire format definitions (frame types, control messages, resize events)",
         "files": 9,
         "units": [
-          "@looplia/do-relay",
-          "@looplia/email-protocol",
-          "@looplia/protocol"
+          "@project-b/do-relay",
+          "@project-b/email-protocol",
+          "@project-b/protocol"
         ]
       },
       {
@@ -6067,9 +6067,9 @@
         "responsibility": "WebSocket pair management (client + daemon), byte relay, heartbeat alarm, buffered audit log writes to D1",
         "files": 5,
         "units": [
-          "@looplia/db",
-          "@looplia/do-relay",
-          "@looplia/e2e-test"
+          "@project-b/db",
+          "@project-b/do-relay",
+          "@project-b/e2e-test"
         ]
       },
       {
@@ -6085,8 +6085,8 @@
         "responsibility": "Real-time voice pipeline (Layer 12): packages/voice exports VoiceGateway — a withVoice(Agent) DO (per userId:agentId:threadId) that terminates the browser voice WebSocket (PCM16 16kHz), validates a single-use voice ticket, streams ASR via Workers AI @cf/deepgram/flux, bridges final transcripts into the facet's voice-shaped turn entry point, sentence-streams TTS back (ONE provider, spike-chosen), enforces call guardrails (10-min cap, 60s idle hangup, unmuted-only ASR socket, per-user daily voice-minute quota), and emits per-stage latency metrics.",
         "files": 11,
         "units": [
-          "@looplia/infra",
-          "@looplia/voice",
+          "@project-b/infra",
+          "@project-b/voice",
           "server"
         ]
       },
@@ -6096,11 +6096,11 @@
         "responsibility": "Browser UI for signup, daemon listing, audit logs, guardrail config",
         "files": 141,
         "units": [
-          "@looplia/agent-e2e-test",
-          "@looplia/api",
-          "@looplia/do-agent",
-          "@looplia/protocol",
-          "@looplia/ui",
+          "@project-b/agent-e2e-test",
+          "@project-b/api",
+          "@project-b/do-agent",
+          "@project-b/protocol",
+          "@project-b/ui",
           "server",
           "web"
         ]
@@ -6134,12 +6134,12 @@
         "responsibility": "Normalize every material effect from chat, heartbeat, workflow, REST/MCP, UI and deterministic consumers into a typed ActionIntent; intersect company policy, Agent Operating Contract and scoped grant; enforce decision-right tiers and the CEO→COO/Managing Editor→employee command chain; emit machine-verifiable Decision Receipts.",
         "files": 33,
         "units": [
-          "@looplia/agent-e2e-test",
-          "@looplia/api",
-          "@looplia/db",
-          "@looplia/do-agent",
-          "@looplia/infra",
-          "@looplia/protocol",
+          "@project-b/agent-e2e-test",
+          "@project-b/api",
+          "@project-b/db",
+          "@project-b/do-agent",
+          "@project-b/infra",
+          "@project-b/protocol",
           "server",
           "web"
         ],
@@ -6152,10 +6152,10 @@
         "responsibility": "Close the first professional vertical through CMS draft/version/preview/publish/update/hold/withdraw/correction, then separately gated newsletter/social distribution, reader analytics and correction intake. Later business systems reuse the stable query/propose/execute/reconcile adapter contract.",
         "files": 15,
         "units": [
-          "@looplia/agent-e2e-test",
-          "@looplia/api",
-          "@looplia/do-agent",
-          "@looplia/protocol"
+          "@project-b/agent-e2e-test",
+          "@project-b/api",
+          "@project-b/do-agent",
+          "@project-b/protocol"
         ],
         "homeless": false
       },
@@ -6166,8 +6166,8 @@
         "responsibility": "Correlate company events, workflows, agent/model/tool calls, policy decisions, external effects, receipts and verifiers with OpenTelemetry; define company SLOs and Evaluation Registry promotion gates; manage first-class incidents with automatic containment, recovery and replay.",
         "files": 15,
         "units": [
-          "@looplia/api",
-          "@looplia/do-agent",
+          "@project-b/api",
+          "@project-b/do-agent",
           "server"
         ],
         "homeless": false
@@ -6179,9 +6179,9 @@
         "responsibility": "Run bounded independent-first deliberation: qualified participant selection, scoped evidence snapshots, independent positions, one targeted cross-exam, claim verification, synthesis with dissent, authority routing and follow-up tasks.",
         "files": 12,
         "units": [
-          "@looplia/agent-e2e-test",
-          "@looplia/do-agent",
-          "@looplia/protocol"
+          "@project-b/agent-e2e-test",
+          "@project-b/do-agent",
+          "@project-b/protocol"
         ],
         "homeless": false
       },
@@ -6192,11 +6192,11 @@
         "responsibility": "Provide the canonical CompanyEvent contract, per-company outbox/inbox dedup, Queue DLQ/replay operations, and Cloudflare Workflows bridge for durable multi-step business processes that wait for events, deadlines and approvals.",
         "files": 19,
         "units": [
-          "@looplia/agent-e2e-test",
-          "@looplia/do-agent",
-          "@looplia/env",
-          "@looplia/infra",
-          "@looplia/protocol",
+          "@project-b/agent-e2e-test",
+          "@project-b/do-agent",
+          "@project-b/env",
+          "@project-b/infra",
+          "@project-b/protocol",
           "server"
         ],
         "homeless": false
@@ -6208,10 +6208,10 @@
         "responsibility": "Attach source/version/trust/classification/purpose/retention/jurisdiction metadata to company data, memories and derived artifacts; manage correction, quarantine, deletion and legal hold; create residency-aware company state and D1/DO/R2 recovery manifests with tested restore procedures.",
         "files": 14,
         "units": [
-          "@looplia/api",
-          "@looplia/db",
-          "@looplia/do-agent",
-          "@looplia/protocol"
+          "@project-b/api",
+          "@project-b/db",
+          "@project-b/do-agent",
+          "@project-b/protocol"
         ],
         "homeless": false
       },
@@ -6222,7 +6222,7 @@
         "responsibility": null,
         "files": 6,
         "units": [
-          "@looplia/infra"
+          "@project-b/infra"
         ],
         "homeless": false
       },
@@ -6233,9 +6233,9 @@
         "responsibility": "Normalize qualification, routing and verified task outcomes into typed learning evidence; deterministically compute evidence sufficiency, workforce diagnosis and allowed interventions; let a version-locked COO planning skill rank/explain inside that boundary; turn approved retraining evidence into learned-overlay candidates, replay/canary/releases/rollback/requalification, or portfolio evidence into bounded team-composition proposals.",
         "files": 27,
         "units": [
-          "@looplia/agent-e2e-test",
-          "@looplia/do-agent",
-          "@looplia/protocol"
+          "@project-b/agent-e2e-test",
+          "@project-b/do-agent",
+          "@project-b/protocol"
         ],
         "homeless": false
       }
@@ -6252,7 +6252,7 @@
     "options": [
       {
         "trigger": "concept_crowding",
-        "unit": "@looplia/do-agent",
+        "unit": "@project-b/do-agent",
         "concepts": [
           "authority-kernel",
           "business-system-adapters",

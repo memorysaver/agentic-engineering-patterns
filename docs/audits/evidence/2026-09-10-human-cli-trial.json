@@ -5,7 +5,7 @@
   },
   "projects": [
     {
-      "project": "looplia",
+      "project": "project-b",
       "head": "b20c5cebc83d02f60947ee55d64015b253d78587",
       "tracked_and_untracked_files_unchanged": 4805,
       "checks": [
@@ -20,7 +20,7 @@
           "stdout_lines": 59
         },
         {
-          "args": ["--skill", "verify-looplia"],
+          "args": ["--skill", "verify-project-b"],
           "exit_code": 0,
           "stdout_lines": 14
         },
@@ -57,7 +57,7 @@
       ]
     },
     {
-      "project": "MITS",
+      "project": "Project A",
       "head": "4c17c9e41759e8bb9be05281c57ef531808ce696",
       "tracked_and_untracked_files_unchanged": 2631,
       "checks": [
@@ -72,7 +72,7 @@
           "stdout_lines": 59
         },
         {
-          "args": ["--skill", "verify-mits"],
+          "args": ["--skill", "verify-project-a"],
           "exit_code": 0,
           "stdout_lines": 60
         },
@@ -109,7 +109,7 @@
       ]
     },
     {
-      "project": "Rewarc-AutoResearch",
+      "project": "Project C",
       "head": "c1ef641e3fdeda6969921b1d265c9685b857f405",
       "tracked_and_untracked_files_unchanged": 2987,
       "checks": [

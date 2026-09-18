@@ -5,7 +5,7 @@ Status: Accepted for the 5.0 preview correction requested by the user
 
 ## Observed problem
 
-The MITS agent received “這次 reflect 產生的故事是哪一個？自主完成”, implemented MITS-109, repaired failed verification, obtained review and reached delivery eligibility. It ended at a ready candidate. No PR, integration, specification publication, change closure or resource reconciliation followed. See [the observation](../lessons/2026-09-10-mits-reflection-to-implementation.md).
+The Project A agent received “這次 reflect 產生的故事是哪一個？自主完成”, implemented A-109, repaired failed verification, obtained review and reached delivery eligibility. It ended at a ready candidate. No PR, integration, specification publication, change closure or resource reconciliation followed. See [the observation](../lessons/2026-09-10-project-a-reflection-to-implementation.md).
 
 Candidate readiness did not establish that the user's overall outcome was satisfied. The native implement/validate guidance lacked an explicit continuation responsibility; deliver guidance described commands without first recovering the requested endpoint. The human CLI displayed `Eligible: true` without explaining what remained.
 
@@ -23,7 +23,7 @@ After confirmed integration, carry out applicable combined checks, spec publicat
 
 Exercise real CLI readiness and delivery dry runs in a disposable Git lifecycle. Check that story state, delivery records, Git head/status and worktree inventory remain unchanged before explicit local integration. Keep full lifecycle assertions for integrated story, spec publication and change closure.
 
-Evaluate candidate instructions independently for end-to-end work with existing merge authority, PR-only, review-only, candidate-only and missing merge authority. These are simulated guidance observations, separate from executed CLI fixtures and a future live MITS continuation. Ship the embedded guidance and executable together; retain copied-binary evidence.
+Evaluate candidate instructions independently for end-to-end work with existing merge authority, PR-only, review-only, candidate-only and missing merge authority. These are simulated guidance observations, separate from executed CLI fixtures and a future live Project A continuation. Ship the embedded guidance and executable together; retain copied-binary evidence.
 
 ## Scope
 

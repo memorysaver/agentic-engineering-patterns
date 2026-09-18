@@ -136,7 +136,7 @@ Directions are generated based on the product's persona and category. The skill 
 3. **Note strengths and risks** for each direction relative to the target persona
 4. **Suggest 3 directions** — the human may choose one, hybridize, or ignore all three
 
-For a developer tool like Looplia (terminal-adjacent, security-conscious audience), example directions might span:
+For a developer tool like Project B (terminal-adjacent, security-conscious audience), example directions might span:
 
 | Direction         | Mood                                                     | References                 |
 | ----------------- | -------------------------------------------------------- | -------------------------- |
@@ -237,7 +237,7 @@ Stored at **repo root** alongside `product-context.yaml`. This is the authoritat
 
 ```yaml
 schema: v1
-project: looplia-run
+project: project-b-run
 calibrated_at: "2026-04-03"
 calibrated_from_layer: 0.5
 

@@ -8,7 +8,7 @@ Decision: [Corrections from the live downstream delivery trial](../decisions/aep
 
 | Finding | Correction | Verification |
 | --- | --- | --- |
-| Project verification skill appeared to be an AEP dependency | Human catalog groups built-in and project procedures, with project source paths; exact named skill content and structured metadata preserved | Human CLI fixture plus copied binary reading the real MITS catalog and exact verify-mits bytes |
+| Project verification skill appeared to be an AEP dependency | Human catalog groups built-in and project procedures, with project source paths; exact named skill content and structured metadata preserved | Human CLI fixture plus copied binary reading the real Project A catalog and exact verify-project-a bytes |
 | A decision referring to an immutable story was missing from story context/freshness | Shared incoming-decision traversal includes accepted decisions and superseded history; existing outgoing links preserved | Actual CLI lifecycle checks for discoverability, unchanged code head, stale evidence, correction chains, unrelated records and native supersession |
 | Corrective story update failed without useful next step | Update diagnostic and records reference explain linked decisions for contextual corrections and new contracts for changed scope | Existing immutable story remains unchanged after failed update; linked decision becomes visible |
 | Shared ledger copied into candidate triggered scope rejection and later integration conflicts | Git/closure guidance explains shared-root transport and evidence-based reconciliation | Same fixture verifies separate-store checks succeed, while a copied out-of-scope ledger file still blocks verification |
@@ -32,7 +32,7 @@ The reviewer also identified that the dispatch fixture initially lacked both its
 - Official skill quick validation passed for native root/design/implement/deliver/reflect using isolated `uv run --with pyyaml`.
 - `cargo build --locked --release -p aep-cli`: passed.
 - Copied executable passed `scripts/verify-native-preview.py`: source-preserving migration, repeated apply, offline guidance and native inspection; fixture removed.
-- Read-only old/new binary comparison against MITS-109: old context omitted `mits109-delivery-endpoint`; new context included it. New catalog placed verify-mits under Project procedures with its source path. Named verify-mits output matched the actual project SKILL.md bytes; MITS Git state unchanged.
+- Read-only old/new binary comparison against A-109: old context omitted `project-a-109-delivery-endpoint`; new context included it. New catalog placed verify-project-a under Project procedures with its source path. Named verify-project-a output matched the actual project SKILL.md bytes; Project A Git state unchanged.
 - Release archive contains `aep` and `LICENSE`; archived binary bytes match the copied executable.
 
 ## Local preview artifact
@@ -42,6 +42,6 @@ The reviewer also identified that the dispatch fixture initially lacked both its
 - Binary SHA-256: `b75080a5edabd5b0c3cba8e9308ab80312fb3cad0a21a9b24ab7ca205ef36106`.
 - Archive SHA-256: `3c6e0db27c98ac89eba57fc2a1b9bbe121b3e02c22407ab2d8f0d07352c32386`.
 - Provenance, source commit and previous binary: `~/.local/share/aep/builds/b75080a5edabd5b0/manifest.json`.
-- Copied-binary proof and MITS read-only comparisons: `~/.local/share/aep/trials/2026-09-11-downstream-findings/`.
+- Copied-binary proof and Project A read-only comparisons: `~/.local/share/aep/trials/2026-09-11-downstream-findings/`.
 
-Previous executable remains available for rollback. No public AEP release/tag or downstream implementation was made. MITS's historical published spec bytes were left intact. Full live agent behavior for this additional correction and cross-platform runtime checks remain separate from the executed local tests.
+Previous executable remains available for rollback. No public AEP release/tag or downstream implementation was made. Project A's historical published spec bytes were left intact. Full live agent behavior for this additional correction and cross-platform runtime checks remain separate from the executed local tests.

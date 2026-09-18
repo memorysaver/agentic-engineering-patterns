@@ -2,11 +2,11 @@
 
 Date: 2026-09-11
 Status: Accepted implementation of the user's request to fix this trial's findings and reinstall
-Evidence: [MITS-108 observation](../lessons/2026-09-11-mits108-development-observation.md)
+Evidence: [A-108 observation](../lessons/2026-09-11-project-a-108-development-observation.md)
 
 ## Problem and reproduced boundary
 
-MITS-108 integrated its implementation, then merged additional change-directory context into the shared store. Publication required the integration receipt's fingerprint to equal the current verification fingerprint even after new checks and review passed. The agent reopened the story and merged a second records-only PR to obtain a new receipt. `deliver plan` and merge dry run also claimed readiness while the actual merge required an active attempt that the integrated story no longer had.
+A-108 integrated its implementation, then merged additional change-directory context into the shared store. Publication required the integration receipt's fingerprint to equal the current verification fingerprint even after new checks and review passed. The agent reopened the story and merged a second records-only PR to obtain a new receipt. `deliver plan` and merge dry run also claimed readiness while the actual merge required an active attempt that the integrated story no longer had.
 
 A disposable native lifecycle reproduces the publication failure with one fixed executable: integrate a checked/reviewed candidate, add a retained change-directory artifact to shared context, rerun checks and review at the same candidate, then publish. The previous publisher rejects it. This establishes the shared-context failure independently of the mixed-build limitation in the live observation.
 
@@ -26,4 +26,4 @@ Shared-store transport remains an explicit Git operation. Reconcile actual produ
 
 ## Verification
 
-Native lifecycle fixtures cover same-build reproduction/recovery, retained original delivery/story records, stale review rejection, moved worktree rejection, publication provenance and matching Git trees. Existing provider tree-drift and failed-evidence fixtures remain applicable. Run workspace tests, format/clippy, skill checks, then exercise a copied release executable before installation. Live MITS records remain untouched; future live-agent behavior and macOS execution remain separate observations.
+Native lifecycle fixtures cover same-build reproduction/recovery, retained original delivery/story records, stale review rejection, moved worktree rejection, publication provenance and matching Git trees. Existing provider tree-drift and failed-evidence fixtures remain applicable. Run workspace tests, format/clippy, skill checks, then exercise a copied release executable before installation. Live Project A records remain untouched; future live-agent behavior and macOS execution remain separate observations.

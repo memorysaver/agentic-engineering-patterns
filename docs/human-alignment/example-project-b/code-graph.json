@@ -1,0 +1,467 @@
+{
+  "repo": "project-b",
+  "commit": "a28fec13",
+  "tool": "scan-workspace.mjs (package.json workspace graph, deterministic)",
+  "coverage": {
+    "scanned": "JavaScript/TypeScript workspaces declared in the root package.json",
+    "unscanned": [
+      {
+        "path": ".",
+        "language": "Rust",
+        "marker": "Cargo.toml"
+      },
+      {
+        "path": "apps/cli",
+        "language": "Rust",
+        "marker": "Cargo.toml"
+      },
+      {
+        "path": "apps/daemon",
+        "language": "Rust",
+        "marker": "Cargo.toml"
+      },
+      {
+        "path": "packages/proto",
+        "language": "Rust",
+        "marker": "Cargo.toml"
+      }
+    ],
+    "complete": false
+  },
+  "nodes": 21,
+  "edges": 75,
+  "apps": 3,
+  "packages": 17,
+  "package_names": [
+    "@project-b/agent",
+    "server",
+    "web",
+    "@project-b/agent-runtime",
+    "@project-b/api",
+    "@project-b/auth",
+    "@project-b/config",
+    "@project-b/db",
+    "@project-b/do-agent",
+    "@project-b/do-container",
+    "@project-b/do-relay",
+    "@project-b/do-sidecar",
+    "@project-b/agent-e2e-test",
+    "@project-b/email-protocol",
+    "@project-b/email-sdk-ts",
+    "@project-b/env",
+    "@project-b/infra",
+    "@project-b/protocol",
+    "@project-b/ui",
+    "@project-b/voice",
+    "@project-b/e2e-test"
+  ],
+  "nodes_detail": [
+    {
+      "name": "@project-b/agent",
+      "dir": "apps/agent",
+      "private": true
+    },
+    {
+      "name": "server",
+      "dir": "apps/server",
+      "private": false
+    },
+    {
+      "name": "web",
+      "dir": "apps/web",
+      "private": true
+    },
+    {
+      "name": "@project-b/agent-runtime",
+      "dir": "packages/agent-runtime",
+      "private": true
+    },
+    {
+      "name": "@project-b/api",
+      "dir": "packages/api",
+      "private": false
+    },
+    {
+      "name": "@project-b/auth",
+      "dir": "packages/auth",
+      "private": false
+    },
+    {
+      "name": "@project-b/config",
+      "dir": "packages/config",
+      "private": true
+    },
+    {
+      "name": "@project-b/db",
+      "dir": "packages/db",
+      "private": false
+    },
+    {
+      "name": "@project-b/do-agent",
+      "dir": "packages/do-agent",
+      "private": true
+    },
+    {
+      "name": "@project-b/do-container",
+      "dir": "packages/do-container",
+      "private": true
+    },
+    {
+      "name": "@project-b/do-relay",
+      "dir": "packages/do-relay",
+      "private": true
+    },
+    {
+      "name": "@project-b/do-sidecar",
+      "dir": "packages/do-sidecar",
+      "private": true
+    },
+    {
+      "name": "@project-b/agent-e2e-test",
+      "dir": "packages/e2e-test",
+      "private": true
+    },
+    {
+      "name": "@project-b/email-protocol",
+      "dir": "packages/email-protocol",
+      "private": true
+    },
+    {
+      "name": "@project-b/email-sdk-ts",
+      "dir": "packages/email-sdk-ts",
+      "private": false
+    },
+    {
+      "name": "@project-b/env",
+      "dir": "packages/env",
+      "private": true
+    },
+    {
+      "name": "@project-b/infra",
+      "dir": "packages/infra",
+      "private": true
+    },
+    {
+      "name": "@project-b/protocol",
+      "dir": "packages/protocol",
+      "private": true
+    },
+    {
+      "name": "@project-b/ui",
+      "dir": "packages/ui",
+      "private": true
+    },
+    {
+      "name": "@project-b/voice",
+      "dir": "packages/voice",
+      "private": true
+    },
+    {
+      "name": "@project-b/e2e-test",
+      "dir": "tests/e2e",
+      "private": true
+    }
+  ],
+  "edges_detail": [
+    {
+      "from": "@project-b/agent-e2e-test",
+      "to": "@project-b/agent-runtime"
+    },
+    {
+      "from": "@project-b/agent-e2e-test",
+      "to": "@project-b/api"
+    },
+    {
+      "from": "@project-b/agent-e2e-test",
+      "to": "@project-b/auth"
+    },
+    {
+      "from": "@project-b/agent-e2e-test",
+      "to": "@project-b/config"
+    },
+    {
+      "from": "@project-b/agent-e2e-test",
+      "to": "@project-b/db"
+    },
+    {
+      "from": "@project-b/agent-e2e-test",
+      "to": "@project-b/do-agent"
+    },
+    {
+      "from": "@project-b/agent-e2e-test",
+      "to": "@project-b/do-container"
+    },
+    {
+      "from": "@project-b/agent-e2e-test",
+      "to": "@project-b/do-relay"
+    },
+    {
+      "from": "@project-b/agent-e2e-test",
+      "to": "@project-b/email-protocol"
+    },
+    {
+      "from": "@project-b/agent-e2e-test",
+      "to": "@project-b/env"
+    },
+    {
+      "from": "@project-b/agent-e2e-test",
+      "to": "@project-b/protocol"
+    },
+    {
+      "from": "@project-b/agent-e2e-test",
+      "to": "@project-b/voice"
+    },
+    {
+      "from": "@project-b/agent-runtime",
+      "to": "@project-b/config"
+    },
+    {
+      "from": "@project-b/api",
+      "to": "@project-b/auth"
+    },
+    {
+      "from": "@project-b/api",
+      "to": "@project-b/config"
+    },
+    {
+      "from": "@project-b/api",
+      "to": "@project-b/db"
+    },
+    {
+      "from": "@project-b/api",
+      "to": "@project-b/email-protocol"
+    },
+    {
+      "from": "@project-b/api",
+      "to": "@project-b/env"
+    },
+    {
+      "from": "@project-b/api",
+      "to": "@project-b/protocol"
+    },
+    {
+      "from": "@project-b/auth",
+      "to": "@project-b/config"
+    },
+    {
+      "from": "@project-b/auth",
+      "to": "@project-b/db"
+    },
+    {
+      "from": "@project-b/auth",
+      "to": "@project-b/env"
+    },
+    {
+      "from": "@project-b/db",
+      "to": "@project-b/config"
+    },
+    {
+      "from": "@project-b/db",
+      "to": "@project-b/email-protocol"
+    },
+    {
+      "from": "@project-b/db",
+      "to": "@project-b/env"
+    },
+    {
+      "from": "@project-b/do-agent",
+      "to": "@project-b/agent-runtime"
+    },
+    {
+      "from": "@project-b/do-agent",
+      "to": "@project-b/api"
+    },
+    {
+      "from": "@project-b/do-agent",
+      "to": "@project-b/config"
+    },
+    {
+      "from": "@project-b/do-agent",
+      "to": "@project-b/db"
+    },
+    {
+      "from": "@project-b/do-agent",
+      "to": "@project-b/do-relay"
+    },
+    {
+      "from": "@project-b/do-agent",
+      "to": "@project-b/email-protocol"
+    },
+    {
+      "from": "@project-b/do-agent",
+      "to": "@project-b/protocol"
+    },
+    {
+      "from": "@project-b/do-container",
+      "to": "@project-b/config"
+    },
+    {
+      "from": "@project-b/do-relay",
+      "to": "@project-b/config"
+    },
+    {
+      "from": "@project-b/do-relay",
+      "to": "@project-b/protocol"
+    },
+    {
+      "from": "@project-b/do-sidecar",
+      "to": "@project-b/config"
+    },
+    {
+      "from": "@project-b/e2e-test",
+      "to": "@project-b/api"
+    },
+    {
+      "from": "@project-b/e2e-test",
+      "to": "@project-b/auth"
+    },
+    {
+      "from": "@project-b/e2e-test",
+      "to": "@project-b/config"
+    },
+    {
+      "from": "@project-b/e2e-test",
+      "to": "@project-b/db"
+    },
+    {
+      "from": "@project-b/e2e-test",
+      "to": "@project-b/do-relay"
+    },
+    {
+      "from": "@project-b/e2e-test",
+      "to": "@project-b/env"
+    },
+    {
+      "from": "@project-b/e2e-test",
+      "to": "@project-b/protocol"
+    },
+    {
+      "from": "@project-b/email-protocol",
+      "to": "@project-b/config"
+    },
+    {
+      "from": "@project-b/email-sdk-ts",
+      "to": "@project-b/config"
+    },
+    {
+      "from": "@project-b/email-sdk-ts",
+      "to": "@project-b/email-protocol"
+    },
+    {
+      "from": "@project-b/env",
+      "to": "@project-b/config"
+    },
+    {
+      "from": "@project-b/env",
+      "to": "@project-b/infra"
+    },
+    {
+      "from": "@project-b/infra",
+      "to": "@project-b/config"
+    },
+    {
+      "from": "@project-b/protocol",
+      "to": "@project-b/config"
+    },
+    {
+      "from": "@project-b/ui",
+      "to": "@project-b/config"
+    },
+    {
+      "from": "@project-b/voice",
+      "to": "@project-b/agent-runtime"
+    },
+    {
+      "from": "@project-b/voice",
+      "to": "@project-b/api"
+    },
+    {
+      "from": "@project-b/voice",
+      "to": "@project-b/config"
+    },
+    {
+      "from": "@project-b/voice",
+      "to": "@project-b/db"
+    },
+    {
+      "from": "@project-b/voice",
+      "to": "@project-b/do-agent"
+    },
+    {
+      "from": "server",
+      "to": "@project-b/agent-runtime"
+    },
+    {
+      "from": "server",
+      "to": "@project-b/api"
+    },
+    {
+      "from": "server",
+      "to": "@project-b/auth"
+    },
+    {
+      "from": "server",
+      "to": "@project-b/config"
+    },
+    {
+      "from": "server",
+      "to": "@project-b/db"
+    },
+    {
+      "from": "server",
+      "to": "@project-b/do-agent"
+    },
+    {
+      "from": "server",
+      "to": "@project-b/do-container"
+    },
+    {
+      "from": "server",
+      "to": "@project-b/do-relay"
+    },
+    {
+      "from": "server",
+      "to": "@project-b/email-protocol"
+    },
+    {
+      "from": "server",
+      "to": "@project-b/env"
+    },
+    {
+      "from": "server",
+      "to": "@project-b/voice"
+    },
+    {
+      "from": "web",
+      "to": "@project-b/api"
+    },
+    {
+      "from": "web",
+      "to": "@project-b/auth"
+    },
+    {
+      "from": "web",
+      "to": "@project-b/config"
+    },
+    {
+      "from": "web",
+      "to": "@project-b/db"
+    },
+    {
+      "from": "web",
+      "to": "@project-b/env"
+    },
+    {
+      "from": "web",
+      "to": "@project-b/protocol"
+    },
+    {
+      "from": "web",
+      "to": "@project-b/ui"
+    },
+    {
+      "from": "web",
+      "to": "@project-b/voice"
+    }
+  ]
+}

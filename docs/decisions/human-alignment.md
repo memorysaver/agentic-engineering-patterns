@@ -13,7 +13,7 @@
 > committed manifest rather than filename sort (D2).
 >
 > **Revision 3 (2026-07-24):** after a full-pipeline simulation against a real
-> consumer (looplia, 395 stories) and the owner's readability verdict on the
+> consumer (project-b, 395 stories) and the owner's readability verdict on the
 > result. Two changes: the **cold-reader contract** replaces the warm-context
 > reader model — every surfaced item speaks plain language first with the system
 > identifier demoted to a provenance anchor (D2, D4) — and five derivation-spec
@@ -31,7 +31,7 @@
 > deferred archify upgrade path activates now. Band 4's architecture view renders
 > through **archify cross-invocation** (typed IR → schema + layout gates + repair
 > receipts → delivered companion artifact, embedded in the brief); mermaid remains
-> only for the LIFECYCLE vocabulary mini-diagrams. Proven live in the looplia
+> only for the LIFECYCLE vocabulary mini-diagrams. Proven live in the project-b
 > simulation (evidence in D7).
 >
 > **Revision 6 (2026-07-25):** three owner rulings, all proven in the simulation
@@ -47,11 +47,11 @@
 > mermaid CDN dependency is eliminated from the primary path.
 >
 > **Revision 7 (2026-07-25):** a review pass re-derived every simulation number
-> from the looplia repo and the surviving artifacts, and found three derivation
+> from the project-b repo and the surviving artifacts, and found three derivation
 > specs that name fields the real consumer never populates. Corrections: drift 1
 > derives from the coverage counters, not `coverage.uncovered` (which is a
 > `/aep-build` worklist, empty precisely when the gate is `not_started`); schema
-> tolerance is **field-level**, not section-level (looplia's `amendment_log`
+> tolerance is **field-level**, not section-level (project-b's `amendment_log`
 > entries carry no `status`, and `calibration.plan` has no `status` field
 > upstream either, so that predicate is respecified as plan-minus-history); band
 > 2 admits `passed` gates as fact and `scripted_passed` only under an EXP chip;
@@ -416,7 +416,7 @@ Carried over from the SIBYL contract, unchanged in meaning:
   artifacts to the light theme. Full viewer interactivity (guided views, passport,
   Present, exports) survives embedding. Cost stated honestly and now measured:
   each embedded artifact carries archify's ~600 KB viewer runtime, so a
-  five-diagram brief is ~3 MB (the looplia one-pager is 3,218,172 bytes). That
+  five-diagram brief is ~3 MB (the project-b one-pager is 3,218,172 bytes). That
   cost is bounded by D2's retention ruling — Phase 4 keeps the newest three
   briefs and prunes the rest, so `docs/human-alignment/` stays under ~10 MB and
   briefs stay in git rather than behind `.gitignore`.
@@ -643,7 +643,7 @@ pending` (→ `approve ▸`), object-map `status == draft` (→ `/aep-model ▸`
 - **Calibration is derived from plan-minus-history, not from a status field**
   (revision 7). The schema's `calibration.plan[]` entry is
   `layer · dimensions · trigger` — there is **no `status` field** to test, in
-  looplia or upstream; the earlier "pending `.5` checkpoints" phrasing named a
+  project-b or upstream; the earlier "pending `.5` checkpoints" phrasing named a
   field that has never existed, and the simulation's `calibration_status` came
   back as fifteen nulls. The derivable predicate is the one `/aep-calibrate` step
   1 already uses: a plan entry is **due** when its layer is at or below the
@@ -664,9 +664,9 @@ pending` (→ `approve ▸`), object-map `status == draft` (→ `/aep-model ▸`
   in this round).
 - **Schema tolerance is field-level, not section-level** (revision 7 correction).
   Real consumer YAMLs diverge from the current schema in two different ways, and
-  only the first was handled: whole **sections** may be absent (looplia has no
+  only the first was handled: whole **sections** may be absent (project-b has no
   `product`, no `opportunity`), and **fields inside present sections** may be
-  absent — looplia's `architecture.amendment_log[]` entries carry only
+  absent — project-b's `architecture.amendment_log[]` entries carry only
   `date` + `summary`, though the schema defines
   `status: pending | accepted | rejected`. The simulation recorded the two missing
   sections and silently derived nothing from `amendment_log`, which is exactly the
@@ -694,7 +694,7 @@ coverage.criteria_covered > 0` on a layer gate: declared acceptance criteria
    no evidence covers. **The counters are the derivation, not `coverage.uncovered`**
    (revision 7 correction): `uncovered[]` is the worklist `/aep-build` fills while
    authoring the missing scenarios, so it is empty precisely when the gate never
-   opened — in looplia all nine coverage-bearing gates have `uncovered: []`,
+   opened — in project-b all nine coverage-bearing gates have `uncovered: []`,
    including L32 at 0-of-38 covered. A spec pointed at that field would have
    derived zero drift from the very case cited as this detector's motivating
    finding. `uncovered[]` remains the **detail channel**: when populated it names
@@ -705,26 +705,26 @@ coverage.criteria_covered > 0` on a layer gate: declared acceptance criteria
    stated on the surface when relevant.
 2. **Plan behind the architecture** — `architecture.amendment_log[].status ==
 pending`: stories were mapped against a structure that has since been amended.
-   Subject to the field-level tolerance rule above — looplia's entries carry no
+   Subject to the field-level tolerance rule above — project-b's entries carry no
    `status`, so this detector is _skipped and recorded_, not read as "no pending
    amendments".
 3. **Reality resisting intent** — `failure_logs` **on open stories**: a story that
    repeatedly fails is evidence the spec and the code disagree. Closed stories'
    failure logs are history — overcome, kept as record, counted separately
-   (simulation finding: of looplia's 12 log-bearing stories, 10 were closed —
+   (simulation finding: of project-b's 12 log-bearing stories, 10 were closed —
    8 `completed` and 2 `deferred` — leaving only the 2 `failed` ones as drift).
 4. **Control-plane incoherence** — layer↔story-state disagreement: the OBS-4
    class. The predicate is **at least one `completed` story in a layer whose gate
    is `not_started`** — stated explicitly because the simulation prose reported
    this three different ways (6 layers where _every_ story is completed; 8 if
    `deferred` counts as done; 9 under the predicate the script actually ran).
-   One reading, written down: 9 in looplia at `d5212571`. Follow-up (separate PR):
+   One reading, written down: 9 in project-b at `d5212571`. Follow-up (separate PR):
    the same check joins `/aep-validate` so incoherence cannot silently pass again
    — SIBYL's own OBS-4 disposition, applied to AEP.
 5. **Declared vs. actual architecture** (Phase 1.5): the strongest drift form
    ("the YAML says A does not depend on B; the code says it does"), and the exact
    move that earned OBS-5's trust in SIBYL (its architecture graph was the one
-   artifact derived from real imports). The looplia scan made the gap concrete:
+   artifact derived from real imports). The project-b scan made the gap concrete:
    the code is 20 workspace packages while the YAML declares 32 conceptual
    modules — zero name overlap, and no schema field binds a declared module to
    code paths, so the declared architecture is **not code-addressable at all**
@@ -735,7 +735,7 @@ pending`: stories were mapped against a structure that has since been amended.
    Toolchain-dependent, so it degrades honestly: no tool → the view is marked
    `unverified`, never blocked.
 
-**Simulation evidence (2026-07-24).** The full pipeline ran against looplia
+**Simulation evidence (2026-07-24).** The full pipeline ran against project-b
 (`product-context.yaml`, 25k lines, 395 stories, at `d5212571`): a derive script
 implementing both specs produced facts JSON (attention set of 2 — both `failed`
 stories, the one ask chosen deterministically; 28 raw drift facts), the brief
@@ -743,7 +743,7 @@ rendered all six sections with every number JS-rendered from embedded facts, and
 the mechanical audit plus a browser render check passed. The run surfaced the
 five spec corrections now folded in above (intent scope; open-vs-historical
 failure logs; schema tolerance; field typing; plus the D3 paper-overlay fix for
-light sections) and real looplia findings (9 layers holding `completed` stories
+light sections) and real project-b findings (9 layers holding `completed` stories
 under a `not_started` gate; a gate named `completed` outside the two-phase
 vocabulary; L32's 38 criteria with zero coverage). The owner's readability
 verdict on the result — system vocabulary is illegible even to a returning
@@ -783,7 +783,7 @@ Consequently:
   name-comparison produced.
 
 **Re-derivation pass (2026-07-25, revision 7).** Every number above was recomputed
-from the looplia repo and the surviving artifacts. The counts hold — 395 stories,
+from the project-b repo and the surviving artifacts. The counts hold — 395 stories,
 25,074 lines at `d5212571`, attention set of 2 (both `failed`; zero `in_review`),
 28 raw drift facts (12 + 9 + 7), 32 declared modules with zero `paths` fields
 against 20 code packages, code graph 20 nodes / 68 edges, domain overview 9
@@ -800,7 +800,7 @@ while its own anchor said otherwise. The first is the argument for regeneration;
 the second is why D2 now binds band 2 to `passed`.
 
 Revisions 5–6 were proven in the same simulation before being written. The
-deterministic pipeline ran end-to-end on looplia: workspace scan (20 packages,
+deterministic pipeline ran end-to-end on project-b: workspace scan (20 packages,
 68 edges) → rules R1–R10 → mechanical receipt consumer (gutter routing, one
 round) → archify `validate` green with **0 errors** → `deliver`. Five artifacts
 shipped in the final single-file brief — the domain overview (9 domains, 7 edges
@@ -812,12 +812,12 @@ narrative, the AEP loop as a `workflow` diagram, and the story state machine as 
 are unused until a structured source exists (recorded in Horizon).
 
 The revision-5 archify integration was then proven in the same simulation: a
-12-component typed IR authored from looplia's declared modules (zh labels, real
+12-component typed IR authored from project-b's declared modules (zh labels, real
 module names as sublabels, two boundaries, three guided views) went through
 archify `validate` — which caught two defects with actionable repair receipts (a
 card-dot enum violation; a connection label overlapping the `exec` component,
 fixed with the receipt's suggested `labelAt`) — and `deliver`, producing a 614 KB
-interactive artifact the brief embeds. During the same session looplia's HEAD
+interactive artifact the brief embeds. During the same session project-b's HEAD
 advanced mid-simulation (L32-005 landed; its gate flipped to `scripted_passed`),
 which surfaced two more authoring rules now in D4's spirit: changelog
 translations bind by entry id + kind, never by list position, and no authored

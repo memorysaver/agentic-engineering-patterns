@@ -13,7 +13,7 @@
 > nothing, so it cannot state anything wrongly.
 
 These files are the **unedited output** of `/aep-human-alignment` run against a
-real consumer repo (looplia, 396 stories, 41 layer gates, 21 workspace packages)
+real consumer repo (project-b, 396 stories, 41 layer gates, 21 workspace packages)
 at commit `65e359c6`. Nothing here was hand-tuned for presentation — the prose
 was authored by the agent under the skill's rules, every number was bound by
 `derive.mjs`, and `audit.mjs` passed before assembly.
@@ -70,6 +70,6 @@ to do it. Better compression has to come from something that carries meaning.
 The facts change every time the consumer's HEAD moves — that is the point of the
 design, and it happened during development: one drift fact cited in the decision
 doc (a gate with 38 criteria and zero coverage) had already resolved itself
-before the implementation shipped. Re-running against looplia today will not
+before the implementation shipped. Re-running against project-b today will not
 reproduce this file byte for byte; re-running at `65e359c6` reproduces the
 diagrams byte for byte and the facts exactly, while the prose is authored fresh.

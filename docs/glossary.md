@@ -548,7 +548,7 @@ See also: **Classification Authority**, **Environment Preflight Gate**, **Recove
 
 A merge gate requiring a perfect aggregate score ("exactly 5.00/5.00 with zero findings"). What Goodhart's law predicts: it trains the generator to satisfy the evaluator rather than the product, and turns ordinary convergence into round exhaustion. PASS is **zero blocking findings** against the hard-failure thresholds — never perfection.
 
-**Where it appears:** `scoring-framework.md` (Hard Failure Thresholds + Anti-Patterns); `docs/decisions/verification-economics.md` (the looplia `l31-014` counterexample).
+**Where it appears:** `scoring-framework.md` (Hard Failure Thresholds + Anti-Patterns); `docs/decisions/verification-economics.md` (the project-b `l31-014` counterexample).
 
 See also: **Quality Dimension**, **Verification Ratchet**
 

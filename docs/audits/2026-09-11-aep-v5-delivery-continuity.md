@@ -3,7 +3,7 @@
 Date: 2026-09-11
 Implementation commit: `6ccb847c35d39c1c2658cabb9d5a2b272c0ba73e`
 Decision: [Native delivery continuity](../decisions/aep-v5-delivery-continuity.md)
-Trigger: [MITS reflection-to-implementation observation](../lessons/2026-09-10-mits-reflection-to-implementation.md)
+Trigger: [Project A reflection-to-implementation observation](../lessons/2026-09-10-project-a-reflection-to-implementation.md)
 
 ## Result
 
@@ -45,6 +45,6 @@ These results are simulated instruction interpretation, not proof of autonomous 
 - Archive SHA-256: `7dc067e6cfad728c1d56da45280511a1675a5d39c96e2a38e74d7704be32b72f`.
 - Build provenance and previous executable path: `~/.local/share/aep/builds/98689e4053158a96/manifest.json`. Prior binary retained for rollback.
 - Copied-binary proof: `~/.local/share/aep/trials/2026-09-11-delivery-continuity/summary.json` (`passed: true`, `fixture_removed: true`).
-- Read-only installed CLI inspection of MITS-109 reports readiness at head `8d275417989befc25e0762a0ee2da86272cd571a`, four checks and one review, with the new delivery/closure guidance. This did not initiate MITS PR creation, integration or cleanup.
+- Read-only installed CLI inspection of A-109 reports readiness at head `8d275417989befc25e0762a0ee2da86272cd571a`, four checks and one review, with the new delivery/closure guidance. This did not initiate Project A PR creation, integration or cleanup.
 
-The next live downstream interaction must read the updated guidance to evaluate actual autonomous delivery behavior. Existing session memory can still contain earlier skill output. MITS full wrap behavior, remote provider execution and cross-platform runtime behavior remain unproven by this correction's local checks.
+The next live downstream interaction must read the updated guidance to evaluate actual autonomous delivery behavior. Existing session memory can still contain earlier skill output. Project A full wrap behavior, remote provider execution and cross-platform runtime behavior remain unproven by this correction's local checks.

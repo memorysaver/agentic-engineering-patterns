@@ -4,7 +4,7 @@
 **Applies to:** any consumer repo re-pinning v2.5.0 → v3.2.0 ·
 **Companions:** [`aep-v3.0.0-migration-guide.md`](aep-v3.0.0-migration-guide.md) (the v2.x→v3.0.0
 lean-skills cutover mechanics this jump crosses),
-[`audits/2026-07-15-looplia-v2.5.0-to-v3.0.0-compatibility.md`](audits/2026-07-15-looplia-v2.5.0-to-v3.0.0-compatibility.md),
+[`audits/2026-07-15-project-b-v2.5.0-to-v3.0.0-compatibility.md`](audits/2026-07-15-project-b-v2.5.0-to-v3.0.0-compatibility.md),
 and SIBYL's instantiations: `docs/reviews/2026-07-16-aep-v3.2.0-migration-audit.md` (audit shape) +
 PR #11 (artifact-plane execution shape).
 
@@ -30,7 +30,7 @@ operator decisions the re-pin must not smuggle in.
    actuals only (budget-box cold start).
 6. **Human stop-loss until the tier cap lands** — if an eval loop repeats same-class findings for two
    consecutive rounds, stop and surface evidence (rounds, tokens, USD) to the human. The measured
-   SIBYL/looplia failure mode is unbounded repeated verification; the cap is Phase-4 work, so until it
+   SIBYL/project-b failure mode is unbounded repeated verification; the cap is Phase-4 work, so until it
    exists the human IS the cap.
 
 ## Phase 1 — Mechanical re-pin (PR 1, ~30 min)
@@ -133,7 +133,7 @@ choice above came from one of them:
 
 1. **Layout**: where do real skill files live vs symlinks? (Match the repo's existing non-AEP pattern.)
 2. **Self-implementing?** If the repo's product runs its own agent loop (SIBYL), Plane B is the bulk of
-   the work; if it's a plain consumer (looplia), Plane B collapses to AGENTS.md wording checks.
+   the work; if it's a plain consumer (project-b), Plane B collapses to AGENTS.md wording checks.
 3. **In-flight work**: what is mid-build right now, and does its worker read the vendored tree?
 4. **Policy reality**: dogfood target / live_policy / milestone gates / trust-boundary paths are
    per-project facts, not defaults to copy.

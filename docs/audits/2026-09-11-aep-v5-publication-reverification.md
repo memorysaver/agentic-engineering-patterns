@@ -1,9 +1,9 @@
-# MITS-108 findings: fixes and installed preview verification
+# A-108 findings: fixes and installed preview verification
 
 Date: 2026-09-11
 Source commit: `005a89ed91558799b20f8c06e04b8dc161db49c7`
 Decision: [Publication after integration context changes](../decisions/aep-v5-publication-reverification.md)
-Observation: [MITS-108 development](../lessons/2026-09-11-mits108-development-observation.md)
+Observation: [A-108 development](../lessons/2026-09-11-project-a-108-development-observation.md)
 
 ## Changes and checks
 
@@ -35,4 +35,4 @@ The executable probe uses the default self-verification policy; it does not clai
 - Source identity, installation time, previous binary and trial paths: `~/.local/share/aep/builds/aec8e775495a49ff/manifest.json`.
 - Previous build `b75080a5edabd5b0` remains available for rollback.
 
-Herdr reported MITS `w4:p2` idle immediately before installation. Installed PATH/version/digest were verified, then a read-only `deliver plan --story MITS-108` showed its existing integration with `candidate_ready=true`, `integrated=true`, `eligible=false`. MITS records and product files were not changed. This is a local preview reinstall; no public release/tag was created.
+Herdr reported Project A `w4:p2` idle immediately before installation. Installed PATH/version/digest were verified, then a read-only `deliver plan --story A-108` showed its existing integration with `candidate_ready=true`, `integrated=true`, `eligible=false`. Project A records and product files were not changed. This is a local preview reinstall; no public release/tag was created.

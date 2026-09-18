@@ -1,7 +1,7 @@
-# Lessons Learned: Looplia Run Layer 0.5 (UI Polish)
+# Lessons Learned: Project B Run Layer 0.5 (UI Polish)
 
 **Date:** 2026-04-03
-**Project:** Looplia Run (remote shell execution platform)
+**Project:** Project B Run (remote shell execution platform)
 **Layer:** 0.5 (UI Polish Pass)
 **Stories:** 4 (landing page, auth polish, dashboard detail, E2E visual test)
 

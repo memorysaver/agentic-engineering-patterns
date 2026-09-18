@@ -578,7 +578,7 @@
       "reason": "Declared environment and runtime mapping. Relevant to an Option Set's split-versus-keep tradeoff, but as declaration rather than measurement; the Option Set states runtime cost from the code scan instead."
     },
     {
-      "path": "architecture.deployment.module_runtime.looplia-agent",
+      "path": "architecture.deployment.module_runtime.project-b-agent",
       "populated": 1,
       "reason": "Declared environment and runtime mapping. Relevant to an Option Set's split-versus-keep tradeoff, but as declaration rather than measurement; the Option Set states runtime cost from the code scan instead."
     },

@@ -4,7 +4,7 @@
   "version": "aep 5.0.0-preview.1",
   "projects": [
     {
-      "project": "looplia",
+      "project": "project-b",
       "branch": "migration/aep-v5-preview",
       "head": "e17b05bc0ae33552df9a340fa440e2de82161a0e",
       "stories": 416,
@@ -69,7 +69,7 @@
       "read_only": true
     },
     {
-      "project": "MITS",
+      "project": "Project A",
       "branch": "migration/aep-v5-preview",
       "head": "8471b5eeaefc26168e5299f05d33588d81f49665",
       "stories": 107,
@@ -106,12 +106,12 @@
           "ok": true
         },
         {
-          "command": "aep context MITS-107",
+          "command": "aep context A-107",
           "exit_code": 0,
           "ok": true
         },
         {
-          "command": "aep timeline MITS-107",
+          "command": "aep timeline A-107",
           "exit_code": 0,
           "ok": true
         },
@@ -130,7 +130,7 @@
       "read_only": true
     },
     {
-      "project": "Rewarc-AutoResearch",
+      "project": "Project C",
       "branch": "migration/aep-v5-preview",
       "head": "f00aa60bf55e5a50266919fb13af219e893492a5",
       "stories": 96,

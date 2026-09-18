@@ -51,4 +51,4 @@ Downstream pilot 的核心觀察：能否從新結構找到 intent、rules、dep
 
 ## Downstream 實驗選擇
 
-使用者先選定 Looplia，再明確加入自己的 MITS（Rust）與 Rewarc。三者同步使用獨立 local clone 觀察升級，保留原專案與未提交工作。實驗分別記錄 context 是否完整、既有 policy／consumer 是否仍有效，以及 self verification 的實際結果。Apply、驗證通過與恢復產品工作是不同階段；不以放寬規則換取 migration 成功。結果與修正收錄於 [三專案實驗報告](../audits/2026-09-10-aep-v5-downstream-pilots.md)。
+使用者先選定 Project B，再明確加入自己的 Project A（Rust）與 Project C。三者同步使用獨立 local clone 觀察升級，保留原專案與未提交工作。實驗分別記錄 context 是否完整、既有 policy／consumer 是否仍有效，以及 self verification 的實際結果。Apply、驗證通過與恢復產品工作是不同階段；不以放寬規則換取 migration 成功。結果與修正收錄於 [三專案實驗報告](../audits/2026-09-10-aep-v5-downstream-pilots.md)。

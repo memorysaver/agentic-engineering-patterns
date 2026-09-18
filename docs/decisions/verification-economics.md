@@ -30,7 +30,7 @@ judging content stays judgment.
 
 > **Sourcing note:** Sourced from the 2026-07-16 cross-repo research session over SIBYL (story
 > SIBYL-189, `openspec/changes/archive/2026-07-15-SIBYL-189/`, and
-> `skills/e2e-test/results/2026-07-16-s189-current-position.md`) and looplia (Layer 31,
+> `skills/e2e-test/results/2026-07-16-s189-current-position.md`) and project-b (Layer 31,
 > `.dev-workflow/autopilot-status.md`, `.dev-workflow/dogfood-l31-006.md`, lessons
 > `l31-006`/`l31-014`), plus the framing that in the RLVR era stronger generator models make
 > LLM-judged verification simultaneously more expensive and more gameable — so verification must
@@ -45,7 +45,7 @@ judging content stays judgment.
 
 Both v2.5.0 consumers now spend the majority of their loop on verification and process:
 
-- **looplia:** of the last 100 commits, **16 are feature-bearing PR merges; 84 are
+- **project-b:** of the last 100 commits, **16 are feature-bearing PR merges; 84 are
   dispatch/design/prove/complete/archive/lessons overhead** (≈1:5.3). Layer 31's 14 stories all
   merged within three days — then the layer halted at autopilot tick 444 with **zero further product
   advance**: the mandatory post-deploy production dogfood failed on an **environment
@@ -58,7 +58,7 @@ Both v2.5.0 consumers now spend the majority of their loop on verification and p
   that never wired the fixture binding — which is exactly why the taxonomy below is per-finding, not
   per-incident.) Verification cost is uninstrumented there (`stats.total_cost_usd: 0` after 444
   ticks).
-- **looplia's merge gate is a perfect-score gate:** a lesson (`l31-014`) ratcheted the threshold to
+- **project-b's merge gate is a perfect-score gate:** a lesson (`l31-014`) ratcheted the threshold to
   _"the independent evaluator must return exactly 5.00/5.00 with zero findings before PR/merge."_
   Upstream AEP requires only "no blocking findings remaining"
   (`gen-eval/SKILL.md` → Step 5). The perfect-score variant is what Goodhart's law predicts: it
@@ -170,7 +170,7 @@ anything without qualifying evidence defaults to `product-defect`:
 **Ownership check (dual-class incidents).** When a refused precondition is created or managed by
 artifacts _in this repo_ (deploy config, IaC, wrangler bindings, seed scripts), the ops checklist is
 paired with a `product-defect` finding for the wiring — otherwise the ops path becomes a way to mask
-product defects behind hand-repair. looplia's secret incident is the worked case: the missing GitHub
+product defects behind hand-repair. project-b's secret incident is the worked case: the missing GitHub
 secret was `environment`; the deploy config that silently omitted the fixture binding and the
 tracked literal-password fallback were `product-defect` findings discovered by the same probe.
 
@@ -192,7 +192,7 @@ already documented):
   `product-defect`; `timeout` / `context_overflow` → `harness-flake`; `merge_conflict` → sequencing
   → `/aep-dispatch`.
 
-**The environment preflight gate.** Probes split into two sets, because half of looplia's L31
+**The environment preflight gate.** Probes split into two sets, because half of project-b's L31
 failure was knowable before any merge:
 
 - **Deploy-independent probes** — required secret _names_ present in CI config, expected account
@@ -363,7 +363,7 @@ light` instead of carrying its own eval-loop toggle, collapsing the repo's three
 - **Threshold semantics (all tiers):** PASS means **zero blocking findings** against the
   hard-failure thresholds (`gen-eval/references/scoring-framework.md:107`). A perfect aggregate
   score is **never** a gate condition — perfect-score gates train evaluator-gaming and block
-  convergence (looplia's 5.00/5.00 rule is the counterexample).
+  convergence (project-b's 5.00/5.00 rule is the counterexample).
 - The existing round protocol (`gen-eval/references/eval-protocol.md:116`, `max_rounds` default 5)
   becomes tier-derived; `/aep-build` Phase 5's "max 5" (`build/SKILL.md:126`) reads the tier from
   the brief.
@@ -374,7 +374,7 @@ light` instead of carrying its own eval-loop toggle, collapsing the repo's three
 fields split into a **mandatory file-derivable floor** — every field marked `MUST` below is
 computable from artifacts the workflow already writes, and an implementation that leaves them null
 has not implemented this design — and best-effort fields that stay nullable. The motivating
-evidence is the warning: looplia ran 444 ticks with `total_cost_usd: 0`; a calibration loop built
+evidence is the warning: project-b ran 444 ticks with `total_cost_usd: 0`; a calibration loop built
 on optional sensors starves.
 
 ```yaml
@@ -426,7 +426,7 @@ Consumers close the loop:
   instrumented layer runs with no box and only records; its observed actuals plus a human-chosen
   margin become the next layer's expected values. When actuals overrun the box, `/aep-wrap`
   surfaces a **scope-vs-verification tradeoff to the human** at the layer-advance gate — the loop
-  asks, it does not silently grind. (looplia's tick-444 halt is the degenerate form of this
+  asks, it does not silently grind. (project-b's tick-444 halt is the degenerate form of this
   question, asked ten rounds too late.)
 
 ### 4. Regression replay moves from story to layer granularity
@@ -442,7 +442,7 @@ Consumers close the loop:
   prior-layer replay stays here, once per layer. For large layers, a **mid-layer full-replay
   checkpoint every k stories** keeps gate-time bisects tractable — and k is **derived, not an
   unguided planning judgment**: default `k = min(5, ⌈N/3⌉)` for a layer of N stories, overridable
-  by the human (looplia's L31 had 14 stories — the default gives k=5, bounding defect lifetime to
+  by the human (project-b's L31 had 14 stories — the default gives k=5, bounding defect lifetime to
   5 merges).
 - **The honest tradeoff:** executions drop from O(layers × stories) to O(stories + layers), but a
   cross-cutting regression a story's diff does not intersect now lives until the next checkpoint or
@@ -493,7 +493,7 @@ Additionally:
 ## What upstream changes now (v3.1.0 / v3.2.0) vs future
 
 **The two halves of this design carry unequal evidence and get unequal commitment.** The
-taxonomy + preflight + replay half is proven by incident — it neutralizes looplia's L31 failure end
+taxonomy + preflight + replay half is proven by incident — it neutralizes project-b's L31 failure end
 to end. The tiers + recipes + calibration half is extrapolated from one story (SIBYL-189) and
 carries most of the prose surface. They therefore ship in two releases: **v3.1.0** = items marked
 (3.1) below — taxonomy carriers, preflight, deterministic security gates, replay move,
@@ -609,7 +609,7 @@ required schema fields:
 - Any AEP-shipped verifier runtime, verifier-model training loop, or cost-optimal scheduler. AEP
   stays prose; the probes and gates belong to the project.
 - Rewriting `/aep-validate`'s protocol checker (its known prose drift is tracked separately in the
-  [v2.5→v3 compatibility audit](../audits/2026-07-15-looplia-v2.5.0-to-v3.0.0-compatibility.md)).
+  [v2.5→v3 compatibility audit](../audits/2026-07-15-project-b-v2.5.0-to-v3.0.0-compatibility.md)).
 
 ---
 
@@ -640,7 +640,7 @@ sets a tier by hand.
 
 **Consumer adoption step (mid-layer re-pins):** a consumer re-pinning with open failed/blocked gate
 records runs a **one-time reclassification pass before any dispatch** — existing failure records are
-re-labeled under the taxonomy (looplia's L31 `prod_dogfood: FAIL` becomes `environment` + ops
+re-labeled under the taxonomy (project-b's L31 `prod_dogfood: FAIL` becomes `environment` + ops
 checklist), and acceptance criteria authored solely by misrouted recovery stories are re-sliced out
 of the coverage denominator via `/aep-reflect` (`scope`), so a poisoned gate can reach `passed` once
 the environment is actually repaired.
@@ -681,7 +681,7 @@ tier-economics changes are canaried separately, one release apart.
 
 ## Worked examples
 
-**looplia L31, replayed under this design.** The deploy-independent preflight runs pre-merge on the
+**project-b L31, replayed under this design.** The deploy-independent preflight runs pre-merge on the
 first L31 story: `REFUSING [dogfood-secret-absent:LOOPLIA_E2E_FIXTURE_SECRET]` (the GitHub secret
 name was checkable without any deploy) — the ops checklist surfaces days before the gate. Whatever
 slips through, the gate-time target-bound preflight refuses with
@@ -704,7 +704,7 @@ fix-and-reverify cycle, so the catch quality is unchanged. What the tier removes
 full-suite run (~13 minutes; the land verify already runs the suite on merged main) and the
 top-shelf evaluator profile for a display-positioning story. The PTY journey and ledger-equality
 dogfood stay: they are the tamper-evident half of the gate. (An integration-gate story like
-looplia's L31-006 also derives `standard` — and that is safe **because the layer gate's depth is
+project-b's L31-006 also derives `standard` — and that is safe **because the layer gate's depth is
 wrap-owned**, not a property of the story's tier.)
 
 **SIBYL's `live_policy: milestone_gates_only`** (live-model dogfoods only at the L2/L4/L6 milestone
@@ -784,8 +784,8 @@ but its score must control the loop *economically*, not just mechanically.
 - `SIBYL/openspec/changes/archive/2026-07-15-SIBYL-189/` (`tasks.md`, `execution/eval.yaml`) and
   `SIBYL/skills/e2e-test/results/2026-07-16-s189-current-position.md` — the S189 verification
   lifecycle and the ledger-equality oracle.
-- `looplia/.dev-workflow/autopilot-status.md`, `looplia/.dev-workflow/dogfood-l31-006.md` and
-  `…/dogfood-l31-006/02-auth-recovery-audit.md`, `looplia/lessons-learned/l31-014-…md` — the L31
+- `project-b/.dev-workflow/autopilot-status.md`, `project-b/.dev-workflow/dogfood-l31-006.md` and
+  `…/dogfood-l31-006/02-auth-recovery-audit.md`, `project-b/lessons-learned/l31-014-…md` — the L31
   halt, the environment misrouting, the dual-class product findings, and the perfect-score ratchet.
 - `SIBYL/product-context.yaml` → `topology.routing.dogfood.live_policy: milestone_gates_only` and
   `SIBYL/skills/e2e-test/tool-selection.md` (SKIP-not-FAIL degrade) — the downstream prior art for
@@ -794,7 +794,7 @@ but its score must control the loop *economically*, not just mechanically.
   and typed-gate pattern this document extends to verification routing, depth, and accounting.
 - [build-convergence-pipeline.md](build-convergence-pipeline.md) — the execution-record gather this
   document's `verification:` block rides on.
-- [2026-07-15 looplia compatibility audit](../audits/2026-07-15-looplia-v2.5.0-to-v3.0.0-compatibility.md)
+- [2026-07-15 project-b compatibility audit](../audits/2026-07-15-project-b-v2.5.0-to-v3.0.0-compatibility.md)
   and the [v3.0.0 migration guide](../aep-v3.0.0-migration-guide.md) — the v2.5→v3 baseline both
   consumers cross before any of this lands downstream.
 - Affected skills: `/aep-gen-eval`, `/aep-build`, `/aep-wrap`, `/aep-dispatch`, `/aep-reflect`,

@@ -1,16 +1,16 @@
-# MITS layer and wave grouping needed user steering
+# Project A layer and wave grouping needed user steering
 
 Date: 2026-09-11, Asia/Taipei
 Status: live-observed downstream turn, 2 minutes 37 seconds; agent `done`; no records written
-Previous: [story planning](2026-09-11-mits-story-planning.md)
+Previous: [story planning](2026-09-11-project-a-story-planning.md)
 
-After the story-planning turn, the user asked the MITS agent whether the nine new stories were wrapped in a wave or layer. The observer watched pane `w4:p2` without sending any prompt or changing MITS.
+After the story-planning turn, the user asked the Project A agent whether the nine new stories were wrapped in a wave or layer. The observer watched pane `w4:p2` without sending any prompt or changing Project A.
 
 ## Observed behavior
 
-The agent inspected MITS-110 to MITS-118 through native `show` calls and confirmed that `layer` and `wave` were null on every story, while all nine shared `refs` to `evaluation-research-roadmap` and `v2-first-longitudinal-evaluation`. Its context was compacted during the turn.
+The agent inspected A-110 to A-118 through native `show` calls and confirmed that `layer` and `wave` were null on every story, while all nine shared `refs` to `evaluation-research-roadmap` and `v2-first-longitudinal-evaluation`. Its context was compacted during the turn.
 
-It answered that no formal grouping existed and proposed one layer, "build the evaluation and research loop for cross-project learning", with three waves: V2 baseline (110–112), real longitudinal evaluation data (113–115), and continuous evaluation with auto research (116–118). It stated a layer completion criterion: MITS can decide from reproducible experiments whether a memory change improves later work. It said this remained a suggestion and wrote no layer or wave record.
+It answered that no formal grouping existed and proposed one layer, "build the evaluation and research loop for cross-project learning", with three waves: V2 baseline (110–112), real longitudinal evaluation data (113–115), and continuous evaluation with auto research (116–118). It stated a layer completion criterion: Project A can decide from reproducible experiments whether a memory change improves later work. It said this remained a suggestion and wrote no layer or wave record.
 
 Git status and the event directory were unchanged before and after the turn.
 
@@ -22,4 +22,4 @@ Native guidance currently mentions containers in one sentence in the roadmap ski
 
 The proposed AEP follow-up is recorded in [layer and wave encapsulation](../decisions/aep-v5-layer-wave-encapsulation.md).
 
-Evidence: `~/.local/share/aep/trials/2026-09-11-mits-layer-wave/`, including the user prompt, baseline Git status and event list, transcript snapshots and the final transcript.
+Evidence: `~/.local/share/aep/trials/2026-09-11-project-a-layer-wave/`, including the user prompt, baseline Git status and event list, transcript snapshots and the final transcript.
