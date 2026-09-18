@@ -123,6 +123,12 @@ observer_kind = "claude"      # 選用的專案覆寫
 1. 觀察者 pane 開錯地方。原本 split 的是執行 `watch` 的 pane，觀察者落在觀察者自己的 workspace；使用者預期它出現在被觀察 agent 旁邊。改成 `herdr pane split --pane <target>`，觀察者現在開在目標 pane 同一個 tab。已啟動的觀察者用 `herdr pane move` 搬過去。
 2. Codex 的 sandbox 擋住 Herdr socket 與 `~/.aep`。觀察者每跑一個 `herdr` 指令或 `aep eval record` 都要人核准。改成以 codex 為 kind 時，`agent start` 帶 `-s workspace-write -c sandbox_workspace_write.writable_roots=[<AEP home>, <Herdr socket 目錄>]`。其他 kind 不加參數。
 
+## 第一次完整實跑（2026-09-19，一個剛 `aep init` 的新專案）
+
+- 工作 agent 從 `aep init` 起，一輪內讀完 project skill 與 references，建了 stores、三個 checks、專案驗證 skill、兩筆 decision 與兩筆 roadmap，7 筆事件全部帶 note；使用者要求後提交並推送。這是第一個從第一天就照 v5 指引走的專案。
+- 觀察者（以舊的 spawn 方式啟動）完成三筆觀察：基線時序邊界、啟動交接與 23 個檔案雜湊的獨立比對、commit／push 的獨立驗證（remote ref、乾淨工作樹、三個 checks、whitespace）。每筆都寫明哪些是現場看到、哪些是從 transcript 重建、哪些沒有重做。全程沒有對目標送輸入、沒有改專案檔案。規則報告最後只剩 DevOps 四項（沒有 CI、secret scan、lockfile、CHANGELOG）。
+- 兩個摩擦：Codex 的核准對話框（新流程由使用者自己起觀察者後不再是 CLI 的問題）；觀察者輪詢太密（每 45 秒 `agent wait`），使用者直接糾正。observer 參考已改成長 timeout、每個里程碑一次快照一次觀察。
+
 ## 驗證方式
 
 - Rust fixture：對一個小型專案 fixture 跑 `snapshot`／`report`，每條規則各有一個觸發與一個不觸發的案例；`snapshot` 對專案沒有任何寫入（快照前後 tree digest 相同）。
