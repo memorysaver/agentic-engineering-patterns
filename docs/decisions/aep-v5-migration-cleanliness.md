@@ -71,4 +71,7 @@
 - 對三個 downstream 各做一次 A 與 B（使用者授權後），觀察：清理後 `aep check` 通過、`aep --skill` 只列 native 與專案 skill、host 不再列 `/aep-*`；imported 記錄數歸零或全部有處置狀態；AGENTS.md 只剩入口兩句。
 - 對一個沒用過 AEP 的真實專案做 C，觀察 agent 是否能只靠指引與 CLI 建出可用的 roadmap／decision／story，且每筆都有來源。
 
-這份文件只記錄觀察與提案；沒有修改 downstream 專案。
+## 執行紀錄
+
+- 2026-09-18：使用者授權「直接幫我移除 v4，簡化 AGENTS.md」。先改 CLI（PR #39，build `dc7aaf75e0028de9`）：`migrate verify` 接受只有 `aep --skill` 入口的 AGENTS.md；`init` 對已有 migration receipt 的專案不再視為 legacy；migrate 指引加入清理段落。接著在三個專案各做一次提案 A 的前半：移除 `.agents/skills/aep-*` 與 `.claude/skills/aep-*` 共 48 個目錄、`skills-lock.json` 的 24 筆 aep 條目，AGENTS.md 換成兩句入口，以原生 decision `aep-v4-removal`（`--by memorysaver`，三筆事件都帶 `--note`）記錄授權。每個專案清理後 `aep check`、`aep migrate verify`、`aep doctor` 通過，`aep --skill` 只列 8 個內建加專案自己的 skill，`init --dry-run` 無變更。提交：MITS `c1459c9`、looplia `77cb2f8b`、Rewarc `fcdac7f`，各約 450 個檔案、65,470 行刪除；未 push。receipt 內的 legacy sources（openspec、product-context.yaml、product、project-convention、lessons-learned）與 host hook 設定未動，因為 `migrate verify` 仍以它們的 digest 為準；這部分留給提案 A 的 cleanup receipt。證據在 `~/.local/share/aep/trials/2026-09-18-v4-removal/`。
+- 使用者另外指定一個只有 Git 歷史、未用過 AEP 的專案作為提案 C 的實驗對象，待進行。
