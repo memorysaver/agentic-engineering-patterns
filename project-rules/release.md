@@ -2,7 +2,7 @@
 
 A native release couples the Rust binary and embedded `skills/native/` content under the Cargo workspace version. Record a matching `CHANGELOG.md` entry. Update the default config/entrypoint version, native documentation, and migration instructions together. Validate the installed binary and archive checksums.
 
-The optional legacy plugin remains pinned to v4.1.0 in `.claude-plugin/marketplace.json`. A native version bump does not relabel the old plugin. Legacy plugin changes still require its own matching metadata, template/migration updates, package validation, and changelog.
+v5 releases come from `main`; v4 lives on the `v4` branch and its tags and only takes user-requested security or blocking fixes tagged `v4.x` there (see `docs/decisions/aep-v4-sunset.md`). The optional legacy plugin remains pinned to v4.1.0 in `.claude-plugin/marketplace.json`. A native version bump does not relabel the old plugin. Legacy plugin changes still require its own matching metadata, template/migration updates, package validation, and changelog.
 
 The initial downstream candidate is `5.0.0-preview.1`. Tags with a prerelease suffix publish as GitHub prereleases with `latest=false`, preserving the legacy stable release. A prepared candidate, open PR, local archive, and public release are separate states; report the actual one. See `docs/decisions/aep-v5-preview-adoption.md`.
 

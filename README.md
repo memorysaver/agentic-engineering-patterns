@@ -2,7 +2,7 @@
 
 AEP 5.0 is a Rust CLI for project context, isolated implementation, verification, and learning. Agents choose the work and skills. The CLI serves instructions, maintains records, and checks declared constraints.
 
-This branch prepares **5.0.0-preview.1** for downstream trials. The stable legacy skill release remains **v4.1.0**; the native preview does not replace it.
+**v5** is the maintained line: a native `aep` CLI with embedded guidance, released from `main` starting with **5.0.0-preview.1**. **v4** (the Claude Code skill bundle, last release v4.1.0) is kept on the `v4` branch and its tags for existing installs, receives no new features, and is being retired; see [v4 sunset](docs/decisions/aep-v4-sunset.md) and the [legacy v4.1 guide](docs/workflow/aep-v4.1-guide.md).
 
 ## Install
 
@@ -69,6 +69,7 @@ Use `aep status`, `aep context <id>`, `aep query`, and `aep timeline` to inspect
 - [Corrections from downstream delivery](docs/decisions/aep-v5-downstream-delivery-findings.md)
 - [Publication after integration context changes](docs/decisions/aep-v5-publication-reverification.md)
 - [Preview adoption and v4/v5 coexistence](docs/decisions/aep-v5-preview-adoption.md)
+- [v4 sunset and the v4/v5 split](docs/decisions/aep-v4-sunset.md)
 - [Preview implementation and review evidence](docs/audits/2026-09-10-aep-v5-preview.md)
 - [Downstream preview trial](docs/workflow/aep-v5-preview-trial.md)
 - [Looplia, MITS and Rewarc pilot observations](docs/audits/2026-09-10-aep-v5-downstream-pilots.md)

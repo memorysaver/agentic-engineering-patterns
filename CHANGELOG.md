@@ -14,7 +14,11 @@ See [project release rules](project-rules/release.md).
 This file records AEP releases. A downstream project's ledger records its own
 product work, integration evidence, and release history.
 
-## [Unreleased] — 5.0.0-preview.1
+## [Unreleased]
+
+## [5.0.0-preview.1] — 2026-09-18
+
+First native release. `aep` is a single Rust binary with embedded guidance; it replaces the v4 skill bundle as the maintained line. v4.1.0 stays available from its tag and the `v4` branch for existing installs and is being retired; see `docs/decisions/aep-v4-sunset.md`.
 
 - Add `scripts/install.sh`: a `curl | bash` installer that picks the platform archive from the newest v5 GitHub release (or `AEP_VERSION`), verifies the published SHA-256, stores the binary under `~/.local/share/aep/builds/<sha16>/` with a manifest, and switches the `~/.local/bin/aep` link atomically.
 
