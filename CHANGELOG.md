@@ -16,6 +16,8 @@ product work, integration evidence, and release history.
 
 ## [Unreleased]
 
+- `aep init` in a fresh project writes a two-sentence `AGENTS.md` (read `README.md`, run `aep --skill`) with no version route or v4 wording. An existing `AGENTS.md` only gains that pointer when it lacks one. The explicit v4/v5 route is now written only for detected legacy projects and by migration.
+
 ## [5.0.0-preview.1] — 2026-09-18
 
 First native release. `aep` is a single Rust binary with embedded guidance; it replaces the v4 skill bundle as the maintained line. v4.1.0 stays available from its tag and the `v4` branch for existing installs and is being retired; see `docs/decisions/aep-v4-sunset.md`.
