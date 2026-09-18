@@ -33,22 +33,13 @@ pub fn home() -> Result<PathBuf> {
 #[serde(default)]
 pub struct EvalConfig {
     pub root: String,
-    pub observer_kind: String,
     pub retention_days: u32,
-    pub projects: BTreeMap<String, ProjectOverride>,
-}
-#[derive(Debug, Default, Serialize, Deserialize)]
-#[serde(default)]
-pub struct ProjectOverride {
-    pub observer_kind: Option<String>,
 }
 impl Default for EvalConfig {
     fn default() -> Self {
         Self {
             root: "~/.aep/eval".into(),
-            observer_kind: "codex".into(),
             retention_days: 90,
-            projects: BTreeMap::new(),
         }
     }
 }
@@ -1047,41 +1038,12 @@ pub fn run(args: &Cli, command: &Eval) -> Result<Outcome> {
                 text,
             ))
         }
-        Eval::Watch {
-            no_spawn,
-            kind,
-            target,
-        } => watch(args, &config, *no_spawn, kind.as_deref(), target.as_deref()),
+        Eval::Watch { target } => watch(args, &config, target.as_deref()),
     }
 }
 fn with_text(mut out: Outcome, text: String) -> Outcome {
     out.text = Some(text);
     out
-}
-/// Agent-specific arguments so the observer can read Herdr and write its run.
-fn observer_args(kind: &str) -> Result<Vec<String>> {
-    if kind != "codex" {
-        return Ok(vec![]);
-    }
-    let mut roots = vec![home()?];
-    if let Some(dir) = std::env::var_os("HERDR_SOCKET_PATH")
-        .map(PathBuf::from)
-        .as_deref()
-        .and_then(Path::parent)
-    {
-        roots.push(dir.to_path_buf());
-    }
-    let list = roots
-        .iter()
-        .map(|r| serde_json::to_string(&r.to_string_lossy()).unwrap_or_default())
-        .collect::<Vec<_>>()
-        .join(",");
-    Ok(vec![
-        "-s".into(),
-        "workspace-write".into(),
-        "-c".into(),
-        format!("sandbox_workspace_write.writable_roots=[{list}]"),
-    ])
 }
 fn herdr(args: &[&str]) -> Result<Value> {
     let output = Command::new("herdr")
@@ -1113,129 +1075,108 @@ fn herdr(args: &[&str]) -> Result<Value> {
         )
     })
 }
-fn watch(
-    args: &Cli,
-    config: &MachineConfig,
-    no_spawn: bool,
-    kind: Option<&str>,
-    target: Option<&str>,
-) -> Result<Outcome> {
+/// The calling agent becomes the observer. Without a target, list the agents
+/// working in this project so the person can choose; with a target, prepare
+/// the run and hand back the procedure.
+fn watch(args: &Cli, config: &MachineConfig, target: Option<&str>) -> Result<Outcome> {
     let s = Store::open(&args.root)?;
     if std::env::var("HERDR_ENV").ok().as_deref() != Some("1") {
         return Err(Error::blocked(
             "Not running under Herdr (HERDR_ENV != 1); use `aep eval snapshot` and `aep eval report` directly",
         ));
     }
-    let target = target
-        .map(String::from)
-        .or_else(|| std::env::var("HERDR_PANE_ID").ok())
-        .ok_or_else(|| Error::input("No target pane: pass --target <pane-id>"))?;
+    let me = std::env::var("HERDR_PANE_ID").unwrap_or_default();
+    let root = fs::canonicalize(&s.root).unwrap_or_else(|_| s.root.clone());
     let project = project_id(&s.root);
-    let kind = kind
-        .map(String::from)
-        .or_else(|| {
-            config
-                .eval
-                .projects
-                .get(&project)
-                .and_then(|p| p.observer_kind.clone())
-        })
-        .unwrap_or_else(|| config.eval.observer_kind.clone());
+    let Some(target) = target else {
+        let list = herdr(&["agent", "list"])?;
+        let candidates: Vec<Value> = list["result"]["agents"]
+            .as_array()
+            .map(Vec::as_slice)
+            .unwrap_or_default()
+            .iter()
+            .filter(|a| {
+                a["pane_id"].as_str() != Some(me.as_str())
+                    && a["cwd"]
+                        .as_str()
+                        .is_some_and(|c| Path::new(c).starts_with(&root))
+            })
+            .map(|a| {
+                json!({"pane_id": a["pane_id"], "agent": a["agent"], "status": a["agent_status"], "title": a["terminal_title_stripped"], "cwd": a["cwd"]})
+            })
+            .collect();
+        let mut text = format!("eval watch — agents working in {project}:\n");
+        for c in &candidates {
+            text.push_str(&format!(
+                "  {}  {}  {}  {}\n",
+                c["pane_id"].as_str().unwrap_or("?"),
+                c["agent"].as_str().unwrap_or("?"),
+                c["status"].as_str().unwrap_or("?"),
+                c["title"].as_str().unwrap_or("")
+            ));
+        }
+        if candidates.is_empty() {
+            text.push_str("  none\n");
+        }
+        text.push_str(
+            "Confirm the target with the person, then run: aep eval watch --target <pane-id>\n",
+        );
+        return Ok(with_text(
+            Outcome::ok(
+                json!({"project_id": project, "this_pane": me, "candidates": candidates, "next": "aep eval watch --target <pane-id>"}),
+            ),
+            text,
+        ));
+    };
+    if target == me {
+        return Err(Error::input(
+            "The target is this pane; the observer watches another agent's pane",
+        ));
+    }
+    let info = herdr(&["agent", "get", target])?;
+    // `herdr agent get` returns the agent fields flat under result.
+    let agent = if info["result"]["agent"].is_object() {
+        info["result"]["agent"].clone()
+    } else {
+        info["result"].clone()
+    };
+
     let run = run_id();
     let dir = run_dir(config, &s.root, &run)?;
-    let root = fs::canonicalize(&s.root).unwrap_or_else(|_| s.root.clone());
-    let skill = guidance::asset("eval/SKILL.md")?;
-    let prompt = format!(
-        "You are the neutral aep eval observer for this project. Parameters:\n- project root: {}\n- eval run id: {run}\n- run directory: {}\n- target pane (the working agent to observe): {target}\n- this pane hosts you; do not send input to the target pane.\n\nFollow the procedure below exactly as written. Read `aep --skill eval --ref observer` and `aep --skill eval --ref rules` for the details.\n\n---\n{}",
+    let procedure = format!(
+        "You are the neutral aep eval observer for this project.\n- project root: {}\n- eval run id: {run}\n- run directory: {}\n- target pane: {target} ({} agent, {} at start)\n- this pane: {me}; send no input to the target pane.\n\nFollow `aep --skill eval --ref observer`; rules are in `aep --skill eval --ref rules`.\n",
         root.display(),
         dir.display(),
-        skill
+        agent["agent"].as_str().unwrap_or("unknown"),
+        agent["agent_status"].as_str().unwrap_or("unknown")
     );
-    let name = format!("aep-eval-{}", &run[run.len() - 6..]);
-    let mut result = json!({"run": run, "dir": dir, "project_id": project, "target_pane": target, "observer_kind": kind, "observer_name": name, "spawned": false, "dry_run": args.dry_run});
-    let commands = json!([
-        format!(
-            "herdr pane split --pane {target} --direction right --cwd {} --no-focus",
-            root.display()
-        ),
-        format!(
-            "herdr agent start {name} --kind {kind} --pane <returned pane id>{}",
-            observer_args(&kind)?
-                .iter()
-                .map(|a| format!(" {a}"))
-                .collect::<String>()
-                .replace(" -s", " -- -s")
-        ),
-        format!(
-            "herdr agent prompt {name} \"$(cat {}/prompt.md)\"",
-            dir.display()
-        ),
-    ]);
-    result["commands"] = commands.clone();
+    let mut result = json!({"run": run, "dir": dir, "project_id": project, "target_pane": target, "target_agent": {"kind": agent["agent"], "status": agent["agent_status"], "title": agent["terminal_title_stripped"]}, "observer_pane": me, "dry_run": args.dry_run});
     if args.dry_run {
         return Ok(with_text(
             Outcome::ok(result),
-            format!("eval watch — dry run for {project}; would create run {run}\n"),
+            format!(
+                "eval watch — dry run for {project}; would create run {run} observing {target}\n"
+            ),
         ));
     }
     fs::create_dir_all(&dir)?;
     let mut manifest = ensure_manifest(&dir, &s.root, "watch")?;
-    fs::write(dir.join("prompt.md"), &prompt)?;
+    fs::write(dir.join("procedure.md"), &procedure)?;
     let facts = facts(&s, &s.snapshot()?)?;
     write_json(&dir.join("snapshot.json"), &facts)?;
     manifest["target_pane"] = json!(target);
-    manifest["observer"] = json!({"name": name, "kind": kind, "spawned": false});
-    if !no_spawn {
-        // Split beside the observed pane so the observer lives in the project's workspace.
-        let split = herdr(&[
-            "pane",
-            "split",
-            "--pane",
-            &target,
-            "--direction",
-            "right",
-            "--cwd",
-            &root.to_string_lossy(),
-            "--no-focus",
-        ])?;
-        let pane = split["result"]["pane"]["pane_id"]
-            .as_str()
-            .ok_or_else(|| Error::new("herdr", "pane split returned no pane id", 1))?
-            .to_string();
-        let mut start = vec!["agent", "start", &name, "--kind", &kind, "--pane", &pane];
-        // Codex sandboxes the observer to the project tree; let it reach the AEP
-        // home (eval runs) and the Herdr socket without an approval per command.
-        let extra = observer_args(&kind)?;
-        let extra_refs: Vec<&str> = extra.iter().map(String::as_str).collect();
-        if !extra_refs.is_empty() {
-            start.push("--");
-            start.extend(extra_refs.iter().copied());
-        }
-        herdr(&start)?;
-        herdr(&["agent", "prompt", &name, &prompt])?;
-        manifest["observer"] = json!({"name": name, "kind": kind, "pane": pane, "spawned": true, "prompted_at": now()});
-        result["spawned"] = json!(true);
-        result["observer_pane"] = json!(pane);
-    }
+    manifest["target_agent"] = result["target_agent"].clone();
+    manifest["observer"] = json!({"pane": me, "started_at": now()});
     write_json(&dir.join("manifest.json"), &manifest)?;
     write_sums(&dir)?;
+    result["procedure"] = json!(procedure);
     let mut out = Outcome::ok(result);
     out.changed = true;
-    let text = if no_spawn {
+    Ok(with_text(
+        out,
         format!(
-            "eval watch — run {run} prepared under {}\n  prompt: {}/prompt.md\n  start the observer yourself:\n    {}\n    {}\n    {}\n",
-            dir.display(),
-            dir.display(),
-            commands[0].as_str().unwrap_or(""),
-            commands[1].as_str().unwrap_or(""),
-            commands[2].as_str().unwrap_or("")
-        )
-    } else {
-        format!(
-            "eval watch — run {run}\n  observer {name} ({kind}) started in pane {} watching {target}\n  run directory {}\n",
-            out.data["observer_pane"].as_str().unwrap_or("?"),
+            "eval watch — run {run}\n  run directory {}\n\n{procedure}",
             dir.display()
-        )
-    };
-    Ok(with_text(out, text))
+        ),
+    ))
 }

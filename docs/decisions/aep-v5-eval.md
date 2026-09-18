@@ -107,10 +107,16 @@ observer_kind = "claude"      # 選用的專案覆寫
 
 1. `~/.aep` 是否同時成為安裝腳本的 `AEP_HOME`（`builds/` 搬過去）。建議是，讓機器層只有一個位置。
 2. `eval` 做成第九個內建 skill，還是 `reflect` 的一個 reference。建議第九個，因為讀者是觀察者 agent 而不是工作 agent；preview proof 與 catalog 測試的「8」要一併改。
-3. `watch` 預設自動 spawn 觀察者，還是只印指令。建議在 `HERDR_ENV=1` 時預設 spawn，`--no-spawn` 關掉。
+3. `watch` 預設自動 spawn 觀察者，還是只印指令。建議在 `HERDR_ENV=1` 時預設 spawn，`--no-spawn` 關掉。（2026-09-19 改為不 spawn，見下文。）
 4. 第一版規則的門檻（N 天、比例）先寫死在 CLI，之後再開放到 `config.toml`。
 
-## 第一次實跑的修正（2026-09-19）
+## 第一次實跑後的設計改變（2026-09-19）
+
+使用者在第一次實跑後改變了 `watch` 的形式：不自動開 pane、不 spawn。流程是使用者自己決定在哪裡開 pane、起 agent，用自然語言說「在這裡啟動 aep eval watch 看某個 agent」；那個 agent 執行 `aep eval watch` 列出專案裡在工作的 agent（排除自己的 pane），和使用者確認目標後執行 `aep eval watch --target <pane>`，CLI 建立 run、存 `procedure.md`、做基線快照並把觀察程序交回給它，它自己就是觀察者。因此 `config.toml` 不再有 observer_kind，Codex sandbox 參數也不需要（使用者自己決定觀察者 agent 的權限）。
+
+原本第一版的兩個修正（split 目標 pane、Codex writable roots）在這個設計下都不再需要，記錄如下作為歷史：
+
+## 第一次實跑的修正（2026-09-19，已被上面的設計取代）
 
 第一次在真實專案上跑 `watch` 發現兩個問題，都已修：
 

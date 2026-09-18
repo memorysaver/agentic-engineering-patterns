@@ -174,15 +174,9 @@ pub enum Eval {
     List,
     /// Show a run's manifest, snapshot summary, report counts and observations.
     Show { run: String },
-    /// Start a neutral observer agent for this project under Herdr.
+    /// Become the neutral observer of another agent's pane under Herdr.
     Watch {
-        /// Prepare the run and print the Herdr commands instead of starting the observer.
-        #[arg(long)]
-        no_spawn: bool,
-        /// Herdr agent kind for the observer; defaults to the machine configuration.
-        #[arg(long)]
-        kind: Option<String>,
-        /// Pane id of the working agent to observe; defaults to the current pane.
+        /// Pane id of the working agent to observe; omit to list the agents working in this project.
         #[arg(long)]
         target: Option<String>,
     },
@@ -467,7 +461,7 @@ pub fn command() -> clap::Command {
             "migrate" => "Examples:\n  aep migrate plan --output migration.json\n  aep migrate apply --plan migration.json\n  aep migrate verify\n\nInspect the plan and resolve its diagnostics before applying it.",
             "config" => "Examples:\n  aep config show\n  aep config show --json\n  aep config update --file config.toml --expect REVISION",
             "dispatch" => "Examples:\n  aep dispatch plan\n  aep dispatch plan --story STORY-ID\n  aep dispatch start --story STORY-ID --base main --owner developer",
-            "eval" => "Examples:\n  aep eval snapshot             Collect facts into a new run under ~/.aep/eval\n  aep eval report               Findings for the latest run\n  aep eval watch                Start a neutral observer agent under Herdr\n\nEval reads the project and writes only under the machine-level AEP home.",
+            "eval" => "Examples:\n  aep eval snapshot             Collect facts into a new run under ~/.aep/eval\n  aep eval report               Findings for the latest run\n  aep eval watch                List the agents working here, then --target <pane> to observe one\n\nEval reads the project and writes only under the machine-level AEP home.",
             _ => "Use --json for the complete structured result.",
         };
         sub.after_help(example)

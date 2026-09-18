@@ -1,6 +1,6 @@
 # Observer procedure
 
-The parameters arrive in the prompt: project root, eval run id, run directory and the target pane. Confirm `HERDR_ENV=1`, then `herdr agent get <target>` to learn the working agent's kind and state. Work in the project root with `--root` when a command runs elsewhere.
+Start when the person asks to observe an agent from this pane. Confirm `HERDR_ENV=1`, run `aep eval watch` to see the agents working in this project, and confirm with the person which pane to observe; if they named it, restate it and continue. Then `aep eval watch --target <pane-id>` creates the run and returns the parameters: project root, run id, run directory and the target pane; they are also saved as `procedure.md` in the run. Work in the project root with `--root` when a command runs elsewhere.
 
 ## Rhythm
 

@@ -1,6 +1,6 @@
 ---
 name: eval
-description: Observe a project's engineering process as a neutral outsider, judge AEP adherence and engineering practice from structural evidence, and record findings outside the project.
+description: Watch another agent's work as a neutral observer (aep eval watch), judge AEP adherence and engineering practice from structural evidence, and record findings outside the project.
 ---
 
 # Neutral engineering-quality observation
@@ -13,7 +13,7 @@ Everything the observer produces lives under the machine-level AEP home (`~/.aep
 
 Without a live agent, `aep eval snapshot` collects facts and `aep eval report` applies the rules; `aep eval show <run>` and `aep eval list` read past runs. Read [Rules](references/rules.md) (`aep --skill eval --ref rules`) for what each finding means and what it does not claim.
 
-Under Herdr, `aep eval watch` starts a separate observer agent beside the working agent. That observer follows [Observer procedure](references/observer.md) (`aep --skill eval --ref observer`): find the working agent, snapshot at its milestones, compare its claims with records and Git, and record each observation with `aep eval record`.
+Under Herdr, the person opens a pane where they want the observer, starts an agent there and says which agent to watch. That agent runs `aep eval watch` to list the agents working in the project, confirms the target with the person, then runs `aep eval watch --target <pane-id>` and becomes the observer, following [Observer procedure](references/observer.md) (`aep --skill eval --ref observer`): snapshot at the target's milestones, compare its claims with records and Git, and record each observation with `aep eval record`.
 
 ## What counts as evidence
 
