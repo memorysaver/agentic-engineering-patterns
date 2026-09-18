@@ -371,11 +371,19 @@ pub fn initial_files(
         || agents
             .as_ref()
             .is_some_and(|old| old.contains("aep-agents-template: v4") || old.contains("/aep-"));
+    // A fresh project gets the short entrypoint and no version route; the route
+    // exists only where legacy (v4) instructions must stay scoped until migration.
     let merged = match agents {
         None if !legacy => entry,
         None => version_route(s, "", "v4")?,
         Some(old) if old.contains("<!-- aep-version-route: start -->") => old,
-        Some(old) => version_route(s, &old, if legacy { "v4" } else { "v5" })?,
+        Some(old) if legacy => version_route(s, &old, "v4")?,
+        Some(old) if old.contains("aep --skill") => old,
+        Some(old) => format!(
+            "{}\n{}",
+            entry.trim_start_matches("# AGENTS.md\n").trim_start(),
+            old
+        ),
     };
     files.insert("AGENTS.md".into(), Some(merged));
     if claude {

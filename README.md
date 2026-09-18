@@ -25,7 +25,7 @@ aep --skill         # the agent entrypoint: how to work in this project
 aep --skill project # set up stores, checks and the verification procedure
 ```
 
-`aep init --claude` also writes a `CLAUDE.md` that points at `AGENTS.md`. Existing `AGENTS.md` content is kept; `init` prepends a short routing block. Running `init` again changes nothing.
+The generated `AGENTS.md` is two sentences: read `README.md`, run `aep --skill`. `aep init --claude` also writes a `CLAUDE.md` that points at `AGENTS.md`. Existing `AGENTS.md` content is kept and only gains that pointer if it lacks one. Running `init` again changes nothing.
 
 From there the agent reads the procedure it needs (`aep --skill design`, `--skill implement`, and so on), creates records with `aep <kind> new --file`, and moves work through the lifecycle below. A human can follow along with `aep status`, `aep context <id>` and `aep timeline`.
 

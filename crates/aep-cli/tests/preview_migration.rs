@@ -137,10 +137,28 @@ fn init_preserves_legacy_default_and_migration_selects_v5_without_changing_sourc
 fn fresh_init_uses_v5_and_custom_rules_survive_cutover() {
     let d = repo(false);
     call(d.path(), &["init"], 0);
+    let fresh = fs::read_to_string(d.path().join("AGENTS.md")).unwrap();
+    assert!(fresh.contains("Run `aep --skill`"), "{fresh}");
+    assert!(!fresh.contains("aep-version-route"), "{fresh}");
+    assert!(!fresh.contains("v4"), "{fresh}");
+    // Existing instructions without an aep pointer get the pointer prepended; a
+    // second init then changes nothing.
+    fs::write(
+        d.path().join("AGENTS.md"),
+        "# House rules\n\nKeep tests green.\n",
+    )
+    .unwrap();
+    call(d.path(), &["init"], 0);
+    let merged = fs::read_to_string(d.path().join("AGENTS.md")).unwrap();
+    assert!(merged.starts_with("Read `README.md`"), "{merged}");
     assert!(
-        fs::read_to_string(d.path().join("AGENTS.md"))
-            .unwrap()
-            .contains("AEP default: v5")
+        merged.ends_with("# House rules\n\nKeep tests green.\n"),
+        "{merged}"
+    );
+    call(d.path(), &["init"], 0);
+    assert_eq!(
+        merged,
+        fs::read_to_string(d.path().join("AGENTS.md")).unwrap()
     );
     let d = repo(true);
     let root = d.path();

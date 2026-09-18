@@ -18,7 +18,7 @@ Dashboard implementation is deferred; native inspection uses the commands below.
 
 This unreleased preview replaces `aep skills` and `aep skills show` with the single `--skill` surface; no alias or second skill entrypoint remains. Update active project instructions and scripts together with the binary. Historical migration sources retain their original commands.
 
-Run `aep init` in an existing Git repository. It creates `.aep/config.toml`, a rules index if needed, and an explicit AGENTS workflow route. A detected legacy project defaults to v4; a fresh project defaults to v5. An explicit user choice takes precedence. Existing project instructions and legacy skill files are preserved; `--claude` adds `@AGENTS.md`. `--dry-run` exposes planned files. Repeated initialization preserves the route. Migration explicitly switches ownership to v5 while retaining legacy source files. See the [preview trial](aep-v5-preview-trial.md).
+Run `aep init` in an existing Git repository. It creates `.aep/config.toml`, a rules index if needed, and a short `AGENTS.md` that says to read `README.md` and run `aep --skill`. An existing `AGENTS.md` is kept; if it does not mention `aep --skill`, that pointer is prepended. Only a detected legacy (v4) project gets an explicit workflow route defaulting to v4, so its old instructions stay scoped until migration; an explicit user choice takes precedence and legacy skill files are preserved. `--claude` adds `@AGENTS.md`. `--dry-run` exposes planned files. Repeated initialization changes nothing. Migration explicitly switches ownership to v5 while retaining legacy source files. See the [preview trial](aep-v5-preview-trial.md).
 
 ## Configuration
 
