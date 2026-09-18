@@ -1,4 +1,4 @@
-<!-- Historical v4.1 release guide. Native 5.0 documentation is in README.md. -->
+<!-- v4 legacy README. This is the README as released with v4.1.0, kept for existing v4 installs. v4 lives on the `v4` branch and receives no new features; the maintained line is the native v5 CLI documented in README.md. See docs/decisions/aep-v4-sunset.md. -->
 
 # Agentic Engineering Patterns
 
@@ -148,6 +148,25 @@ still equals the locked content. To truly freeze a release, **commit the install
 (under `.claude/skills/` and/or `.agents/skills/`) together with `skills-lock.json`. The committed
 bytes become the pin: teammates, CI, and Codex need no install step, and nothing drifts when
 upstream moves on. Upgrade deliberately by re-running `add@<newtag>` in its own PR.
+
+### The `v4` branch
+
+Since 2026-09-18 the repository's `main` branch carries the native v5 CLI, and the v4 skill bundle is kept on the `v4` branch, cut from the `v4.1.0` tag. Three refs are relevant:
+
+| Ref | What it is | Use it when |
+| --- | --- | --- |
+| `@v4.1.0` | The last v4 release, frozen | You want the exact bytes this guide documents (default choice) |
+| `@v4` | The maintenance branch; equals `v4.1.0` until a fix is tagged | You want to follow user-requested security or blocking fixes automatically |
+| no ref (`main`) | The v5 development line | Never for v4; its v4 files remain only until the sunset completes and will change |
+
+```bash
+# Frozen release (recommended)
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4.1.0 -a claude-code --skill '*' -y
+# Maintenance branch
+npx -y skills@1.5.17 add memorysaver/agentic-engineering-patterns@v4 -a claude-code --skill '*' -y
+```
+
+v4 receives no new features. Fixes land only on the `v4` branch as `v4.x` tags when a user asks for them, and v4 is retired once downstream projects deliver on v5 and a v5 stable release exists. Tags, the branch and this guide are kept after that; only the maintenance status changes. Moving a project to v5 is a separate, explicit step described in [the v5 migration guide](aep-v5-migration.md).
 
 ### Upgrading to a new release
 
