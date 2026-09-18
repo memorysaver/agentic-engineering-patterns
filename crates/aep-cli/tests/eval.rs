@@ -174,7 +174,7 @@ fn eval_watch_needs_herdr_and_prepares_a_run_for_the_calling_agent() {
     fs::write(
         &fake,
         format!(
-            "#!/bin/sh\ncase \"$1 $2\" in\n  \"agent list\") printf '%s' '{{\"result\":{{\"agents\":[{{\"pane_id\":\"w9:p1\",\"agent\":\"codex\",\"agent_status\":\"working\",\"terminal_title_stripped\":\"work\",\"cwd\":\"{root}\"}},{{\"pane_id\":\"w9:p9\",\"agent\":\"claude\",\"agent_status\":\"idle\",\"terminal_title_stripped\":\"me\",\"cwd\":\"{root}\"}},{{\"pane_id\":\"w1:p1\",\"agent\":\"codex\",\"agent_status\":\"idle\",\"terminal_title_stripped\":\"other\",\"cwd\":\"/elsewhere\"}}]}}}}' ;;\n  \"agent get\") printf '%s' '{{\"result\":{{\"agent\":\"codex\",\"agent_status\":\"working\",\"pane_id\":\"w9:p1\",\"terminal_title_stripped\":\"work\"}}}}' ;;\n  *) echo unexpected >&2; exit 1 ;;\nesac\n",
+            "#!/bin/sh\ncase \"$1 $2\" in\n  \"agent list\") printf '%s' '{{\"result\":{{\"agents\":[{{\"pane_id\":\"w9:p1\",\"agent\":\"codex\",\"agent_status\":\"working\",\"terminal_title_stripped\":\"work\",\"cwd\":\"{root}\"}},{{\"pane_id\":\"w9:p9\",\"agent\":\"claude\",\"agent_status\":\"idle\",\"terminal_title_stripped\":\"me\",\"cwd\":\"{root}\"}},{{\"pane_id\":\"w1:p1\",\"agent\":\"codex\",\"agent_status\":\"idle\",\"terminal_title_stripped\":\"other\",\"cwd\":\"/elsewhere\"}}]}}}}' ;;\n  \"agent get\") printf '%s' '{{\"result\":{{\"agent\":\"codex\",\"agent_status\":\"idle\",\"pane_id\":\"w9:p1\",\"terminal_title_stripped\":\"work\"}}}}' ;;\n  \"agent wait\") printf '%s' '{{\"result\":{{\"agent_status\":\"idle\",\"pane_id\":\"w9:p1\"}}}}' ;;\n  *) echo unexpected >&2; exit 1 ;;\nesac\n",
             root = root.canonicalize().unwrap().display()
         ),
     )
@@ -246,6 +246,56 @@ fn eval_watch_needs_herdr_and_prepares_a_run_for_the_calling_agent() {
         .output()
         .unwrap();
     assert_eq!(out.status.code(), Some(2), "own pane rejected: {out:?}");
+
+    // Ticks: nothing changed -> no new snapshot; a change -> delta and snapshot.
+    let run = data["run"].as_str().unwrap().to_string();
+    let tick = |extra: &[&str]| -> Value {
+        let out = Command::new(env!("CARGO_BIN_EXE_aep"))
+            .env("AEP_HOME", home.path())
+            .env("HERDR_ENV", "1")
+            .env("HERDR_PANE_ID", "w9:p9")
+            .env("PATH", &path)
+            .args(["--json", "--root"])
+            .arg(root)
+            .args(["eval", "tick", "--run", &run, "--interval", "0"])
+            .args(extra)
+            .output()
+            .unwrap();
+        assert_eq!(out.status.code(), Some(0), "{out:?}");
+        serde_json::from_slice::<Value>(&out.stdout).unwrap()["data"].clone()
+    };
+    let snapshots_before = fs::read_dir(dir.join("snapshots"))
+        .map(|d| d.count())
+        .unwrap_or(0);
+    let quiet = tick(&[]);
+    assert_eq!(quiet["changed"], false, "{quiet}");
+    assert_eq!(quiet["target_status"], "idle");
+    assert_eq!(
+        fs::read_dir(dir.join("snapshots"))
+            .map(|d| d.count())
+            .unwrap_or(0),
+        snapshots_before
+    );
+    fs::write(root.join("note.txt"), "x\n").unwrap();
+    let busy = tick(&[]);
+    assert_eq!(busy["changed"], true, "{busy}");
+    assert!(
+        busy["delta"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|d| d["fact"] == "dirty_files"),
+        "{busy}"
+    );
+    assert_eq!(
+        fs::read_dir(dir.join("snapshots"))
+            .map(|d| d.count())
+            .unwrap_or(0),
+        snapshots_before + 1
+    );
+    fs::remove_file(root.join("note.txt")).unwrap();
+    let ticks = fs::read_to_string(dir.join("ticks.jsonl")).unwrap();
+    assert_eq!(ticks.lines().count(), 2, "{ticks}");
 }
 
 #[test]

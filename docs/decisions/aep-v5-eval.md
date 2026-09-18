@@ -127,7 +127,7 @@ observer_kind = "claude"      # 選用的專案覆寫
 
 - 工作 agent 從 `aep init` 起，一輪內讀完 project skill 與 references，建了 stores、三個 checks、專案驗證 skill、兩筆 decision 與兩筆 roadmap，7 筆事件全部帶 note；使用者要求後提交並推送。這是第一個從第一天就照 v5 指引走的專案。
 - 觀察者（以舊的 spawn 方式啟動）完成三筆觀察：基線時序邊界、啟動交接與 23 個檔案雜湊的獨立比對、commit／push 的獨立驗證（remote ref、乾淨工作樹、三個 checks、whitespace）。每筆都寫明哪些是現場看到、哪些是從 transcript 重建、哪些沒有重做。全程沒有對目標送輸入、沒有改專案檔案。規則報告最後只剩 DevOps 四項（沒有 CI、secret scan、lockfile、CHANGELOG）。
-- 兩個摩擦：Codex 的核准對話框（新流程由使用者自己起觀察者後不再是 CLI 的問題）；觀察者輪詢太密（每 45 秒 `agent wait`），使用者直接糾正。observer 參考已改成長 timeout、每個里程碑一次快照一次觀察。
+- 兩個摩擦：Codex 的核准對話框（新流程由使用者自己起觀察者後不再是 CLI 的問題）；觀察者輪詢太密（每 45 秒 `agent wait`），使用者直接糾正。使用者進一步要求：記錄完至少等 10 分鐘、由 CLI 自己控制節奏、沒有重要的事不記錄。因此新增 `aep eval tick --run <id>`：自己等滿間隔（`~/.aep/config.toml` 的 `min_interval_minutes`，預設 10）、等目標 settled、快照並只回報和上一份快照相比有變化的結構事實；沒變化就不寫快照，觀察者不記錄。observer 參考改成以 tick 為迴圈，只在宣稱與證據不符、里程碑經獨立驗證、或目標等人時才記錄。
 
 ## 驗證方式
 
