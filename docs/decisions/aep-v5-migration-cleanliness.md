@@ -1,6 +1,6 @@
 # AEP v5：把專案 migrate 乾淨，以及沒有用過 AEP 的專案
 
-狀態：提案（2026-09-18，使用者要求 review 三個 downstream 專案的 migration 之後整理）。
+狀態：提案（2026-09-18，使用者要求 review 三個 downstream 專案的 migration 之後整理）。downstream 專案以 A／B／C 代稱；具體識別資訊只保留在本機證據目錄。
 相關：[preview 採用與雙版本並存](aep-v5-preview-adoption.md)、[v4 sunset](aep-v4-sunset.md)、[原始專案遷移紀錄](../audits/2026-09-10-aep-v5-live-migrations.md)、[layer／wave 封裝](aep-v5-layer-wave-encapsulation.md)
 
 ## 使用者的定義
@@ -11,7 +11,7 @@
 
 三個專案都在 2026-09-10 遷移，之後全部工作都寫在 native stores。機械層面是乾淨的：
 
-| 項目 | MITS | looplia | Rewarc-AutoResearch |
+| 項目 | 專案 A | 專案 B | 專案 C |
 | --- | --- | --- | --- |
 | `aep migrate plan` already_migrated／`migrate verify` | 是／通過 | 是／通過 | 是／通過 |
 | 遷移後改動 legacy stores 的 commit | 0 | 0 | 0 |
@@ -20,7 +20,7 @@
 
 但以「乾淨」的標準看，三個專案都停在同一個狀態：
 
-| 殘留 | MITS | looplia | Rewarc |
+| 殘留 | 專案 A | 專案 B | 專案 C |
 | --- | --- | --- | --- |
 | `openspec/` | 917 檔、11 MB | 1,388 檔、9.2 MB | 670 檔、4.2 MB |
 | 已 commit 的 v4 skill（`.agents/skills`＋`.claude/skills`，各 48 個 `aep-*` 目錄） | 676 檔、5.5 MB | 489 檔、4.3 MB | 796 檔、6.0 MB |
@@ -35,7 +35,7 @@
 三個結構性後果：
 
 1. **v4 skill 還在被 host 載入。** Claude Code 讀 `.claude/skills/`，Codex 讀 `.agents/skills/`，所以每個 agent 仍看得到 48 個 `/aep-*` v4 skill。AGENTS.md 的 route 區塊（「Retained v4 instructions apply only to v4 work」）就是為了壓住它們而存在。殘留不清，route 就拿不掉；使用者在 `aep init` 上不想要的那段文字，根源在這裡。
-2. **匯入的記錄是惰性的。** 所有 imported story 沒有一筆經 `aep story reconcile` 用 Git 證據確認；匯入的 decision 全部 pending，沒有接受也沒有 supersede；容器沒有 outcome。它們佔了記錄數的大半（MITS 548 筆中 imported story 96、layer 21、wave 79、decision 32），但 readiness 與 context 都把它們當未驗證，等於只是搬進來的檔案。
+2. **匯入的記錄是惰性的。** 所有 imported story 沒有一筆經 `aep story reconcile` 用 Git 證據確認；匯入的 decision 全部 pending，沒有接受也沒有 supersede；容器沒有 outcome。它們佔了記錄數的大半（專案 A 548 筆中 imported story 96、layer 21、wave 79、decision 32），但 readiness 與 context 都把它們當未驗證，等於只是搬進來的檔案。
 3. **legacy lessons 沒有進記錄圖。** 遷移把 `lessons-learned/` 的檔案複製到 `lesson-learned/`，但只有少數成為 lesson 記錄；`aep context` 只沿記錄的 `refs` 走，所以這些檔案只剩 `aep lesson find` 能搜到。
 
 ## 沒有用過 AEP 的專案
@@ -68,10 +68,10 @@
 
 ## 驗證方式
 
-- 對三個 downstream 各做一次 A 與 B（使用者授權後），觀察：清理後 `aep check` 通過、`aep --skill` 只列 native 與專案 skill、host 不再列 `/aep-*`；imported 記錄數歸零或全部有處置狀態；AGENTS.md 只剩入口兩句。
+- 對三個 downstream 專案各做一次 A 與 B（使用者授權後），觀察：清理後 `aep check` 通過、`aep --skill` 只列 native 與專案 skill、host 不再列 `/aep-*`；imported 記錄數歸零或全部有處置狀態；AGENTS.md 只剩入口兩句。
 - 對一個沒用過 AEP 的真實專案做 C，觀察 agent 是否能只靠指引與 CLI 建出可用的 roadmap／decision／story，且每筆都有來源。
 
 ## 執行紀錄
 
-- 2026-09-18：使用者授權「直接幫我移除 v4，簡化 AGENTS.md」。先改 CLI（PR #39，build `dc7aaf75e0028de9`）：`migrate verify` 接受只有 `aep --skill` 入口的 AGENTS.md；`init` 對已有 migration receipt 的專案不再視為 legacy；migrate 指引加入清理段落。接著在三個專案各做一次提案 A 的前半：移除 `.agents/skills/aep-*` 與 `.claude/skills/aep-*` 共 48 個目錄、`skills-lock.json` 的 24 筆 aep 條目，AGENTS.md 換成兩句入口，以原生 decision `aep-v4-removal`（`--by memorysaver`，三筆事件都帶 `--note`）記錄授權。每個專案清理後 `aep check`、`aep migrate verify`、`aep doctor` 通過，`aep --skill` 只列 8 個內建加專案自己的 skill，`init --dry-run` 無變更。提交：MITS `c1459c9`、looplia `77cb2f8b`、Rewarc `fcdac7f`，各約 450 個檔案、65,470 行刪除；未 push。receipt 內的 legacy sources（openspec、product-context.yaml、product、project-convention、lessons-learned）與 host hook 設定未動，因為 `migrate verify` 仍以它們的 digest 為準；這部分留給提案 A 的 cleanup receipt。證據在 `~/.local/share/aep/trials/2026-09-18-v4-removal/`。
+- 2026-09-18：使用者授權「直接幫我移除 v4，簡化 AGENTS.md」。先改 CLI（PR #39，build `dc7aaf75e0028de9`）：`migrate verify` 接受只有 `aep --skill` 入口的 AGENTS.md；`init` 對已有 migration receipt 的專案不再視為 legacy；migrate 指引加入清理段落。接著在三個專案各做一次提案 A 的前半：移除 `.agents/skills/aep-*` 與 `.claude/skills/aep-*` 共 48 個目錄、`skills-lock.json` 的 24 筆 aep 條目，AGENTS.md 換成兩句入口，以原生 decision `aep-v4-removal`（`--by memorysaver`，三筆事件都帶 `--note`）記錄授權。每個專案清理後 `aep check`、`aep migrate verify`、`aep doctor` 通過，`aep --skill` 只列 8 個內建加專案自己的 skill，`init --dry-run` 無變更。三個專案各一個 commit，約 450 個檔案、65,470 行刪除；未 push。receipt 內的 legacy sources（openspec、product-context.yaml、product、project-convention、lessons-learned）與 host hook 設定未動，因為 `migrate verify` 仍以它們的 digest 為準；這部分留給提案 A 的 cleanup receipt。證據在 `~/.local/share/aep/trials/2026-09-18-v4-removal/`。
 - 使用者另外指定一個只有 Git 歷史、未用過 AEP 的專案作為提案 C 的實驗對象，待進行。
