@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "note": "Per-skill steering ceilings (C1/C6 of docs/decisions/claude-5-context-engineering.md; F4 of fable-5-1-behavioral-rebaseline.md adds the gen-eval prompt payloads). A file may fall below its entry; rising above it fails CI. Raising an entry is a reviewable decision, not a fix \u2014 the question it asks is which prohibition in THIS file earned its place.",
+  "note": "Per-skill steering ceilings (C1/C6 of docs/decisions/claude-5-context-engineering.md; F4 of fable-5-1-behavioral-rebaseline.md adds the gen-eval prompt payloads). A file may fall below its entry; rising above it fails CI. Raising an entry is a reviewable decision, not a fix — the question it asks is which prohibition in THIS file earned its place.",
   "skills": {
     "skills/agentic-development-workflow/build/SKILL.md": {
-      "negations": 11,
-      "imperatives": 2
+      "negations": 8,
+      "imperatives": 0
     },
     "skills/agentic-development-workflow/design/SKILL.md": {
       "negations": 0,
@@ -38,6 +38,10 @@
       "negations": 0,
       "imperatives": 0
     },
+    "skills/native/eval/SKILL.md": {
+      "negations": 1,
+      "imperatives": 0
+    },
     "skills/native/implement/SKILL.md": {
       "negations": 0,
       "imperatives": 0
@@ -63,8 +67,8 @@
       "imperatives": 0
     },
     "skills/patterns/autopilot/SKILL.md": {
-      "negations": 7,
-      "imperatives": 2
+      "negations": 6,
+      "imperatives": 0
     },
     "skills/patterns/design-lens/SKILL.md": {
       "negations": 4,
@@ -83,19 +87,19 @@
       "imperatives": 0
     },
     "skills/patterns/gen-eval/references/agent-contracts.md": {
-      "negations": 3,
+      "negations": 2,
       "imperatives": 0
     },
     "skills/patterns/gen-eval/references/eval-protocol.md": {
-      "negations": 5,
-      "imperatives": 1
-    },
-    "skills/patterns/gen-eval/references/scoring-framework.md": {
       "negations": 4,
       "imperatives": 0
     },
-    "skills/patterns/workflow-feedback/SKILL.md": {
+    "skills/patterns/gen-eval/references/scoring-framework.md": {
       "negations": 2,
+      "imperatives": 0
+    },
+    "skills/patterns/workflow-feedback/SKILL.md": {
+      "negations": 1,
       "imperatives": 0
     },
     "skills/patterns/workflow/SKILL.md": {
@@ -115,7 +119,7 @@
       "imperatives": 0
     },
     "skills/product-context/map/SKILL.md": {
-      "negations": 2,
+      "negations": 1,
       "imperatives": 0
     },
     "skills/product-context/model/SKILL.md": {
@@ -139,12 +143,12 @@
       "imperatives": 0
     },
     "skills/project-setup/onboard/SKILL.md": {
-      "negations": 1,
+      "negations": 0,
       "imperatives": 0
     },
     "skills/project-setup/scaffold/SKILL.md": {
-      "negations": 3,
-      "imperatives": 1
+      "negations": 2,
+      "imperatives": 0
     }
   }
 }

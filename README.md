@@ -10,7 +10,7 @@ Current release: **5.0.0-preview.1** (Linux x86_64, macOS Apple Silicon). The ea
 curl -fsSL https://raw.githubusercontent.com/memorysaver/agentic-engineering-patterns/main/scripts/install.sh | bash
 ```
 
-The script picks the archive for your platform from the newest v5 release, verifies its SHA-256, keeps the binary under `~/.local/share/aep/builds/<sha16>/` and links `~/.local/bin/aep`. `AEP_VERSION=v5.x.y` pins a tag; `AEP_HOME` and `AEP_BIN_DIR` change the locations. Runtime needs are `git` on `PATH` and nothing else: no Node, no LLM key, no per-agent skill copies.
+The script picks the archive for your platform from the newest v5 release, verifies its SHA-256, keeps the binary under `~/.aep/builds/<sha16>/` and links `~/.local/bin/aep`. `AEP_VERSION=v5.x.y` pins a tag; `AEP_HOME` and `AEP_BIN_DIR` change the locations. Runtime needs are `git` on `PATH` and nothing else: no Node, no LLM key, no per-agent skill copies.
 
 To build from source, install the pinned Rust toolchain with rustup and run `cargo install --locked --path crates/aep-cli` from this checkout.
 
@@ -67,12 +67,19 @@ Readiness comes from explicit dependencies, gates and accepted contracts, never 
 | Implement and verify | `dispatch`, `worktree`, `attempt`, `verify`, `review`, `gate` |
 | Deliver and learn | `deliver`, `release`, `spec`, `lesson`, `reflect`, `rule` |
 | Maintain | `config`, `migrate`, `openspec`, `recover` |
+| Observe | `eval` |
 
 Every command accepts `--json` for structured output, `--dry-run` for supported writes and `--note` for the reason. `aep --skill [name] [--ref name]` prints the embedded guidance; it is the only place agents read procedures from.
 
 ### Verification and policy
 
 `.aep/config.toml` pins the CLI version, names the stores and declares the project's checks as explicit command arrays, together with policy: parallel attempt capacity, whether independent review is required, protected paths. Checks run inside the attempt's worktree and their results are stored as evidence bound to the revision they checked. Passing `aep check` proves structure; product behavior is proved by the project's own verification procedure, which `aep --skill project --ref verification-setup` helps establish.
+
+### Observing a project from outside
+
+`aep eval` is a neutral view of how a project is run. `aep eval snapshot` collects structural facts (records, verification policy, delivery receipts, Git state, legacy residue, CI and secret scanning) into a run under `~/.aep/eval/<project>/<run>/` and `aep eval report` applies fixed rules that name the engineering practice behind each finding. Nothing is written into the project. Under Herdr, `aep eval watch` starts a separate observer agent that follows `aep --skill eval`: it reads the working agent's transcript at each milestone, compares its claims with records and Git, and stores observations with `aep eval record`. The observer never sends input to the working agent and never judges product decisions or feature value.
+
+The machine-level AEP home is `~/.aep` (`AEP_HOME` overrides it): `config.toml` from `aep eval init`, `eval/` for runs, and `builds/` from the installer.
 
 ## For coding agents
 

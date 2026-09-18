@@ -77,7 +77,7 @@ def main():
             run(["git", "-C", fixture, "add", "."], fixture)
             run(["git", "-C", fixture, "-c", "core.hooksPath=/dev/null", "-c", "commit.gpgsign=false", "commit", "-qm", "legacy fixture"], fixture)
             catalog = aep(fixture, "--skill")
-            assert len(catalog["skills"]) == 8, catalog
+            assert len(catalog["skills"]) == 9, catalog
             summary["guidance"] = catalog["metadata"]
             for argv in [("project",), ("roadmap", "--ref", "purpose-research"), ("roadmap", "--ref", "product-context"), ("design", "--ref", "prototype"), ("validate", "--ref", "self-verification")]:
                 aep(fixture, "--skill", *argv)

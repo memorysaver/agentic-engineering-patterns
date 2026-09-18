@@ -6,14 +6,14 @@
 # Environment:
 #   AEP_VERSION   Release tag to install (default: newest v5 release, prereleases included).
 #   AEP_BASE_URL  Directory URL holding aep-<target>.tar.gz and its .sha256 (default: the tag's GitHub release assets).
-#   AEP_HOME      Install root (default: ~/.local/share/aep). Builds live under $AEP_HOME/builds/<sha16>/bin/aep.
+#   AEP_HOME      AEP home (default: ~/.aep). Builds live under $AEP_HOME/builds/<sha16>/bin/aep; eval runs under $AEP_HOME/eval.
 #   AEP_BIN_DIR   Directory for the `aep` link (default: ~/.local/bin).
 #
 # Targets: Linux x86_64 (x86_64-unknown-linux-gnu) and macOS Apple Silicon (aarch64-apple-darwin).
 set -euo pipefail
 
 REPO="memorysaver/agentic-engineering-patterns"
-AEP_HOME="${AEP_HOME:-$HOME/.local/share/aep}"
+AEP_HOME="${AEP_HOME:-$HOME/.aep}"
 AEP_BIN_DIR="${AEP_BIN_DIR:-$HOME/.local/bin}"
 
 log() { printf 'aep-install: %s\n' "$*" >&2; }

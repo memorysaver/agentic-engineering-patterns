@@ -1,6 +1,6 @@
 use crate::{
     cli::{Cli, Command, RecordAction},
-    guidance, migration, spec, workflow,
+    eval, guidance, migration, spec, workflow,
 };
 use aep_core::{Error, Kind, Record, Result, digest, now, unique_id, validate};
 use aep_store::{Snapshot, Store, contained, git, parse_yaml, read_optional};
@@ -59,6 +59,9 @@ pub fn store(args: &Cli) -> Result<Store> {
 }
 /// Note supplied with `--note`, applied to every event written by this invocation.
 static NOTE: OnceLock<String> = OnceLock::new();
+pub fn note() -> Option<String> {
+    NOTE.get().cloned()
+}
 
 pub fn run(args: &Cli) -> Result<Outcome> {
     if let Some(name) = &args.skill {
@@ -79,6 +82,7 @@ pub fn run(args: &Cli) -> Result<Outcome> {
         Command::Init { claude } => return init(args, *claude),
         Command::Doctor => return doctor(args),
         Command::Migrate { command } => return migration::run(args, command),
+        Command::Eval { command } => return eval::run(args, command),
         Command::Recover { apply, rollback } => {
             let store = match Store::open(&args.root) {
                 Ok(s) => s,

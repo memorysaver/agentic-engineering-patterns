@@ -16,6 +16,8 @@ product work, integration evidence, and release history.
 
 ## [Unreleased]
 
+- Add `aep eval`, a neutral, read-only observation of a project's engineering process: `eval snapshot` collects structural facts (records, verification policy, reviews, deliveries, Git state, legacy residue, CI, secret scanning) into `~/.aep/eval/<project>/<run>/`; `eval report` applies fixed rules that name the practice behind each finding; `eval record` stores observer findings with notes; `eval list`/`show` read runs; `eval watch` starts a separate observer agent under Herdr with the new ninth built-in skill `eval`. `aep eval init` writes the machine-level `~/.aep/config.toml`; the installer's default home moves to `~/.aep`. Nothing is written into the observed project.
+
 - After migration, a project may remove its installed v4 skills and replace the `AGENTS.md` route with the plain `aep --skill` entrypoint: `aep migrate verify` accepts either form, and `aep init` no longer treats a project with a migration receipt as legacy, so it does not reintroduce a v4 route. Retained legacy sources listed in the migration receipt still need to stay unchanged.
 
 - `aep init` in a fresh project writes a two-sentence `AGENTS.md` (read `README.md`, run `aep --skill`) with no version route or v4 wording. An existing `AGENTS.md` only gains that pointer when it lacks one. The explicit v4/v5 route is now written only for detected legacy projects and by migration.
