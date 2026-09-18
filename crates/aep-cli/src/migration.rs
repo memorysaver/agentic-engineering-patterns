@@ -1097,8 +1097,11 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                         return Err(Error::input("Migrated story was lost"));
                     }
                 }
+                // The entrypoint is either the explicit v5 route kept from cutover or,
+                // after legacy skills are removed, the plain `aep --skill` pointer.
                 if !snap.files.get("AGENTS.md").is_some_and(|s| {
-                    s.contains("aep-version-route: start") && s.contains("AEP default: v5")
+                    (s.contains("aep-version-route: start") && s.contains("AEP default: v5"))
+                        || (!s.contains("aep-version-route: start") && s.contains("aep --skill"))
                 }) || !snap
                     .files
                     .contains_key(&format!("{}/README.md", s.config.stores.rules))

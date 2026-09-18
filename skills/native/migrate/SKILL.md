@@ -13,6 +13,8 @@ Commit exact source files before cutover so imported context remains retrievable
 
 Switch affected readers/writers together and finish or explicitly restart old-contract attempts. Use `aep --skill project` to reconcile instruction discovery, project constraints and the selected workflow. Legacy workflow commands remain historical context; subsequent work updates native stores. Reading native guidance alone leaves migration unapplied.
 
+Once `aep migrate verify` passes and the migration is committed, remove the installed legacy skills the agent hosts still load (`.claude/skills/aep-*`, `.agents/skills/aep-*`, their `skills-lock.json` entries) and replace the AGENTS.md version route with the plain `aep --skill` entrypoint; Git retains the removed files. Legacy sources listed in the migration receipt stay unchanged until a later cleanup records their removal.
+
 Commit the coherent migration after context and checks work. Git revert or selective restore supplies recovery; returning to a legacy workflow after native work requires an explicit handoff of new facts. Use `aep recover` for interrupted CLI file transactions.
 
 An imported completion remains unverified. Inspect code/Git evidence, then use `aep story reconcile <id> --commit <sha> --by <actor>` to record an attributed integration claim and worktree for current validation. Configure and execute current checks and any required review before evaluating covering gates.
