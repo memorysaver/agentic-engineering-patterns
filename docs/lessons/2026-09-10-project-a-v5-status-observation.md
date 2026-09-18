@@ -12,14 +12,14 @@
 
 ## 問題與自行恢復情況（均未修正）
 
-| 編號 | 實際觀察 | 影響／目前判定 |
-| --- | --- | --- |
-| OBS-01 | 先呼叫 `aep --skill roadmap references/status.md`；再試 `aep --skill roadmap --ref references/status.md`。第二次錯誤列出可用名稱 `product-context, status`，之後自行改成 `aep --skill roadmap --ref status` 成功。 | Skill 的相對 Markdown 路徑和 CLI reference 名稱不同，造成兩次可恢復的操作錯誤。須後續評估呈現／尋找方式，未選定修法。 |
-| OBS-02 | 直接以 Python 解析 story YAML 時缺少 yaml module；改用 Ruby 時遇到受限日期／時間類型載入錯誤。後來使用 CLI JSON，也以明確允許 Time/Date 的 Ruby 讀取。 | 狀態盤點引入額外解析器與環境依賴。這是本次 agent 行為與使用摩擦，不代表 CLI 本身無法讀取資料。 |
-| OBS-03 | 一次將完整 `aep status --json` 重印，終端顯示超過 3,000 行摺疊輸出；稍後才依 `data.stories` 過濾。`project-a orient --format json` 也有超過 950 行摺疊輸出。 | 可見大量資料輸出與後續過濾；尚未量測實際 token、延遲或錯誤率，不能只憑畫面判定 context 遺失。 |
-| OBS-04 | Agent 回報 `project-a project status --deep` 的 `adoption_missing_agents_trigger`，並讀取 `crates/project-a/src/project/adoption.rs`、精簡後的 AGENTS.md 與 `project-rules/project-a-memory.md` 比對。 | 具體接入契約不一致：健康檢查仍要求記憶指令直接出現在 AGENTS.md，而 v5 入口將專案指引移至 indexed rules。程式與文件均尚未修改。 |
-| OBS-05 | Agent 回報 recall 包含未記錄結案的歷史 blocker，並交叉比對後續 Git 合併與 Layer 18 結案證據。 | 記憶的歷史阻擋與當前可執行工作需要辨識；此觀察不等於已確認所有舊 blocker 都失效。沒有修改或批次結案記憶。 |
-| OBS-06 | 沒有程式變更時，仍重複執行 help_smoke 與 fmt 檢查。 | 可見重複驗證，後續可評估狀態盤點的驗證範圍；目前沒有建立固定次數或新流程要求。 |
+| 編號   | 實際觀察                                                                                                                                                                                                           | 影響／目前判定                                                                                                                 |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| OBS-01 | 先呼叫 `aep --skill roadmap references/status.md`；再試 `aep --skill roadmap --ref references/status.md`。第二次錯誤列出可用名稱 `product-context, status`，之後自行改成 `aep --skill roadmap --ref status` 成功。 | Skill 的相對 Markdown 路徑和 CLI reference 名稱不同，造成兩次可恢復的操作錯誤。須後續評估呈現／尋找方式，未選定修法。          |
+| OBS-02 | 直接以 Python 解析 story YAML 時缺少 yaml module；改用 Ruby 時遇到受限日期／時間類型載入錯誤。後來使用 CLI JSON，也以明確允許 Time/Date 的 Ruby 讀取。                                                             | 狀態盤點引入額外解析器與環境依賴。這是本次 agent 行為與使用摩擦，不代表 CLI 本身無法讀取資料。                                 |
+| OBS-03 | 一次將完整 `aep status --json` 重印，終端顯示超過 3,000 行摺疊輸出；稍後才依 `data.stories` 過濾。`project-a orient --format json` 也有超過 950 行摺疊輸出。                                                       | 可見大量資料輸出與後續過濾；尚未量測實際 token、延遲或錯誤率，不能只憑畫面判定 context 遺失。                                  |
+| OBS-04 | Agent 回報 `project-a project status --deep` 的 `adoption_missing_agents_trigger`，並讀取 `crates/project-a/src/project/adoption.rs`、精簡後的 AGENTS.md 與 `project-rules/project-a-memory.md` 比對。             | 具體接入契約不一致：健康檢查仍要求記憶指令直接出現在 AGENTS.md，而 v5 入口將專案指引移至 indexed rules。程式與文件均尚未修改。 |
+| OBS-05 | Agent 回報 recall 包含未記錄結案的歷史 blocker，並交叉比對後續 Git 合併與 Layer 18 結案證據。                                                                                                                      | 記憶的歷史阻擋與當前可執行工作需要辨識；此觀察不等於已確認所有舊 blocker 都失效。沒有修改或批次結案記憶。                      |
+| OBS-06 | 沒有程式變更時，仍重複執行 help_smoke 與 fmt 檢查。                                                                                                                                                                | 可見重複驗證，後續可評估狀態盤點的驗證範圍；目前沒有建立固定次數或新流程要求。                                                 |
 
 ## 有效行為與界線
 

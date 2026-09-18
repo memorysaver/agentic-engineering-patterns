@@ -23,20 +23,20 @@ The applied snapshot contains {'decision': 32, 'story': 107, 'gate': 19, 'roadma
 
 ## Checks actually observed
 
-| Check | Result |
-|---|---|
-| Local Rust preflight | PASS |
-| Rust 1.95.0 formatter | PASS |
-| Offline locked `help_smoke` integration test | PASS, 10 tests |
-| Retained Layer 18 archive verifier and self-test | PASS, 31 members |
-| Synthetic vault init/checkpoint | PASS |
-| Initial synthetic recall | Correctly failed missing derived current view, exit 60 |
-| Synthetic state rebuild + BM25-only index rebuild + recall | PASS; local_only/vector_unavailable retained |
-| Packaged `aep doctor`, status, context, skills | PASS |
-| Packaged `aep check`, `aep migrate verify` | FAIL, seven inherited missing-WHEN scenarios |
-| Native verify plan for A-072 | BLOCKED as expected: no active attempt |
-| Git diff check | PASS |
-| Original Git state before/after | Identical and clean |
+| Check                                                      | Result                                                 |
+| ---------------------------------------------------------- | ------------------------------------------------------ |
+| Local Rust preflight                                       | PASS                                                   |
+| Rust 1.95.0 formatter                                      | PASS                                                   |
+| Offline locked `help_smoke` integration test               | PASS, 10 tests                                         |
+| Retained Layer 18 archive verifier and self-test           | PASS, 31 members                                       |
+| Synthetic vault init/checkpoint                            | PASS                                                   |
+| Initial synthetic recall                                   | Correctly failed missing derived current view, exit 60 |
+| Synthetic state rebuild + BM25-only index rebuild + recall | PASS; local_only/vector_unavailable retained           |
+| Packaged `aep doctor`, status, context, skills             | PASS                                                   |
+| Packaged `aep check`, `aep migrate verify`                 | FAIL, seven inherited missing-WHEN scenarios           |
+| Native verify plan for A-072                               | BLOCKED as expected: no active attempt                 |
+| Git diff check                                             | PASS                                                   |
+| Original Git state before/after                            | Identical and clean                                    |
 
 The seven BDD issues occur in imported capture-adapter-kit, fixture-harness and packet-builder specs. They reflect source scenarios with Given/Then and no explicit When. No diagnostics or acceptance criteria were removed to force a green result. Source hashes and migration receipt checks completed; the overall verifier remains failure because the spec check fails.
 

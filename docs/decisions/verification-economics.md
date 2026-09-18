@@ -744,8 +744,8 @@ degrade for the optional live half is preserved verbatim by the `live_policy`-aw
 
 **Field evidence.** Observed across downstream runs (owner report, 2026-08-07): eval loops
 round-trip on fine-grained findings without asking impact — the generator fixes nits, the
-evaluator finds more nits, the cap absorbs the budget. The accounting above prices *how much*
-verification ran; nothing priced *whether a finding was worth a round*. The finding template
+evaluator finds more nits, the cap absorbs the budget. The accounting above prices _how much_
+verification ran; nothing priced _whether a finding was worth a round_. The finding template
 even had an `Impact:` line — free prose, routed on by nothing.
 
 **The change (three moves, all in-round; the deferred calibration loop is untouched):**
@@ -754,7 +754,7 @@ even had an `Impact:` line — free prose, routed on by nothing.
    evaluator-authored per finding, anchored to the story's acceptance criteria (`blocking`
    names the criterion or hard-floor dimension it violates; `material` is user-observable;
    `polish` has no user-observable consequence). Orthogonal to `failure_class`: class routes
-   *which path*, impact decides *whether a round is bought*. Only `product-defect` findings
+   _which path_, impact decides _whether a round is bought_. Only `product-defect` findings
    are graded; the other classes keep conjunctive routing.
 2. **The verdict is derived, not chosen.** FAIL ⇔ ≥1 blocking/material finding or a
    hard-floor breach. All-polish ⇒ mechanically PASS-with-notes: notes ride the response and
@@ -775,7 +775,7 @@ distillation already has a proposal path).
 
 Grounding: Matt Pocock's eval-economics position ("evals are dead — long live observability
 and semi-automated QA") endorses exactly this shape — the judge stays in the live workflow,
-but its score must control the loop *economically*, not just mechanically.
+but its score must control the loop _economically_, not just mechanically.
 
 ---
 

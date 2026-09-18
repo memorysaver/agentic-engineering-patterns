@@ -15,14 +15,14 @@ Project A agent 依一份 design 草案建立了九個 story、九個 change 與
 
 以下為 `aep-core` 與 `aep-cli` 目前行為，來源為 `crates/aep-core/src/lib.rs` 與 `crates/aep-cli/src/commands.rs`：
 
-| 能力 | 目前行為 |
-| --- | --- |
-| 記錄形狀 | story 有 `layer`、`wave`、`release` 欄位；容器以 `refs` 列成員。`scope_stories` 從兩個方向認定成員 |
-| 連結與 context | `links()` 包含 `layer`、`wave`；`aep context <id>` 沿這些連結展開，容器與成員互相可達。`validate` 檢查 `missing_reference` 與 `reference_kind` |
-| readiness | story 繼承所在 layer／wave 的 `depends_on` 與 `required_gates`。容器作為依賴時展開為成員 story，每個成員需 integrated 且有 delivery |
-| gate | `gate.refs` 指向容器即涵蓋全部成員，用於 `gate evaluate` 與 dispatch |
-| 遷移 | legacy layer 變成 `layer-N`，wave 變成 `wave-N-M`，layer 邊界變成 `gate-layer-N-N+1`；legacy 的 `theme`、`outcome` 只保留在 `data.legacy_metadata` |
-| 狀態呈現 | `aep status` 依 story 列出 readiness，不按容器分組，也不顯示容器 outcome |
+| 能力           | 目前行為                                                                                                                                           |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 記錄形狀       | story 有 `layer`、`wave`、`release` 欄位；容器以 `refs` 列成員。`scope_stories` 從兩個方向認定成員                                                 |
+| 連結與 context | `links()` 包含 `layer`、`wave`；`aep context <id>` 沿這些連結展開，容器與成員互相可達。`validate` 檢查 `missing_reference` 與 `reference_kind`     |
+| readiness      | story 繼承所在 layer／wave 的 `depends_on` 與 `required_gates`。容器作為依賴時展開為成員 story，每個成員需 integrated 且有 delivery                |
+| gate           | `gate.refs` 指向容器即涵蓋全部成員，用於 `gate evaluate` 與 dispatch                                                                               |
+| 遷移           | legacy layer 變成 `layer-N`，wave 變成 `wave-N-M`，layer 邊界變成 `gate-layer-N-N+1`；legacy 的 `theme`、`outcome` 只保留在 `data.legacy_metadata` |
+| 狀態呈現       | `aep status` 依 story 列出 readiness，不按容器分組，也不顯示容器 outcome                                                                           |
 
 容器記錄本身沒有 outcome、設計來源或完成條件欄位。Project A 遷移後的 20 個 layer 與 75 個 wave 的 `description` 均為空。
 
@@ -67,11 +67,11 @@ Layer 20 建立後，A-110 在使用者直接引導下走了四輪設計，agent
 
 同時觀察到三個結構性現象，屬於本提案未涵蓋的責任分工：
 
-| 現象 | 證據 | 影響 |
-| --- | --- | --- |
-| 概念層級狀態被複製到每個成員 | 四輪後 layer-20 的 `data` 有 7 個 key，A-110 有 16 個，change 有 17 個；同一段 `design_status` 同時存在 story 與 change，`trajectory_design_status` 複製到 6 筆記錄；每個新決策都在 layer、story、change 各加一組 `<主題>_decision`／`<主題>_design_artifact` | 狀態 prose 有多個 canonical 位置；每個新決策要改所有成員；後續 agent 無法判斷哪一份是權威 |
+| 現象                                      | 證據                                                                                                                                                                                                                                                                                                                                                                                                                                 | 影響                                                                                                           |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| 概念層級狀態被複製到每個成員              | 四輪後 layer-20 的 `data` 有 7 個 key，A-110 有 16 個，change 有 17 個；同一段 `design_status` 同時存在 story 與 change，`trajectory_design_status` 複製到 6 筆記錄；每個新決策都在 layer、story、change 各加一組 `<主題>_decision`／`<主題>_design_artifact`                                                                                                                                                                        | 狀態 prose 有多個 canonical 位置；每個新決策要改所有成員；後續 agent 無法判斷哪一份是權威                      |
 | 改變 readiness 的契約接受依據是概括性授權 | `eval-v2-evaluation-contract` 由 agent 在自行獨立審查後接受，`accepted_by` 與 `authority` 有填，但引用的是「好我們照著流程往下」與 agent 前一回合宣告的計畫；前四個決策都引用使用者的具體陳述。同日另一位觀察者在 Project C 專案看到相同模式：change 由 agent 以 `--by owner-implementation-order` 自行接受。A-110 交付後的同一回合，agent 又以 `codex-user-authorized-implementation` 接受 `eval-v2-project-a-adapter` 並開始 A-111 | 歸因欄位有用到，可追溯；但這是讓 story 可派工的轉換，指引沒有區分「改變 readiness 的接受」與「補充脈絡的決策」 |
-| 更新事件沒有說明 | 2026-09-14 至 09-16 的 33 筆事件全部標題為 Records updated、description 為空 | 只能靠 revision 與 commit message 回推；`update` 指令沒有可填說明的參數 |
+| 更新事件沒有說明                          | 2026-09-14 至 09-16 的 33 筆事件全部標題為 Records updated、description 為空                                                                                                                                                                                                                                                                                                                                                         | 只能靠 revision 與 commit message 回推；`update` 指令沒有可填說明的參數                                        |
 
 另外，`aep context layer-20 --json` 在 agent 終端輸出約一萬兩千八百行，設計文件內容仍只能循 `data` 路徑另讀，與研究草案 context 提案的發現相同。
 

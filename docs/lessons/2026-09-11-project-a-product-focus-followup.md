@@ -17,12 +17,12 @@ The visible transcript confirms calls to `aep --skill roadmap`, `aep --skill roa
 
 The agent used a Python orchestration cell invoking native record commands. Terminal output showed `decision accept — Saved` and saved roadmap paths. The retained native event chain independently confirms creation and acceptance for both records, including before/after revisions:
 
-| Artifact | Native state and purpose |
-| --- | --- |
-| `project-roadmap/decisions/product-focus-cross-project-learning.md` | Accepted decision: exact user statement, source of authority, accepted scope, considered alternatives, boundaries and unresolved choices |
-| `project-roadmap/plans/cross-project-learning-focus.md` | Accepted roadmap: primary user and selected outcome; design pointer; LongMemEval V2 explicitly tentative |
-| `docs/design/2026-09-11-product-focus-and-longmemeval-v2.md` | Revised prose design: chosen product priority, proposed first journey, eight positive/negative cases, existing research, benchmark mapping and limits, comparison/cost design, unresolved next decisions |
-| `project-ledger/events/event-18d42832*.yaml` | Four native events: each new record moves from absent to pending, then pending to accepted |
+| Artifact                                                            | Native state and purpose                                                                                                                                                                                 |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `project-roadmap/decisions/product-focus-cross-project-learning.md` | Accepted decision: exact user statement, source of authority, accepted scope, considered alternatives, boundaries and unresolved choices                                                                 |
+| `project-roadmap/plans/cross-project-learning-focus.md`             | Accepted roadmap: primary user and selected outcome; design pointer; LongMemEval V2 explicitly tentative                                                                                                 |
+| `docs/design/2026-09-11-product-focus-and-longmemeval-v2.md`        | Revised prose design: chosen product priority, proposed first journey, eight positive/negative cases, existing research, benchmark mapping and limits, comparison/cost design, unresolved next decisions |
+| `project-ledger/events/event-18d42832*.yaml`                        | Four native events: each new record moves from absent to pending, then pending to accepted                                                                                                               |
 
 The accepted scope is product priority only. The records explicitly exclude story activation/implementation acceptance, benchmark execution, baseline changes and spending decisions. Detailed first scenario, metrics/thresholds and benchmark contract remain under design. No new implementation change/story was created for unresolved scope; existing A-068/A-072 were linked as context and retained their prior states.
 

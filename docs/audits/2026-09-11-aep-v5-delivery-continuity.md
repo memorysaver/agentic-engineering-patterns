@@ -25,12 +25,12 @@ Delivery planning and PR/merge dry runs present candidate readiness, identify th
 
 Host subagent `/root/review_delivery_continuity` read candidate source and CLI diff. No external mutations or actual downstream lifecycle were performed. Its five scenarios produced:
 
-| Request/context | Observed proposed endpoint |
-| --- | --- |
-| Autonomous story completion, prior PR and merge-to-develop authorization | Continue PR/integration, applicable checks, spec/change closure and resource reconciliation; recover existing authority rather than asking again |
-| PR only | Confirm PR and hand off pending integration/resources |
-| Review only with a discovered bug | Findings, without repair or merge |
-| Verified candidate only | Verified candidate and retained resumable context |
+| Request/context                                                              | Observed proposed endpoint                                                                                                                         |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Autonomous story completion, prior PR and merge-to-develop authorization     | Continue PR/integration, applicable checks, spec/change closure and resource reconciliation; recover existing authority rather than asking again   |
+| PR only                                                                      | Confirm PR and hand off pending integration/resources                                                                                              |
+| Review only with a discovered bug                                            | Findings, without repair or merge                                                                                                                  |
+| Verified candidate only                                                      | Verified candidate and retained resumable context                                                                                                  |
 | Autonomous completion, customary PR workflow, missing merge target/authority | Complete authorized concrete preparation, recover existing workflow authority, identify the exact remaining decision and report partial completion |
 
 No blocking findings. Reviewer identified ambiguity between PR publication and release publication. Changed “publication authority” to “public-release authority” and “For a PR request” to “For an authorized PR”. Follow-up review confirmed the ambiguity resolved without broadening scope.

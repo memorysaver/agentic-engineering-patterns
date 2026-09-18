@@ -16,15 +16,15 @@
 
 ## 研究依據與界線
 
-| 來源 | 本次採用的發現 | 證據界線 |
-| --- | --- | --- |
-| [24 項盤點](../audits/2026-09-10-aep-v5-skill-migration-inventory.md)、[marketplace](../../.claude-plugin/marketplace.json)、legacy skills | 區分產品知識、可重用方法、操作契約與固定編排；不是把 24 個名稱塞回 8 個檔案 | 盤點中的 15 項補寫／9 項重設是此前建議，不能繼續當成全部必做 |
-| [Native skills](../../skills/native/)、[context 實作](../../crates/aep-cli/src/commands.rs)、[verification 實作](../../crates/aep-cli/src/workflow.rs)、[config](../../crates/aep-core/src/lib.rs) | 現有命令可當骨架，但 context coverage、runtime proof 與 review autonomy 仍有缺口 | 下文清楚區分既有能力與新增建議 |
-| idea：`deep-research/agentic-engineering-patterns/14-pstack-verification-with-prototype.md`、`lesson-learned/05-aep-next-gen-adversarial-edge-case-search.md` | 已有 AEP 下游「對抗過約束 → 低收益 edge case search」觀察；prototype 是可能改善方法 | 本機來源根目錄為 `/home/memorysaver/idea`；不把筆記當成本次重跑實驗 |
-| [AEP verification economics](verification-economics.md)、[v4.1 behavioral rebaseline](fable-5-1-behavioral-rebaseline.md) | 舊制度已遭遇驗證成本、抽象情境膨脹與低影響 findings 的反覆循環 | 既有現場觀察支持重新設計，未證明所有 independent review 都應取消 |
-| pstack 官方 [create-verification-skill](https://raw.githubusercontent.com/cursor/plugins/main/pstack/skills/create-verification-skill/SKILL.md) | 專案自己的操作工具、Feature Map，以及產生指引後真正跑一次的要求 | 本次閱讀原始指引，未安裝或執行 pstack |
-| pstack 官方 [prototype playbook](https://github.com/cursor/plugins/blob/main/pstack/skills/poteto-mode/playbooks/prototype.md) | 原型用來回答具體設計問題，觀察對應 surface；產出決定與可拋棄原型 | 來源主張；沒有與 AEP 做同任務的效果比較 |
-| pstack 官方 [maintain-verification-skill](https://raw.githubusercontent.com/cursor/plugins/main/pstack/skills/maintain-verification-skill/SKILL.md) | Feature Map 需以 source 與 live 行為核對；文件漂移和產品 regression 分開處理 | 取維護責任，不採用其固定平行 agent 分工 |
+| 來源                                                                                                                                                                                               | 本次採用的發現                                                                      | 證據界線                                                            |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| [24 項盤點](../audits/2026-09-10-aep-v5-skill-migration-inventory.md)、[marketplace](../../.claude-plugin/marketplace.json)、legacy skills                                                         | 區分產品知識、可重用方法、操作契約與固定編排；不是把 24 個名稱塞回 8 個檔案         | 盤點中的 15 項補寫／9 項重設是此前建議，不能繼續當成全部必做        |
+| [Native skills](../../skills/native/)、[context 實作](../../crates/aep-cli/src/commands.rs)、[verification 實作](../../crates/aep-cli/src/workflow.rs)、[config](../../crates/aep-core/src/lib.rs) | 現有命令可當骨架，但 context coverage、runtime proof 與 review autonomy 仍有缺口    | 下文清楚區分既有能力與新增建議                                      |
+| idea：`deep-research/agentic-engineering-patterns/14-pstack-verification-with-prototype.md`、`lesson-learned/05-aep-next-gen-adversarial-edge-case-search.md`                                      | 已有 AEP 下游「對抗過約束 → 低收益 edge case search」觀察；prototype 是可能改善方法 | 本機來源根目錄為 `/home/memorysaver/idea`；不把筆記當成本次重跑實驗 |
+| [AEP verification economics](verification-economics.md)、[v4.1 behavioral rebaseline](fable-5-1-behavioral-rebaseline.md)                                                                          | 舊制度已遭遇驗證成本、抽象情境膨脹與低影響 findings 的反覆循環                      | 既有現場觀察支持重新設計，未證明所有 independent review 都應取消    |
+| pstack 官方 [create-verification-skill](https://raw.githubusercontent.com/cursor/plugins/main/pstack/skills/create-verification-skill/SKILL.md)                                                    | 專案自己的操作工具、Feature Map，以及產生指引後真正跑一次的要求                     | 本次閱讀原始指引，未安裝或執行 pstack                               |
+| pstack 官方 [prototype playbook](https://github.com/cursor/plugins/blob/main/pstack/skills/poteto-mode/playbooks/prototype.md)                                                                     | 原型用來回答具體設計問題，觀察對應 surface；產出決定與可拋棄原型                    | 來源主張；沒有與 AEP 做同任務的效果比較                             |
+| pstack 官方 [maintain-verification-skill](https://raw.githubusercontent.com/cursor/plugins/main/pstack/skills/maintain-verification-skill/SKILL.md)                                                | Feature Map 需以 source 與 live 行為核對；文件漂移和產品 regression 分開處理        | 取維護責任，不採用其固定平行 agent 分工                             |
 
 官方來源讀取日為 2026-09-10，連結指向當時的 `main`，未固定 commit。X Part 1／2 本次無法重新取回正文，文章層面的解讀來自已存在的 idea 筆記；本次直接核對的是上述三份 GitHub 指引。未驗證文章的產量數字，也未進行整個 plugin 稽核。
 
@@ -32,16 +32,16 @@
 
 這是可按需選用的工作入口，沒有要求每個任務依序跑完八個 skill。
 
-| CLI 指引入口 | 核心問題與責任 | 應留下的 context／證據 | 現有操作骨架 |
-| --- | --- | --- | --- |
-| `aep skills show project` | 這個專案怎麼理解、啟動、操作與驗證？建立／修復環境和專案驗證 procedure | rules index、實際 setup、verification procedure、Feature Map、可執行 checks | `init`、`doctor`、`config show/update`、`check` |
-| `aep skills show roadmap` | 為誰解決什麼問題？下一個可觀察成果是什麼？ | 問題、persona/JTBD、outcome、journeys、邊界、system map、stories 與 dependencies | `roadmap`、`story`、`layer`、`wave`、`release`、`decision` |
-| `aep skills show design` | 本次要改什麼？還缺哪個決定或實證？ | 小型 change contract、BDD、適用設計判準、prototype findings、decision 與排除理由 | `context`、`change`、`decision`、`spec check` |
-| `aep skills show implement` | 在哪個基準、範圍與環境把工作完成？ | 任務 context、base/head、worktree/attempt、進度、未決問題與恢復資訊 | `context`、`dispatch plan/start`、`attempt`、`worktree inspect` |
-| `aep skills show validate` | 哪些觀察足以支持完成主張？ | acceptance → 方法 → 結果／artifact；revision、environment、未涵蓋範圍 | `verify plan/run`、按政策使用 `review`、`gate evaluate` |
-| `aep skills show deliver` | 這份已驗證工作實際交付到哪裡？ | PR／integration、spec publication、environment gate、保留的 lessons/evidence、資源收尾 | `deliver`、`spec publish/close`、`release promote` |
-| `aep skills show reflect` | 新觀察改變了哪些已知事實或作法？ | bug／產品假說／規則修正的分流、lessons、verification map 維護、上游候選 | `lesson`、`reflect propose`、`rule adopt`，需要時回到 `story/roadmap` |
-| `aep skills show migrate` | 哪些既有 context 必須帶到 v5？ | 來源版本、語意 mapping、尚未驗證的歷史主張、切換結果 | `migrate plan/apply/verify`、`openspec` adapter |
+| CLI 指引入口                | 核心問題與責任                                                         | 應留下的 context／證據                                                                 | 現有操作骨架                                                          |
+| --------------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `aep skills show project`   | 這個專案怎麼理解、啟動、操作與驗證？建立／修復環境和專案驗證 procedure | rules index、實際 setup、verification procedure、Feature Map、可執行 checks            | `init`、`doctor`、`config show/update`、`check`                       |
+| `aep skills show roadmap`   | 為誰解決什麼問題？下一個可觀察成果是什麼？                             | 問題、persona/JTBD、outcome、journeys、邊界、system map、stories 與 dependencies       | `roadmap`、`story`、`layer`、`wave`、`release`、`decision`            |
+| `aep skills show design`    | 本次要改什麼？還缺哪個決定或實證？                                     | 小型 change contract、BDD、適用設計判準、prototype findings、decision 與排除理由       | `context`、`change`、`decision`、`spec check`                         |
+| `aep skills show implement` | 在哪個基準、範圍與環境把工作完成？                                     | 任務 context、base/head、worktree/attempt、進度、未決問題與恢復資訊                    | `context`、`dispatch plan/start`、`attempt`、`worktree inspect`       |
+| `aep skills show validate`  | 哪些觀察足以支持完成主張？                                             | acceptance → 方法 → 結果／artifact；revision、environment、未涵蓋範圍                  | `verify plan/run`、按政策使用 `review`、`gate evaluate`               |
+| `aep skills show deliver`   | 這份已驗證工作實際交付到哪裡？                                         | PR／integration、spec publication、environment gate、保留的 lessons/evidence、資源收尾 | `deliver`、`spec publish/close`、`release promote`                    |
+| `aep skills show reflect`   | 新觀察改變了哪些已知事實或作法？                                       | bug／產品假說／規則修正的分流、lessons、verification map 維護、上游候選                | `lesson`、`reflect propose`、`rule adopt`，需要時回到 `story/roadmap` |
+| `aep skills show migrate`   | 哪些既有 context 必須帶到 v5？                                         | 來源版本、語意 mapping、尚未驗證的歷史主張、切換結果                                   | `migrate plan/apply/verify`、`openspec` adapter                       |
 
 `status/query/context/timeline` 是跨入口的讀取面。人的狀態摘要在這些事實上組裝，不再需要獨立 human-alignment renderer。摘要能指出現在位置、證據、變化、阻塞與真正需要決定的事項即可。
 
@@ -49,32 +49,32 @@
 
 「保留」保留的是方法與必要 context，不保留舊固定流程；「自主」不再把該 pattern 當 native 必修程序。每列有一個主要責任歸屬，跨入口只交接結果，不複製整份方法。
 
-| ID | Legacy skill | 主要落點 | 保留的能力與退出的責任 |
-| --- | --- | --- | --- |
-| L01 | `envision` | `roadmap` | 保留問題、機會、persona/JTBD、成功結果與 proceed/kill/defer 的依據；以任務需要決定分析深度 |
-| L02 | `map` | `roadmap` | 保留 system map、journeys、walking skeleton、可驗收切片與介面依賴；移除數字 layer 的隱含流程 |
-| L03 | `model` | `design` 按需 reference | 保留領域名詞、objects/relationships/actions 與畫面結構；ORCA 是工具，非所有 UI 工作的必經階段 |
-| L04 | `dispatch` | `implement` | 保留選工依據、dependency/readiness 與 context handoff；排序由 agent 判斷，claim/容量/隔離由 CLI 維持 |
-| L05 | `validate` | `validate` | 保留 code／文件／設計相對 intent 的驗證；以可追溯結果取代統一評分儀式，review-only 仍只報 findings |
-| L06 | `calibrate` | `design` 按需 reference | 保留人的判準、examples/counterexamples、適用範圍與來源；七維度作選單，移除 `.5` gate 與 heavy 類型必定停下的安排 |
-| L07 | `reflect` | `reflect` | 保留產品回饋、outcome 假說、bug/refinement/discovery 分流，形成 context 更新；清除 native `monet-*` 名稱殘留 |
-| L08 | `watch` | `reflect` 接收觀察；driver 外置 | 保留 observation 的來源、時間、identity 與證據；來源抓取／cursor／去重由選定 adapter 負責，通用監控引擎退出 native 核心待辦 |
-| L09 | `onboard` | `project` | 保留首次導入、既有 instructions 保護、能力探測；移除 plugin pin 與 per-host 技能複製流程 |
-| L10 | `scaffold` | `project` | 保留實際 stack/setup、env/seed/isolation 與冪等修復；以既有工具為起點，不指定通用產品 stack |
-| L11 | `e2e-skill-scaffolding` | `project` 產製；`validate` 使用 | 升級為 project-owned verification procedure + Feature Map；涵蓋 CLI/API/UI/library，保留已有 journeys，避免另建一份重複測試地圖 |
-| L12 | `design` | `design` | 保留 intent、邊界、alternatives、acceptance；加入 verification-with-prototype，不把抽象 plan 的完整度當 gate |
-| L13 | `launch` | `implement` | 保留 base/cwd/context/environment 的 handoff；當前 agent 可自己執行，只有選用 delegation 時才需要 host handle，不預設 spawn |
-| L14 | `build` | `implement` | 保留成果、範圍、恢復資訊與實作中 self verification；固定 phase 0–13、重複狀態檔與 gen-eval 呼叫鏈退出 |
-| L15 | `wrap` | `deliver` | 保留 integration 核實、spec、lessons/evidence 保存與所屬資源清理；done 不能代替 cleanup 證據 |
-| L16 | `git-ref` | `implement` 的操作 reference | 保留 base/ref/worktree、衝突與恢復的必要指引，`deliver` 引用；不成為獨立 skill 或自動猜分支的腳本 |
-| L17 | `human-alignment` | `roadmap` 的 status reference | 保留以 records/evidence 解釋目前狀態、缺口與待決問題；dashboard／HTML renderer 延後，不為文字摘要新增入口 |
-| L18 | `gen-eval` | **模型自主**；證據原則歸 `validate` | 取消固定 generator/evaluator topology、分數尺與必跑 rounds；保留反證、真實觀察、findings impact，以及選用 reviewer 時的來源與 revision |
-| L19 | `executor` | **host 能力**；交接邊界歸 `implement` | agent 選擇 host 已有能力；保留 worker/cwd/resource ownership 與恢復事實；通用 backend matrix、fallback scripts 退出核心 |
-| L20 | `autopilot` | **模型／host 自主** | 持續執行與排程由 host 提供；AEP 保留可查詢進度、冪等操作、未解決問題與授權範圍，不重建 tick daemon／第二套狀態機 |
-| L21 | `workflow` | **模型自主** | 拆工、fan-out、競爭方案與 synthesis 交模型選；不內嵌固定 topology catalog，也不因存在 skill 就要求多 agent |
-| L22 | `workflow-feedback` | `reflect` | 保留有來源的 capture、共通模式與 upstream proposal；本地保存和對外發送依任務授權分開處理 |
-| L23 | `design-lens` | `design` 按需 reference | 保留有來源的 usability/accessibility 判準，供 `validate` 使用；不固定跑完全部 theory families 或一律分數化 |
-| L24 | `easy-explain` | **模型溝通能力**；專案詞彙屬 context | 不新增 native skill；保留 glossary 與缺失前提，依使用者要求重新解釋，不移植 explicit-only host 設定 |
+| ID  | Legacy skill            | 主要落點                              | 保留的能力與退出的責任                                                                                                                 |
+| --- | ----------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| L01 | `envision`              | `roadmap`                             | 保留問題、機會、persona/JTBD、成功結果與 proceed/kill/defer 的依據；以任務需要決定分析深度                                             |
+| L02 | `map`                   | `roadmap`                             | 保留 system map、journeys、walking skeleton、可驗收切片與介面依賴；移除數字 layer 的隱含流程                                           |
+| L03 | `model`                 | `design` 按需 reference               | 保留領域名詞、objects/relationships/actions 與畫面結構；ORCA 是工具，非所有 UI 工作的必經階段                                          |
+| L04 | `dispatch`              | `implement`                           | 保留選工依據、dependency/readiness 與 context handoff；排序由 agent 判斷，claim/容量/隔離由 CLI 維持                                   |
+| L05 | `validate`              | `validate`                            | 保留 code／文件／設計相對 intent 的驗證；以可追溯結果取代統一評分儀式，review-only 仍只報 findings                                     |
+| L06 | `calibrate`             | `design` 按需 reference               | 保留人的判準、examples/counterexamples、適用範圍與來源；七維度作選單，移除 `.5` gate 與 heavy 類型必定停下的安排                       |
+| L07 | `reflect`               | `reflect`                             | 保留產品回饋、outcome 假說、bug/refinement/discovery 分流，形成 context 更新；清除 native `monet-*` 名稱殘留                           |
+| L08 | `watch`                 | `reflect` 接收觀察；driver 外置       | 保留 observation 的來源、時間、identity 與證據；來源抓取／cursor／去重由選定 adapter 負責，通用監控引擎退出 native 核心待辦            |
+| L09 | `onboard`               | `project`                             | 保留首次導入、既有 instructions 保護、能力探測；移除 plugin pin 與 per-host 技能複製流程                                               |
+| L10 | `scaffold`              | `project`                             | 保留實際 stack/setup、env/seed/isolation 與冪等修復；以既有工具為起點，不指定通用產品 stack                                            |
+| L11 | `e2e-skill-scaffolding` | `project` 產製；`validate` 使用       | 升級為 project-owned verification procedure + Feature Map；涵蓋 CLI/API/UI/library，保留已有 journeys，避免另建一份重複測試地圖        |
+| L12 | `design`                | `design`                              | 保留 intent、邊界、alternatives、acceptance；加入 verification-with-prototype，不把抽象 plan 的完整度當 gate                           |
+| L13 | `launch`                | `implement`                           | 保留 base/cwd/context/environment 的 handoff；當前 agent 可自己執行，只有選用 delegation 時才需要 host handle，不預設 spawn            |
+| L14 | `build`                 | `implement`                           | 保留成果、範圍、恢復資訊與實作中 self verification；固定 phase 0–13、重複狀態檔與 gen-eval 呼叫鏈退出                                  |
+| L15 | `wrap`                  | `deliver`                             | 保留 integration 核實、spec、lessons/evidence 保存與所屬資源清理；done 不能代替 cleanup 證據                                           |
+| L16 | `git-ref`               | `implement` 的操作 reference          | 保留 base/ref/worktree、衝突與恢復的必要指引，`deliver` 引用；不成為獨立 skill 或自動猜分支的腳本                                      |
+| L17 | `human-alignment`       | `roadmap` 的 status reference         | 保留以 records/evidence 解釋目前狀態、缺口與待決問題；dashboard／HTML renderer 延後，不為文字摘要新增入口                              |
+| L18 | `gen-eval`              | **模型自主**；證據原則歸 `validate`   | 取消固定 generator/evaluator topology、分數尺與必跑 rounds；保留反證、真實觀察、findings impact，以及選用 reviewer 時的來源與 revision |
+| L19 | `executor`              | **host 能力**；交接邊界歸 `implement` | agent 選擇 host 已有能力；保留 worker/cwd/resource ownership 與恢復事實；通用 backend matrix、fallback scripts 退出核心                |
+| L20 | `autopilot`             | **模型／host 自主**                   | 持續執行與排程由 host 提供；AEP 保留可查詢進度、冪等操作、未解決問題與授權範圍，不重建 tick daemon／第二套狀態機                       |
+| L21 | `workflow`              | **模型自主**                          | 拆工、fan-out、競爭方案與 synthesis 交模型選；不內嵌固定 topology catalog，也不因存在 skill 就要求多 agent                             |
+| L22 | `workflow-feedback`     | `reflect`                             | 保留有來源的 capture、共通模式與 upstream proposal；本地保存和對外發送依任務授權分開處理                                               |
+| L23 | `design-lens`           | `design` 按需 reference               | 保留有來源的 usability/accessibility 判準，供 `validate` 使用；不固定跑完全部 theory families 或一律分數化                             |
+| L24 | `easy-explain`          | **模型溝通能力**；專案詞彙屬 context  | 不新增 native skill；保留 glossary 與缺失前提，依使用者要求重新解釋，不移植 explicit-only host 設定                                    |
 
 patterns 目錄不能整包同樣處理：L18–L21 的通用編排退出；L22 的可累積經驗是 context 資產；L23 的領域判準可按需載入；L24 的溝通方式交模型，但 glossary 仍有保存價值。
 
@@ -82,13 +82,13 @@ patterns 目錄不能整包同樣處理：L18–L21 的通用編排退出；L22 
 
 完整度不是讀完倉庫，也不是增加文件數量。判準是：**agent 是否能說明這次為何做、現況如何、受哪些約束、成功如何觀察，以及哪些資訊仍未知。**
 
-| Context 面向 | 來源／需要知道什麼 | 缺口如何處理 |
-| --- | --- | --- |
-| Intent | 使用者請求、story、roadmap；outcome、範圍、授權到哪一步 | 補目前缺少的前提；會改變產品方向的歧義交人決定 |
-| Reality | 目前 source、tests、runtime、diff、base/head；實際行為與歷史原因 | 讀 relevant code/history 或跑最小 probe，區分宣告與現況 |
-| Constraints | 適用 rules、ADR、介面、人的設計判準及其版本 | 缺失／互相矛盾／已 superseded 的來源要可見，不能當有效 acceptance |
+| Context 面向 | 來源／需要知道什麼                                                  | 缺口如何處理                                                           |
+| ------------ | ------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Intent       | 使用者請求、story、roadmap；outcome、範圍、授權到哪一步             | 補目前缺少的前提；會改變產品方向的歧義交人決定                         |
+| Reality      | 目前 source、tests、runtime、diff、base/head；實際行為與歷史原因    | 讀 relevant code/history 或跑最小 probe，區分宣告與現況                |
+| Constraints  | 適用 rules、ADR、介面、人的設計判準及其版本                         | 缺失／互相矛盾／已 superseded 的來源要可見，不能當有效 acceptance      |
 | Verification | 使用者路徑、操作工具、fixture、預期結果、local/deployed environment | 找出能驗的 surface；工具欠缺時先補最小 harness，無法執行則如實留下 gap |
-| Continuity | dependencies、attempt/worktree、已做的檢查、未決問題、相關 lessons | 恢復既有工作與有效證據，避免重新開工或重複 claim |
+| Continuity   | dependencies、attempt/worktree、已做的檢查、未決問題、相關 lessons  | 恢復既有工作與有效證據，避免重新開工或重複 claim                       |
 
 建議以簡短的任務 context 摘要保存「主張 → 來源 → 版本／觀察時間 → unknown」，引用 canonical records 與 artifacts，按需讀原文。不規定固定 token 配額、全檔複製或獨立的 `context.json` 狀態機。當缺少來源會影響 acceptance 時，留下具體待查項；無關領域不強迫填表。
 
@@ -110,13 +110,13 @@ patterns 目錄不能整包同樣處理：L18–L21 的通用編排退出；L22 
 
 Feature Map 是「使用者功能 → 到達方式 → 操作方式 → 預期可觀察結果」的索引。roadmap/journey 記錄想要的產品體驗；Feature Map 記錄目前怎麼操作驗證，引用同一 acceptance，避免另存一份會漂移的需求。入口、介面或工具改變時，由交付／反思觸發受影響項目的實跑更新；產品 regression 不能靠修改地圖洗掉。[維護參考](https://raw.githubusercontent.com/cursor/plugins/main/pstack/skills/maintain-verification-skill/SKILL.md)
 
-| 產品 surface | 可以構成 self verification 的例子 | 不能單獨支持的主張 |
-| --- | --- | --- |
-| CLI | 執行實際 binary、exit/stdout/stderr、前後檔案狀態；必要時 PTY | 編譯成功不證明 migration 或互動路徑正確 |
-| API/service | 經公開 API 發 request、核對 response 和持久化／權限效果 | handler unit test 不證明部署 routing/auth 正確 |
-| Web/desktop | 使用實際控制工具走路徑、觀察畫面與副作用 | 靜態 screenshot 不證明點擊／保存真的有效 |
-| Library | 從公開 API 執行 consumer 範例或 compile/run harness | private helper 測試不證明使用者能整合 |
-| 文件／research | 核對原始來源、連結、指令與關鍵主張 | 文筆流暢或模型評分不證明來源成立；無 runtime 的產物不強造 app journey |
+| 產品 surface   | 可以構成 self verification 的例子                             | 不能單獨支持的主張                                                    |
+| -------------- | ------------------------------------------------------------- | --------------------------------------------------------------------- |
+| CLI            | 執行實際 binary、exit/stdout/stderr、前後檔案狀態；必要時 PTY | 編譯成功不證明 migration 或互動路徑正確                               |
+| API/service    | 經公開 API 發 request、核對 response 和持久化／權限效果       | handler unit test 不證明部署 routing/auth 正確                        |
+| Web/desktop    | 使用實際控制工具走路徑、觀察畫面與副作用                      | 靜態 screenshot 不證明點擊／保存真的有效                              |
+| Library        | 從公開 API 執行 consumer 範例或 compile/run harness           | private helper 測試不證明使用者能整合                                 |
+| 文件／research | 核對原始來源、連結、指令與關鍵主張                            | 文筆流暢或模型評分不證明來源成立；無 runtime 的產物不強造 app journey |
 
 每個重要完成主張應能追到 acceptance、實際 revision/environment、執行方法、預期與觀察結果、artifact 位置及限制。重用有效證據；變更後重驗受影響部分；只有新資訊或未解決問題才擴大驗證。無法取得 deployed environment 就保留該缺口，不用 local pass 代替。
 
@@ -147,12 +147,12 @@ Prototype 的完成條件是回答問題，並非完成 production code；採用
 
 自主選擇方法與明示的專案約束需要一起成立。建議目標：**self verification 是一般預設；independent review 由專案 policy／任務的明確要求決定是否必需，agent 仍可主動選擇額外 review。** 選擇 reviewer 也遵循 host 的 delegation 授權。
 
-| 現況 | 建議目標 | 實作前的界線 |
-| --- | --- | --- |
-| `Policy.independent_review` 預設 true，且 `risk != "light" || policy.independent_review` 令 standard/deep 即使設 false 仍必需 review | 新 native 預設不強制獨立 LLM；明示 project review policy 可要求指定 scope 的 review | 不是改 description 就生效；需改 risk/policy 判定、相關 gate/delivery/rule adoption 與 fixtures |
-| `review request` 硬編碼兩輪，第二輪限定 blocking 修正 | 不以固定 rounds 決定任務何時完成；依實際未解決問題、取得新證據的價值與任務 budget 決定下一步 | 舊兩輪限制仍有效，直到 policy/receipt 契約一起修改；保留明確停止理由，避免無收益循環 |
-| `validate` 主要敘述 review 流程 | 先寫如何操作、觀察、反證與判斷 coverage；review 是其中一種選用方法 | 同一 agent 的觀察不能被假記為另一個 independent reviewer |
-| 已有 project config 或歷史 check/review receipts | 保留其來源和原始意思；政策變動後重新評估當前完成條件 | 不偷偷刪除專案明示 review 要求，不重寫歷史證據，不把缺席說成通過 |
+| 現況                                                       | 建議目標                                                                                     | 實作前的界線                                                                         |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `Policy.independent_review` 預設 true，且 `risk != "light" |                                                                                              | policy.independent_review` 令 standard/deep 即使設 false 仍必需 review               | 新 native 預設不強制獨立 LLM；明示 project review policy 可要求指定 scope 的 review | 不是改 description 就生效；需改 risk/policy 判定、相關 gate/delivery/rule adoption 與 fixtures |
+| `review request` 硬編碼兩輪，第二輪限定 blocking 修正      | 不以固定 rounds 決定任務何時完成；依實際未解決問題、取得新證據的價值與任務 budget 決定下一步 | 舊兩輪限制仍有效，直到 policy/receipt 契約一起修改；保留明確停止理由，避免無收益循環 |
+| `validate` 主要敘述 review 流程                            | 先寫如何操作、觀察、反證與判斷 coverage；review 是其中一種選用方法                           | 同一 agent 的觀察不能被假記為另一個 independent reviewer                             |
+| 已有 project config 或歷史 check/review receipts           | 保留其來源和原始意思；政策變動後重新評估當前完成條件                                         | 不偷偷刪除專案明示 review 要求，不重寫歷史證據，不把缺席說成通過                     |
 
 保留 `review` 命令有實際價值：一些專案需要第二人 review；外部 reviewer 的 findings 和 revision 仍需保存。移除的是一律套用的模型編排與評分，不是移除 review 記錄能力。`verify/gate/deliver` 繼續核對所有明示 required checks、有效 evidence 與實際 integration；模型自治不改寫已接受的完成條件。
 
@@ -160,16 +160,16 @@ Prototype 的完成條件是回答問題，並非完成 production code；採用
 
 建議先新增少量 reference，每份有單一責任，其他 skill 只引用。以下路徑都是**預計新增**，目前不能當成已可用的 `--ref`：
 
-| 擁有者 | 預計 references | 內容 |
-| --- | --- | --- |
-| `project` | `context-sources.md`、`verification-setup.md` | 專案來源與環境盤點；專案驗證 procedure 的產製／修復 |
-| `roadmap` | `product-context.md`、`status.md` | 產品 framing、切片與依賴；有來源的狀態摘要 |
-| `design` | `design-criteria.md`、`prototype.md` | model/calibrate/design-lens 的按需方法；實證探索；既有 `bdd`、`records` 留存 |
-| `implement` | `handoff.md`、`git.md` | 任務 context、自己執行／委派、恢復及資源 ownership |
-| `validate` | `self-verification.md` | acceptance coverage、工具與 runtime 證據、失敗／未知／失效的判斷 |
-| `deliver` | `closure.md` | integration、證據保留與收尾；Git 操作引用 `implement` |
-| `reflect` | `feedback.md` | observation 分流、更新 Feature Map/lessons/rules、上游候選 |
-| `migrate` | 按既有 migration 缺口補充 | 舊資料語意與可追溯轉換；不恢復舊日常執行流程 |
+| 擁有者      | 預計 references                               | 內容                                                                         |
+| ----------- | --------------------------------------------- | ---------------------------------------------------------------------------- |
+| `project`   | `context-sources.md`、`verification-setup.md` | 專案來源與環境盤點；專案驗證 procedure 的產製／修復                          |
+| `roadmap`   | `product-context.md`、`status.md`             | 產品 framing、切片與依賴；有來源的狀態摘要                                   |
+| `design`    | `design-criteria.md`、`prototype.md`          | model/calibrate/design-lens 的按需方法；實證探索；既有 `bdd`、`records` 留存 |
+| `implement` | `handoff.md`、`git.md`                        | 任務 context、自己執行／委派、恢復及資源 ownership                           |
+| `validate`  | `self-verification.md`                        | acceptance coverage、工具與 runtime 證據、失敗／未知／失效的判斷             |
+| `deliver`   | `closure.md`                                  | integration、證據保留與收尾；Git 操作引用 `implement`                        |
+| `reflect`   | `feedback.md`                                 | observation 分流、更新 Feature Map/lessons/rules、上游候選                   |
+| `migrate`   | 按既有 migration 缺口補充                     | 舊資料語意與可追溯轉換；不恢復舊日常執行流程                                 |
 
 Project-owned Feature Map 可先採單層 `references/feature-map.md` 與拆分檔；若專案已有巢狀 journeys，從 procedure 直接指向原檔。現有 local loader 的 `--ref` 只列單層合法 Markdown 名稱，不能假設 native 的巢狀 reference 行為也適用本地 procedure。大型地圖確有需要時才擴充 loader。
 
@@ -184,16 +184,16 @@ Project-owned Feature Map 可先採單層 `references/feature-map.md` 與拆分�
 
 ## 驗收：證明 agent 有能力閉環
 
-| 情境 | 要觀察到什麼 |
-| --- | --- |
-| 冷啟動接手 | 只憑 catalog、task 和專案資料找到適用規則、當前行為與驗證入口；缺資料能指出具體來源，不靠先前對話記憶 |
-| 已知功能的小修改 | 單一 agent 完成實作與有效 probe；不因 AEP 存在而強制 spawn、評分或多輪 review |
-| 未定案設計 | 原型回答具體問題，決定引用觀察；沒有未驗證的抽象 edge-case 清單膨脹；正式版本另驗 |
-| 假綠與版本漂移 | 編譯通過但實際行為錯誤的候選不能報完成；code／判準／必需 artifact 變更後相關證據失效 |
-| 環境缺失 | 區分產品缺陷與 preflight 問題，報 blocked/未驗範圍，不用增加 LLM review 修補缺失環境 |
-| 專案明示 review | 模型 autonomy 不繞過 project policy；缺必要獨立 review 仍不能 deliver |
-| Feature Map 漂移 | 更新已變動操作，產品 regression 留作 defect；保留手寫 journeys 和清理後證據 |
-| 恢復與交付 | 延續既有 attempt 與有效證據；清理只作用於所屬資源，未整合工作保存；local 與 deployed 結果分開 |
+| 情境             | 要觀察到什麼                                                                                          |
+| ---------------- | ----------------------------------------------------------------------------------------------------- |
+| 冷啟動接手       | 只憑 catalog、task 和專案資料找到適用規則、當前行為與驗證入口；缺資料能指出具體來源，不靠先前對話記憶 |
+| 已知功能的小修改 | 單一 agent 完成實作與有效 probe；不因 AEP 存在而強制 spawn、評分或多輪 review                         |
+| 未定案設計       | 原型回答具體問題，決定引用觀察；沒有未驗證的抽象 edge-case 清單膨脹；正式版本另驗                     |
+| 假綠與版本漂移   | 編譯通過但實際行為錯誤的候選不能報完成；code／判準／必需 artifact 變更後相關證據失效                  |
+| 環境缺失         | 區分產品缺陷與 preflight 問題，報 blocked/未驗範圍，不用增加 LLM review 修補缺失環境                  |
+| 專案明示 review  | 模型 autonomy 不繞過 project policy；缺必要獨立 review 仍不能 deliver                                 |
+| Feature Map 漂移 | 更新已變動操作，產品 regression 留作 defect；保留手寫 journeys 和清理後證據                           |
+| 恢復與交付       | 延續既有 attempt 與有效證據；清理只作用於所屬資源，未整合工作保存；local 與 deployed 結果分開         |
 
 評估這次收斂，優先看漏掉的 acceptance、使用過期 context 的次數、能否冷啟動重跑、錯誤完成宣稱，以及為實際問題花的驗證成本。不以新增 skill 數、評分滿分或文件數作成功指標。既有 downstream 失敗記錄能支持改變方向；prototype 與自主驗證的新流程效果仍須上述 pilot 實際觀察。
 
@@ -214,7 +214,6 @@ Project-owned Feature Map 可先採單層 `references/feature-map.md` 與拆分�
 目前 runtime 已發現 rules store 下的 skills，也支援設定額外 `skill_paths`；同名／保留名稱會拒絕，避免專案覆蓋內建程序。這裡的「搜尋」目前指 catalog 的發現與選用，尚無獨立語意搜尋能力。JSON 有 source 標記；人類版應清楚呈現內建與專案來源，以免把專案 procedure 誤認成 AEP 依賴。後者是待改善的呈現項目，這次觀察沒有修改 runtime 或技能。
 
 實際來源與下游行為見 [Project A 交付續行觀察](../lessons/2026-09-11-project-a-delivery-continuity-observation.md)。
-
 
 ## 後續概念：以產品目的驅動自主研究
 

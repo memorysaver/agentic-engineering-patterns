@@ -25,19 +25,19 @@ The pilot agent reviewed and transformed a separate plan, retaining both the ori
 
 ## Executed checks
 
-| Check | Result and boundary |
-| --- | --- |
-| Reviewed-plan apply dry run | Pass, zero side effects |
-| Apply in independent clone | Pass; only clone receives native stores |
-| Explicit root OpenSpec mapping | Pass through supported CLI command |
-| Final-candidate `migrate verify` | Pass, exit 0, zero diagnostics; source commit/digests checked |
-| Final-candidate `check` | Pass, exit 0, zero structural diagnostics; 710 stored records |
-| Final-candidate `status` | Pass; native records readable |
-| Final-candidate `context L41-006b` with active rule sources | Pass; 188 linked records, zero missing references; L41-006b remains blocked, L41-006a2 remains imported/unverified |
-| Final-candidate `skills` | Pass; eight native skills plus project e2e-test discovered |
-| Final-candidate `config show` | Pass; independent review and actual check commands preserved |
-| Repeat reviewed apply | Pass; `already_migrated=true`, zero files |
-| Source comparison | 2,176 source files checked, zero changes in original, zero preserved-source differences in clone; original AGENTS bytes preserved in project-rules/legacy-entrypoint.md |
+| Check                                                       | Result and boundary                                                                                                                                                     |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Reviewed-plan apply dry run                                 | Pass, zero side effects                                                                                                                                                 |
+| Apply in independent clone                                  | Pass; only clone receives native stores                                                                                                                                 |
+| Explicit root OpenSpec mapping                              | Pass through supported CLI command                                                                                                                                      |
+| Final-candidate `migrate verify`                            | Pass, exit 0, zero diagnostics; source commit/digests checked                                                                                                           |
+| Final-candidate `check`                                     | Pass, exit 0, zero structural diagnostics; 710 stored records                                                                                                           |
+| Final-candidate `status`                                    | Pass; native records readable                                                                                                                                           |
+| Final-candidate `context L41-006b` with active rule sources | Pass; 188 linked records, zero missing references; L41-006b remains blocked, L41-006a2 remains imported/unverified                                                      |
+| Final-candidate `skills`                                    | Pass; eight native skills plus project e2e-test discovered                                                                                                              |
+| Final-candidate `config show`                               | Pass; independent review and actual check commands preserved                                                                                                            |
+| Repeat reviewed apply                                       | Pass; `already_migrated=true`, zero files                                                                                                                               |
+| Source comparison                                           | 2,176 source files checked, zero changes in original, zero preserved-source differences in clone; original AGENTS bytes preserved in project-rules/legacy-entrypoint.md |
 
 Final inspection command outputs: `/tmp/aep-project-b-final-{verify,check,status,context,skills,config}.json`. Repeat-apply result: `/tmp/aep-project-b-repeat-apply.json`. Preservation result and manifest: `/tmp/aep-project-b-preservation-result.json`, `/tmp/aep-project-b-source-hashes.json`.
 

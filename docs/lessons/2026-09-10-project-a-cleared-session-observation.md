@@ -10,15 +10,15 @@
 
 ## 可見行為與結果
 
-| 面向 | 本輪實際觀察 |
-| --- | --- |
-| 入口與 context | 自行執行 `aep --skill`、讀 README、roadmap 與 project-a-memory skill，讀 migration 規則、CLI config、memory 規則，核對 Git branch 與 log。 |
-| Reference | 一次使用 `aep --skill roadmap --ref status` 成功，沒有重現先前兩次 reference 語法錯誤。這輪沒有測試 linked-path 用法。 |
-| 狀態範圍 | 先用人類可讀的 `aep status`，再用 `aep context A-108`、`aep timeline`，並讀取該 change 的 verification 與 story。沒有可見的完整 AEP status JSON 重印或額外 YAML parser 錯誤。 |
-| 證據辨識 | 正確指出 A-108 已實作、獨立 review 與本機試用，但尚未 PR／merge，story 仍 in_progress。526 passed／1 ignored 明確標為既有驗證，沒有聲稱本輪重跑。 |
-| 自我核對 | 執行 `aep check`、memory sync、orient、recall、deep status，並用 `project-a show` 核對前兩筆 checkpoint。發現本次 deep status 與前次成功紀錄不同，以本次結果為準。 |
-| 範圍控制 | 保留 Layer 19 暫停與待選題狀態；沒有自行開始產品實作，也沒有為盤點重跑完整測試。 |
-| 剩餘輸出摩擦 | `project-a orient --format json` 顯示超過 968 行摺疊輸出，deep status JSON 超過 412 行；recall Markdown 超過 176 行。這只是輸出量觀察，未量測 token 或證明造成 context 遺失。 |
+| 面向           | 本輪實際觀察                                                                                                                                                                  |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 入口與 context | 自行執行 `aep --skill`、讀 README、roadmap 與 project-a-memory skill，讀 migration 規則、CLI config、memory 規則，核對 Git branch 與 log。                                    |
+| Reference      | 一次使用 `aep --skill roadmap --ref status` 成功，沒有重現先前兩次 reference 語法錯誤。這輪沒有測試 linked-path 用法。                                                        |
+| 狀態範圍       | 先用人類可讀的 `aep status`，再用 `aep context A-108`、`aep timeline`，並讀取該 change 的 verification 與 story。沒有可見的完整 AEP status JSON 重印或額外 YAML parser 錯誤。 |
+| 證據辨識       | 正確指出 A-108 已實作、獨立 review 與本機試用，但尚未 PR／merge，story 仍 in_progress。526 passed／1 ignored 明確標為既有驗證，沒有聲稱本輪重跑。                             |
+| 自我核對       | 執行 `aep check`、memory sync、orient、recall、deep status，並用 `project-a show` 核對前兩筆 checkpoint。發現本次 deep status 與前次成功紀錄不同，以本次結果為準。            |
+| 範圍控制       | 保留 Layer 19 暫停與待選題狀態；沒有自行開始產品實作，也沒有為盤點重跑完整測試。                                                                                              |
+| 剩餘輸出摩擦   | `project-a orient --format json` 顯示超過 968 行摺疊輸出，deep status JSON 超過 412 行；recall Markdown 超過 176 行。這只是輸出量觀察，未量測 token 或證明造成 context 遺失。 |
 
 本輪 agent 有執行 `project-a sync`，因此不是完全唯讀；沒有可見的新 checkpoint 寫入。觀察者在它結束後僅讀取狀態、程式和既有記憶 metadata，沒有修正 Project A 或記憶內容。
 
@@ -33,12 +33,12 @@ Agent 最終回報 `mits_codex_dogfood_evidence_missing`；觀察者另外執行
 
 唯讀核對的最新 checkpoint 順序：
 
-| 順位 | Record ID | Codex source profile |
-| --- | --- | --- |
-| 1 | `20260910T142553Z769024524` | 無 |
-| 2 | `20260910T140632Z509020399` | 無 |
-| 3 | `20260910T105014Z077349843` | 無 |
-| 4 | `20260909T083142Z934555326` | `codex` |
+| 順位 | Record ID                   | Codex source profile |
+| ---- | --------------------------- | -------------------- |
+| 1    | `20260910T142553Z769024524` | 無                   |
+| 2    | `20260910T140632Z509020399` | 無                   |
+| 3    | `20260910T105014Z077349843` | 無                   |
+| 4    | `20260909T083142Z934555326` | `codex`              |
 
 Project A `crates/project-a/src/packet/mod.rs` 的 `memory_checkpoint_context` 只保留最近三筆（`.take(3)`）；`crates/project-a/src/status/project.rs` 的 `codex_checkpoint_record_ids` 只檢查 packet 內的 checkpoint，`evaluate_packet` 在沒有匹配時產生 hard failure。較舊、帶 Codex 標記的證據仍存在於 vault，但落在這個視窗外。
 

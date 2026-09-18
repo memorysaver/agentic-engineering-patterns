@@ -18,9 +18,9 @@ Records created through native commands, in order: layer `basic-user-access` wit
 
 Acceptance was attributed to the user's chat direction, not to a user action on the records. The design doc and decision text restate the direction accurately. Whether one prompt should carry `attributed_decision` acceptance for a change is a policy question for the user; structurally the records are consistent and `aep check` accepted them at every snapshot (786 → 820 → 823 → 824 → 846 → 855 records, all pass).
 
-| Story | Attempt | Checks | Review | Delivery | Result |
-| --- | --- | --- | --- | --- | --- |
-| BASIC-001 | worktree `attempt-18d57d0491cb10ea-35c41d-0`, head d0e467bf | 3 pass | round 1 pass, 0 findings | PR #363 merged 12:11:07Z → 21f799ce | `integrated`, change closed, spec published |
+| Story     | Attempt                                                                            | Checks                       | Review                                               | Delivery                            | Result                                      |
+| --------- | ---------------------------------------------------------------------------------- | ---------------------------- | ---------------------------------------------------- | ----------------------------------- | ------------------------------------------- |
+| BASIC-001 | worktree `attempt-18d57d0491cb10ea-35c41d-0`, head d0e467bf                        | 3 pass                       | round 1 pass, 0 findings                             | PR #363 merged 12:11:07Z → 21f799ce | `integrated`, change closed, spec published |
 | BASIC-002 | worktree `attempt-18d57d67ef53255d-35fc11-0`, heads bbd6d167 → f6329b6e → 37e69e31 | 3 × 3 pass, one set per head | round 1 superseded, round 2 superseded, round 3 pass | PR #364 merged 12:36:04Z → de86eb41 | `integrated`, change closed, spec published |
 
 Both attempts were dispatched with `aep dispatch start`, moved through `attempt record --status review`, `review request`, `verify run`, `deliver plan`, `deliver pr`, `deliver merge`, `spec publish`, `change close`. Delivery records carry the attempt head, merge commit, fingerprint, producer binary hash and provider PR state; GitHub confirms both merges.
@@ -172,13 +172,13 @@ Final message: the 503 diagnostic reinforcement and the deployment check correct
 
 End-of-session ledger state for the stories touched today:
 
-| Story | Status | Layer | Note |
-| --- | --- | --- | --- |
-| BASIC-001, BASIC-002 | integrated | basic-user-access | delivered 09-15; production-verified 09-15/16 |
-| FIX-DEPLOY-STARTUP-CPU-001 | pending | basic-user-access | never updated; deploy succeeded three times since |
-| FIX-L41-SUPERVISOR-RPC-503-002 | ready (84 readiness failures) | layer-41 | never updated; worked around |
-| FIX-L41-SUPERVISOR-RPC-503-DIAGNOSTICS | integrated | none | sibling story, PR #366, promoted by #367 (deploy failed) and #369 (deploy passed) |
-| FIX-L41-SUPERVISOR-RPC-MANIFEST-SYNC | integrated | none | correction story, PR #368 |
+| Story                                  | Status                        | Layer             | Note                                                                              |
+| -------------------------------------- | ----------------------------- | ----------------- | --------------------------------------------------------------------------------- |
+| BASIC-001, BASIC-002                   | integrated                    | basic-user-access | delivered 09-15; production-verified 09-15/16                                     |
+| FIX-DEPLOY-STARTUP-CPU-001             | pending                       | basic-user-access | never updated; deploy succeeded three times since                                 |
+| FIX-L41-SUPERVISOR-RPC-503-002         | ready (84 readiness failures) | layer-41          | never updated; worked around                                                      |
+| FIX-L41-SUPERVISOR-RPC-503-DIAGNOSTICS | integrated                    | none              | sibling story, PR #366, promoted by #367 (deploy failed) and #369 (deploy passed) |
+| FIX-L41-SUPERVISOR-RPC-MANIFEST-SYNC   | integrated                    | none              | correction story, PR #368                                                         |
 
 `project-ledger/releases/` still holds only `basic-access-production-20260915`. The two promotions on 09-16 (`bf0103a8` failed, `6746a92b` succeeded) have no release record; their evidence lives under `project-ledger/evidence/supervisor-rpc-diagnostic-channel-20260916/`. `basic-user-access` still has `refs: []`.
 

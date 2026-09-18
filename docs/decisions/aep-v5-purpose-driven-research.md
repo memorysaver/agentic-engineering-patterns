@@ -54,13 +54,13 @@ Project A 這輪原先推薦一個保留的候選功能，經使用者追問才�
 
 先提出有證據的建議、主要取捨與真正需要使用者決定的問題。收到足夠明確的方向後，在同一任務內自主完成相關文件與連結，不再要求使用者逐項授權寫 roadmap、ADR、design 或 work record。若仍有未決部分，保存其狀態並完成已明確的內容；使用者的普通回饋不自動等於接受所有替代方案、benchmark 門檻或實作範圍。
 
-| 要保存的內容 | 5.0 責任 | 下游配置的典型位置 |
-| --- | --- | --- |
-| 產品目的、主要使用者、問題、成功成果、優先序、journey／系統關係 | roadmap 維護 product context | `project-roadmap/` 的相關 plans／journeys／architecture 文件 |
-| 選擇及原因、替代方案、來源、適用範圍、取代哪些舊決策 | roadmap 維護 decision，按目前授權接受或取代 | `project-roadmap/decisions/` |
-| 研究推導、設計方案、介面、未知、benchmark 對照與 prototype 結果 | design 收斂設計 | `docs/design/`，必要時引用 `docs/research/` 的來源整理 |
-| 已接受行為、場景、驗證契約及實作範圍 | design 建立／連結 change；有確定工作才建立 story | `project-ledger/changes/<id>/`、`project-ledger/stories/` |
-| 本次操作中學到、下次值得重用的事情 | 按需 reflect | `lesson-learned/`；規則採納另循既有流程 |
+| 要保存的內容                                                    | 5.0 責任                                         | 下游配置的典型位置                                           |
+| --------------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------ |
+| 產品目的、主要使用者、問題、成功成果、優先序、journey／系統關係 | roadmap 維護 product context                     | `project-roadmap/` 的相關 plans／journeys／architecture 文件 |
+| 選擇及原因、替代方案、來源、適用範圍、取代哪些舊決策            | roadmap 維護 decision，按目前授權接受或取代      | `project-roadmap/decisions/`                                 |
+| 研究推導、設計方案、介面、未知、benchmark 對照與 prototype 結果 | design 收斂設計                                  | `docs/design/`，必要時引用 `docs/research/` 的來源整理       |
+| 已接受行為、場景、驗證契約及實作範圍                            | design 建立／連結 change；有確定工作才建立 story | `project-ledger/changes/<id>/`、`project-ledger/stories/`    |
+| 本次操作中學到、下次值得重用的事情                              | 按需 reflect                                     | `lesson-learned/`；規則採納另循既有流程                      |
 
 Product context 是這些 canonical 文件及其連結共同構成，不重建 v4 的單一大型 product-context 檔案。Draft 到 accepted 的轉換要依已知使用者意圖與權限記錄 attribution；已接受且不可改寫的歷史用新決策取代或補充。設計接受後且實作在授權範圍內，繼續 `implement → validate → deliver`；純方向／設計請求則以完成分類、連結與可接續的契約作為交付。
 

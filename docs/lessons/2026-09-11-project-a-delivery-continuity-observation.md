@@ -46,7 +46,6 @@ Post-merge, the agent committed the GitHub integration receipt and merged remote
 
 The agent then executed `aep spec publish --change status-evidence-scope` and `aep change close status-evidence-scope`; both succeeded. Native `aep check` passed with 349 records at this point. Thus the observed continuation reached specification publication and change closure as well as remote integration.
 
-
 ## Final outcome and independent read-only checks
 
 The agent removed the integrated A-109 worktree and local/remote implementation/context branches, while preserving A-108's unintegrated worktree. A local context-branch deletion initially failed because its upstream was behind; after confirming ancestry in main, it unset that branch's upstream and used normal `branch -d`. Remote deletion used exact expected-head leases. Source/receipts/specs/lessons were retained before final handoff.
@@ -55,17 +54,17 @@ It wrote `lesson-learned/observations/project-a-109-delivery-closure.md` through
 
 The observer independently checked native read commands, Git state, worktree existence and GitHub PR state after the work:
 
-| Surface | Confirmed result |
-| --- | --- |
-| PR #101 | MERGED into main at `36a7f0318ceca3526a4de8a92ac72b0e2f3de485` |
-| A-109 | `integrated`, delivery `delivery-18d40342bfef3e52-128a98-0` |
-| Attempt | `done` |
-| status-evidence-scope change | `closed`, publication evidence retained |
-| Final main and origin/main | Both `0cce911181b0482ee69e68919450c54cef9d2819`; clean checkout |
-| Project A-status-evidence | Directory absent and no longer in worktree inventory |
-| Project A-adoption-fix | Still present at `c2e390a`; not integrated by this task |
-| Installed Project A | Agent verified unchanged SHA-256 `80cbf44ed2bd4adc60f511604eba1f7ec85ee0539c038ec44ab3329fbc64b87d` |
-| Agent | Herdr `done`; final report after 15m 52s |
+| Surface                      | Confirmed result                                                                                    |
+| ---------------------------- | --------------------------------------------------------------------------------------------------- |
+| PR #101                      | MERGED into main at `36a7f0318ceca3526a4de8a92ac72b0e2f3de485`                                      |
+| A-109                        | `integrated`, delivery `delivery-18d40342bfef3e52-128a98-0`                                         |
+| Attempt                      | `done`                                                                                              |
+| status-evidence-scope change | `closed`, publication evidence retained                                                             |
+| Final main and origin/main   | Both `0cce911181b0482ee69e68919450c54cef9d2819`; clean checkout                                     |
+| Project A-status-evidence    | Directory absent and no longer in worktree inventory                                                |
+| Project A-adoption-fix       | Still present at `c2e390a`; not integrated by this task                                             |
+| Installed Project A          | Agent verified unchanged SHA-256 `80cbf44ed2bd4adc60f511604eba1f7ec85ee0539c038ec44ab3329fbc64b87d` |
+| Agent                        | Herdr `done`; final report after 15m 52s                                                            |
 
 A-108 delivery and a future installed Project A update remain separate decisions. No AEP code, Project A product changes, or additional prompts were supplied by the observer during execution. The AEP observer only retained this report and the user-confirmed project-skill direction.
 

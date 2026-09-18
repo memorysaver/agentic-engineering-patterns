@@ -4,11 +4,11 @@ The owner authorized full migration branches in Project B, Project A and Project
 
 ## Committed migration results
 
-| Original repository | Final migration commit | Stories / native records | Custom artifacts mapped |
-| --- | --- | --- | --- |
-| `project-b` | `e17b05bc0ae33552df9a340fa440e2de82161a0e` | 416 / 786 | 29 |
-| `Project A` | `8471b5eeaefc26168e5299f05d33588d81f49665` | 107 / 276 | 41 |
-| `Project C` | `f00aa60bf55e5a50266919fb13af219e893492a5` | 96 / 266 | 6 |
+| Original repository | Final migration commit                     | Stories / native records | Custom artifacts mapped |
+| ------------------- | ------------------------------------------ | ------------------------ | ----------------------- |
+| `project-b`         | `e17b05bc0ae33552df9a340fa440e2de82161a0e` | 416 / 786                | 29                      |
+| `Project A`         | `8471b5eeaefc26168e5299f05d33588d81f49665` | 107 / 276                | 41                      |
+| `Project C`         | `f00aa60bf55e5a50266919fb13af219e893492a5` | 96 / 266                 | 6                       |
 
 Project audits live at `docs/audits/2026-09-10-aep-v5-migration.md` in Project B/Project A and `docs/audits/2026-09-10-aep-v5/migration.md` in Project C. They retain source bases, mapping decisions, local verification policy and recovery constraints. The common [lessons learned](../lessons/2026-09-10-three-projects-native-v5-migration.md) record observed defects and repairs rather than declaring additional workflow requirements.
 

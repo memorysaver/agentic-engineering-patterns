@@ -46,22 +46,22 @@ Agent 加入 change 下的 `verification.md` 後，自行透過 verify plan 察�
 
 使用者要求同步觀察 CLI 如何引導步驟。下表分開 skill 內容、命令結果與 agent 後續行為；相鄰的呼叫不是其內部決策原因的完整證明。
 
-| 實際入口／命令 | 可見回傳／作用 | Agent 的可見後續 |
-| --- | --- | --- |
-| `aep --skill design`，及 `--ref records`／`bdd` | Skill 與 reference Markdown | 建立 change、BDD scenarios、story，保留 prototype 結論與範圍 |
-| `aep --skill implement`，及 `--ref handoff`／`git` | 實作與交接指引 Markdown | 核對分支、既有工作、base、WIP 與共享 store |
-| `aep --skill validate --ref self-verification` | 可觀察驗證指引 Markdown | 使用隔離 fixture、configured checks 與專案要求的獨立 review |
-| `aep spec check --change status-evidence-scope` | PASS，附「context checks 不等於產品行為驗證」說明 | 繼續 accept change，而未把結構通過當作產品驗收 |
-| `aep change accept …`／`aep story new --file - --json` | Saved／structured records、changed files、operation identity | 提交設計與 context，作為 dispatch 的 base |
-| `aep attempt recover … --cancel` | 舊 attempt／story 更新，worktree 成果保留 | 釋放 WIP 容量，再啟動 A-109 |
-| `aep dispatch plan --story A-109` | Ready，Reasons: none | 使用已提交基準執行 start |
-| `aep dispatch start … --json` | 建立 branch／worktree／attempt；回傳 cwd、共享 store、launch request，`worker_started=false` | 同一 agent 將 attempt 標為 running，進入新 worktree 實作，沒有把 prepared 當成 worker 已啟動 |
-| `aep attempt record … --status review` | Saved 與受影響 records | 對已提交 product candidate 跑正式驗證 |
-| `aep verify run … --json` | 實際執行 configured checks；第一輪 `ok=false`／exit 1 並保存 failed evidence | 查證 stale test executable 的路徑，保留失敗，重編並重跑 Rust checks |
-| `aep verify plan --story A-109 --json` | candidate head、context fingerprint、checks 與 review 要求 | 發現摘要改變 fingerprint，固定摘要後重跑 required checks |
-| `aep review request … --json` | 建立綁定 head／fingerprint 的 review request | 委派獨立 host reviewer，沒有宣稱 CLI 本身執行模型審查 |
-| `aep review record --file - --json` | 接受 reviewer 的 structured response（findings 空）並保存 review | 進行 delivery readiness 查詢 |
-| `aep deliver plan --story A-109` | Eligible: true；四項 check 加一項 review；Missing: none | 保存紀錄後再次確認仍 eligible，回報實作完成但尚未整合 |
+| 實際入口／命令                                         | 可見回傳／作用                                                                               | Agent 的可見後續                                                                             |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `aep --skill design`，及 `--ref records`／`bdd`        | Skill 與 reference Markdown                                                                  | 建立 change、BDD scenarios、story，保留 prototype 結論與範圍                                 |
+| `aep --skill implement`，及 `--ref handoff`／`git`     | 實作與交接指引 Markdown                                                                      | 核對分支、既有工作、base、WIP 與共享 store                                                   |
+| `aep --skill validate --ref self-verification`         | 可觀察驗證指引 Markdown                                                                      | 使用隔離 fixture、configured checks 與專案要求的獨立 review                                  |
+| `aep spec check --change status-evidence-scope`        | PASS，附「context checks 不等於產品行為驗證」說明                                            | 繼續 accept change，而未把結構通過當作產品驗收                                               |
+| `aep change accept …`／`aep story new --file - --json` | Saved／structured records、changed files、operation identity                                 | 提交設計與 context，作為 dispatch 的 base                                                    |
+| `aep attempt recover … --cancel`                       | 舊 attempt／story 更新，worktree 成果保留                                                    | 釋放 WIP 容量，再啟動 A-109                                                                  |
+| `aep dispatch plan --story A-109`                      | Ready，Reasons: none                                                                         | 使用已提交基準執行 start                                                                     |
+| `aep dispatch start … --json`                          | 建立 branch／worktree／attempt；回傳 cwd、共享 store、launch request，`worker_started=false` | 同一 agent 將 attempt 標為 running，進入新 worktree 實作，沒有把 prepared 當成 worker 已啟動 |
+| `aep attempt record … --status review`                 | Saved 與受影響 records                                                                       | 對已提交 product candidate 跑正式驗證                                                        |
+| `aep verify run … --json`                              | 實際執行 configured checks；第一輪 `ok=false`／exit 1 並保存 failed evidence                 | 查證 stale test executable 的路徑，保留失敗，重編並重跑 Rust checks                          |
+| `aep verify plan --story A-109 --json`                 | candidate head、context fingerprint、checks 與 review 要求                                   | 發現摘要改變 fingerprint，固定摘要後重跑 required checks                                     |
+| `aep review request … --json`                          | 建立綁定 head／fingerprint 的 review request                                                 | 委派獨立 host reviewer，沒有宣稱 CLI 本身執行模型審查                                        |
+| `aep review record --file - --json`                    | 接受 reviewer 的 structured response（findings 空）並保存 review                             | 進行 delivery readiness 查詢                                                                 |
+| `aep deliver plan --story A-109`                       | Eligible: true；四項 check 加一項 review；Missing: none                                      | 保存紀錄後再次確認仍 eligible，回報實作完成但尚未整合                                        |
 
 這些操作命令没有每次重送 skill 全文。指引由 `--skill` 主動取得；命令回傳執行結果、機械條件、識別資料或特定操作提示。`dispatch start` 的 launch request 另提供「讀 AGENTS／implement、實作指定 story、使用共享 store」的簡短交接；不是自動呼叫下一個 skill 或啟動 agent。
 
