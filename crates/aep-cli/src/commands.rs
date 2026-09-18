@@ -359,18 +359,25 @@ pub fn initial_files(
     let entry = guidance::asset("templates/AGENTS.md")?
         .replace("project-rules/", &format!("{}/", s.config.stores.rules));
     let agents = read_optional(&contained(&s.root, "AGENTS.md")?)?;
-    let legacy = [
-        "product-context.yaml",
-        "product",
-        "project-convention",
-        "lessons-learned",
-        "openspec",
-    ]
-    .iter()
-    .any(|p| s.root.join(p).exists())
-        || agents
-            .as_ref()
-            .is_some_and(|old| old.contains("aep-agents-template: v4") || old.contains("/aep-"));
+    // Retained legacy sources no longer make a project legacy once a migration
+    // receipt exists: native stores own the workflow and the v4 route may be gone.
+    let migrated = snap
+        .records
+        .iter()
+        .any(|r| r.kind == Kind::Import && r.text("migration") == Some("v4-context"));
+    let legacy = !migrated
+        && ([
+            "product-context.yaml",
+            "product",
+            "project-convention",
+            "lessons-learned",
+            "openspec",
+        ]
+        .iter()
+        .any(|p| s.root.join(p).exists())
+            || agents.as_ref().is_some_and(|old| {
+                old.contains("aep-agents-template: v4") || old.contains("/aep-")
+            }));
     // A fresh project gets the short entrypoint and no version route; the route
     // exists only where legacy (v4) instructions must stay scoped until migration.
     let merged = match agents {

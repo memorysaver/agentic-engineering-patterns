@@ -129,6 +129,20 @@ fn init_preserves_legacy_default_and_migration_selects_v5_without_changing_sourc
         call(root, &["migrate", "plan"], 0)["already_migrated"],
         true
     );
+    // After cutover the project may drop the v4 route and installed legacy
+    // skills: verify accepts the plain entrypoint and init does not bring the
+    // route back even though legacy sources are still retained.
+    fs::remove_dir_all(root.join(".agents/skills/aep-build")).unwrap();
+    write(
+        root,
+        "AGENTS.md",
+        "# AGENTS.md\n\nRead `README.md` for project context. Run `aep --skill`, then read the procedure it names for the task; project rules are indexed in `project-rules/README.md`.\n",
+    );
+    commit(root);
+    call(root, &["migrate", "verify"], 0);
+    let plain = fs::read(root.join("AGENTS.md")).unwrap();
+    call(root, &["init"], 0);
+    assert_eq!(plain, fs::read(root.join("AGENTS.md")).unwrap());
     write(root, "project-convention/security.md", "Source changed\n");
     call(root, &["migrate", "plan"], 5);
     call(root, &["migrate", "verify"], 5);

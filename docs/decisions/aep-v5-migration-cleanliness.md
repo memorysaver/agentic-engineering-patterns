@@ -57,6 +57,8 @@
 
 ### C. 沒有用過 AEP 的專案：從歷史建立脈絡
 
+使用者補充（2026-09-18）：偵測到是 AEP 專案時，記錄本身就是脈絡來源，不需要再翻 Git；只有其他專案要導入時，才透過 `.git` 的歷史來梳理專案結構。
+
 - 指引：新增 `migrate --ref bootstrap`（或放在 `project`）：讀 README、docs/design（或專案自己的設計目錄）、ADR 目錄、CHANGELOG、最近的 git log 與 open PR；用 roadmap 記錄寫方向，用 decision 記錄寫已成立的選擇（`data.source` 帶 path 與 commit），用 story 記錄寫進行中與明確待辦，來源不足的留成 draft。每筆記錄的 `refs` 或 `data.source` 都要指回原始檔案與 commit，讓 `aep context` 能沿線找到。
 - CLI 候選：`aep migrate plan --source <dir>` 目前只接受 legacy 結構；可加 `--from-docs <dir>` 產生「候選記錄」草稿，交由 agent 分類，不自動接受。
 
