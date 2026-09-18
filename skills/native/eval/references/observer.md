@@ -1,14 +1,16 @@
 # Observer procedure
 
-The parameters arrive in the prompt: project root, eval run id, run directory and the target pane. Confirm `HERDR_ENV=1`, then `herdr agent get <target>` to learn the working agent's kind and state. Work in the project root with `--root` when a command runs elsewhere.
+Start when the person asks to observe an agent from this pane. Confirm `HERDR_ENV=1`, run `aep eval watch` to see the agents working in this project, and confirm with the person which pane to observe; if they named it, restate it and continue. Then `aep eval watch --target <pane-id>` creates the run and returns the parameters: project root, run id, run directory and the target pane; they are also saved as `procedure.md` in the run. Work in the project root with `--root` when a command runs elsewhere.
 
 ## Rhythm
 
-1. Baseline: `aep eval snapshot --run <id>` once at the start; read `aep status`, `aep check` and `git status` yourself so later comparisons have a reference.
-2. Wait for milestones: `herdr agent wait <target> --until idle --timeout <ms>` (blocked and done also end a turn). On each milestone read the recent transcript with `herdr agent read <target> --source recent-unwrapped --lines <n>`, take another snapshot, and inspect what changed: new records (`aep timeline`, `aep query --kind event`), Git commits, worktrees, checks and reviews.
-3. Compare: for each claim the agent made about its work (accepted, verified, delivered, committed, pushed) find the record or Git fact that supports it, or note that none does. Separate live observation from reconstruction from transcript text, and mark what remains unverified.
-4. Record: write one JSON object per observation and store it with `aep eval record --run <id> --file <path> --note "<one line>"`. A useful shape is `{"claim": "...", "source": "transcript|record|git", "evidence": {...}, "matches": true|false, "practice": "verification|records|delivery|git|legacy|devops", "note": "..."}`.
-5. Close: `aep eval report --run <id>` for the rule findings, then a final observation summarizing what held, what did not, and what stays unverified. Report the run directory to the person who started the watch.
+The CLI paces the observer. After the run is created, loop on `aep eval tick --run <id>`: the command waits until at least the configured interval (ten minutes by default, `--interval` to change it) has passed since the previous tick, then waits for the target to reach idle, done or blocked, takes a snapshot and reports only the structural facts that changed since the last snapshot. Run it with a long tool timeout or as a background command; it blocks on purpose.
+
+- `changed: no` and the target is working or idle: there is nothing to record. Run the next tick.
+- `changed: yes`: read the recent transcript with `herdr agent read <target> --source recent-unwrapped --lines <n>`, find the claims the agent made about the work that changed (accepted, verified, delivered, committed, pushed), and check each against the record or Git fact that should support it. Record one observation for the milestone with `aep eval record --run <id> --file <path> --note "<one line>"`; a useful shape is `{"claim": "...", "source": "transcript|record|git", "evidence": {...}, "matches": true|false, "practice": "verification|records|delivery|git|legacy|devops", "note": "..."}`.
+- `target needs attention` (blocked or done): note what it is waiting for; the person decides.
+
+Separate live observation from reconstruction from transcript text, and mark what remains unverified. An observation is worth recording when a claim and its evidence disagree, when a milestone was independently verified, or when the target is waiting on a person; routine progress with matching evidence needs no record. Close with `aep eval report --run <id>` and a final observation summarizing what held, what did not, and what stays unverified; report the run directory to the person who started the watch.
 
 ## Reading the working agent without steering it
 

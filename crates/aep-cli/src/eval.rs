@@ -33,22 +33,16 @@ pub fn home() -> Result<PathBuf> {
 #[serde(default)]
 pub struct EvalConfig {
     pub root: String,
-    pub observer_kind: String,
     pub retention_days: u32,
-    pub projects: BTreeMap<String, ProjectOverride>,
-}
-#[derive(Debug, Default, Serialize, Deserialize)]
-#[serde(default)]
-pub struct ProjectOverride {
-    pub observer_kind: Option<String>,
+    /// Minimum minutes between observer ticks.
+    pub min_interval_minutes: u64,
 }
 impl Default for EvalConfig {
     fn default() -> Self {
         Self {
             root: "~/.aep/eval".into(),
-            observer_kind: "codex".into(),
             retention_days: 90,
-            projects: BTreeMap::new(),
+            min_interval_minutes: 10,
         }
     }
 }
@@ -1047,12 +1041,202 @@ pub fn run(args: &Cli, command: &Eval) -> Result<Outcome> {
                 text,
             ))
         }
-        Eval::Watch {
-            no_spawn,
-            kind,
-            target,
-        } => watch(args, &config, *no_spawn, kind.as_deref(), target.as_deref()),
+        Eval::Watch { target } => watch(args, &config, target.as_deref()),
+        Eval::Tick {
+            run,
+            interval,
+            timeout,
+        } => tick(args, &config, run, *interval, *timeout),
     }
+}
+/// Facts whose change makes a milestone worth the observer's attention.
+fn milestone_keys(f: &Value) -> Vec<(&'static str, Value)> {
+    vec![
+        ("head", f["head"].clone()),
+        ("records", f["records"]["total"].clone()),
+        ("check_pass", f["records"]["check"]["pass"].clone()),
+        ("check_warnings", f["records"]["check"]["warnings"].clone()),
+        ("events", f["records"]["events"]["total"].clone()),
+        (
+            "configured_checks",
+            f["verification"]["configured_checks"].clone(),
+        ),
+        (
+            "stale_evidence",
+            f["verification"]["stale_evidence"].clone(),
+        ),
+        (
+            "blocking_reviews",
+            f["verification"]["blocking_reviews"].clone(),
+        ),
+        ("deliveries", f["delivery"]["deliveries"].clone()),
+        ("closed_changes", f["delivery"]["closed_changes"].clone()),
+        ("branch", f["git"]["branch"].clone()),
+        ("dirty_files", f["git"]["dirty_files"].clone()),
+        ("unpushed_commits", f["git"]["unpushed_commits"].clone()),
+        ("running_attempts", f["git"]["running_attempts"].clone()),
+        ("worktrees", f["git"]["worktrees"].clone()),
+        ("by_kind_status", f["records"]["by_kind_status"].clone()),
+    ]
+}
+fn epoch_seconds() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0)
+}
+/// Seconds since the epoch for an RFC 3339 UTC timestamp written by `now()`.
+fn epoch_of(timestamp: &str) -> Option<i64> {
+    let day = day_of(timestamp)?;
+    let h: i64 = timestamp.get(11..13)?.parse().ok()?;
+    let m: i64 = timestamp.get(14..16)?.parse().ok()?;
+    let s: i64 = timestamp.get(17..19)?.parse().ok()?;
+    Some(day * 86_400 + h * 3600 + m * 60 + s)
+}
+/// One observer step: honour the minimum interval, wait for the target to
+/// settle, snapshot, and report only what changed since the last snapshot.
+fn tick(
+    args: &Cli,
+    config: &MachineConfig,
+    run: &str,
+    interval: Option<u64>,
+    timeout: Option<u64>,
+) -> Result<Outcome> {
+    let s = Store::open(&args.root)?;
+    let dir = run_dir(config, &s.root, run)?;
+    let mut manifest = read_json(&dir.join("manifest.json"))
+        .map_err(|_| Error::blocked(format!("Unknown eval run {run}")))?;
+    let target = manifest["target_pane"]
+        .as_str()
+        .map(String::from)
+        .ok_or_else(|| {
+            Error::blocked(
+                "This run has no target pane; start it with `aep eval watch --target <pane>`",
+            )
+        })?;
+    let interval_secs = interval.unwrap_or(config.eval.min_interval_minutes) as i64 * 60;
+    let timeout_ms = timeout.unwrap_or(30) * 60_000;
+    // 1. Pace: wait until the interval since the last tick has passed.
+    let ticks_path = dir.join("ticks.jsonl");
+    let last = fs::read_to_string(&ticks_path)
+        .ok()
+        .and_then(|t| {
+            t.lines()
+                .rev()
+                .find(|l| !l.trim().is_empty())
+                .map(String::from)
+        })
+        .and_then(|l| serde_json::from_str::<Value>(&l).ok())
+        .and_then(|v| v["at"].as_str().and_then(epoch_of));
+    let mut waited = 0i64;
+    if let Some(last) = last {
+        let due = last + interval_secs;
+        let now_s = epoch_seconds();
+        if due > now_s && !args.dry_run {
+            waited = due - now_s;
+            std::thread::sleep(std::time::Duration::from_secs(waited as u64));
+        }
+    }
+    // 2. Wait for the target to reach a settled state (or the timeout).
+    let (target_status, wait_result) = if args.dry_run {
+        ("dry-run".to_string(), "skipped".to_string())
+    } else {
+        let wait_ms = timeout_ms.to_string();
+        let waited_for = herdr(&[
+            "agent",
+            "wait",
+            &target,
+            "--until",
+            "idle",
+            "--timeout",
+            &wait_ms,
+        ]);
+        let info = herdr(&["agent", "get", &target]).ok();
+        let status = info
+            .as_ref()
+            .and_then(|i| {
+                let a = if i["result"]["agent"].is_object() {
+                    &i["result"]["agent"]
+                } else {
+                    &i["result"]
+                };
+                a["agent_status"].as_str().map(String::from)
+            })
+            .unwrap_or_else(|| "unknown".into());
+        let outcome = match waited_for {
+            Ok(_) => "settled".to_string(),
+            Err(e) if e.message.contains("timeout") => "timeout".to_string(),
+            Err(e) => format!("error: {}", e.message),
+        };
+        (status, outcome)
+    };
+    // 3. Snapshot and compare with the previous one.
+    let facts = facts(&s, &s.snapshot()?)?;
+    let previous = read_json(&dir.join("snapshot.json")).ok();
+    let mut delta = vec![];
+    if let Some(prev) = &previous {
+        let before = milestone_keys(prev);
+        for (key, after) in milestone_keys(&facts) {
+            let old = before
+                .iter()
+                .find(|(k, _)| *k == key)
+                .map(|(_, v)| v.clone())
+                .unwrap_or(Value::Null);
+            if old != after {
+                delta.push(json!({"fact": key, "before": old, "after": after}));
+            }
+        }
+    }
+    let attention = matches!(target_status.as_str(), "blocked" | "done");
+    let changed = previous.is_none() || !delta.is_empty();
+    let stamp = now();
+    if !args.dry_run {
+        if changed {
+            let name = stamp.replace(':', "-");
+            write_json(&dir.join("snapshot.json"), &facts)?;
+            write_json(&dir.join("snapshots").join(format!("{name}.json")), &facts)?;
+        }
+        let entry = json!({"at": stamp, "waited_seconds": waited, "wait": wait_result, "target_status": target_status, "changed": changed, "delta": delta.len()});
+        let mut existing = fs::read_to_string(&ticks_path).unwrap_or_default();
+        existing.push_str(&serde_json::to_string(&entry)?);
+        existing.push('\n');
+        fs::write(&ticks_path, existing)?;
+        manifest["last_tick"] = json!(stamp);
+        write_json(&dir.join("manifest.json"), &manifest)?;
+        write_sums(&dir)?;
+    }
+    let next_due = epoch_of(&stamp).unwrap_or(0) + interval_secs;
+    let mut text = format!(
+        "eval tick — run {run}\n  target {target}: {target_status} ({wait_result}) · waited {waited}s for the interval\n  changed: {}{}\n",
+        if changed { "yes" } else { "no" },
+        if attention {
+            " · target needs attention"
+        } else {
+            ""
+        }
+    );
+    for d in &delta {
+        text.push_str(&format!(
+            "    {}: {} -> {}\n",
+            d["fact"].as_str().unwrap_or(""),
+            d["before"],
+            d["after"]
+        ));
+    }
+    text.push_str(&format!(
+        "  {}\n  next tick allowed after {} minutes\n",
+        if changed || attention {
+            "read the transcript, compare claims with records and Git, record only what matters"
+        } else {
+            "nothing to record; run the next tick"
+        },
+        interval_secs / 60
+    ));
+    let mut out = Outcome::ok(
+        json!({"run": run, "target_pane": target, "target_status": target_status, "wait": wait_result, "waited_seconds": waited, "changed": changed, "attention": attention, "delta": delta, "snapshot_written": changed && !args.dry_run, "next_due_epoch": next_due, "dry_run": args.dry_run}),
+    );
+    out.changed = !args.dry_run;
+    Ok(with_text(out, text))
 }
 fn with_text(mut out: Outcome, text: String) -> Outcome {
     out.text = Some(text);
@@ -1088,111 +1272,108 @@ fn herdr(args: &[&str]) -> Result<Value> {
         )
     })
 }
-fn watch(
-    args: &Cli,
-    config: &MachineConfig,
-    no_spawn: bool,
-    kind: Option<&str>,
-    target: Option<&str>,
-) -> Result<Outcome> {
+/// The calling agent becomes the observer. Without a target, list the agents
+/// working in this project so the person can choose; with a target, prepare
+/// the run and hand back the procedure.
+fn watch(args: &Cli, config: &MachineConfig, target: Option<&str>) -> Result<Outcome> {
     let s = Store::open(&args.root)?;
     if std::env::var("HERDR_ENV").ok().as_deref() != Some("1") {
         return Err(Error::blocked(
             "Not running under Herdr (HERDR_ENV != 1); use `aep eval snapshot` and `aep eval report` directly",
         ));
     }
-    let target = target
-        .map(String::from)
-        .or_else(|| std::env::var("HERDR_PANE_ID").ok())
-        .ok_or_else(|| Error::input("No target pane: pass --target <pane-id>"))?;
+    let me = std::env::var("HERDR_PANE_ID").unwrap_or_default();
+    let root = fs::canonicalize(&s.root).unwrap_or_else(|_| s.root.clone());
     let project = project_id(&s.root);
-    let kind = kind
-        .map(String::from)
-        .or_else(|| {
-            config
-                .eval
-                .projects
-                .get(&project)
-                .and_then(|p| p.observer_kind.clone())
-        })
-        .unwrap_or_else(|| config.eval.observer_kind.clone());
+    let Some(target) = target else {
+        let list = herdr(&["agent", "list"])?;
+        let candidates: Vec<Value> = list["result"]["agents"]
+            .as_array()
+            .map(Vec::as_slice)
+            .unwrap_or_default()
+            .iter()
+            .filter(|a| {
+                a["pane_id"].as_str() != Some(me.as_str())
+                    && a["cwd"]
+                        .as_str()
+                        .is_some_and(|c| Path::new(c).starts_with(&root))
+            })
+            .map(|a| {
+                json!({"pane_id": a["pane_id"], "agent": a["agent"], "status": a["agent_status"], "title": a["terminal_title_stripped"], "cwd": a["cwd"]})
+            })
+            .collect();
+        let mut text = format!("eval watch — agents working in {project}:\n");
+        for c in &candidates {
+            text.push_str(&format!(
+                "  {}  {}  {}  {}\n",
+                c["pane_id"].as_str().unwrap_or("?"),
+                c["agent"].as_str().unwrap_or("?"),
+                c["status"].as_str().unwrap_or("?"),
+                c["title"].as_str().unwrap_or("")
+            ));
+        }
+        if candidates.is_empty() {
+            text.push_str("  none\n");
+        }
+        text.push_str(
+            "Confirm the target with the person, then run: aep eval watch --target <pane-id>\n",
+        );
+        return Ok(with_text(
+            Outcome::ok(
+                json!({"project_id": project, "this_pane": me, "candidates": candidates, "next": "aep eval watch --target <pane-id>"}),
+            ),
+            text,
+        ));
+    };
+    if target == me {
+        return Err(Error::input(
+            "The target is this pane; the observer watches another agent's pane",
+        ));
+    }
+    let info = herdr(&["agent", "get", target])?;
+    // `herdr agent get` returns the agent fields flat under result.
+    let agent = if info["result"]["agent"].is_object() {
+        info["result"]["agent"].clone()
+    } else {
+        info["result"].clone()
+    };
+
     let run = run_id();
     let dir = run_dir(config, &s.root, &run)?;
-    let root = fs::canonicalize(&s.root).unwrap_or_else(|_| s.root.clone());
-    let skill = guidance::asset("eval/SKILL.md")?;
-    let prompt = format!(
-        "You are the neutral aep eval observer for this project. Parameters:\n- project root: {}\n- eval run id: {run}\n- run directory: {}\n- target pane (the working agent to observe): {target}\n- this pane hosts you; do not send input to the target pane.\n\nFollow the procedure below exactly as written. Read `aep --skill eval --ref observer` and `aep --skill eval --ref rules` for the details.\n\n---\n{}",
+    let procedure = format!(
+        "You are the neutral aep eval observer for this project.\n- project root: {}\n- eval run id: {run}\n- run directory: {}\n- target pane: {target} ({} agent, {} at start)\n- this pane: {me}; send no input to the target pane.\n\nFollow `aep --skill eval --ref observer`; rules are in `aep --skill eval --ref rules`.\n",
         root.display(),
         dir.display(),
-        skill
+        agent["agent"].as_str().unwrap_or("unknown"),
+        agent["agent_status"].as_str().unwrap_or("unknown")
     );
-    let name = format!("aep-eval-{}", &run[run.len() - 6..]);
-    let mut result = json!({"run": run, "dir": dir, "project_id": project, "target_pane": target, "observer_kind": kind, "observer_name": name, "spawned": false, "dry_run": args.dry_run});
-    let commands = json!([
-        format!(
-            "herdr pane split --current --direction right --cwd {} --no-focus",
-            root.display()
-        ),
-        format!("herdr agent start {name} --kind {kind} --pane <returned pane id>"),
-        format!(
-            "herdr agent prompt {name} \"$(cat {}/prompt.md)\"",
-            dir.display()
-        ),
-    ]);
-    result["commands"] = commands.clone();
+    let mut result = json!({"run": run, "dir": dir, "project_id": project, "target_pane": target, "target_agent": {"kind": agent["agent"], "status": agent["agent_status"], "title": agent["terminal_title_stripped"]}, "observer_pane": me, "dry_run": args.dry_run});
     if args.dry_run {
         return Ok(with_text(
             Outcome::ok(result),
-            format!("eval watch — dry run for {project}; would create run {run}\n"),
+            format!(
+                "eval watch — dry run for {project}; would create run {run} observing {target}\n"
+            ),
         ));
     }
     fs::create_dir_all(&dir)?;
     let mut manifest = ensure_manifest(&dir, &s.root, "watch")?;
-    fs::write(dir.join("prompt.md"), &prompt)?;
+    fs::write(dir.join("procedure.md"), &procedure)?;
     let facts = facts(&s, &s.snapshot()?)?;
     write_json(&dir.join("snapshot.json"), &facts)?;
     manifest["target_pane"] = json!(target);
-    manifest["observer"] = json!({"name": name, "kind": kind, "spawned": false});
-    if !no_spawn {
-        let split = herdr(&[
-            "pane",
-            "split",
-            "--current",
-            "--direction",
-            "right",
-            "--cwd",
-            &root.to_string_lossy(),
-            "--no-focus",
-        ])?;
-        let pane = split["result"]["pane"]["pane_id"]
-            .as_str()
-            .ok_or_else(|| Error::new("herdr", "pane split returned no pane id", 1))?
-            .to_string();
-        herdr(&["agent", "start", &name, "--kind", &kind, "--pane", &pane])?;
-        herdr(&["agent", "prompt", &name, &prompt])?;
-        manifest["observer"] = json!({"name": name, "kind": kind, "pane": pane, "spawned": true, "prompted_at": now()});
-        result["spawned"] = json!(true);
-        result["observer_pane"] = json!(pane);
-    }
+    manifest["target_agent"] = result["target_agent"].clone();
+    manifest["observer"] = json!({"pane": me, "started_at": now()});
     write_json(&dir.join("manifest.json"), &manifest)?;
     write_sums(&dir)?;
+    result["procedure"] = json!(procedure);
     let mut out = Outcome::ok(result);
     out.changed = true;
-    let text = if no_spawn {
+    Ok(with_text(
+        out,
         format!(
-            "eval watch — run {run} prepared under {}\n  prompt: {}/prompt.md\n  start the observer yourself:\n    {}\n    {}\n    {}\n",
-            dir.display(),
-            dir.display(),
-            commands[0].as_str().unwrap_or(""),
-            commands[1].as_str().unwrap_or(""),
-            commands[2].as_str().unwrap_or("")
-        )
-    } else {
-        format!(
-            "eval watch — run {run}\n  observer {name} ({kind}) started in pane {} watching {target}\n  run directory {}\n",
-            out.data["observer_pane"].as_str().unwrap_or("?"),
+            "eval watch — run {run}\n  run directory {}\n\n{procedure}",
             dir.display()
-        )
-    };
-    Ok(with_text(out, text))
+        ),
+    ))
 }

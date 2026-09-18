@@ -94,7 +94,7 @@ observer_kind = "claude"      # 選用的專案覆寫
 ## `aep eval watch`：Herdr 之下的監看模式
 
 - 需要 `HERDR_ENV=1`；不在 Herdr 之下時只提示改用 `snapshot`／`report`。
-- 建立一個 run，用 `aep --skill eval` 產生觀察者 prompt（含 run id、專案路徑、要觀察的 pane），在旁邊開一個 pane 以 `config.eval.observer_kind` 啟動專用觀察者 agent 並送出 prompt。`--no-spawn` 只印出 Herdr 指令。
+- 建立一個 run，用 `aep --skill eval` 產生觀察者 prompt（含 run id、專案路徑、要觀察的 pane），在被觀察的 pane 旁邊（同一個 workspace）split 一個 pane，以 `config.eval.observer_kind` 啟動專用觀察者 agent 並送出 prompt。`--no-spawn` 只印出 Herdr 指令。
 - 觀察者 agent 依 skill `eval` 的程序：用 Herdr 找到同一 cwd 的工作 agent；在它每次 idle／done 時做 `aep eval snapshot --run <id>`、讀 transcript、對照記錄與 Git；把宣稱與證據的差異用 `aep eval record --run <id> --file <obs.json> --note` 寫進 run；結束時 `aep eval report --run <id>`。
 - 中立規則寫在 skill 裡：不提示工作 agent、不回答它的問題、不改專案檔案、不提交它的工作、不評價產品決策。
 - 從 Codex 或 Claude Code 啟動：使用者在自己的 session 說「開始 aep eval」，工作 agent 執行 `aep eval watch`。
@@ -107,8 +107,27 @@ observer_kind = "claude"      # 選用的專案覆寫
 
 1. `~/.aep` 是否同時成為安裝腳本的 `AEP_HOME`（`builds/` 搬過去）。建議是，讓機器層只有一個位置。
 2. `eval` 做成第九個內建 skill，還是 `reflect` 的一個 reference。建議第九個，因為讀者是觀察者 agent 而不是工作 agent；preview proof 與 catalog 測試的「8」要一併改。
-3. `watch` 預設自動 spawn 觀察者，還是只印指令。建議在 `HERDR_ENV=1` 時預設 spawn，`--no-spawn` 關掉。
+3. `watch` 預設自動 spawn 觀察者，還是只印指令。建議在 `HERDR_ENV=1` 時預設 spawn，`--no-spawn` 關掉。（2026-09-19 改為不 spawn，見下文。）
 4. 第一版規則的門檻（N 天、比例）先寫死在 CLI，之後再開放到 `config.toml`。
+
+## 第一次實跑後的設計改變（2026-09-19）
+
+使用者在第一次實跑後改變了 `watch` 的形式：不自動開 pane、不 spawn。流程是使用者自己決定在哪裡開 pane、起 agent，用自然語言說「在這裡啟動 aep eval watch 看某個 agent」；那個 agent 執行 `aep eval watch` 列出專案裡在工作的 agent（排除自己的 pane），和使用者確認目標後執行 `aep eval watch --target <pane>`，CLI 建立 run、存 `procedure.md`、做基線快照並把觀察程序交回給它，它自己就是觀察者。因此 `config.toml` 不再有 observer_kind，Codex sandbox 參數也不需要（使用者自己決定觀察者 agent 的權限）。
+
+原本第一版的兩個修正（split 目標 pane、Codex writable roots）在這個設計下都不再需要，記錄如下作為歷史：
+
+## 第一次實跑的修正（2026-09-19，已被上面的設計取代）
+
+第一次在真實專案上跑 `watch` 發現兩個問題，都已修：
+
+1. 觀察者 pane 開錯地方。原本 split 的是執行 `watch` 的 pane，觀察者落在觀察者自己的 workspace；使用者預期它出現在被觀察 agent 旁邊。改成 `herdr pane split --pane <target>`，觀察者現在開在目標 pane 同一個 tab。已啟動的觀察者用 `herdr pane move` 搬過去。
+2. Codex 的 sandbox 擋住 Herdr socket 與 `~/.aep`。觀察者每跑一個 `herdr` 指令或 `aep eval record` 都要人核准。改成以 codex 為 kind 時，`agent start` 帶 `-s workspace-write -c sandbox_workspace_write.writable_roots=[<AEP home>, <Herdr socket 目錄>]`。其他 kind 不加參數。
+
+## 第一次完整實跑（2026-09-19，一個剛 `aep init` 的新專案）
+
+- 工作 agent 從 `aep init` 起，一輪內讀完 project skill 與 references，建了 stores、三個 checks、專案驗證 skill、兩筆 decision 與兩筆 roadmap，7 筆事件全部帶 note；使用者要求後提交並推送。這是第一個從第一天就照 v5 指引走的專案。
+- 觀察者（以舊的 spawn 方式啟動）完成三筆觀察：基線時序邊界、啟動交接與 23 個檔案雜湊的獨立比對、commit／push 的獨立驗證（remote ref、乾淨工作樹、三個 checks、whitespace）。每筆都寫明哪些是現場看到、哪些是從 transcript 重建、哪些沒有重做。全程沒有對目標送輸入、沒有改專案檔案。規則報告最後只剩 DevOps 四項（沒有 CI、secret scan、lockfile、CHANGELOG）。
+- 兩個摩擦：Codex 的核准對話框（新流程由使用者自己起觀察者後不再是 CLI 的問題）；觀察者輪詢太密（每 45 秒 `agent wait`），使用者直接糾正。使用者進一步要求：記錄完至少等 10 分鐘、由 CLI 自己控制節奏、沒有重要的事不記錄。因此新增 `aep eval tick --run <id>`：自己等滿間隔（`~/.aep/config.toml` 的 `min_interval_minutes`，預設 10）、等目標 settled、快照並只回報和上一份快照相比有變化的結構事實；沒變化就不寫快照，觀察者不記錄。observer 參考改成以 tick 為迴圈，只在宣稱與證據不符、里程碑經獨立驗證、或目標等人時才記錄。
 
 ## 驗證方式
 

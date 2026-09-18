@@ -31,6 +31,10 @@ aep --skill design --ref prototype
 aep --skill validate
 ```
 
+## Watch another agent
+
+When the person asks you to watch, observe or evaluate another agent's work from this pane, read `aep --skill eval` and run `aep eval watch`: it lists the agents working in this project, you confirm the target with the person, and `aep eval watch --target <pane>` makes you the observer. The observer reads the project, sends nothing to the observed agent and writes only under the machine-level AEP home.
+
 ## Verify and retain evidence
 
 Use the project's own verification procedure and configured checks. Bind results to the actual candidate and environment; retain failed checks and missing evidence. Follow explicit project independent-review requirements. Imported completion is historical context until reconciled and verified. Read the validate procedure before claiming acceptance or delivery.

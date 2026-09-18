@@ -155,7 +155,7 @@ fn eval_writes_only_under_the_aep_home_and_reports_structural_findings() {
 }
 
 #[test]
-fn eval_watch_needs_herdr_and_can_prepare_a_run_without_spawning() {
+fn eval_watch_needs_herdr_and_prepares_a_run_for_the_calling_agent() {
     let (project, home) = setup();
     let root = project.path();
     let out = Command::new(env!("CARGO_BIN_EXE_aep"))
@@ -168,31 +168,134 @@ fn eval_watch_needs_herdr_and_can_prepare_a_run_without_spawning() {
         .unwrap();
     assert_eq!(out.status.code(), Some(3), "{out:?}");
 
+    // A fake herdr on PATH answers agent list/get so the flow can be exercised.
+    let bin = tempfile::tempdir().unwrap();
+    let fake = bin.path().join("herdr");
+    fs::write(
+        &fake,
+        format!(
+            "#!/bin/sh\ncase \"$1 $2\" in\n  \"agent list\") printf '%s' '{{\"result\":{{\"agents\":[{{\"pane_id\":\"w9:p1\",\"agent\":\"codex\",\"agent_status\":\"working\",\"terminal_title_stripped\":\"work\",\"cwd\":\"{root}\"}},{{\"pane_id\":\"w9:p9\",\"agent\":\"claude\",\"agent_status\":\"idle\",\"terminal_title_stripped\":\"me\",\"cwd\":\"{root}\"}},{{\"pane_id\":\"w1:p1\",\"agent\":\"codex\",\"agent_status\":\"idle\",\"terminal_title_stripped\":\"other\",\"cwd\":\"/elsewhere\"}}]}}}}' ;;\n  \"agent get\") printf '%s' '{{\"result\":{{\"agent\":\"codex\",\"agent_status\":\"idle\",\"pane_id\":\"w9:p1\",\"terminal_title_stripped\":\"work\"}}}}' ;;\n  \"agent wait\") printf '%s' '{{\"result\":{{\"agent_status\":\"idle\",\"pane_id\":\"w9:p1\"}}}}' ;;\n  *) echo unexpected >&2; exit 1 ;;\nesac\n",
+            root = root.canonicalize().unwrap().display()
+        ),
+    )
+    .unwrap();
+    let mut perms = fs::metadata(&fake).unwrap().permissions();
+    std::os::unix::fs::PermissionsExt::set_mode(&mut perms, 0o755);
+    fs::set_permissions(&fake, perms).unwrap();
+    let path = format!(
+        "{}:{}",
+        bin.path().display(),
+        std::env::var("PATH").unwrap()
+    );
+
     let out = Command::new(env!("CARGO_BIN_EXE_aep"))
         .env("AEP_HOME", home.path())
         .env("HERDR_ENV", "1")
         .env("HERDR_PANE_ID", "w9:p9")
+        .env("PATH", &path)
         .args(["--json", "--root"])
         .arg(root)
-        .args(["eval", "watch", "--no-spawn", "--kind", "claude"])
+        .args(["eval", "watch"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0), "{out:?}");
+    let result: Value = serde_json::from_slice(&out.stdout).unwrap();
+    let candidates = result["data"]["candidates"].as_array().unwrap();
+    assert_eq!(
+        candidates.len(),
+        1,
+        "own pane and other projects excluded: {candidates:?}"
+    );
+    assert_eq!(candidates[0]["pane_id"], "w9:p1");
+
+    let out = Command::new(env!("CARGO_BIN_EXE_aep"))
+        .env("AEP_HOME", home.path())
+        .env("HERDR_ENV", "1")
+        .env("HERDR_PANE_ID", "w9:p9")
+        .env("PATH", &path)
+        .args(["--json", "--root"])
+        .arg(root)
+        .args(["eval", "watch", "--target", "w9:p1"])
         .output()
         .unwrap();
     assert_eq!(out.status.code(), Some(0), "{out:?}");
     let result: Value = serde_json::from_slice(&out.stdout).unwrap();
     let data = &result["data"];
-    assert_eq!(data["spawned"], false);
-    assert_eq!(data["target_pane"], "w9:p9");
-    assert_eq!(data["observer_kind"], "claude");
+    assert_eq!(data["target_pane"], "w9:p1");
+    assert_eq!(data["observer_pane"], "w9:p9");
+    assert_eq!(data["target_agent"]["kind"], "codex");
     let dir = Path::new(data["dir"].as_str().unwrap());
-    let prompt = fs::read_to_string(dir.join("prompt.md")).unwrap();
-    assert!(prompt.contains("eval run id"));
-    assert!(prompt.contains("name: eval"));
+    let procedure = fs::read_to_string(dir.join("procedure.md")).unwrap();
+    assert!(procedure.contains("eval run id"));
+    assert!(procedure.contains("aep --skill eval --ref observer"));
     assert!(dir.join("snapshot.json").exists());
     let manifest: Value =
         serde_json::from_str(&fs::read_to_string(dir.join("manifest.json")).unwrap()).unwrap();
     assert_eq!(manifest["mode"], "watch");
-    assert_eq!(manifest["observer"]["spawned"], false);
+    assert_eq!(manifest["observer"]["pane"], "w9:p9");
     assert_eq!(git(root, &["status", "--porcelain"]), "");
+
+    let out = Command::new(env!("CARGO_BIN_EXE_aep"))
+        .env("AEP_HOME", home.path())
+        .env("HERDR_ENV", "1")
+        .env("HERDR_PANE_ID", "w9:p9")
+        .env("PATH", &path)
+        .args(["--json", "--root"])
+        .arg(root)
+        .args(["eval", "watch", "--target", "w9:p9"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2), "own pane rejected: {out:?}");
+
+    // Ticks: nothing changed -> no new snapshot; a change -> delta and snapshot.
+    let run = data["run"].as_str().unwrap().to_string();
+    let tick = |extra: &[&str]| -> Value {
+        let out = Command::new(env!("CARGO_BIN_EXE_aep"))
+            .env("AEP_HOME", home.path())
+            .env("HERDR_ENV", "1")
+            .env("HERDR_PANE_ID", "w9:p9")
+            .env("PATH", &path)
+            .args(["--json", "--root"])
+            .arg(root)
+            .args(["eval", "tick", "--run", &run, "--interval", "0"])
+            .args(extra)
+            .output()
+            .unwrap();
+        assert_eq!(out.status.code(), Some(0), "{out:?}");
+        serde_json::from_slice::<Value>(&out.stdout).unwrap()["data"].clone()
+    };
+    let snapshots_before = fs::read_dir(dir.join("snapshots"))
+        .map(|d| d.count())
+        .unwrap_or(0);
+    let quiet = tick(&[]);
+    assert_eq!(quiet["changed"], false, "{quiet}");
+    assert_eq!(quiet["target_status"], "idle");
+    assert_eq!(
+        fs::read_dir(dir.join("snapshots"))
+            .map(|d| d.count())
+            .unwrap_or(0),
+        snapshots_before
+    );
+    fs::write(root.join("note.txt"), "x\n").unwrap();
+    let busy = tick(&[]);
+    assert_eq!(busy["changed"], true, "{busy}");
+    assert!(
+        busy["delta"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|d| d["fact"] == "dirty_files"),
+        "{busy}"
+    );
+    assert_eq!(
+        fs::read_dir(dir.join("snapshots"))
+            .map(|d| d.count())
+            .unwrap_or(0),
+        snapshots_before + 1
+    );
+    fs::remove_file(root.join("note.txt")).unwrap();
+    let ticks = fs::read_to_string(dir.join("ticks.jsonl")).unwrap();
+    assert_eq!(ticks.lines().count(), 2, "{ticks}");
 }
 
 #[test]
