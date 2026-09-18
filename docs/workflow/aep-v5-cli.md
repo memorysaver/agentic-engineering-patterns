@@ -91,6 +91,10 @@ Use `aep story new --file story.yaml`. The same new/show/list/update shape appli
 
 Read commands never decide that a new story, design, repair, or merge is wanted. Context packets state their scope; agents inspect additional project sources as needed.
 
+## Observation with `aep eval`
+
+`aep eval` reads a project and writes only under the machine-level AEP home (`~/.aep`, or `AEP_HOME`). `aep eval init` writes `~/.aep/config.toml` (observer agent kind, eval root, retention). `aep eval snapshot` stores structural facts for the project in `~/.aep/eval/<host/owner/repo>/<run>/snapshot.json` with a manifest and checksums; `aep eval report` applies the fixed rules in `aep --skill eval --ref rules` and writes `report.json`/`report.md`; `aep eval record --run <id> --file <json>` stores an observer's finding and its `--note`; `aep eval list` and `aep eval show <run>` read past runs. Under Herdr (`HERDR_ENV=1`), `aep eval watch` prepares a run, writes the observer prompt from `aep --skill eval`, splits a sibling pane, starts an observer agent of the configured kind and sends it the prompt; `--no-spawn` prints the Herdr commands instead, `--target` names the pane to observe. The observer's scope is engineering process and AEP adherence; findings cite snapshot facts or transcript evidence and never evaluate product decisions.
+
 ## Design and specifications
 
 For product refocusing or a benchmark/priority choice, `aep --skill roadmap --ref purpose-research` describes research driven by decision uncertainty. The agent investigates relevant sources and alternatives, discusses its recommendation, and uses settled feedback to maintain canonical context through `aep --skill roadmap --ref product-context`. Roadmap intent and decisions, design artifacts and concrete change/story contracts retain their separate homes and links. Direction-only work ends with its requested context/design deliverable; authorized implementation continues through implement, validate and deliver. These are embedded instructions chosen by the working agent, not an automatic CLI router or research service.

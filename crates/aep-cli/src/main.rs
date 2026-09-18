@@ -1,5 +1,6 @@
 mod cli;
 mod commands;
+mod eval;
 mod guidance;
 mod migration;
 mod output;

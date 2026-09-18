@@ -140,6 +140,52 @@ pub enum Command {
         #[arg(long)]
         rollback: bool,
     },
+    /// Observe engineering-process quality from outside the project.
+    Eval {
+        #[command(subcommand)]
+        command: Eval,
+    },
+}
+#[derive(Debug, Subcommand)]
+pub enum Eval {
+    /// Write the machine-level configuration under ~/.aep.
+    Init,
+    /// Collect structural facts about this project into an eval run; writes nothing into the project.
+    Snapshot {
+        /// Add to an existing run instead of creating one.
+        #[arg(long)]
+        run: Option<String>,
+    },
+    /// Apply the engineering-practice rules to a run's latest snapshot.
+    Report {
+        /// Run id; defaults to the latest run for this project.
+        #[arg(long)]
+        run: Option<String>,
+    },
+    /// Store an observer's finding (a JSON object) in a run.
+    Record {
+        #[arg(long)]
+        run: String,
+        /// JSON file, or - for stdin.
+        #[arg(long)]
+        file: PathBuf,
+    },
+    /// List eval runs for this project.
+    List,
+    /// Show a run's manifest, snapshot summary, report counts and observations.
+    Show { run: String },
+    /// Start a neutral observer agent for this project under Herdr.
+    Watch {
+        /// Prepare the run and print the Herdr commands instead of starting the observer.
+        #[arg(long)]
+        no_spawn: bool,
+        /// Herdr agent kind for the observer; defaults to the machine configuration.
+        #[arg(long)]
+        kind: Option<String>,
+        /// Pane id of the working agent to observe; defaults to the current pane.
+        #[arg(long)]
+        target: Option<String>,
+    },
 }
 #[derive(Debug, Args)]
 pub struct Records {
@@ -421,6 +467,7 @@ pub fn command() -> clap::Command {
             "migrate" => "Examples:\n  aep migrate plan --output migration.json\n  aep migrate apply --plan migration.json\n  aep migrate verify\n\nInspect the plan and resolve its diagnostics before applying it.",
             "config" => "Examples:\n  aep config show\n  aep config show --json\n  aep config update --file config.toml --expect REVISION",
             "dispatch" => "Examples:\n  aep dispatch plan\n  aep dispatch plan --story STORY-ID\n  aep dispatch start --story STORY-ID --base main --owner developer",
+            "eval" => "Examples:\n  aep eval snapshot             Collect facts into a new run under ~/.aep/eval\n  aep eval report               Findings for the latest run\n  aep eval watch                Start a neutral observer agent under Herdr\n\nEval reads the project and writes only under the machine-level AEP home.",
             _ => "Use --json for the complete structured result.",
         };
         sub.after_help(example)
@@ -450,6 +497,7 @@ pub fn command() -> clap::Command {
             "Project maintenance",
             &["config", "migrate", "openspec", "recover"],
         ),
+        ("Observe", &["eval"]),
     ];
     let mut help = format!(
         "aep — {}\n\nUsage: aep [OPTIONS] <COMMAND>\n       aep --skill [NAME] [--ref NAME|PATH]\n",
