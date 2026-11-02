@@ -16,12 +16,12 @@ product work, integration evidence, and release history.
 
 ## [Unreleased]
 
-## [5.0.0] — pending
+## [5.0.1] — 2026-11-02
 
 - Retire OpenSpec commands, profile configuration, import/export and reference CLI execution; use native specification records.
 - Add a Better-T-Stack / Vite+ web scaffold procedure with local runtime, checks and an automated smoke test.
 
-- Prepare the standalone native CLI for stable release; the optional v4 plugin keeps its independent version.
+- Release the standalone native CLI as stable; the optional v4 plugin keeps its independent version.
 - Add typed runbooks, a six-step bug-fix runbook, four engineering principles, attempt-scoped guidance read receipts and `aep runbook check`. Existing project rules, ledger and lesson stores remain unchanged.
 
 - Add `aep eval`, a neutral, read-only observation of a project's engineering process: `eval snapshot` collects structural facts (records, verification policy, reviews, deliveries, Git state, legacy residue, CI, secret scanning) into `~/.aep/eval/<project>/<run>/`; `eval report` applies fixed rules that name the practice behind each finding; `eval record` stores observer findings with notes; `eval list`/`show` read runs; `eval watch` starts a separate observer agent under Herdr with the new ninth built-in skill `eval`. `aep eval init` writes the machine-level `~/.aep/config.toml`; the installer's default home moves to `~/.aep`. Nothing is written into the observed project.

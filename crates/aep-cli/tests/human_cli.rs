@@ -265,3 +265,20 @@ fn native_writes_show_outcome_and_dry_run_remains_non_mutating() {
         "Test"
     );
 }
+
+#[test]
+fn local_runbooks_validate_evidence_and_principles_before_serving() {
+    let d = repo();
+    let p = d.path().join("project-rules/skills/local-runbook");
+    fs::create_dir_all(&p).unwrap();
+    for (evidence, principle, expected) in [
+        ("unsupported", "prove-it", 2),
+        ("command-output", "nonexistent", 2),
+        ("command-output", "prove-it", 0),
+    ] {
+        fs::write(p.join("SKILL.md"), format!("---\nname: local-runbook\nkind: runbook\ndescription: Check local work.\nsteps:\n  - id: check\n    do: Check it.\n    evidence: [{evidence}]\n    principles: [{principle}]\n---\n# Local runbook\n")).unwrap();
+        for args in [vec!["--skill"], vec!["--skill", "local-runbook"]] {
+            assert_eq!(run(d.path(), &args).status.code(), Some(expected));
+        }
+    }
+}

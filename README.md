@@ -2,7 +2,7 @@
 
 AEP is a native CLI, `aep`, that keeps a software project's context, work and verification together so coding agents can plan, implement and deliver with evidence. The agent decides what to do; `aep` serves the procedures, maintains the records, isolates implementation in Git worktrees, runs the project's checks and records what actually happened.
 
-Current release: **5.0.0-preview.1**; this branch prepares **5.0.0** (Linux x86_64, macOS Apple Silicon). The earlier skill bundle, v4, is kept for existing installs and is being retired; see [Coming from v4](#coming-from-v4).
+Current release: **5.0.1** (Linux x86_64, macOS Apple Silicon). The earlier skill bundle, v4, is kept for existing installs and is being retired; see [Coming from v4](#coming-from-v4).
 
 ## Install
 

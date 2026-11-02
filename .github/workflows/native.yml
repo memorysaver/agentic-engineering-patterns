@@ -43,6 +43,14 @@ jobs:
           cp target/${{ matrix.target }}/release/aep LICENSE native-artifact/
           tar -czf aep-${{ matrix.target }}.tar.gz -C native-artifact aep LICENSE
           python3 -c 'import hashlib,pathlib; p=pathlib.Path("aep-${{ matrix.target }}.tar.gz"); pathlib.Path(str(p)+".sha256").write_text(hashlib.sha256(p.read_bytes()).hexdigest()+"  "+p.name+"\n")'
+      - name: Verify the packaged executable and checksum
+        shell: bash
+        run: |
+          python3 -c 'import hashlib,pathlib; p=pathlib.Path("aep-${{ matrix.target }}.tar.gz"); assert hashlib.sha256(p.read_bytes()).hexdigest() == pathlib.Path(str(p)+".sha256").read_text().split()[0]'
+          extracted="$(mktemp -d)"
+          tar -xzf aep-${{ matrix.target }}.tar.gz -C "$extracted"
+          "$extracted/aep" --version
+          python3 scripts/verify-native-preview.py --binary "$extracted/aep" --output "$RUNNER_TEMP/aep-package-proof"
       - uses: actions/upload-artifact@v4
         with:
           name: aep-${{ matrix.target }}

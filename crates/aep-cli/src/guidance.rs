@@ -316,6 +316,7 @@ pub fn run(args: &Cli, name: &str, reference: Option<&str>) -> Result<Outcome> {
             "Duplicate or reserved skill name; project procedures cannot shadow bundled skills or aep",
         ));
     }
+    validate_runbooks(&skills)?;
     let common =
         json!({"release":aep_core::VERSION,"bundle_digest":bundle_digest(),"complete":true});
     let answer = (|| {
