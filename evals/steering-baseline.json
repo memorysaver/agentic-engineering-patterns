@@ -157,6 +157,10 @@
     "skills/native/principles/SKILL.md": {
       "negations": 0,
       "imperatives": 0
+    },
+    "skills/native/stack/SKILL.md": {
+      "negations": 0,
+      "imperatives": 0
     }
   }
 }

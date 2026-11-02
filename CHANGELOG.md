@@ -18,6 +18,9 @@ product work, integration evidence, and release history.
 
 ## [5.0.0] — pending
 
+- Retire OpenSpec commands, profile configuration, import/export and reference CLI execution; use native specification records.
+- Add a Better-T-Stack / Vite+ web scaffold procedure with local runtime, checks and an automated smoke test.
+
 - Prepare the standalone native CLI for stable release; the optional v4 plugin keeps its independent version.
 - Add typed runbooks, a six-step bug-fix runbook, four engineering principles, attempt-scoped guidance read receipts and `aep runbook check`. Existing project rules, ledger and lesson stores remain unchanged.
 

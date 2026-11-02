@@ -417,7 +417,7 @@ mod tests {
         let skills = builtin().unwrap();
         let names: std::collections::BTreeSet<_> = skills.iter().map(|s| s.name.as_str()).collect();
         assert_eq!(names.len(), skills.len());
-        assert_eq!(names.len(), 11);
+        assert_eq!(names.len(), 12);
         assert!(names.contains("eval"));
         for skill in &skills {
             assert!(skill.body.lines().count() <= 400);

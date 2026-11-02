@@ -131,11 +131,6 @@ pub enum Command {
         #[command(subcommand)]
         command: Spec,
     },
-    /// Import, map, or export OpenSpec context.
-    Openspec {
-        #[command(subcommand)]
-        command: Openspec,
-    },
     /// Plan, apply, or verify a legacy project migration.
     Migrate {
         #[command(subcommand)]
@@ -412,26 +407,6 @@ pub enum Spec {
     },
 }
 #[derive(Debug, Subcommand)]
-pub enum Openspec {
-    /// Bind custom imported context to explicit active project rules or configuration.
-    Map(Input),
-    /// Import context from an OpenSpec directory.
-    Import {
-        #[arg(long)]
-        source: PathBuf,
-    },
-    /// Export native change context to an OpenSpec directory.
-    Export {
-        #[arg(long)]
-        output: PathBuf,
-    },
-    /// Validate project records, links, and specifications.
-    Check {
-        #[arg(long)]
-        reference_cli: bool,
-    },
-}
-#[derive(Debug, Subcommand)]
 pub enum Migrate {
     /// Inspect prerequisites and the proposed work without applying it.
     Plan {
@@ -506,10 +481,7 @@ pub fn command() -> clap::Command {
             "Deliver and learn",
             &["deliver", "release", "spec", "lesson", "reflect", "rule"],
         ),
-        (
-            "Project maintenance",
-            &["config", "migrate", "openspec", "recover"],
-        ),
+        ("Project maintenance", &["config", "migrate", "recover"]),
         ("Observe", &["eval"]),
     ];
     let mut help = format!(

@@ -656,41 +656,6 @@ fn migration_preserves_gates_rules_adrs_paths_and_git_sources() {
     call(root, &["gate", "evaluate", "gate-layer-1-1"], 3);
 }
 #[test]
-fn migration_scopes_are_independent_and_wave_barriers_are_explicit() {
-    let d = legacy_repo();
-    let root = d.path();
-    write(root, "product-context.yaml", &json!({"stories":[{"id":"S1","status":"pending","layer":1,"openspec_change":"alpha"},{"id":"S2","status":"pending","layer":1,"openspec_change":"beta"}],"waves":[{"layer":1,"wave":1,"stories":["S1"]},{"layer":1,"wave":2,"stories":["S2"]}]}).to_string());
-    git(root, &["add", "."]);
-    write(
-        root,
-        "openspec/changes/alpha/proposal.md",
-        "Alpha contract with enough context for preserving current project behavior.",
-    );
-    write(root, "openspec/changes/alpha/specs/result/spec.md", BDD);
-    write(
-        root,
-        "openspec/changes/beta/proposal.md",
-        "Beta contract with enough context for preserving current project behavior.",
-    );
-    write(root, "openspec/changes/beta/specs/result/spec.md", BDD);
-    git(root, &["add", "."]);
-    git(root, &["commit", "-qm", "legacy waves"]);
-    let first = call(root, &["migrate", "plan", "--story", "S1"], 0);
-    apply_migration(root, &first["plan"], 0);
-    let second = call(root, &["migrate", "plan", "--story", "S2"], 0);
-    assert!(second.get("plan").is_some());
-    apply_migration(root, &second["plan"], 0);
-    assert_eq!(
-        call(root, &["story", "show", "S2"], 0)["record"]["depends_on"],
-        json!(["S1"])
-    );
-    assert_eq!(
-        call(root, &["story", "show", "S2"], 0)["record"]["change"],
-        "beta"
-    );
-    call(root, &["migrate", "verify"], 0);
-}
-#[test]
 fn migration_refuses_lost_git_sources_collisions_and_empty_verification() {
     let d = legacy_repo();
     let root = d.path();
@@ -712,133 +677,6 @@ fn migration_refuses_lost_git_sources_collisions_and_empty_verification() {
     git(root, &["commit", "-qm", "colliding context"]);
     call(root, &["migrate", "plan"], 5);
 }
-#[test]
-fn custom_openspec_context_is_retained_and_requires_mapping() {
-    let d = setup();
-    let root = d.path();
-    write(
-        root,
-        "openspec/config.yaml",
-        "schema: security-flow\ncontext: Retain audit records.\n",
-    );
-    write(
-        root,
-        "openspec/schemas/security-flow/schema.yaml",
-        "name: security-flow\n",
-    );
-    write(
-        root,
-        "openspec/changes/C/.openspec.yaml",
-        "schema: security-flow\n",
-    );
-    write(
-        root,
-        "openspec/changes/C/proposal.md",
-        "A result with a security review.\n",
-    );
-    write(root, "openspec/changes/C/specs/result/spec.md", BDD);
-    call(
-        root,
-        &[
-            "openspec",
-            "import",
-            "--source",
-            root.join("openspec").to_str().unwrap(),
-        ],
-        0,
-    );
-    call(root, &["change", "accept", "C", "--by", "designer"], 4);
-    assert!(
-        root.join("project-ledger/imports/openspec-artifacts/config.yaml")
-            .exists()
-    );
-    let exported = d.path().join("exported");
-    call(
-        root,
-        &["openspec", "export", "--output", exported.to_str().unwrap()],
-        0,
-    );
-    assert_eq!(
-        fs::read_to_string(exported.join("config.yaml")).unwrap(),
-        "schema: security-flow\ncontext: Retain audit records.\n"
-    );
-}
-
-#[cfg(unix)]
-fn provider_fixture(
-    scenario: &str,
-) -> (tempfile::TempDir, tempfile::TempDir, Vec<(String, String)>) {
-    use std::os::unix::fs::PermissionsExt;
-    let d = setup();
-    let root = d.path();
-    let extra = tempfile::tempdir().unwrap();
-    let remote = extra.path().join("remote");
-    fs::create_dir(&remote).unwrap();
-    git(&remote, &["init", "--bare", "-q"]);
-    git(root, &["remote", "add", "origin", remote.to_str().unwrap()]);
-    let (_, worker) = prepared(root);
-    call(root, &["verify", "run", "--story", "S"], 0);
-    review(root, json!([]), 0);
-    let head = git(&worker, &["rev-parse", "HEAD"]);
-    let base = git(root, &["rev-parse", "HEAD"]);
-    let provider = extra.path().join("provider");
-    git(
-        root,
-        &[
-            "worktree",
-            "add",
-            "-b",
-            "provider",
-            provider.to_str().unwrap(),
-            &base,
-        ],
-    );
-    let mock = write(extra.path(), "bin/gh", include_str!("fixtures/gh-mock.py"));
-    fs::set_permissions(&mock, fs::Permissions::from_mode(0o755)).unwrap();
-    let env = vec![
-        (
-            "PATH".into(),
-            format!(
-                "{}:{}",
-                mock.parent().unwrap().display(),
-                std::env::var("PATH").unwrap()
-            ),
-        ),
-        (
-            "AEP_TEST_STATE".into(),
-            extra.path().join("state.json").to_string_lossy().into(),
-        ),
-        (
-            "AEP_TEST_STORY".into(),
-            root.join("project-ledger/stories/S.yaml")
-                .to_string_lossy()
-                .into(),
-        ),
-        ("AEP_TEST_SCENARIO".into(), scenario.into()),
-        ("AEP_TEST_HEAD".into(), head),
-        ("AEP_TEST_BASE".into(), base),
-        (
-            "AEP_TEST_PROVIDER".into(),
-            provider.to_string_lossy().into(),
-        ),
-    ];
-    (d, extra, env)
-}
-#[cfg(unix)]
-fn provider_call(root: &Path, env: &[(String, String)], args: &[&str], code: i32) -> Value {
-    let result = Command::new(env!("CARGO_BIN_EXE_aep"))
-        .arg("--json")
-        .arg("--root")
-        .arg(root)
-        .envs(env.iter().cloned())
-        .args(args)
-        .output()
-        .unwrap();
-    let json: Value = serde_json::from_slice(&result.stdout).unwrap();
-    assert_eq!(result.status.code(), Some(code), "{args:?}: {json}");
-    json
-}
-#[cfg(unix)]
 #[test]
 fn provider_pr_preserves_concurrent_prose_and_merge_reconciles_lost_response() {
     let (d, _extra, env) = provider_fixture("pr-edit");
@@ -1025,67 +863,6 @@ fn release_promotion_requires_current_environment_gate_evidence() {
         call(root, &["story", "show", "S"], 0)["record"]["status"],
         "released"
     );
-}
-
-#[test]
-fn mapping_drift_blocks_acceptance_until_explicitly_reconciled() {
-    let d = setup();
-    let root = d.path();
-    write(
-        root,
-        "openspec/config.yaml",
-        "schema: security-flow\ncontext: Threat review is required.\n",
-    );
-    call(
-        root,
-        &[
-            "openspec",
-            "import",
-            "--source",
-            root.join("openspec").to_str().unwrap(),
-        ],
-        0,
-    );
-    record(
-        root,
-        "change",
-        json!({"kind":"change","id":"C","title":"Guidance","description":"Retain the required project threat review when guidance changes.","data":{"documentation_only":true}}),
-    );
-    call(root, &["change", "accept", "C", "--by", "designer"], 4);
-    let imported = call(root, &["query", "--kind", "import"], 0)["records"][0]["record"].clone();
-    let target = "project-rules/security.md";
-    write(
-        root,
-        target,
-        "Require threat review before accepting a behavior change.\n",
-    );
-    let file = tempfile::NamedTempFile::new().unwrap();
-    fs::write(
-        file.path(),
-        json!({"record":imported["id"],"by":"maintainer","mappings":{"config.yaml":target}})
-            .to_string(),
-    )
-    .unwrap();
-    call(
-        root,
-        &["openspec", "map", "--file", file.path().to_str().unwrap()],
-        0,
-    );
-    call(root, &["check"], 0);
-    fs::remove_file(root.join(target)).unwrap();
-    call(root, &["check"], 1);
-    call(root, &["change", "accept", "C", "--by", "designer"], 4);
-    write(
-        root,
-        target,
-        "Require an attributed threat review before change acceptance.\n",
-    );
-    call(
-        root,
-        &["openspec", "map", "--file", file.path().to_str().unwrap()],
-        0,
-    );
-    call(root, &["change", "accept", "C", "--by", "designer"], 0);
 }
 
 #[test]
@@ -1532,4 +1309,118 @@ fn note_becomes_the_event_description() {
         text.contains("      Container for the retry concept"),
         "{text}"
     );
+}
+
+#[cfg(unix)]
+fn provider_fixture(
+    scenario: &str,
+) -> (tempfile::TempDir, tempfile::TempDir, Vec<(String, String)>) {
+    use std::os::unix::fs::PermissionsExt;
+    let d = setup();
+    let root = d.path();
+    let extra = tempfile::tempdir().unwrap();
+    let remote = extra.path().join("remote");
+    fs::create_dir(&remote).unwrap();
+    git(&remote, &["init", "--bare", "-q"]);
+    git(root, &["remote", "add", "origin", remote.to_str().unwrap()]);
+    let (_, worker) = prepared(root);
+    call(root, &["verify", "run", "--story", "S"], 0);
+    review(root, json!([]), 0);
+    let head = git(&worker, &["rev-parse", "HEAD"]);
+    let base = git(root, &["rev-parse", "HEAD"]);
+    let provider = extra.path().join("provider");
+    git(
+        root,
+        &[
+            "worktree",
+            "add",
+            "-b",
+            "provider",
+            provider.to_str().unwrap(),
+            &base,
+        ],
+    );
+    let mock = write(extra.path(), "bin/gh", include_str!("fixtures/gh-mock.py"));
+    fs::set_permissions(&mock, fs::Permissions::from_mode(0o755)).unwrap();
+    let env = vec![
+        (
+            "PATH".into(),
+            format!(
+                "{}:{}",
+                mock.parent().unwrap().display(),
+                std::env::var("PATH").unwrap()
+            ),
+        ),
+        (
+            "AEP_TEST_STATE".into(),
+            extra.path().join("state.json").to_string_lossy().into(),
+        ),
+        (
+            "AEP_TEST_STORY".into(),
+            root.join("project-ledger/stories/S.yaml")
+                .to_string_lossy()
+                .into(),
+        ),
+        ("AEP_TEST_SCENARIO".into(), scenario.into()),
+        ("AEP_TEST_HEAD".into(), head),
+        ("AEP_TEST_BASE".into(), base),
+        (
+            "AEP_TEST_PROVIDER".into(),
+            provider.to_string_lossy().into(),
+        ),
+    ];
+    (d, extra, env)
+}
+#[cfg(unix)]
+fn provider_call(root: &Path, env: &[(String, String)], args: &[&str], code: i32) -> Value {
+    let result = Command::new(env!("CARGO_BIN_EXE_aep"))
+        .arg("--json")
+        .arg("--root")
+        .arg(root)
+        .envs(env.iter().cloned())
+        .args(args)
+        .output()
+        .unwrap();
+    let json: Value = serde_json::from_slice(&result.stdout).unwrap();
+    assert_eq!(result.status.code(), Some(code), "{args:?}: {json}");
+    json
+}
+#[cfg(unix)]
+#[test]
+fn migration_scopes_are_independent_and_wave_barriers_are_explicit() {
+    let d = legacy_repo();
+    let root = d.path();
+    write(root, "product-context.yaml", &json!({"stories":[{"id":"S1","status":"pending","layer":1},{"id":"S2","status":"pending","layer":1}],"waves":[{"layer":1,"wave":1,"stories":["S1"]},{"layer":1,"wave":2,"stories":["S2"]}]}).to_string());
+    git(root, &["add", "."]);
+    git(root, &["commit", "-qm", "legacy waves"]);
+    let first = call(root, &["migrate", "plan", "--story", "S1"], 0);
+    apply_migration(root, &first["plan"], 0);
+    let second = call(root, &["migrate", "plan", "--story", "S2"], 0);
+    assert!(second.get("plan").is_some());
+    apply_migration(root, &second["plan"], 0);
+    assert_eq!(
+        call(root, &["story", "show", "S2"], 0)["record"]["depends_on"],
+        json!(["S1"])
+    );
+    call(root, &["migrate", "verify"], 0);
+}
+
+#[test]
+fn native_projects_have_no_retired_spec_integration() {
+    let d = setup();
+    let root = d.path();
+    let config = fs::read_to_string(root.join(".aep/config.toml")).unwrap();
+    assert!(!config.contains("openspec"));
+    assert!(!root.join("openspec").exists());
+    let output = Command::new(env!("CARGO_BIN_EXE_aep"))
+        .args(["--help"])
+        .output()
+        .unwrap();
+    assert!(!String::from_utf8_lossy(&output.stdout).contains("openspec"));
+    let output = Command::new(env!("CARGO_BIN_EXE_aep"))
+        .args(["openspec", "check"])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(2));
+    call(root, &["check"], 0);
 }

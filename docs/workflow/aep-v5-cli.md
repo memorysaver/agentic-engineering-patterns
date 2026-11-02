@@ -29,7 +29,6 @@ This complete example defines a project check. Replace its argv with the project
 ```toml
 schema_version = 1
 cli_version = "5.0.0"
-openspec_profile = "1.12.0-common"
 skill_paths = []
 
 [stores]

@@ -66,7 +66,7 @@ Readiness comes from explicit dependencies, gates and accepted contracts, never 
 | Plan | `query`, `timeline`, `story`, `roadmap`, `change`, `decision`, `layer`, `wave` |
 | Implement and verify | `dispatch`, `worktree`, `attempt`, `verify`, `review`, `gate` |
 | Deliver and learn | `deliver`, `release`, `spec`, `lesson`, `reflect`, `rule` |
-| Maintain | `config`, `migrate`, `openspec`, `recover` |
+| Maintain | `config`, `migrate`, `recover` |
 | Observe | `eval`, `runbook` |
 
 Every command accepts `--json` for structured output, `--dry-run` for supported writes and `--note` for the reason. `aep --skill [name] [--ref name]` prints the embedded guidance; it is the only place agents read procedures from.
@@ -98,7 +98,7 @@ A v4 project does not change behavior by installing the binary; the switch is an
 ## Documentation
 
 - [Native CLI and configuration](docs/workflow/aep-v5-cli.md)
-- [Migration and OpenSpec compatibility](docs/workflow/aep-v5-migration.md)
+- [Migration to native records](docs/workflow/aep-v5-migration.md)
 - [Architecture and accepted design](docs/decisions/aep-v5-rust-cli-architecture.md)
 - [Human-readable CLI](docs/decisions/aep-v5-human-cli.md)
 - [Skill classification: context and self verification](docs/decisions/aep-v5-context-and-self-verification.md)
@@ -133,3 +133,5 @@ MIT. See [LICENSE](LICENSE).
 ### Runbooks and principles
 
 `aep --skill bug-fix` serves an ordered runbook; `aep --skill principles` lists the four admitted principles. Read a cited principle with `aep --skill principles --ref prove-it --attempt <attempt-id>` to record a local read receipt. `aep runbook check progress.yaml` checks a bundled runbook's completed or explicitly skipped steps, evidence references and prior principle reads. It does not execute steps or replace verification. Ordinary guidance reads remain read-only; attempt-scoped reads write under Git metadata. See [the contract and limits](docs/decisions/aep-v5-runbooks-and-principles.md) and [progress format](docs/workflow/aep-v5-cli.md#runbook-progress).
+
+New web projects use `aep --skill stack` for the Better-T-Stack / Vite+ setup. AEP 5.0 retires OpenSpec integration; specifications are native change and published specification records.

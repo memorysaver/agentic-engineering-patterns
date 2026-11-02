@@ -9,6 +9,8 @@ Establish the selected workflow from the user's explicit choice, then the projec
 
 Inspect the repository, host discovery, scripts, and Git changes. Read [Context sources](references/context-sources.md) (`aep --skill project --ref context-sources`) when onboarding or repairing missing project knowledge. Use `aep doctor` for CLI/configuration compatibility; `aep init --dry-run` previews minimal setup and `aep init` applies it. Add `--claude` when that host needs a CLAUDE.md pointer. Existing legacy stores require the migration procedure (`aep --skill migrate`) for an authorized cutover.
 
+For a new web project, read `aep --skill stack` for the Better-T-Stack and Vite+ scaffold. Use native change and specification records for requirements.
+
 Classify existing AGENTS content yourself. Keep the agreement and selection entrypoint short; index applicable code, testing, package, DevOps, release, and workflow rules in the configured rules store, normally `project-rules/`. Preserve project constraints while identifying historical workflow instructions as sources.
 
 Read [Verification setup](references/verification-setup.md) (`aep --skill project --ref verification-setup`) when establishing or repairing how agents operate this product. Reuse actual stack, setup, fixtures, and hand-written journeys; scaffold the missing capabilities within task scope. Rehearse the resulting procedure on a representative path and retain its results.
