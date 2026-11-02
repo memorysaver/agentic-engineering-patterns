@@ -198,6 +198,7 @@ pub fn run(args: &Cli) -> Result<Outcome> {
                 json!({"revision":snap.revision,"events":records,"ordering":"recorded_at; occurrence time is unknown unless explicitly recorded"}),
             ))
         }
+        Command::Runbook { command } => crate::runbook::run(args, &s, &snap, command),
         Command::Check => check(&s, &snap),
         Command::Story(a) => records(args, &s, &snap, Kind::Story, &a.action),
         Command::Layer(a) => records(args, &s, &snap, Kind::Layer, &a.action),

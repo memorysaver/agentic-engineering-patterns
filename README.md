@@ -2,7 +2,7 @@
 
 AEP is a native CLI, `aep`, that keeps a software project's context, work and verification together so coding agents can plan, implement and deliver with evidence. The agent decides what to do; `aep` serves the procedures, maintains the records, isolates implementation in Git worktrees, runs the project's checks and records what actually happened.
 
-Current release: **5.0.0-preview.1** (Linux x86_64, macOS Apple Silicon). The earlier skill bundle, v4, is kept for existing installs and is being retired; see [Coming from v4](#coming-from-v4).
+Current release: **5.0.0-preview.1**; this branch prepares **5.0.0** (Linux x86_64, macOS Apple Silicon). The earlier skill bundle, v4, is kept for existing installs and is being retired; see [Coming from v4](#coming-from-v4).
 
 ## Install
 
@@ -67,7 +67,7 @@ Readiness comes from explicit dependencies, gates and accepted contracts, never 
 | Implement and verify | `dispatch`, `worktree`, `attempt`, `verify`, `review`, `gate` |
 | Deliver and learn | `deliver`, `release`, `spec`, `lesson`, `reflect`, `rule` |
 | Maintain | `config`, `migrate`, `openspec`, `recover` |
-| Observe | `eval` |
+| Observe | `eval`, `runbook` |
 
 Every command accepts `--json` for structured output, `--dry-run` for supported writes and `--note` for the reason. `aep --skill [name] [--ref name]` prints the embedded guidance; it is the only place agents read procedures from.
 
@@ -129,3 +129,7 @@ Releases are tagged `v5.*` on `main`; CI builds both platforms, publishes the ar
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+### Runbooks and principles
+
+`aep --skill bug-fix` serves an ordered runbook; `aep --skill principles` lists the four admitted principles. Read a cited principle with `aep --skill principles --ref prove-it --attempt <attempt-id>` to record a local read receipt. `aep runbook check progress.yaml` checks a bundled runbook's completed or explicitly skipped steps, evidence references and prior principle reads. It does not execute steps or replace verification. Ordinary guidance reads remain read-only; attempt-scoped reads write under Git metadata. See [the contract and limits](docs/decisions/aep-v5-runbooks-and-principles.md) and [progress format](docs/workflow/aep-v5-cli.md#runbook-progress).

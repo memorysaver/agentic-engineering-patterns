@@ -62,3 +62,7 @@ Migration receipts retain source commit, paths, digests, and selection. Verifica
 Use Git to recover historical context or revert a reviewed migration commit. Use `aep recover` only for an interrupted current file transaction. This release does not provide a second historical database, full archive replay, or reverse-schema engine.
 
 The implementation is tested with synthetic Git fixtures and optional provider mocks. Production downstream migration remains a separate operation against that project's actual consumer inventory and verification commands.
+
+## Preview to stable 5.0
+
+The record schema remains 1. Install v5.0.0, run `aep config show --json`, and save the full configuration to a TOML file with only `cli_version` changed to `"5.0.0"`. Run `aep config update --file <config.toml> --expect <revision>` using the revision returned by config show. This explicit update preserves project checks, stores and policy; `aep init` does not silently upgrade the pin. Run `aep doctor` and `aep check`, and rerun candidate verification before delivery because evidence is bound to its producing binary. Retain preview records as history.

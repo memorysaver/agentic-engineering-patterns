@@ -4,6 +4,7 @@ mod eval;
 mod guidance;
 mod migration;
 mod output;
+mod runbook;
 mod spec;
 mod workflow;
 

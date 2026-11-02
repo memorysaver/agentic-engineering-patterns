@@ -28,7 +28,7 @@ This complete example defines a project check. Replace its argv with the project
 
 ```toml
 schema_version = 1
-cli_version = "5.0.0-preview.1"
+cli_version = "5.0.0"
 openspec_profile = "1.12.0-common"
 skill_paths = []
 
@@ -167,3 +167,23 @@ Agents decide whether a lesson belongs in a local rule, local procedure, or an A
 Managed stores contain UTF-8 text, bounded to 16 MiB per file. Large or binary evidence belongs in an artifact store or Git source with explicit pointers. Git history protects migration context; the transaction journal protects interrupted current writes. These serve different purposes.
 
 References accept their catalog name or exact Markdown link path: `aep --skill roadmap --ref status` and `aep --skill roadmap --ref references/status.md` return identical content. Both resolve only resources in the selected procedure catalog. Native skill links include the command beside the relative link.
+
+## Runbook progress
+
+Run `aep --skill bug-fix` to obtain the ordered step definitions. Keep a progress file outside tracked source (for example under `.aep/`) with all step IDs. Each step is `done` with an RFC3339 time, the declared evidence mapping and its exact `principles_read` list, or `skipped` with a reason. For example, one entry within the complete file is:
+
+```yaml
+runbook: bug-fix
+attempt: attempt-EXISTING-ID
+steps:
+  reproduce:
+    status: done
+    at: "2026-11-02T12:00:00Z"
+    evidence:
+      command-output: "Retained reproduction output location and failure summary"
+    principles_read: [prove-it]
+```
+
+Read each cited principle with `--attempt` before completing its step. Then run `aep runbook check <file>`. Include the remaining steps from the runbook: the partial example alone is rejected. Check IDs resolve against configuration and record IDs against the ledger. Other evidence is retained text for review, not independently authenticated output. Successful validation does not waive configured checks or delivery policy. A skip is visible and requires a reason; the checker does not judge the reason's adequacy.
+
+Project-local skills may also declare `kind: runbook` and typed steps; the loader validates them against the admitted principle catalog. Progress checking currently selects bundled runbooks.
