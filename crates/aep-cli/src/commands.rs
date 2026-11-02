@@ -136,10 +136,9 @@ pub fn run(args: &Cli) -> Result<Outcome> {
                 let proposed = Store::with_config(s.root.clone(), config)?;
                 if proposed.config.cli_version != aep_core::VERSION
                     || proposed.config.schema_version != aep_core::SCHEMA
-                    || proposed.config.openspec_profile != "1.12.0-common"
                 {
                     return Err(Error::unsupported(
-                        "Configuration requires an unsupported release/schema/profile",
+                        "Configuration requires an unsupported release/schema",
                     ));
                 }
                 if snap.files.keys().any(|path| {
@@ -198,6 +197,7 @@ pub fn run(args: &Cli) -> Result<Outcome> {
                 json!({"revision":snap.revision,"events":records,"ordering":"recorded_at; occurrence time is unknown unless explicitly recorded"}),
             ))
         }
+        Command::Runbook { command } => crate::runbook::run(args, &s, &snap, command),
         Command::Check => check(&s, &snap),
         Command::Story(a) => records(args, &s, &snap, Kind::Story, &a.action),
         Command::Layer(a) => records(args, &s, &snap, Kind::Layer, &a.action),
@@ -227,7 +227,6 @@ pub fn run(args: &Cli) -> Result<Outcome> {
         Command::Review { command } => workflow::review(args, &s, &snap, command),
         Command::Deliver { command } => workflow::deliver(args, &s, &snap, command),
         Command::Spec { command } => spec::run(args, &s, &snap, command),
-        Command::Openspec { command } => spec::openspec(args, &s, &snap, command),
         _ => Err(Error::input("Unsupported command combination")),
     }
 }
@@ -250,10 +249,9 @@ pub fn save(
         let proposed = Store::with_config(s.root.clone(), config)?;
         if proposed.config.cli_version != aep_core::VERSION
             || proposed.config.schema_version != aep_core::SCHEMA
-            || proposed.config.openspec_profile != "1.12.0-common"
         {
             return Err(Error::unsupported(
-                "Configuration requires an unsupported release/schema/profile",
+                "Configuration requires an unsupported release/schema",
             ));
         }
         if proposed.roots() != s.roots() {
@@ -375,7 +373,6 @@ pub fn initial_files(
             "product",
             "project-convention",
             "lessons-learned",
-            "openspec",
         ]
         .iter()
         .any(|p| s.root.join(p).exists())
@@ -486,9 +483,8 @@ fn doctor(args: &Cli) -> Result<Outcome> {
             "records":{"available":configured,"requires":["compatible initialized Git project"]},
             "worktrees":{"available":configured && git_version.is_some() && native_platform,"requires":["Git","Linux or macOS","committed design and dependency integrations"]},
             "verify":{"available":configured && native_platform,"requires":["bound candidate worktree","configured project commands and their toolchains"]},
-            "github_delivery":{"executable_present":available("gh"),"requires":["gh","repository authentication","current checks and review"],"authentication_checked":false},
-            "openspec_reference":{"executable_present":available("openspec"),"requires":["OpenSpec 1.12.0"],"version_checked":false}
-        },"openspec_cli_required":false,"llm_required":false}),
+            "github_delivery":{"executable_present":available("gh"),"requires":["gh","repository authentication","current checks and review"],"authentication_checked":false}
+        },"llm_required":false}),
     ))
 }
 pub fn check(s: &Store, snap: &Snapshot) -> Result<Outcome> {

@@ -398,72 +398,6 @@ fn nested_rule_links_and_missing_claude_discovery_require_mapping() {
 }
 
 #[test]
-fn overlapping_story_and_change_ids_keep_stable_provenance_across_scopes() {
-    let d = repo(true);
-    let root = d.path();
-    write(
-        root,
-        "product-context.yaml",
-        &json!({"stories":[
-            {"id":"one","status":"pending","change_id":"one"},
-            {"id":"two","status":"pending","openspec_change":"two"}
-        ]})
-        .to_string(),
-    );
-    for id in ["one", "two"] {
-        write(
-            root,
-            &format!("openspec/changes/{id}/proposal.md"),
-            "Documented change\n",
-        );
-        write(
-            root,
-            &format!("openspec/changes/{id}/design.md"),
-            "Preserve source intent\n",
-        );
-    }
-    commit(root);
-    let first = call(root, &["migrate", "plan", "--story", "one"], 0)["plan"].clone();
-    assert_eq!(first["diagnostics"], json!([]));
-    let records = first["records"].as_array().unwrap();
-    let story = records.iter().find(|r| r["id"] == "one").unwrap();
-    assert_eq!(story["change"], "openspec-change-one");
-    let change = records
-        .iter()
-        .find(|r| r["id"] == "openspec-change-one")
-        .unwrap();
-    assert_eq!(change["data"]["source"]["change"], "one");
-    assert!(
-        first["writes"]
-            .get("project-ledger/changes/openspec-change-one/imported/design.md")
-            .is_some()
-    );
-    apply(root, &first, 0);
-    call(root, &["migrate", "verify"], 0);
-    call(
-        root,
-        &[
-            "openspec",
-            "import",
-            "--source",
-            root.join("openspec").to_str().unwrap(),
-        ],
-        0,
-    );
-    let second = call(root, &["migrate", "plan", "--story", "two"], 0)["plan"].clone();
-    assert_eq!(second["diagnostics"], json!([]));
-    let story = second["records"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|r| r["id"] == "two")
-        .unwrap();
-    assert_eq!(story["change"], "openspec-change-two");
-    apply(root, &second, 0);
-    call(root, &["migrate", "verify"], 0);
-}
-
-#[test]
 fn migration_preserves_non_dispatchable_legacy_states() {
     let d = repo(true);
     let root = d.path();
@@ -493,71 +427,6 @@ fn migration_preserves_non_dispatchable_legacy_states() {
     }
     apply(root, &plan, 0);
     call(root, &["migrate", "verify"], 0);
-}
-
-#[test]
-fn legacy_change_link_ignores_same_source_id_from_another_bundle() {
-    let d = repo(true);
-    let root = d.path();
-    write(
-        root,
-        "product-context.yaml",
-        &json!({"stories":[{"id":"one","status":"pending","change_id":"one"}]}).to_string(),
-    );
-    write(
-        root,
-        "openspec/changes/one/proposal.md",
-        "This repository's change\n",
-    );
-    call(root, &["init"], 0);
-    let unrelated = tempfile::NamedTempFile::new().unwrap();
-    fs::write(
-        unrelated.path(),
-        json!({
-            "kind":"change", "id":"foreign-one", "title":"Unrelated imported change",
-            "data":{"source":{"path":root.join("other-openspec"),"change":"one"}}
-        })
-        .to_string(),
-    )
-    .unwrap();
-    call(
-        root,
-        &[
-            "change",
-            "new",
-            "--file",
-            unrelated.path().to_str().unwrap(),
-        ],
-        0,
-    );
-    commit(root);
-
-    let plan = call(root, &["migrate", "plan"], 0)["plan"].clone();
-    assert_eq!(plan["diagnostics"], json!([]));
-    let story = plan["records"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|record| record["id"] == "one")
-        .unwrap();
-    assert_eq!(story["change"], "openspec-change-one");
-    let imported = plan["records"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|record| record["id"] == "openspec-change-one")
-        .unwrap();
-    assert_eq!(
-        imported["data"]["source"]["path"],
-        json!(fs::canonicalize(root.join("openspec")).unwrap())
-    );
-    assert_eq!(imported["data"]["source"]["change"], "one");
-    apply(root, &plan, 0);
-    call(root, &["migrate", "verify"], 0);
-    assert_eq!(
-        call(root, &["story", "show", "one"], 0)["record"]["change"],
-        "openspec-change-one"
-    );
 }
 
 #[test]
@@ -596,4 +465,32 @@ fn reviewed_migration_rejects_invalid_prospective_config_before_writes() {
         .unwrap()["required_checks"] = json!(["smoke"]);
     apply(root, &plan, 0);
     call(root, &["migrate", "verify"], 0);
+}
+
+#[test]
+fn retired_spec_sources_and_links_block_cutover_without_writes() {
+    let d = repo(true);
+    let root = d.path();
+    write(
+        root,
+        "openspec/changes/critical/spec.md",
+        "Critical historical requirement\n",
+    );
+    commit(root);
+    call(root, &["migrate", "plan"], 3);
+    assert!(!root.join(".aep/config.toml").exists());
+    fs::rename(root.join("openspec"), root.join("archived-contracts")).unwrap();
+    write(
+        root,
+        "product-context.yaml",
+        &json!({"stories":[{"id":"one","status":"pending","openspec_change":"critical"}]})
+            .to_string(),
+    );
+    commit(root);
+    call(root, &["migrate", "plan"], 3);
+    assert!(!root.join(".aep/config.toml").exists());
+    assert_eq!(
+        fs::read_to_string(root.join("archived-contracts/changes/critical/spec.md")).unwrap(),
+        "Critical historical requirement\n"
+    );
 }

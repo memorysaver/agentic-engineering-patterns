@@ -56,7 +56,7 @@ def main():
         with tempfile.TemporaryDirectory(prefix="aep-preview-fixture-") as scratch:
             fixture = Path(scratch)
             summary["version"] = run([binary, "--version"], fixture).strip()
-            assert "preview" in summary["version"], "Select the preview binary"
+            assert summary["version"].startswith("aep 5."), "Select an AEP v5 binary"
             run(["git", "init", "-q", "-b", "main"], fixture)
             run(["git", "-C", fixture, "config", "user.name", "AEP preview fixture"], fixture)
             run(["git", "-C", fixture, "config", "user.email", "fixture@example.invalid"], fixture)
@@ -77,7 +77,7 @@ def main():
             run(["git", "-C", fixture, "add", "."], fixture)
             run(["git", "-C", fixture, "-c", "core.hooksPath=/dev/null", "-c", "commit.gpgsign=false", "commit", "-qm", "legacy fixture"], fixture)
             catalog = aep(fixture, "--skill")
-            assert len(catalog["skills"]) == 9, catalog
+            assert {"stack", "bug-fix", "principles", "design", "implement", "validate", "deliver", "project", "migrate", "reflect", "roadmap", "eval"} == {skill["name"] for skill in catalog["skills"]}, catalog
             summary["guidance"] = catalog["metadata"]
             for argv in [("project",), ("roadmap", "--ref", "purpose-research"), ("roadmap", "--ref", "product-context"), ("design", "--ref", "prototype"), ("validate", "--ref", "self-verification")]:
                 aep(fixture, "--skill", *argv)

@@ -1,7 +1,6 @@
 use crate::{
     cli::{Cli, Migrate},
     commands::{Outcome, initial_files, input, save, version_route},
-    spec,
 };
 use aep_core::{Error, Kind, Record, Result, digest, valid_id};
 use aep_store::{Store, contained, git, parse_yaml};
@@ -219,7 +218,6 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                     "product",
                     "project-convention",
                     "lessons-learned",
-                    "openspec",
                     ".claude",
                     ".agents",
                     source_path.as_str(),
@@ -270,6 +268,11 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                     .iter()
                     .map(text),
                 );
+            }
+            if s.root.join("openspec").exists() {
+                return Err(Error::blocked(
+                    "Retired specification source detected: translate its contracts into native changes, preserve the source outside the active openspec directory, then retry migration",
+                ));
             }
             let mut sources = BTreeMap::new();
             let mut legacy = source(&s, &source_path, &mut sources)?
@@ -362,6 +365,11 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
             }
 
             for old in list(&legacy["stories"]) {
+                if old.get("openspec_change").is_some() {
+                    return Err(Error::blocked(
+                        "Retired openspec_change link detected: translate the contract into a native change_id and remove the retired link before migration",
+                    ));
+                }
                 let id = text(&old["id"]);
                 if !valid_id(&id) || all.insert(id.clone(), old).is_some() {
                     return Err(Error::input(format!(
@@ -777,80 +785,19 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                     diagnostics.push(format!("Project-specific {key} must be mapped to active rules/checks before cutover"));
                 }
             }
-            if s.root.join("openspec").exists() {
-                let reserved = all
-                    .keys()
-                    .cloned()
-                    .chain(
-                        records
-                            .values()
-                            .filter(|r| r.kind != Kind::Change)
-                            .map(|r| r.id.clone()),
-                    )
-                    .chain(
-                        snap.records
-                            .iter()
-                            .filter(|r| r.kind != Kind::Change)
-                            .map(|r| r.id.clone()),
-                    )
-                    .collect();
-                let imported =
-                    spec::import_bundle_reserved(&s, &snap, &s.root.join("openspec"), &reserved)?;
-                for r in imported.0 {
-                    insert_record(&mut records, r)?;
-                }
-                writes.extend(imported.1);
-                // The importer writes a source digest into its receipt; bind all copied files in this plan too.
-                fn bind(
-                    root: &Path,
-                    path: &Path,
-                    out: &mut BTreeMap<String, String>,
-                ) -> Result<()> {
-                    for entry in std::fs::read_dir(path)? {
-                        let entry = entry?;
-                        let rel = entry
-                            .path()
-                            .strip_prefix(root)
-                            .unwrap()
-                            .to_string_lossy()
-                            .to_string();
-                        let path = contained(root, &rel)?;
-                        if entry.file_type()?.is_dir() {
-                            bind(root, &path, out)?;
-                        } else {
-                            out.insert(rel, digest(std::fs::read(path)?));
-                        }
-                    }
-                    Ok(())
-                }
-                bind(&s.root, &s.root.join("openspec"), &mut sources)?;
-            }
             // Link only explicit legacy change references; semantic matches belong to the agent.
             let changes: Vec<_> = records
                 .values()
                 .chain(snap.records.iter())
                 .filter(|r| r.kind == Kind::Change)
                 .collect();
-            let mut change_ids: BTreeMap<_, _> = changes
+            let change_ids: BTreeMap<_, _> = changes
                 .iter()
                 .map(|r| (r.id.clone(), r.id.clone()))
                 .collect();
-            let source_root = s.root.join("openspec");
-            for change in changes {
-                if let Some(source) = change.data.get("source")
-                    && source.get("path") == Some(&json!(source_root))
-                    && let Some(id) = source.get("change").and_then(Value::as_str)
-                {
-                    change_ids.insert(id.into(), change.id.clone());
-                }
-            }
             for id in &selected {
                 let old = &all[id];
-                if let Some(change) = old
-                    .get("change_id")
-                    .or_else(|| old.get("openspec_change"))
-                    .and_then(Value::as_str)
-                {
+                if let Some(change) = old.get("change_id").and_then(Value::as_str) {
                     if let Some(native_id) = change_ids.get(change) {
                         records.get_mut(id).unwrap().change = Some(native_id.clone());
                     } else {

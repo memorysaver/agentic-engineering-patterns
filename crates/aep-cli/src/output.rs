@@ -229,7 +229,7 @@ pub fn render(operation: &str, result: &Outcome) -> String {
             diagnostics(&mut out, &d["diagnostics"]);
             out.push_str("\nInspect: aep context STORY-ID\nBrowse:  aep query --kind story --status pending\nFull readiness details: aep status --json\n");
         }
-        "check" | "migrate.verify" | "spec.check" | "openspec.check" => {
+        "check" | "migrate.verify" | "spec.check" => {
             let pass = result.exit_code == 0 && d["pass"] != false;
             let _ = writeln!(
                 out,
@@ -498,7 +498,7 @@ mod tests {
             "code":1,"stdout":"Checked feature-a", "stderr":"Missing scenario: retry"
         }}));
         result.exit_code = 1;
-        let output = render("openspec.check", &result);
+        let output = render("spec.check", &result);
         assert!(output.contains("FAIL"));
         assert!(output.contains("Missing scenario: retry"));
         assert!(output.contains("Checked feature-a"));

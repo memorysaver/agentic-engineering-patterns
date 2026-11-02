@@ -400,7 +400,6 @@ pub fn facts(s: &Store, snap: &Snapshot) -> Result<Value> {
         "product",
         "project-convention",
         "lessons-learned",
-        "openspec",
     ]
     .into_iter()
     .filter(|p| root.join(p).exists())

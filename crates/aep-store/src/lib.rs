@@ -211,11 +211,6 @@ impl Store {
         if self.config.schema_version != aep_core::SCHEMA {
             return Err(Error::unsupported("Unsupported project schema"));
         }
-        if self.config.openspec_profile != "1.12.0-common" {
-            return Err(Error::unsupported(
-                "Unsupported OpenSpec compatibility profile",
-            ));
-        }
         if self.config.cli_version != aep_core::VERSION {
             return Err(Error::unsupported(format!(
                 "Project pins CLI {}; running {}",
