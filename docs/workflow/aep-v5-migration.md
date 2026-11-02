@@ -30,7 +30,7 @@ This records an attributed Git inspection and creates a worktree for current ver
 
 ## Native specifications and retired compatibility
 
-AEP 5.0 retires OpenSpec commands, profile configuration, automatic import/export and external reference validation. Existing source files remain untouched; they are not interpreted as active contracts. Translate requirements deliberately into native change records and BDD deltas, preserving source attribution in the change description. Check and publish them through `aep spec check`, `aep spec diff` and `aep spec publish` after normal verification and delivery.
+AEP 5.0 retires OpenSpec commands, profile configuration, automatic import/export and external reference validation. Existing source files remain untouched; they are not interpreted as active contracts. Migration refuses an active `openspec/` directory or a legacy `openspec_change` link: first translate the contracts into native changes and `change_id` links, and preserve the retired source in an archival location outside that active directory. Translate requirements deliberately into native change records and BDD deltas, preserving source attribution in the change description. Check and publish them through `aep spec check`, `aep spec diff` and `aep spec publish` after normal verification and delivery.
 
 ## Preview to stable 5.0
 

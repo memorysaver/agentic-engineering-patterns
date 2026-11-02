@@ -466,3 +466,31 @@ fn reviewed_migration_rejects_invalid_prospective_config_before_writes() {
     apply(root, &plan, 0);
     call(root, &["migrate", "verify"], 0);
 }
+
+#[test]
+fn retired_spec_sources_and_links_block_cutover_without_writes() {
+    let d = repo(true);
+    let root = d.path();
+    write(
+        root,
+        "openspec/changes/critical/spec.md",
+        "Critical historical requirement\n",
+    );
+    commit(root);
+    call(root, &["migrate", "plan"], 3);
+    assert!(!root.join(".aep/config.toml").exists());
+    fs::rename(root.join("openspec"), root.join("archived-contracts")).unwrap();
+    write(
+        root,
+        "product-context.yaml",
+        &json!({"stories":[{"id":"one","status":"pending","openspec_change":"critical"}]})
+            .to_string(),
+    );
+    commit(root);
+    call(root, &["migrate", "plan"], 3);
+    assert!(!root.join(".aep/config.toml").exists());
+    assert_eq!(
+        fs::read_to_string(root.join("archived-contracts/changes/critical/spec.md")).unwrap(),
+        "Critical historical requirement\n"
+    );
+}

@@ -269,6 +269,11 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
                     .map(text),
                 );
             }
+            if s.root.join("openspec").exists() {
+                return Err(Error::blocked(
+                    "Retired specification source detected: translate its contracts into native changes, preserve the source outside the active openspec directory, then retry migration",
+                ));
+            }
             let mut sources = BTreeMap::new();
             let mut legacy = source(&s, &source_path, &mut sources)?
                 .ok_or_else(|| Error::input(format!("No legacy source {source_path}")))?;
@@ -360,6 +365,11 @@ pub fn run(args: &Cli, command: &Migrate) -> Result<Outcome> {
             }
 
             for old in list(&legacy["stories"]) {
+                if old.get("openspec_change").is_some() {
+                    return Err(Error::blocked(
+                        "Retired openspec_change link detected: translate the contract into a native change_id and remove the retired link before migration",
+                    ));
+                }
                 let id = text(&old["id"]);
                 if !valid_id(&id) || all.insert(id.clone(), old).is_some() {
                     return Err(Error::input(format!(
