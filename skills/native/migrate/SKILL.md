@@ -18,4 +18,3 @@ Once `aep migrate verify` passes and the migration is committed, remove the inst
 Commit the coherent migration after context and checks work. Git revert or selective restore supplies recovery; returning to a legacy workflow after native work requires an explicit handoff of new facts. Use `aep recover` for interrupted CLI file transactions.
 
 An imported completion remains unverified. Inspect code/Git evidence, then use `aep story reconcile <id> --commit <sha> --by <actor>` to record an attributed integration claim and worktree for current validation. Configure and execute current checks and any required review before evaluating covering gates.
-
